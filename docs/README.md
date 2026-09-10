@@ -25,7 +25,9 @@ API starts.
 Copy `.env.example` to `.env` before starting the stack. Compose reads the
 PostgreSQL name, user, password, and host port from `.env`, then constructs the
 API container's internal `DATABASE_URL` using the `postgres` service hostname.
-The `.env` file is ignored by Git.
+For commands run locally, the backend constructs the connection URL from those
+same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
+`DATABASE_URL` takes precedence. The `.env` file is ignored by Git.
 
 ## Commands
 
@@ -44,8 +46,10 @@ The `.env` file is ignored by Git.
 After setup, every commit runs `bun run lint` through `.githooks/pre-commit`.
 
 Start the stack with `cp .env.example .env` followed by
-`scripts/build-container`. Apply `bun run db:migrate` once, review the result,
-then check the API with `curl http://localhost:3000/health`.
+`scripts/build-container`. Then run `scripts/migrate up` once, review the
+result, and check the API with `curl http://localhost:3000/health`. Repeat the
+migration command after each review checkpoint; `scripts/build-container` does
+not apply migrations.
 
 ## Conventions
 
