@@ -7,7 +7,15 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"preset": "recommended"
+			"preset": "recommended",
+			"style": {
+				"useConsistentTypeDefinitions": {
+					"level": "error",
+					"options": {
+						"style": "type"
+					}
+				}
+			}
 		}
 	}
 }

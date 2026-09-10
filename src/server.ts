@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import { sql } from "kysely";
-import { db } from "./db.js";
+import { db } from "./db/db.js";
 
 const port = Number(process.env.PORT ?? 3000);
 const app = Fastify({ logger: true });

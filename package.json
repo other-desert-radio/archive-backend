@@ -6,6 +6,9 @@
 	"scripts": {
 		"dev": "bun --watch src/server.ts",
 		"start": "bun src/server.ts",
+		"db:migrate": "./scripts/migrate up",
+		"db:rollback": "./scripts/migrate down",
+		"format": "./scripts/format",
 		"lint": "./scripts/lint",
 		"typecheck": "tsc --noEmit",
 		"setup-hooks": "./scripts/setup-git-hooks"
@@ -19,6 +22,7 @@
 		"@biomejs/biome": "latest",
 		"@types/node": "latest",
 		"@types/pg": "latest",
+		"markdownlint-cli2": "^0.23.2",
 		"typescript": "latest"
 	}
 }
