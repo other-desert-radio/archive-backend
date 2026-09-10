@@ -7,6 +7,9 @@ The server exposes `GET /health` and checks PostgreSQL connectivity during start
 The PostgreSQL database is intentionally empty. There are currently no migrations,
 tables, or schema files.
 
+Biome is the formatter and linter. The checked-in `biome.json` is the source of
+truth for lint and formatting rules.
+
 ## Containers
 
 Docker Compose runs two services:
