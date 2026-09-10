@@ -2,3 +2,4 @@
 set -euo pipefail
 
 ./node_modules/.bin/biome check .
+./node_modules/.bin/markdownlint-cli2 "**/*.md" "#node_modules"

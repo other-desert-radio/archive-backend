@@ -7,8 +7,9 @@ The server exposes `GET /health` and checks PostgreSQL connectivity during start
 The PostgreSQL database is intentionally empty. There are currently no migrations,
 tables, or schema files.
 
-Biome is the formatter and linter. The checked-in `biome.json` is the source of
-truth for lint and formatting rules.
+Biome is the formatter and linter for source files. The checked-in `biome.json`
+is the source of truth for those lint and formatting rules. Markdown is linted
+with markdownlint-cli2.
 
 ## Containers
 
@@ -31,9 +32,10 @@ The `.env` file is ignored by Git.
 - `bun run dev` starts the server with Bun watch mode.
 - `bun run start` starts the server once.
 - `bun run typecheck` runs TypeScript validation.
-- `bun run lint` runs Biome checks.
+- `bun run lint` runs Biome and Markdown checks.
 - `bun run setup-hooks` configures the tracked Git pre-commit hook.
-- `scripts/build-container` rebuilds and starts the Docker Compose stack in the background.
+- `scripts/build-container` rebuilds and starts the Docker Compose stack in the
+  background.
 
 After setup, every commit runs `bun run lint` through `.githooks/pre-commit`.
 
@@ -44,6 +46,9 @@ Start the stack with `cp .env.example .env` followed by
 ## Conventions
 
 - Keep the backend small until a concrete feature requires more structure.
-- Use Kysely for database access; do not add migrations or tables until requested.
-- Keep `.env` local and untracked. Update `.env.example` when required variables change.
-- Update this document in the same change whenever the project behavior or workflow changes.
+- Use Kysely for database access; do not add migrations or tables until
+  requested.
+- Keep `.env` local and untracked. Update `.env.example` when required
+  variables change.
+- Update this document in the same change whenever the project behavior or
+  workflow changes.

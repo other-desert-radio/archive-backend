@@ -19,6 +19,7 @@
 		"@biomejs/biome": "latest",
 		"@types/node": "latest",
 		"@types/pg": "latest",
+		"markdownlint-cli2": "^0.23.2",
 		"typescript": "latest"
 	}
 }
