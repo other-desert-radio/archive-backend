@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+direction="${1:-up}"
+
+if [[ "$direction" != "up" && "$direction" != "down" ]]; then
+	echo "Usage: scripts/migrate [up|down]" >&2
+	exit 1
+fi
+
+exec bun src/db/migrate.ts "$direction"
