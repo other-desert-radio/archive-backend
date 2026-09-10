@@ -35,6 +35,8 @@ The `.env` file is ignored by Git.
 - `bun run setup-hooks` configures the tracked Git pre-commit hook.
 - `scripts/build-container` rebuilds and starts the Docker Compose stack in the background.
 
+After setup, every commit runs `bun run lint` through `.githooks/pre-commit`.
+
 Start the stack with `cp .env.example .env` followed by
 `scripts/build-container`, then check the API with
 `curl http://localhost:3000/health`.
