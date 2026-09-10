@@ -2,7 +2,26 @@
 
 This document is the implementation reference for agents building or changing
 the archive database. The human-readable design notes are in
-[`docs/databases_human.md`](docs/databases_human.md).
+[`human_docs/databases_human.md`](../human_docs/databases_human.md).
+
+## Build and migration decisions
+
+The schema will be built incrementally, with one table per migration. The
+tables will be created in dependency order: `djs`, `shows`, `tags`,
+`show_djs`, `show_tags`, then `dj_tags`. Work pauses after each table so the
+schema can be reviewed before the next migration is added or applied.
+
+Migrations will be run explicitly, one step at a time, rather than
+automatically when the API starts. API startup will continue to check only
+PostgreSQL connectivity.
+
+All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ,
+show, or tag will therefore remove its dependent relationship rows
+automatically.
+
+The current effort is limited to the PostgreSQL schema, migrations, and typed
+database wiring. The JSON exporter and its sanitization logic are out of scope
+until the schema has been built and reviewed.
 
 ## Purpose
 
