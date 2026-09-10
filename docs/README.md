@@ -11,6 +11,10 @@ Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is linted
 with markdownlint-cli2.
 
+TypeScript-specific conventions, including the preference for `type` aliases
+and `undefined` over `null`, are documented in
+[`TYPESCRIPT.md`](TYPESCRIPT.md).
+
 ## Containers
 
 Docker Compose runs two services:

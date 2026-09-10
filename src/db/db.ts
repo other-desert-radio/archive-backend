@@ -1,16 +1,16 @@
 import { type Generated, Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
 
-export interface DjsTable {
+export type DjsTable = {
 	id: Generated<number>;
 	title: string;
 	bio: string;
-	image: string | undefined;
-}
+	image: string | null;
+};
 
-export interface Database {
+export type Database = {
 	djs: DjsTable;
-}
+};
 
 const databaseUrl =
 	process.env.DATABASE_URL ??
