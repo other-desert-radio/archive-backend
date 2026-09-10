@@ -7,6 +7,21 @@ The server exposes `GET /health` and checks PostgreSQL connectivity during start
 The PostgreSQL database is intentionally empty. There are currently no migrations,
 tables, or schema files.
 
+## Containers
+
+Docker Compose runs two services:
+
+- `api` builds from the Bun-based `Dockerfile` and listens on port `3000`.
+- `postgres` runs PostgreSQL 16 on port `5432`.
+
+PostgreSQL uses the named `archive_postgres_data` volume, so its data persists
+across container rebuilds. The initial database has no migrations or tables.
+
+Copy `.env.example` to `.env` before starting the stack. Compose reads the
+PostgreSQL name, user, password, and host port from `.env`, then constructs the
+API container's internal `DATABASE_URL` using the `postgres` service hostname.
+The `.env` file is ignored by Git.
+
 ## Commands
 
 - `bun install` installs dependencies.
@@ -16,6 +31,10 @@ tables, or schema files.
 - `bun run lint` runs Biome checks.
 - `bun run setup-hooks` configures the tracked Git pre-commit hook.
 - `scripts/build-container` rebuilds and starts the Docker Compose stack in the background.
+
+Start the stack with `cp .env.example .env` followed by
+`scripts/build-container`, then check the API with
+`curl http://localhost:3000/health`.
 
 ## Conventions
 
