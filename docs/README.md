@@ -3,6 +3,7 @@
 ## Current status
 
 This is a minimal TypeScript backend using Bun, Fastify, Kysely, and PostgreSQL.
+The server exposes `GET /health` and checks PostgreSQL connectivity during startup.
 The PostgreSQL database is intentionally empty. There are currently no migrations,
 tables, or schema files.
 
