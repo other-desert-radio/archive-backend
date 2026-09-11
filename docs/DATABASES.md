@@ -6,18 +6,17 @@ the archive database. The human-readable design notes are in
 
 ## Build and migration decisions
 
-The schema will be built incrementally, with one table per migration. The
-tables will be created in dependency order: `djs`, `shows`, `tags`,
-`show_djs`, `show_tags`, then `dj_tags`. Work pauses after each table so the
-schema can be reviewed before the next migration is added or applied.
+The schema will be built incrementally, with one table per migration. The tables
+will be created in dependency order: `djs`, `shows`, `tags`, `show_djs`,
+`show_tags`, then `dj_tags`. Work pauses after each table so the schema can be
+reviewed before the next migration is added or applied.
 
-Migrations will be run explicitly, one step at a time, rather than
-automatically when the API starts. API startup will continue to check only
-PostgreSQL connectivity.
+Migrations will be run explicitly, one step at a time, rather than automatically
+when the API starts. API startup will continue to check only PostgreSQL
+connectivity.
 
-All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ,
-show, or tag will therefore remove its dependent relationship rows
-automatically.
+All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ, show,
+or tag will therefore remove its dependent relationship rows automatically.
 
 The current effort is limited to the PostgreSQL schema, migrations, and typed
 database wiring. The JSON exporter and its sanitization logic are out of scope
@@ -34,6 +33,16 @@ relational data into three static JSON files for the GitHub-hosted frontend:
 
 The database is the source of truth. Arrays of IDs belong in the exported JSON
 format, not in the primary entity tables.
+
+## Authentication tables
+
+Better Auth owns its authentication tables separately from archive entities.
+Migration `0007_create_better_auth_tables` creates the `user`, `session`,
+`account`, and `verification` tables and their lookup indexes. Migration `0008`
+adds the server-owned `user.role` field. The configured application uses the
+single `admin` role; Better Auth initializes new accounts with that role while
+public sign-up remains disabled. These tables are managed by Better Auth and are
+not archive resources.
 
 ## Core tables
 
@@ -141,8 +150,8 @@ Each relationship table should have:
 - a unique constraint on the pair of foreign keys;
 - indexes that support both lookup directions.
 
-For example, `UNIQUE (show_id, dj_id)` efficiently supports show-to-DJ
-lookups. Add an index beginning with `dj_id` for DJ-to-show lookups:
+For example, `UNIQUE (show_id, dj_id)` efficiently supports show-to-DJ lookups.
+Add an index beginning with `dj_id` for DJ-to-show lookups:
 
 ```sql
 CREATE INDEX show_djs_dj_id_idx ON show_djs (dj_id);
@@ -178,8 +187,8 @@ Duplicate tag IDs must be removed in the exported array.
 
 For a show, `djs` comes from `show_djs`, and `tags` comes from `show_tags`.
 
-The JSON field names are part of the frontend contract. Keep them stable even
-if internal database column names change.
+The JSON field names are part of the frontend contract. Keep them stable even if
+internal database column names change.
 
 ## Implementation checklist
 
