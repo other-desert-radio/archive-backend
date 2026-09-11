@@ -15,7 +15,7 @@ and stop for user input before the next chunk begins.
 
 ```text
 Browser
-  ├── /admin             private React/Vite admin UI
+  ├── /                  private React/Vite admin UI
   └── /api/admin/*       private Fastify JSON API
                               │
                               └── Kysely → PostgreSQL
@@ -26,25 +26,26 @@ authentication and authorization independently of the UI.
 
 ## Delivery sequence
 
-### Phase 0: Confirm decisions
+### Phase 0: Confirm decisions — complete
 
-Pause for review and confirm:
+The initial product and deployment decisions are:
 
-- React/Vite with React-admin versus a smaller custom React UI.
-- Better Auth for authentication and authorization, integrated with Fastify.
-- Where the admin UI will be reachable.
-- Whether deployment will require a VPN, private network, reverse-proxy
-  allowlist, or identity provider in addition to application authentication.
-- The initial admin user and role model.
+- Use a custom React/Vite UI; do not add React-admin.
+- Use Better Auth for authentication and authorization, integrated with
+  Fastify.
+- Serve the private admin UI at the exposed root path `/`.
+- Do not add a VPN, private network, reverse-proxy allowlist, or identity
+  provider in addition to application authentication for the initial version.
+- Support multiple accounts with one admin role.
 
-No application code should be added until these decisions are confirmed.
+These decisions are recorded before application implementation begins.
 
 ### Phase 1: Establish the admin boundary
 
 Add only the structural boundary for the private admin area:
 
 - Create an admin route/plugin module.
-- Add `/api/admin` and `/admin` route prefixes.
+- Add the `/api/admin` API prefix and the root `/` UI prefix.
 - Add a temporary, clearly marked authentication guard or local-only guard.
 - Return `401 Unauthorized` for protected API requests without access.
 - Keep `/health` unchanged.
