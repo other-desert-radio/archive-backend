@@ -93,10 +93,11 @@ These decisions are recorded before application implementation begins.
 - [x] Add the reviewed authentication migration `0007`, one migration at a time.
 - [x] Apply migration `0007` explicitly after migration review.
 - [x] Mount the Better Auth handler under `/api/auth/*`.
-- [ ] Review the Fastify auth-handler boundary before adding session guards.
-- [ ] Add sign-in, sign-out, and session validation.
+- [x] Review the Fastify auth-handler boundary before adding session guards.
+- [x] Add Better Auth session validation to both `/admin` and `/api/admin/*`.
+- [ ] Add sign-in, sign-out, and configured-instance session coverage.
 - [ ] Add the single admin role with multiple accounts and sign-up disabled.
-- [ ] Replace the temporary guard on both admin paths.
+- [ ] Enforce the single admin role and remove the temporary test fallback.
 
 ### Archive resources
 
@@ -160,20 +161,20 @@ records; it will not own archive entities such as DJs, shows, or tags.
 
 The initial configuration uses the existing PostgreSQL pool, enables
 email/password authentication, and disables public sign-up. The authentication
-handler and session guard remain separate follow-up work.
+handler is mounted under `/api/auth/*`, and the session guard protects both
+admin route prefixes. Role enforcement and configured-instance auth coverage
+remain follow-up work.
 
 The generated review-only schema is in
 [`BETTER_AUTH_SCHEMA.sql`](BETTER_AUTH_SCHEMA.sql). It defines the four core
 Better Auth tables—`user`, `session`, `account`, and `verification`—and their
-lookup indexes. It has not been applied and is not a repository migration.
+lookup indexes. Migration `0007_create_better_auth_tables` transcribes this
+reviewed schema into the repository's Kysely migration format and has been
+explicitly applied to PostgreSQL.
 
-Migration `0007_create_better_auth_tables` transcribes that reviewed schema into
-the repository's Kysely migration format. It has been explicitly applied to
-PostgreSQL.
-
-Generate Better Auth's PostgreSQL schema and review it before applying it as a
-repository migration. Do not allow authentication setup to silently modify the
-database, and preserve the existing one-migration-at-a-time workflow.
+The schema was generated and reviewed before it was transcribed into the
+repository migration. Authentication setup must not silently modify the
+database; preserve the existing one-migration-at-a-time workflow.
 
 Add only the minimum needed for:
 
@@ -188,8 +189,12 @@ same-site cookies and check the authenticated user's admin role on the server
 for every protected route.
 
 Mount Better Auth's handler under `/api/auth/*` and use its session API from a
-Fastify authorization hook. Do not use the Better Auth Admin plugin for archive
-CRUD; that plugin is only for managing authentication users and roles.
+Fastify authorization hook. The current hook requires an authenticated session
+on both admin route prefixes but does not yet enforce the admin role. The
+temporary bearer-token guard remains available only for direct route-plugin
+tests; `buildApp` requires Better Auth. Do not use the Better Auth Admin plugin
+for archive CRUD; that plugin is only for managing authentication users and
+roles.
 
 Do not add archive CRUD behavior in this phase. Review cookie settings, secret
 management, session expiry, authentication schema, and deployment assumptions

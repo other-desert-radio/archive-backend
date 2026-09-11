@@ -9,7 +9,8 @@ startup. The first six Kysely migrations create the `djs`, `shows`, `tags`,
 
 They were added one migration at a time for review.
 
-A seventh migration contains the reviewed Better Auth tables and has been applied.
+A seventh migration contains the reviewed Better Auth tables and has been
+applied.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -36,16 +37,20 @@ For commands run locally, the backend constructs the connection URL from those
 same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 `DATABASE_URL` takes precedence. The `.env` file is ignored by Git.
 
-The temporary Phase 1 admin guard requires `ADMIN_LOCAL_TOKEN`. Requests to
-`/admin` and `/api/admin/*` must include `Authorization: Bearer <token>`.
-Requests are rejected when the variable is unset or the token does not match.
-This guard is only an implementation boundary and will be replaced by Better
-Auth in the authentication phase.
+The production admin routes require an authenticated Better Auth session.
+Requests to `/admin` and `/api/admin/*` are rejected with `401 Unauthorized`
+when no session is present. The temporary Phase 1 `ADMIN_LOCAL_TOKEN` bearer
+guard remains only as a fallback for tests that build the app without Better
+Auth. The application factory requires Better Auth; direct route-plugin tests
+are the only callers that use the temporary guard. It is not used by
+`src/server.ts`.
 
 The Better Auth configuration also requires `BETTER_AUTH_SECRET` and
 `BETTER_AUTH_URL`. The secret must be generated and stored outside Git. The
-authentication handler is mounted under `/api/auth/*`. The temporary admin
-guard remains active until the Better Auth session boundary is reviewed.
+authentication handler is mounted under `/api/auth/*`. The current session
+boundary checks authentication but does not yet enforce the single admin role;
+role enforcement and configured-instance sign-in/sign-out coverage are the next
+authentication tasks.
 
 ## Commands
 
