@@ -39,18 +39,14 @@ same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 
 The production admin routes require an authenticated Better Auth session.
 Requests to `/admin` and `/api/admin/*` are rejected with `401 Unauthorized`
-when no session is present. The temporary Phase 1 `ADMIN_LOCAL_TOKEN` bearer
-guard remains only as a fallback for tests that build the app without Better
-Auth. The application factory requires Better Auth; direct route-plugin tests
-are the only callers that use the temporary guard. It is not used by
-`src/server.ts`.
+when no session is present and `403 Forbidden` when the authenticated user does
+not have the `admin` role. The application factory requires Better Auth.
 
 The Better Auth configuration also requires `BETTER_AUTH_SECRET` and
 `BETTER_AUTH_URL`. The secret must be generated and stored outside Git. The
-authentication handler is mounted under `/api/auth/*`. The current session
-boundary checks authentication but does not yet enforce the single admin role;
-role enforcement and configured-instance sign-in/sign-out coverage are the next
-authentication tasks.
+authentication handler is mounted under `/api/auth/*`. The server-owned user
+role defaults to `admin`, and public sign-up is disabled. Configured-instance
+session and sign-out coverage is included in the authentication tests.
 
 ## Commands
 

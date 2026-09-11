@@ -3,8 +3,6 @@ import Fastify from "fastify";
 import { adminRoutes } from "../../src/admin/admin.js";
 import { buildApp } from "../../src/app.js";
 
-const localAdminToken = "test-admin-token";
-process.env.ADMIN_LOCAL_TOKEN = localAdminToken;
 const testAuth = {
 	api: {
 		getSession: async () => null,
@@ -31,9 +29,8 @@ describe("admin route boundary", () => {
 		expect(response.json()).toEqual({ status: "ok" });
 	});
 
-	test("rejects protected admin requests without a token", async () => {
-		const app = Fastify({ logger: false });
-		await app.register(adminRoutes());
+	test("rejects protected admin requests without a session", async () => {
+		const app = buildApp(testAuth);
 		apps.push(app);
 
 		const apiResponse = await app.inject({
@@ -45,21 +42,6 @@ describe("admin route boundary", () => {
 		expect(apiResponse.statusCode).toBe(401);
 		expect(apiResponse.json()).toEqual({ error: "Unauthorized" });
 		expect(uiResponse.statusCode).toBe(401);
-	});
-
-	test("allows the configured temporary token", async () => {
-		const app = Fastify({ logger: false });
-		await app.register(adminRoutes());
-		apps.push(app);
-
-		const response = await app.inject({
-			method: "GET",
-			url: "/api/admin",
-			headers: { authorization: `Bearer ${localAdminToken}` },
-		});
-
-		expect(response.statusCode).toBe(200);
-		expect(response.json()).toEqual({ status: "admin api boundary ready" });
 	});
 
 	test("rejects admin requests without a Better Auth session", async () => {
@@ -96,7 +78,9 @@ describe("admin route boundary", () => {
 		await app.register(
 			adminRoutes({
 				api: {
-					getSession: async () => ({ user: { id: "admin-user" } }),
+					getSession: async () => ({
+						user: { id: "admin-user", role: "admin" },
+					}),
 				},
 			} as never),
 		);
@@ -116,6 +100,29 @@ describe("admin route boundary", () => {
 
 		expect(uiResponse.statusCode).toBe(501);
 		expect(uiResponse.body).toContain("Admin UI is not implemented yet.");
+
+		await app.close();
+	});
+
+	test("rejects an authenticated non-admin user", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(
+			adminRoutes({
+				api: {
+					getSession: async () => ({
+						user: { id: "regular-user", role: "user" },
+					}),
+				},
+			} as never),
+		);
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/admin",
+		});
+
+		expect(response.statusCode).toBe(403);
+		expect(response.json()).toEqual({ error: "Forbidden" });
 
 		await app.close();
 	});

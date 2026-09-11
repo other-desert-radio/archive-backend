@@ -80,7 +80,7 @@ These decisions are recorded before application implementation begins.
 - [x] Return `401 Unauthorized` for admin requests without valid access.
 - [x] Keep `/health` public and unchanged.
 - [x] Add focused route-boundary tests under `tests/admin/`.
-- [x] Document the temporary guard and local configuration.
+- [x] Document the initial boundary and local configuration.
 - [x] Review this Phase 1 slice with the user.
 
 ### Phase 2: Better Auth
@@ -95,9 +95,9 @@ These decisions are recorded before application implementation begins.
 - [x] Mount the Better Auth handler under `/api/auth/*`.
 - [x] Review the Fastify auth-handler boundary before adding session guards.
 - [x] Add Better Auth session validation to both `/admin` and `/api/admin/*`.
-- [ ] Add sign-in, sign-out, and configured-instance session coverage.
-- [ ] Add the single admin role with multiple accounts and sign-up disabled.
-- [ ] Enforce the single admin role and remove the temporary test fallback.
+- [x] Add sign-in, sign-out, and configured-instance session coverage.
+- [x] Add the single admin role with multiple accounts and sign-up disabled.
+- [x] Enforce the single admin role and remove the temporary test fallback.
 
 ### Archive resources
 
@@ -146,8 +146,6 @@ Add only the structural boundary for the private admin area:
 
 - [x] Create an admin route/plugin module.
 - [x] Add the `/api/admin` and `/admin` route prefixes.
-- [x] Add a temporary, clearly marked bearer-token guard using
-      `ADMIN_LOCAL_TOKEN`.
 - [x] Return `401 Unauthorized` for protected API requests without access.
 - [x] Keep `/health` unchanged.
 
@@ -162,8 +160,8 @@ records; it will not own archive entities such as DJs, shows, or tags.
 The initial configuration uses the existing PostgreSQL pool, enables
 email/password authentication, and disables public sign-up. The authentication
 handler is mounted under `/api/auth/*`, and the session guard protects both
-admin route prefixes. Role enforcement and configured-instance auth coverage
-remain follow-up work.
+admin route prefixes. The server-owned `role` field defaults to the sole
+`admin` role, and the guard rejects authenticated users without that role.
 
 The generated review-only schema is in
 [`BETTER_AUTH_SCHEMA.sql`](BETTER_AUTH_SCHEMA.sql). It defines the four core
@@ -190,11 +188,9 @@ for every protected route.
 
 Mount Better Auth's handler under `/api/auth/*` and use its session API from a
 Fastify authorization hook. The current hook requires an authenticated session
-on both admin route prefixes but does not yet enforce the admin role. The
-temporary bearer-token guard remains available only for direct route-plugin
-tests; `buildApp` requires Better Auth. Do not use the Better Auth Admin plugin
-for archive CRUD; that plugin is only for managing authentication users and
-roles.
+and the `admin` role on both admin route prefixes. Do not use the Better Auth
+Admin plugin for archive CRUD; that plugin is only for managing authentication
+users and roles.
 
 Do not add archive CRUD behavior in this phase. Review cookie settings, secret
 management, session expiry, authentication schema, and deployment assumptions

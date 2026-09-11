@@ -16,6 +16,16 @@ export const auth = betterAuth({
 	secret: authSecret,
 	baseURL: authUrl,
 	database: pool,
+	user: {
+		additionalFields: {
+			role: {
+				type: ["admin"],
+				required: false,
+				defaultValue: "admin",
+				input: false,
+			},
+		},
+	},
 	emailAndPassword: {
 		enabled: true,
 		disableSignUp: true,
