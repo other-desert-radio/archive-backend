@@ -1,16 +1,6 @@
-import { type Generated, Kysely, PostgresDialect } from "kysely";
+import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
-
-export type DjsTable = {
-	id: Generated<number>;
-	title: string;
-	bio: string;
-	image: string | null;
-};
-
-export type Database = {
-	djs: DjsTable;
-};
+import { Database } from "./types";
 
 const databaseUrl =
 	process.env.DATABASE_URL ??
