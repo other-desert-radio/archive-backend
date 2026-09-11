@@ -40,6 +40,7 @@ same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 - `bun run dev` starts the server with Bun watch mode.
 - `bun run start` starts the server once.
 - `bun run db:migrate` applies one pending migration.
+- `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run format` formats supported files with Biome.
 - `bun run typecheck` runs TypeScript validation.
@@ -54,8 +55,9 @@ through `.githooks/pre-commit`.
 Start the stack with `cp .env.example .env` followed by
 `scripts/build-container`. Then run `scripts/migrate up` once, review the
 result, and check the API with `curl http://localhost:3000/health`. Repeat the
-migration command after each review checkpoint; `scripts/build-container` does
-not apply migrations.
+migration command after each review checkpoint, or run
+`scripts/run-migrations` to apply all pending migrations after the schema has
+been reviewed; `scripts/build-container` does not apply migrations.
 
 ## Conventions
 
