@@ -50,6 +50,7 @@ active until the Better Auth session boundary is reviewed.
 - `bun run dev` starts the server with Bun watch mode.
 - `bun run start` starts the server once.
 - `bun run test` runs the focused Bun test suite.
+- `bun run auth:generate` regenerates the review-only Better Auth schema.
 - `bun run db:migrate` applies one pending migration.
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.

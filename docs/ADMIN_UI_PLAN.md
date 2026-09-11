@@ -86,7 +86,10 @@ These decisions are recorded before application implementation begins.
 ### Phase 2: Better Auth
 
 - [x] Add the Better Auth dependency and initial database-backed configuration.
-- [ ] Review Better Auth schema and deployment assumptions.
+- [x] Generate the review-only schema at `docs/BETTER_AUTH_SCHEMA.sql`.
+- [x] Confirm the generated schema contains only Better Auth core tables and
+  lookup indexes.
+- [ ] Review the generated schema and deployment assumptions with the user.
 - [ ] Add the reviewed authentication migration, one migration at a time.
 - [ ] Add sign-in, sign-out, and session validation.
 - [ ] Add the single admin role with multiple accounts and sign-up disabled.
@@ -97,11 +100,11 @@ These decisions are recorded before application implementation begins.
 - [ ] Add the read-only DJ API and its documented response shape.
 - [ ] Serve the empty React/Vite shell at `/admin`.
 - [ ] Render the read-only DJ list with loading, empty, and error states.
-- [ ] Add DJ creation with server validation.
-- [ ] Add DJ editing as a separate reviewed chunk.
-- [ ] Add DJ deletion as a separate reviewed chunk.
-- [ ] Repeat read, UI list, create, update, and delete for shows.
-- [ ] Repeat read, UI list, create, update, and delete for tags.
+- [ ] Add a read-only shows API and UI list as a separate reviewed chunk.
+- [ ] Add a read-only tags API and UI list as a separate reviewed chunk.
+- [ ] Keep DJ, show, and tag resources read-only in the initial release.
+- [ ] Defer archive-resource creation, editing, and deletion until explicitly
+  approved.
 
 ### Relationships
 
@@ -155,6 +158,11 @@ records; it will not own archive entities such as DJs, shows, or tags.
 The initial configuration uses the existing PostgreSQL pool, enables
 email/password authentication, and disables public sign-up. The authentication
 handler and session guard remain separate follow-up work.
+
+The generated review-only schema is in
+[`BETTER_AUTH_SCHEMA.sql`](BETTER_AUTH_SCHEMA.sql). It defines the four core
+Better Auth tables—`user`, `session`, `account`, and `verification`—and their
+lookup indexes. It has not been applied and is not a repository migration.
 
 Generate Better Auth's PostgreSQL schema and review it before applying it as a
 repository migration. Do not allow authentication setup to silently modify the
@@ -214,36 +222,19 @@ Add one read-only DJ table in the admin UI:
 
 Do not add editing or deletion until the list is reviewed.
 
-### Phase 6: Add DJ creation
+### Phase 6: Render read-only shows and tags
 
-Add only the ability to create a DJ:
+Add the remaining archive resources as read-only views only:
 
-- Add `POST /api/admin/djs`.
-- Validate the request body on the server.
-- Add the create form and success/error handling.
-- Add tests for valid input and rejected input.
+1. read-only shows endpoint;
+2. read-only shows UI list;
+3. read-only tags endpoint;
+4. read-only tags UI list.
 
-Pause for review before editing or deleting DJs.
+Implement each endpoint and UI list as a separate reviewed chunk. Do not add
+archive-resource creation, editing, or deletion yet.
 
-### Phase 7: Add DJ editing and deletion
-
-Implement update and delete as separate chunks, one at a time. Each chunk must
-include server authorization, validation, database behavior, UI behavior, and
-tests. Review after each operation.
-
-### Phase 8: Add shows and tags
-
-Repeat the same sequence for shows and tags:
-
-1. read-only endpoint;
-2. read-only UI list;
-3. create;
-4. update;
-5. delete.
-
-Do not implement all three resources in one chunk.
-
-### Phase 9: Add relationships
+### Phase 7: Add relationships
 
 Add relationships one at a time, starting with the smallest useful workflow:
 
@@ -254,7 +245,21 @@ Add relationships one at a time, starting with the smallest useful workflow:
 Each relationship feature must preserve the database constraints and cascade
 behavior documented in [`DATABASES.md`](DATABASES.md).
 
-### Phase 11: Hardening and operations
+### Phase 8: Audio publishing and archive sync
+
+After the read-only archive views are stable, add the audio workflow as
+separate chunks:
+
+- define upload size, storage lifetime, and failure behavior;
+- upload a show's MP3 and publish it to Mixcloud;
+- record the returned Mixcloud URL with the show's metadata;
+- decide whether optional FFMPEG parsing and tracklist time editing are needed;
+- generate archive JSON and trigger GitHub Actions publication.
+
+Do not combine the upload, publishing, metadata, parsing, export, and GitHub
+Actions work into one chunk.
+
+### Phase 9: Hardening and operations
 
 After the feature set is stable, add these as separate reviewable chunks:
 
