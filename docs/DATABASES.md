@@ -41,8 +41,8 @@ Migration `0007_create_better_auth_tables` creates the `user`, `session`,
 `account`, and `verification` tables and their lookup indexes. Migration `0008`
 adds the server-owned `user.role` field. The configured application uses the
 single `admin` role; Better Auth initializes new accounts with that role while
-public sign-up remains disabled. These tables are managed by Better Auth and
-are not archive resources.
+public sign-up remains disabled. These tables are managed by Better Auth and are
+not archive resources.
 
 ## Core tables
 

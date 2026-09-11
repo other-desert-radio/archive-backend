@@ -46,6 +46,40 @@ Browser
 The UI should not access PostgreSQL directly. The API must enforce
 authentication and authorization independently of the UI.
 
+## Handoff for the next agent
+
+As of 2026-09-11, Phases 0–2 are implemented. The latest completed work is
+committed as `4947763` (`finish auth implementation!`). The current runtime
+boundary is:
+
+- `src/server.ts` imports the configured Better Auth instance and passes it to
+  `buildApp(auth)`.
+- `src/app.ts` requires an auth instance and always registers `/api/auth/*` and
+  the authenticated admin routes.
+- `src/admin/admin.ts` protects both `/admin` and `/api/admin/*` with a
+  Better Auth session and the server-owned `admin` role. Missing sessions return
+  `401`; authenticated non-admin users return `403`.
+- `/health` remains public. `/api/admin` is still a boundary placeholder, and
+  `/admin` still returns a `501` placeholder because the React/Vite UI has not
+  been added yet.
+- `0007_create_better_auth_tables` and
+  `0008_add_better_auth_user_role` are applied to the local PostgreSQL
+  database. Migrations are not applied automatically in other environments.
+- `.env` contains local mock values and is ignored by Git. Do not commit real
+  secrets. `.env.example` contains the required Better Auth variables.
+
+The last full verification passed: 9 tests, TypeScript checking, Biome,
+Markdownlint, and `git diff --check`. The configured auth tests cover sign-in
+request validation, no-session lookup, and sign-out without a session; they do
+not yet verify a successful credential sign-in with a seeded account.
+
+The next implementation slice is Phase 3 only: add `GET /api/admin/djs`, its
+documented response shape, basic error handling, and a focused route test. Do
+not add the React/Vite shell, relationships, or mutations in that slice. The
+initial DJ, show, and tag resource APIs and UI must remain read-only. After the
+DJ endpoint is implemented and tested, pause for user review before starting
+the UI shell.
+
 ## Delivery sequence
 
 ### Phase 0: Confirm decisions — complete
@@ -98,6 +132,8 @@ These decisions are recorded before application implementation begins.
 - [x] Add sign-in, sign-out, and configured-instance session coverage.
 - [x] Add the single admin role with multiple accounts and sign-up disabled.
 - [x] Enforce the single admin role and remove the temporary test fallback.
+- [ ] Create the initial admin account through the reviewed setup process and
+      verify a successful cookie-backed sign-in.
 
 ### Archive resources
 
@@ -160,8 +196,8 @@ records; it will not own archive entities such as DJs, shows, or tags.
 The initial configuration uses the existing PostgreSQL pool, enables
 email/password authentication, and disables public sign-up. The authentication
 handler is mounted under `/api/auth/*`, and the session guard protects both
-admin route prefixes. The server-owned `role` field defaults to the sole
-`admin` role, and the guard rejects authenticated users without that role.
+admin route prefixes. The server-owned `role` field defaults to the sole `admin`
+role, and the guard rejects authenticated users without that role.
 
 The generated review-only schema is in
 [`BETTER_AUTH_SCHEMA.sql`](BETTER_AUTH_SCHEMA.sql). It defines the four core

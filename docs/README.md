@@ -9,8 +9,8 @@ startup. The first six Kysely migrations create the `djs`, `shows`, `tags`,
 
 They were added one migration at a time for review.
 
-A seventh migration contains the reviewed Better Auth tables and has been
-applied.
+The seventh migration contains the reviewed Better Auth tables, and the eighth
+migration adds the server-owned admin role. Both have been applied locally.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -47,6 +47,18 @@ The Better Auth configuration also requires `BETTER_AUTH_SECRET` and
 authentication handler is mounted under `/api/auth/*`. The server-owned user
 role defaults to `admin`, and public sign-up is disabled. Configured-instance
 session and sign-out coverage is included in the authentication tests.
+
+## Handoff
+
+Phases 0–2 of the admin plan are implemented. The admin API and UI are still
+placeholders: `/api/admin` returns a boundary status object and `/admin`
+returns `501 Not Implemented`. The next narrowly scoped feature is
+`GET /api/admin/djs`, with its response documentation and focused test. Keep
+all archive resources read-only and stop for review before adding the
+React/Vite shell.
+
+For detailed runtime state, migration status, verification results, and known
+test gaps, see the [admin plan handoff](ADMIN_UI_PLAN.md#handoff-for-the-next-agent).
 
 ## Commands
 
