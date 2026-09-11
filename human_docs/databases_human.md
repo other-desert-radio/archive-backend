@@ -47,33 +47,24 @@ files for the front end to consume:
 
 The database tables on the backend will be:
 
-DJs: ID | Title | Bio | Image
-Shows: ID | Title | Date | Duration | Image | URL
+DJs: ID | Title | Bio | Image Shows: ID | Title | Date | Duration | Image | URL
 Tags: ID | Title | Color
 
-Show_DJs: ID | show_id | dj_id
-show_id FOREIGN KEY -> Shows.ID
-dj_id FOREIGN KEY -> DJs.ID
-UNIQUE(show_id, dj_id)
+Show_DJs: ID | show_id | dj_id show_id FOREIGN KEY -> Shows.ID dj_id FOREIGN KEY
+-> DJs.ID UNIQUE(show_id, dj_id)
 
-> this maps a show to a DJ id, a show can have multiple DJs:
-> ID | show_id | dj_id
-> 1 | 5 | 2
-> 2 | 5 | 3
+> this maps a show to a DJ id, a show can have multiple DJs: ID | show_id |
+> dj_id 1 | 5 | 2 2 | 5 | 3
 
-Show_Tags: ID | show_id | tag_id
-show_id FOREIGN KEY -> Shows.ID
-tag_id FOREIGN KEY -> Tags.ID
-UNIQUE(show_id, tag_id)
+Show_Tags: ID | show_id | tag_id show_id FOREIGN KEY -> Shows.ID tag_id FOREIGN
+KEY -> Tags.ID UNIQUE(show_id, tag_id)
 
-DJ_Tags: ID | dj_id | tag_id
-dj_id FOREIGN KEY -> DJs.ID
-tag_id FOREIGN KEY -> Tags.ID
-UNIQUE (dj_id, tag_id)
+DJ_Tags: ID | dj_id | tag_id dj_id FOREIGN KEY -> DJs.ID tag_id FOREIGN KEY ->
+Tags.ID UNIQUE (dj_id, tag_id)
 
-these are the manual tags added to a dj.
-When generating JSON, combine a DJ’s manual tags with the distinct tags
-assigned to any show associated with that DJ through Show_DJs.
+these are the manual tags added to a dj. When generating JSON, combine a DJ’s
+manual tags with the distinct tags assigned to any show associated with that DJ
+through Show_DJs.
 
 For example, the Show_DJs table can be created with foreign keys like this:
 

@@ -3,18 +3,17 @@
 ## Current status
 
 This is a minimal TypeScript backend using Bun, Fastify, Kysely, and PostgreSQL.
-The server exposes `GET /health` and checks PostgreSQL connectivity during startup.
-The first six Kysely migrations create the `djs`, `shows`, `tags`, `show_djs`,
-`show_tags`, and `dj_tags` tables. They were added one migration at a time for
-review.
+The server exposes `GET /health` and checks PostgreSQL connectivity during
+startup. The first six Kysely migrations create the `djs`, `shows`, `tags`,
+`show_djs`, `show_tags`, and `dj_tags` tables. They were added one migration at
+a time for review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
 formatted with Prettier and linted with markdownlint-cli2.
 
-TypeScript-specific conventions, including the preference for `type` aliases
-and `undefined` over `null`, are documented in
-[`TYPESCRIPT.md`](TYPESCRIPT.md).
+TypeScript-specific conventions, including the preference for `type` aliases and
+`undefined` over `null`, are documented in [`TYPESCRIPT.md`](TYPESCRIPT.md).
 
 ## Containers
 
@@ -24,8 +23,8 @@ Docker Compose runs two services:
 - `postgres` runs PostgreSQL 16 on port `5432`.
 
 PostgreSQL uses the named `archive_postgres_data` volume, so its data persists
-across container rebuilds. Migrations are not applied automatically when the
-API starts.
+across container rebuilds. Migrations are not applied automatically when the API
+starts.
 
 Copy `.env.example` to `.env` before starting the stack. Compose reads the
 PostgreSQL name, user, password, and host port from `.env`, then constructs the
@@ -39,6 +38,11 @@ The temporary Phase 1 admin guard requires `ADMIN_LOCAL_TOKEN`. Requests to
 Requests are rejected when the variable is unset or the token does not match.
 This guard is only an implementation boundary and will be replaced by Better
 Auth in the authentication phase.
+
+The Better Auth configuration also requires `BETTER_AUTH_SECRET` and
+`BETTER_AUTH_URL`. The secret must be generated and stored outside Git. The
+authentication handler is not mounted yet, and the temporary admin guard remains
+active until the Better Auth session boundary is reviewed.
 
 ## Commands
 
@@ -63,16 +67,16 @@ through `.githooks/pre-commit`.
 Start the stack with `cp .env.example .env` followed by
 `scripts/build-container`. Then run `scripts/migrate up` once, review the
 result, and check the API with `curl http://localhost:3000/health`. Repeat the
-migration command after each review checkpoint, or run
-`scripts/run-migrations` to apply all pending migrations after the schema has
-been reviewed; `scripts/build-container` does not apply migrations.
+migration command after each review checkpoint, or run `scripts/run-migrations`
+to apply all pending migrations after the schema has been reviewed;
+`scripts/build-container` does not apply migrations.
 
 ## Conventions
 
 - Keep the backend small until a concrete feature requires more structure.
 - Use Kysely for database access and migrations.
 - Apply one migration at a time and pause for review before continuing.
-- Keep `.env` local and untracked. Update `.env.example` when required
-  variables change.
+- Keep `.env` local and untracked. Update `.env.example` when required variables
+  change.
 - Update this document in the same change whenever the project behavior or
   workflow changes.

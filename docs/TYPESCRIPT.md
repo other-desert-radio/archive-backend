@@ -24,9 +24,9 @@ when omission is the intended meaning. Do not introduce `null` as a second
 application-level representation of absence without a concrete integration
 reason.
 
-Database boundaries are the important exception: PostgreSQL nullable columns
-are represented as `T | null` in Kysely table types because PostgreSQL returns
+Database boundaries are the important exception: PostgreSQL nullable columns are
+represented as `T | null` in Kysely table types because PostgreSQL returns
 `NULL`. Convert that value to `undefined` as soon as it leaves the database
 access layer when the rest of the backend does not need to preserve the SQL
-distinction. Non-null database columns should remain non-null in both the
-schema and their TypeScript types.
+distinction. Non-null database columns should remain non-null in both the schema
+and their TypeScript types.

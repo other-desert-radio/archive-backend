@@ -2,14 +2,14 @@
 
 ## Goal
 
-Build a private admin UI for managing DJs, shows, tags, and their
-relationships. The UI will be served by the existing Fastify backend and will
-use the existing Kysely and PostgreSQL layers. The public archive frontend and
-its GitHub-hosted static JSON workflow remain separate.
+Build a private admin UI for managing DJs, shows, tags, and their relationships.
+The UI will be served by the existing Fastify backend and will use the existing
+Kysely and PostgreSQL layers. The public archive frontend and its GitHub-hosted
+static JSON workflow remain separate.
 
 The implementation must proceed in small, reviewable chunks. Each chunk should
-introduce one narrowly scoped feature, include its tests and documentation,
-and stop for user input before the next chunk begins.
+introduce one narrowly scoped feature, include its tests and documentation, and
+stop for user input before the next chunk begins.
 
 ## Product context
 
@@ -25,8 +25,8 @@ tracklist start and stop times. Once a show is complete, the backend should
 generate the archive JSON and trigger GitHub Actions to publish it to the
 archive GitHub Pages repository.
 
-This context does not change the confirmed framework decisions: Fastify,
-Kysely, and PostgreSQL remain the backend stack; the admin UI remains a custom
+This context does not change the confirmed framework decisions: Fastify, Kysely,
+and PostgreSQL remain the backend stack; the admin UI remains a custom
 React/Vite application; and Better Auth remains the planned authentication
 system. It does add future workflow concerns for upload limits and temporary
 file handling, Mixcloud credentials and job status, optional FFMPEG processing,
@@ -53,8 +53,7 @@ authentication and authorization independently of the UI.
 The initial product and deployment decisions are:
 
 - Use a custom React/Vite UI; do not add React-admin.
-- Use Better Auth for authentication and authorization, integrated with
-  Fastify.
+- Use Better Auth for authentication and authorization, integrated with Fastify.
 - Serve the private admin UI at the exposed `/admin` path.
 - Do not add a VPN, private network, reverse-proxy allowlist, or identity
   provider in addition to application authentication for the initial version.
@@ -86,6 +85,7 @@ These decisions are recorded before application implementation begins.
 
 ### Phase 2: Better Auth
 
+- [x] Add the Better Auth dependency and initial database-backed configuration.
 - [ ] Review Better Auth schema and deployment assumptions.
 - [ ] Add the reviewed authentication migration, one migration at a time.
 - [ ] Add sign-in, sign-out, and session validation.
@@ -108,8 +108,8 @@ These decisions are recorded before application implementation begins.
 - [ ] Add DJ-to-show assignment.
 - [ ] Add tag-to-show assignment.
 - [ ] Add tag-to-DJ assignment.
-- [ ] Verify each relationship preserves the documented database constraints
-      and cascade behavior.
+- [ ] Verify each relationship preserves the documented database constraints and
+      cascade behavior.
 
 ### Audio publishing and archive sync
 
@@ -152,6 +152,10 @@ Use Better Auth with the existing Bun, Fastify, PostgreSQL, and Kysely stack.
 Better Auth will own authentication users, sessions, accounts, and verification
 records; it will not own archive entities such as DJs, shows, or tags.
 
+The initial configuration uses the existing PostgreSQL pool, enables
+email/password authentication, and disables public sign-up. The authentication
+handler and session guard remain separate follow-up work.
+
 Generate Better Auth's PostgreSQL schema and review it before applying it as a
 repository migration. Do not allow authentication setup to silently modify the
 database, and preserve the existing one-migration-at-a-time workflow.
@@ -164,9 +168,9 @@ Add only the minimum needed for:
 - protection of both `/admin` and `/api/admin/*`.
 
 Configure email/password authentication with sign-up disabled. Create the
-initial admin account through the reviewed setup process. Use secure,
-HTTP-only, same-site cookies and check the authenticated user's admin role on
-the server for every protected route.
+initial admin account through the reviewed setup process. Use secure, HTTP-only,
+same-site cookies and check the authenticated user's admin role on the server
+for every protected route.
 
 Mount Better Auth's handler under `/api/auth/*` and use its session API from a
 Fastify authorization hook. Do not use the Better Auth Admin plugin for archive
@@ -205,8 +209,8 @@ Add one read-only DJ table in the admin UI:
 - Connect the table to `GET /api/admin/djs`.
 - Render the DJ ID, title, bio, and image fields.
 - Add loading, empty, and error states.
-- Add focused frontend or browser-level coverage appropriate to the chosen
-  test setup.
+- Add focused frontend or browser-level coverage appropriate to the chosen test
+  setup.
 
 Do not add editing or deletion until the list is reviewed.
 
@@ -223,9 +227,9 @@ Pause for review before editing or deleting DJs.
 
 ### Phase 7: Add DJ editing and deletion
 
-Implement update and delete as separate chunks, one at a time. Each chunk
-must include server authorization, validation, database behavior, UI behavior,
-and tests. Review after each operation.
+Implement update and delete as separate chunks, one at a time. Each chunk must
+include server authorization, validation, database behavior, UI behavior, and
+tests. Review after each operation.
 
 ### Phase 8: Add shows and tags
 

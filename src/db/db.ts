@@ -16,7 +16,7 @@ if (!databaseUrl) {
 	);
 }
 
-const pool = new Pool({ connectionString: databaseUrl });
+export const pool = new Pool({ connectionString: databaseUrl });
 
 export const db = new Kysely<Database>({
 	dialect: new PostgresDialect({ pool }),

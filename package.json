@@ -16,6 +16,7 @@
 		"setup-hooks": "./scripts/setup-git-hooks"
 	},
 	"dependencies": {
+		"better-auth": "^1.7.4",
 		"fastify": "latest",
 		"kysely": "latest",
 		"pg": "latest"
