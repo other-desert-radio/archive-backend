@@ -1,6 +1,6 @@
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
-import { Database } from "./types";
+import type { Database } from "./types.js";
 
 const databaseUrl =
 	process.env.DATABASE_URL ??

@@ -1,6 +1,18 @@
 import type { Kysely } from "kysely";
-import type { Database } from "../db.js";
+import type { Database } from "../types.js";
 
+/*
+ * DJs Database:
+ *
+ * +--------+---------+------------+
+ * | column | type    | constraints |
+ * +--------+---------+------------+
+ * | id     | integer | primary key |
+ * | title  | text    | not null   |
+ * | bio    | text    | not null   |
+ * | image  | text    | nullable   |
+ * +--------+---------+------------+
+ */
 export async function up(db: Kysely<Database>): Promise<void> {
 	await db.schema
 		.createTable("djs")
