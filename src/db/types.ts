@@ -5,6 +5,7 @@ export type Database = {
 	shows: ShowsTable;
 	tags: TagsTable;
 	show_djs: ShowDjsTable;
+	show_tags: ShowTagsTable;
 };
 
 export type DjsTable = {
@@ -33,4 +34,10 @@ export type ShowDjsTable = {
 	id: Generated<number>;
 	show_id: number;
 	dj_id: number;
+};
+
+export type ShowTagsTable = {
+	id: Generated<number>;
+	show_id: number;
+	tag_id: number;
 };
