@@ -9,8 +9,8 @@ The first six Kysely migrations create the `djs`, `shows`, `tags`, `show_djs`,
 review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
-is the source of truth for those lint and formatting rules. Markdown is linted
-with markdownlint-cli2.
+is the source of truth for those lint and formatting rules. Markdown is
+formatted with Prettier and linted with markdownlint-cli2.
 
 TypeScript-specific conventions, including the preference for `type` aliases
 and `undefined` over `null`, are documented in
@@ -34,15 +34,23 @@ For commands run locally, the backend constructs the connection URL from those
 same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 `DATABASE_URL` takes precedence. The `.env` file is ignored by Git.
 
+The temporary Phase 1 admin guard requires `ADMIN_LOCAL_TOKEN`. Requests to
+`/admin` and `/api/admin/*` must include `Authorization: Bearer <token>`.
+Requests are rejected when the variable is unset or the token does not match.
+This guard is only an implementation boundary and will be replaced by Better
+Auth in the authentication phase.
+
 ## Commands
 
 - `bun install` installs dependencies.
 - `bun run dev` starts the server with Bun watch mode.
 - `bun run start` starts the server once.
+- `bun run test` runs the focused Bun test suite.
 - `bun run db:migrate` applies one pending migration.
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
-- `bun run format` formats supported files with Biome.
+- `bun run format` formats source files with Biome and Markdown files with
+  Prettier.
 - `bun run typecheck` runs TypeScript validation.
 - `bun run lint` runs Biome and Markdown checks.
 - `bun run setup-hooks` configures the tracked Git pre-commit hook.

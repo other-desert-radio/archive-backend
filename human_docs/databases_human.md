@@ -57,9 +57,9 @@ dj_id FOREIGN KEY -> DJs.ID
 UNIQUE(show_id, dj_id)
 
 > this maps a show to a DJ id, a show can have multiple DJs:
-  ID | show_id | dj_id
-  1  |   5     |  2
-  2  |   5     |  3
+> ID | show_id | dj_id
+> 1 | 5 | 2
+> 2 | 5 | 3
 
 Show_Tags: ID | show_id | tag_id
 show_id FOREIGN KEY -> Shows.ID

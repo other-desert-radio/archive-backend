@@ -11,11 +11,33 @@ The implementation must proceed in small, reviewable chunks. Each chunk should
 introduce one narrowly scoped feature, include its tests and documentation,
 and stop for user input before the next chunk begins.
 
+## Product context
+
+The product notes in [`human_docs/features.md`](../human_docs/features.md)
+describe a DigitalOcean Droplet deployment with two related responsibilities:
+
+- provide a management website for archive data; and
+- let an admin upload a show's MP3, publish it to Mixcloud, complete the show
+  metadata, and store that metadata in PostgreSQL.
+
+The longer-term workflow may also include FFMPEG parsing and a UI for setting
+tracklist start and stop times. Once a show is complete, the backend should
+generate the archive JSON and trigger GitHub Actions to publish it to the
+archive GitHub Pages repository.
+
+This context does not change the confirmed framework decisions: Fastify,
+Kysely, and PostgreSQL remain the backend stack; the admin UI remains a custom
+React/Vite application; and Better Auth remains the planned authentication
+system. It does add future workflow concerns for upload limits and temporary
+file handling, Mixcloud credentials and job status, optional FFMPEG processing,
+and GitHub Actions credentials and dispatch behavior. Those concerns must be
+planned and implemented as separate reviewable features.
+
 ## Target architecture
 
 ```text
 Browser
-  ├── /                  private React/Vite admin UI
+  ├── /admin             private React/Vite admin UI
   └── /api/admin/*       private Fastify JSON API
                               │
                               └── Kysely → PostgreSQL
@@ -33,22 +55,94 @@ The initial product and deployment decisions are:
 - Use a custom React/Vite UI; do not add React-admin.
 - Use Better Auth for authentication and authorization, integrated with
   Fastify.
-- Serve the private admin UI at the exposed root path `/`.
+- Serve the private admin UI at the exposed `/admin` path.
 - Do not add a VPN, private network, reverse-proxy allowlist, or identity
   provider in addition to application authentication for the initial version.
 - Support multiple accounts with one admin role.
 
 These decisions are recorded before application implementation begins.
 
+## Granular implementation checklist
+
+### Decisions and foundation
+
+- [x] Confirm the custom React/Vite UI choice.
+- [x] Confirm Better Auth as the authentication and authorization system.
+- [x] Confirm the `/admin` UI path and `/api/admin/*` API path.
+- [x] Confirm multiple accounts with one admin role.
+- [x] Record the DigitalOcean, Mixcloud, optional FFMPEG, and GitHub Actions
+      workflow context.
+
+### Phase 1: Admin boundary
+
+- [x] Add the admin route/plugin module under `src/admin/`.
+- [x] Add protected `/api/admin` and `/admin` route prefixes.
+- [x] Add the temporary `ADMIN_LOCAL_TOKEN` bearer-token guard.
+- [x] Return `401 Unauthorized` for admin requests without valid access.
+- [x] Keep `/health` public and unchanged.
+- [x] Add focused route-boundary tests under `tests/admin/`.
+- [x] Document the temporary guard and local configuration.
+- [ ] Review this Phase 1 slice with the user.
+
+### Phase 2: Better Auth
+
+- [ ] Review Better Auth schema and deployment assumptions.
+- [ ] Add the reviewed authentication migration, one migration at a time.
+- [ ] Add sign-in, sign-out, and session validation.
+- [ ] Add the single admin role with multiple accounts and sign-up disabled.
+- [ ] Replace the temporary guard on both admin paths.
+
+### Archive resources
+
+- [ ] Add the read-only DJ API and its documented response shape.
+- [ ] Serve the empty React/Vite shell at `/admin`.
+- [ ] Render the read-only DJ list with loading, empty, and error states.
+- [ ] Add DJ creation with server validation.
+- [ ] Add DJ editing as a separate reviewed chunk.
+- [ ] Add DJ deletion as a separate reviewed chunk.
+- [ ] Repeat read, UI list, create, update, and delete for shows.
+- [ ] Repeat read, UI list, create, update, and delete for tags.
+
+### Relationships
+
+- [ ] Add DJ-to-show assignment.
+- [ ] Add tag-to-show assignment.
+- [ ] Add tag-to-DJ assignment.
+- [ ] Verify each relationship preserves the documented database constraints
+      and cascade behavior.
+
+### Audio publishing and archive sync
+
+- [ ] Define upload size, storage lifetime, and failure behavior for show MP3s.
+- [ ] Add the show MP3 upload workflow.
+- [ ] Add Mixcloud publishing with server-side credential handling.
+- [ ] Add publishing status and retry behavior.
+- [ ] Decide whether FFMPEG parsing is required for the first release.
+- [ ] If needed, add tracklist parsing and start/stop time editing.
+- [ ] Finalize show metadata after Mixcloud returns its URL.
+- [ ] Generate the archive JSON from PostgreSQL after a completed show.
+- [ ] Trigger and verify GitHub Actions publication to the archive repository.
+
+### Hardening and operations
+
+- [ ] Add CSRF protection for cookie-authenticated mutations.
+- [ ] Add rate limiting and security headers.
+- [ ] Add audit logging for mutations.
+- [ ] Add pagination, search, and filtering.
+- [ ] Add sanitized handling of DJ bio HTML.
+- [ ] Document backup and recovery.
+- [ ] Verify HTTPS, secrets, and DigitalOcean deployment behavior.
+
 ### Phase 1: Establish the admin boundary
 
 Add only the structural boundary for the private admin area:
 
-- Create an admin route/plugin module.
-- Add the `/api/admin` API prefix and the root `/` UI prefix.
-- Add a temporary, clearly marked authentication guard or local-only guard.
-- Return `401 Unauthorized` for protected API requests without access.
-- Keep `/health` unchanged.
+- [x] Create an admin route/plugin module.
+- [x] Add the `/api/admin` and `/admin` route prefixes.
+- [x] Add a temporary, clearly marked bearer-token guard using
+      `ADMIN_LOCAL_TOKEN`.
+- [x] Return `401 Unauthorized` for protected API requests without access.
+- [x] Keep `/health` unchanged.
 
 Stop and request review before adding database reads or frontend code.
 
@@ -156,7 +250,7 @@ Add relationships one at a time, starting with the smallest useful workflow:
 Each relationship feature must preserve the database constraints and cascade
 behavior documented in [`DATABASES.md`](DATABASES.md).
 
-### Phase 10: Hardening and operations
+### Phase 11: Hardening and operations
 
 After the feature set is stable, add these as separate reviewable chunks:
 

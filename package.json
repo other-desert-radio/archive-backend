@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "bun --watch src/server.ts",
 		"start": "bun src/server.ts",
+		"test": "bun test",
 		"db:migrate": "./scripts/migrate up",
 		"db:migrate:all": "./scripts/run-migrations",
 		"db:rollback": "./scripts/migrate down",
@@ -24,6 +25,7 @@
 		"@types/node": "latest",
 		"@types/pg": "latest",
 		"markdownlint-cli2": "^0.23.2",
+		"prettier": "^3.9.6",
 		"typescript": "latest"
 	}
 }
