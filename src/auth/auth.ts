@@ -20,4 +20,9 @@ export const auth = betterAuth({
 		enabled: true,
 		disableSignUp: true,
 	},
+	advanced: {
+		database: {
+			validateSchema: process.env.NODE_ENV !== "test",
+		},
+	},
 });

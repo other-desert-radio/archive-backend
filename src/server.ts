@@ -1,9 +1,12 @@
 import { sql } from "kysely";
 import { buildApp } from "./app.js";
+import { auth } from "./auth/auth.js";
+import { authRoutes } from "./auth/routes.js";
 import { db } from "./db/db.js";
 
 const port = Number(process.env.PORT ?? 3000);
 const app = buildApp();
+app.register(authRoutes(auth));
 
 app.addHook("onClose", async () => {
 	await db.destroy();

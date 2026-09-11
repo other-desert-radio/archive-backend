@@ -5,8 +5,11 @@
 This is a minimal TypeScript backend using Bun, Fastify, Kysely, and PostgreSQL.
 The server exposes `GET /health` and checks PostgreSQL connectivity during
 startup. The first six Kysely migrations create the `djs`, `shows`, `tags`,
-`show_djs`, `show_tags`, and `dj_tags` tables. A seventh migration contains the
-reviewed Better Auth tables and has been applied.
+`show_djs`, `show_tags`, and `dj_tags` tables.
+
+They were added one migration at a time for review.
+
+A seventh migration contains the reviewed Better Auth tables and has been applied.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -41,8 +44,8 @@ Auth in the authentication phase.
 
 The Better Auth configuration also requires `BETTER_AUTH_SECRET` and
 `BETTER_AUTH_URL`. The secret must be generated and stored outside Git. The
-authentication handler is not mounted yet, and the temporary admin guard remains
-active until the Better Auth session boundary is reviewed.
+authentication handler is mounted under `/api/auth/*`. The temporary admin
+guard remains active until the Better Auth session boundary is reviewed.
 
 ## Commands
 

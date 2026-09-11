@@ -92,6 +92,8 @@ These decisions are recorded before application implementation begins.
 - [x] Review the generated schema and deployment assumptions with the user.
 - [x] Add the reviewed authentication migration `0007`, one migration at a time.
 - [x] Apply migration `0007` explicitly after migration review.
+- [x] Mount the Better Auth handler under `/api/auth/*`.
+- [ ] Review the Fastify auth-handler boundary before adding session guards.
 - [ ] Add sign-in, sign-out, and session validation.
 - [ ] Add the single admin role with multiple accounts and sign-up disabled.
 - [ ] Replace the temporary guard on both admin paths.
