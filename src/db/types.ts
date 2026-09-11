@@ -3,6 +3,7 @@ import type { Generated } from "kysely";
 export type Database = {
 	djs: DjsTable;
 	shows: ShowsTable;
+	tags: TagsTable;
 };
 
 export type DjsTable = {
@@ -19,4 +20,10 @@ export type ShowsTable = {
 	duration: number;
 	image: string | null;
 	url: string;
+};
+
+export type TagsTable = {
+	id: Generated<number>;
+	name: string;
+	color: string | null;
 };

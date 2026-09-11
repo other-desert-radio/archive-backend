@@ -16,11 +16,11 @@ import type { Database } from "../types.js";
 export async function up(db: Kysely<Database>): Promise<void> {
 	await db.schema
 		.createTable("djs")
-		.addColumn("id", "integer", (column) =>
-			column.generatedByDefaultAsIdentity().primaryKey(),
+		.addColumn("id", "integer", (c) =>
+			c.generatedByDefaultAsIdentity().primaryKey(),
 		)
-		.addColumn("title", "text", (column) => column.notNull())
-		.addColumn("bio", "text", (column) => column.notNull())
+		.addColumn("title", "text", (c) => c.notNull())
+		.addColumn("bio", "text", (c) => c.notNull())
 		.addColumn("image", "text")
 		.execute();
 }

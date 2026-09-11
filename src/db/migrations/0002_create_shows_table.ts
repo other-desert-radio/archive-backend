@@ -18,8 +18,8 @@ import type { Database } from "../types.js";
 export async function up(db: Kysely<Database>): Promise<void> {
 	await db.schema
 		.createTable("shows")
-		.addColumn("id", "integer", (column) =>
-			column.generatedByDefaultAsIdentity().primaryKey(),
+		.addColumn("id", "integer", (c) =>
+			c.generatedByDefaultAsIdentity().primaryKey(),
 		)
 		.addColumn("title", "text", (c) => c.notNull())
 		.addColumn("date", "timestamptz", (c) => c.notNull())
