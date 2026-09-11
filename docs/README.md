@@ -48,7 +48,8 @@ same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 - `scripts/build-container` rebuilds and starts the Docker Compose stack in the
   background.
 
-After setup, every commit runs `bun run lint` through `.githooks/pre-commit`.
+After setup, every commit runs `bun run format` followed by `bun run lint`
+through `.githooks/pre-commit`.
 
 Start the stack with `cp .env.example .env` followed by
 `scripts/build-container`. Then run `scripts/migrate up` once, review the
