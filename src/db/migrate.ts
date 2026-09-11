@@ -21,14 +21,16 @@ const migrator = new Migrator({
 const direction = process.argv[2] ?? "up";
 
 try {
-	if (direction !== "up" && direction !== "down") {
-		throw new Error("Usage: bun src/db/migrate.ts [up|down]");
+	if (direction !== "up" && direction !== "down" && direction !== "latest") {
+		throw new Error("Usage: bun src/db/migrate.ts [up|down|latest]");
 	}
 
 	const result =
 		direction === "up"
 			? await migrator.migrateUp()
-			: await migrator.migrateDown();
+			: direction === "down"
+				? await migrator.migrateDown()
+				: await migrator.migrateToLatest();
 
 	if (result.error) {
 		throw result.error;

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bun run format
-bun run lint
+exec bun src/db/migrate.ts latest

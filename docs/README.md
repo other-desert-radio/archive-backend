@@ -4,8 +4,9 @@
 
 This is a minimal TypeScript backend using Bun, Fastify, Kysely, and PostgreSQL.
 The server exposes `GET /health` and checks PostgreSQL connectivity during startup.
-The first Kysely migration creates the `djs` table. The remaining archive tables
-will be added one migration at a time for review.
+The first six Kysely migrations create the `djs`, `shows`, `tags`, `show_djs`,
+`show_tags`, and `dj_tags` tables. They were added one migration at a time for
+review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is linted
@@ -39,6 +40,7 @@ same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 - `bun run dev` starts the server with Bun watch mode.
 - `bun run start` starts the server once.
 - `bun run db:migrate` applies one pending migration.
+- `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run format` formats supported files with Biome.
 - `bun run typecheck` runs TypeScript validation.
@@ -47,13 +49,15 @@ same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 - `scripts/build-container` rebuilds and starts the Docker Compose stack in the
   background.
 
-After setup, every commit runs `bun run lint` through `.githooks/pre-commit`.
+After setup, every commit runs `bun run format` followed by `bun run lint`
+through `.githooks/pre-commit`.
 
 Start the stack with `cp .env.example .env` followed by
 `scripts/build-container`. Then run `scripts/migrate up` once, review the
 result, and check the API with `curl http://localhost:3000/health`. Repeat the
-migration command after each review checkpoint; `scripts/build-container` does
-not apply migrations.
+migration command after each review checkpoint, or run
+`scripts/run-migrations` to apply all pending migrations after the schema has
+been reviewed; `scripts/build-container` does not apply migrations.
 
 ## Conventions
 

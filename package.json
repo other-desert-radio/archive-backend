@@ -7,6 +7,7 @@
 		"dev": "bun --watch src/server.ts",
 		"start": "bun src/server.ts",
 		"db:migrate": "./scripts/migrate up",
+		"db:migrate:all": "./scripts/run-migrations",
 		"db:rollback": "./scripts/migrate down",
 		"format": "./scripts/format",
 		"lint": "./scripts/lint",
