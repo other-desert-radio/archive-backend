@@ -81,16 +81,17 @@ These decisions are recorded before application implementation begins.
 - [x] Keep `/health` public and unchanged.
 - [x] Add focused route-boundary tests under `tests/admin/`.
 - [x] Document the temporary guard and local configuration.
-- [ ] Review this Phase 1 slice with the user.
+- [x] Review this Phase 1 slice with the user.
 
 ### Phase 2: Better Auth
 
 - [x] Add the Better Auth dependency and initial database-backed configuration.
 - [x] Generate the review-only schema at `docs/BETTER_AUTH_SCHEMA.sql`.
 - [x] Confirm the generated schema contains only Better Auth core tables and
-  lookup indexes.
-- [ ] Review the generated schema and deployment assumptions with the user.
-- [ ] Add the reviewed authentication migration, one migration at a time.
+      lookup indexes.
+- [x] Review the generated schema and deployment assumptions with the user.
+- [x] Add the reviewed authentication migration `0007`, one migration at a time.
+- [x] Apply migration `0007` explicitly after migration review.
 - [ ] Add sign-in, sign-out, and session validation.
 - [ ] Add the single admin role with multiple accounts and sign-up disabled.
 - [ ] Replace the temporary guard on both admin paths.
@@ -104,7 +105,7 @@ These decisions are recorded before application implementation begins.
 - [ ] Add a read-only tags API and UI list as a separate reviewed chunk.
 - [ ] Keep DJ, show, and tag resources read-only in the initial release.
 - [ ] Defer archive-resource creation, editing, and deletion until explicitly
-  approved.
+      approved.
 
 ### Relationships
 
@@ -163,6 +164,10 @@ The generated review-only schema is in
 [`BETTER_AUTH_SCHEMA.sql`](BETTER_AUTH_SCHEMA.sql). It defines the four core
 Better Auth tables—`user`, `session`, `account`, and `verification`—and their
 lookup indexes. It has not been applied and is not a repository migration.
+
+Migration `0007_create_better_auth_tables` transcribes that reviewed schema into
+the repository's Kysely migration format. It has been explicitly applied to
+PostgreSQL.
 
 Generate Better Auth's PostgreSQL schema and review it before applying it as a
 repository migration. Do not allow authentication setup to silently modify the
@@ -247,8 +252,8 @@ behavior documented in [`DATABASES.md`](DATABASES.md).
 
 ### Phase 8: Audio publishing and archive sync
 
-After the read-only archive views are stable, add the audio workflow as
-separate chunks:
+After the read-only archive views are stable, add the audio workflow as separate
+chunks:
 
 - define upload size, storage lifetime, and failure behavior;
 - upload a show's MP3 and publish it to Mixcloud;

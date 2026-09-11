@@ -7,6 +7,10 @@ export type Database = {
 	show_djs: ShowDjsTable;
 	show_tags: ShowTagsTable;
 	dj_tags: DjTagsTable;
+	user: BetterAuthUserTable;
+	session: BetterAuthSessionTable;
+	account: BetterAuthAccountTable;
+	verification: BetterAuthVerificationTable;
 };
 
 export type DjsTable = {
@@ -47,4 +51,50 @@ export type DjTagsTable = {
 	id: Generated<number>;
 	dj_id: number;
 	tag_id: number;
+};
+
+export type BetterAuthUserTable = {
+	id: string;
+	name: string;
+	email: string;
+	emailVerified: boolean;
+	image: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type BetterAuthSessionTable = {
+	id: string;
+	expiresAt: Date;
+	token: string;
+	createdAt: Date;
+	updatedAt: Date;
+	ipAddress: string | null;
+	userAgent: string | null;
+	userId: string;
+};
+
+export type BetterAuthAccountTable = {
+	id: string;
+	accountId: string;
+	providerId: string;
+	userId: string;
+	accessToken: string | null;
+	refreshToken: string | null;
+	idToken: string | null;
+	accessTokenExpiresAt: Date | null;
+	refreshTokenExpiresAt: Date | null;
+	scope: string | null;
+	password: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type BetterAuthVerificationTable = {
+	id: string;
+	identifier: string;
+	value: string;
+	expiresAt: Date;
+	createdAt: Date;
+	updatedAt: Date;
 };

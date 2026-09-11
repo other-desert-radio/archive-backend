@@ -34,6 +34,13 @@ relational data into three static JSON files for the GitHub-hosted frontend:
 The database is the source of truth. Arrays of IDs belong in the exported JSON
 format, not in the primary entity tables.
 
+## Authentication tables
+
+Better Auth owns its authentication tables separately from archive entities.
+Migration `0007_create_better_auth_tables` creates the `user`, `session`,
+`account`, and `verification` tables and their lookup indexes. These tables are
+managed by Better Auth and are not archive resources.
+
 ## Core tables
 
 ### `djs`
