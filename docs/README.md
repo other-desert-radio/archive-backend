@@ -4,8 +4,8 @@
 
 This is a minimal TypeScript backend using Bun, Fastify, Kysely, and PostgreSQL.
 The server exposes `GET /health` and checks PostgreSQL connectivity during startup.
-The first three Kysely migrations create the `djs`, `shows`, and `tags` tables.
-The remaining relationship tables will be added one migration at a time for
+The first six Kysely migrations create the `djs`, `shows`, `tags`, `show_djs`,
+`show_tags`, and `dj_tags` tables. They were added one migration at a time for
 review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
