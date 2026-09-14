@@ -73,12 +73,10 @@ Markdownlint, and `git diff --check`. The configured auth tests cover sign-in
 request validation, no-session lookup, and sign-out without a session; they do
 not yet verify a successful credential sign-in with a seeded account.
 
-The next implementation slice is Phase 3 only: add `GET /api/admin/djs`, its
-documented response shape, basic error handling, and a focused route test. Do
-not add the React/Vite shell, relationships, or mutations in that slice. The
-initial DJ, show, and tag resource APIs and UI must remain read-only. The DJ
-endpoint is implemented, with focused success and database-error coverage. Pause
-for user review before starting the UI shell.
+The DJ API and read-only DJ UI are implemented with loading, empty, and error
+states. The next reviewable chunk is the read-only Shows API only. The Shows UI,
+Tags API, Tags UI, shared Figma-inspired shell, and background asset integration
+remain separate follow-up chunks. Archive resources remain read-only.
 
 ## Delivery sequence
 
@@ -162,8 +160,9 @@ assigned to the DJ's shows through `show_tags`. Database errors return
 `500 { "error": "Internal Server Error" }`.
 
 - [x] Serve the empty React/Vite shell at `/admin`.
-- [ ] Render the read-only DJ list with loading, empty, and error states.
-- [ ] Add a read-only shows API and UI list as a separate reviewed chunk.
+- [x] Render the read-only DJ list with loading, empty, and error states.
+- [x] Add the read-only shows API.
+- [ ] Add the read-only shows UI list as a separate reviewed chunk.
 - [ ] Add a read-only tags API and UI list as a separate reviewed chunk.
 - [ ] Keep DJ, show, and tag resources read-only in the initial release.
 - [ ] Defer archive-resource creation, editing, and deletion until explicitly
@@ -255,7 +254,7 @@ Do not add archive CRUD behavior in this phase. Review cookie settings, secret
 management, session expiry, authentication schema, and deployment assumptions
 before continuing.
 
-### Phase 3: Add the first read-only API
+### Phase 3: Add the first read-only API — complete
 
 Implement only `GET /api/admin/djs`:
 
@@ -264,7 +263,8 @@ Implement only `GET /api/admin/djs`:
 - Add basic error handling and a focused route test.
 - Do not add create, update, delete, filtering, or relationship endpoints yet.
 
-Pause for review after this endpoint works.
+The DJ endpoint is implemented and covered by focused success and database error
+tests.
 
 ### Phase 4: Serve the empty admin shell
 
