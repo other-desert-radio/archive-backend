@@ -19,8 +19,5 @@ export type ShowsJSON = {
 export type TransformShowsParams = {
 	shows: Array<Selectable<ShowsTable>>;
 	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
-	showTags: Array<
-		Pick<Selectable<ShowDJsTable>, "dj_id"> &
-			Pick<Selectable<ShowTagsTable>, "tag_id">
-	>;
+	showTags: Array<Pick<Selectable<ShowTagsTable>, "show_id" | "tag_id">>;
 };
