@@ -31,3 +31,58 @@ h1 {
 .status {
 	color: #52606d;
 }
+
+.message {
+	padding: 1rem;
+	border-radius: 0.5rem;
+}
+
+.error {
+	color: #8a1c1c;
+	background: #fdecec;
+}
+
+button {
+	padding: 0.5rem 0.75rem;
+	border: 1px solid currentColor;
+	border-radius: 0.35rem;
+	color: inherit;
+	background: transparent;
+	cursor: pointer;
+}
+
+.table-wrapper {
+	overflow-x: auto;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	background: #fff;
+}
+
+th,
+td {
+	padding: 0.75rem;
+	border-bottom: 1px solid #d9e2ec;
+	text-align: left;
+	vertical-align: top;
+}
+
+th {
+	color: #52606d;
+	font-size: 0.75rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+td img {
+	width: 3rem;
+	height: 3rem;
+	border-radius: 0.35rem;
+	object-fit: cover;
+}
+
+.muted {
+	color: #829ab1;
+}

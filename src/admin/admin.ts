@@ -12,17 +12,62 @@ type BetterAuth = typeof auth;
 
 type AdminDatabase = Kysely<Database>;
 
-const requireAuthenticatedAdminAccess = (auth: BetterAuth) => {
+export type BasicAuthCredentials = {
+	username: string;
+	password: string;
+};
+
+const defaultBasicAuthCredentials: BasicAuthCredentials = {
+	username: process.env.ADMIN_BASIC_USERNAME ?? "",
+	password: process.env.ADMIN_BASIC_PASSWORD ?? "",
+};
+
+const hasValidBasicAuth = (
+	authorization: string | undefined,
+	credentials: BasicAuthCredentials,
+): boolean => {
+	if (!authorization?.startsWith("Basic ")) {
+		return false;
+	}
+
+	const decoded = Buffer.from(authorization.slice(6), "base64").toString(
+		"utf8",
+	);
+	const separator = decoded.indexOf(":");
+
+	return (
+		separator !== -1 &&
+		decoded.slice(0, separator) === credentials.username &&
+		decoded.slice(separator + 1) === credentials.password &&
+		credentials.username !== "" &&
+		credentials.password !== ""
+	);
+};
+
+const requireAuthenticatedAdminAccess = (
+	auth: BetterAuth,
+	credentials: BasicAuthCredentials,
+) => {
 	return async (
 		request: FastifyRequest,
 		reply: FastifyReply,
 	): Promise<void> => {
+		if (hasValidBasicAuth(request.headers.authorization, credentials)) {
+			return;
+		}
+
 		const session = await auth.api.getSession({
 			headers: fromNodeHeaders(request.headers),
 		});
 
 		if (!session?.user) {
-			reply.code(401).send({ error: "Unauthorized" });
+			reply
+				.header(
+					"WWW-Authenticate",
+					'Basic realm="Archive Admin", charset="UTF-8"',
+				)
+				.code(401)
+				.send({ error: "Unauthorized" });
 			reply.hijack();
 			return;
 		}
@@ -127,9 +172,13 @@ const contentTypeFor = (filePath: string): string => {
 export const adminRoutes = (
 	auth: BetterAuth,
 	database: AdminDatabase = defaultDb,
+	credentials: BasicAuthCredentials = defaultBasicAuthCredentials,
 ): FastifyPluginAsync => {
 	return async (app) => {
-		app.addHook("onRequest", requireAuthenticatedAdminAccess(auth));
+		app.addHook(
+			"onRequest",
+			requireAuthenticatedAdminAccess(auth, credentials),
+		);
 		await app.register(adminApiRoutes(database), { prefix: "/api/admin" });
 		await app.register(adminUiRoutes, { prefix: "/admin" });
 	};

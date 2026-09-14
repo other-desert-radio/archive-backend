@@ -132,14 +132,16 @@ These decisions are recorded before application implementation begins.
 - [x] Add sign-in, sign-out, and configured-instance session coverage.
 - [x] Add the single admin role with multiple accounts and sign-up disabled.
 - [x] Enforce the single admin role and remove the temporary test fallback.
+- [x] Add temporary HTTP Basic Auth browser prompting while the admin login UI
+      is not yet available.
 - [ ] Create the initial admin account through the reviewed setup process and
       verify a successful cookie-backed sign-in.
 
 ### Archive resources
 
 - [x] Add the read-only DJ API and its documented response shape.
-  `GET /api/admin/djs` returns a top-level array in the format consumed by the
-  frontend:
+      `GET /api/admin/djs` returns a top-level array in the format consumed by
+      the frontend:
 
 ```json
 [
@@ -154,10 +156,10 @@ These decisions are recorded before application implementation begins.
 ]
 ```
 
-  `image` is omitted when the database value is `NULL`. Show IDs come from
-  `show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries and
-  tags assigned to the DJ's shows through `show_tags`. Database errors return
-  `500 { "error": "Internal Server Error" }`.
+`image` is omitted when the database value is `NULL`. Show IDs come from
+`show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries and tags
+assigned to the DJ's shows through `show_tags`. Database errors return
+`500 { "error": "Internal Server Error" }`.
 
 - [x] Serve the empty React/Vite shell at `/admin`.
 - [ ] Render the read-only DJ list with loading, empty, and error states.
@@ -279,11 +281,11 @@ Pause for review after the authenticated shell loads.
 
 Add one read-only DJ table in the admin UI:
 
-- Connect the table to `GET /api/admin/djs`.
-- Render the DJ ID, title, bio, and image fields.
-- Add loading, empty, and error states.
-- Add focused frontend or browser-level coverage appropriate to the chosen test
-  setup.
+- [x] Connect the table to `GET /api/admin/djs`.
+- [x] Render the DJ ID, title, bio, and image fields.
+- [x] Add loading, empty, and error states.
+- [x] Add focused frontend data-loader coverage. The bio is displayed as escaped
+      text until the later sanitization phase is implemented.
 
 Do not add editing or deletion until the list is reviewed.
 
