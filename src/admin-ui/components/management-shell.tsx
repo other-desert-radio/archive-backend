@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 type ManagementShellProps = {
-	activeResource: "shows" | "djs";
+	activeResource: "shows" | "djs" | "tags";
 	children: ReactNode;
 };
 
@@ -35,7 +35,15 @@ export const ManagementShell = ({
 							- DJs
 						</a>
 					</li>
-					<li>- tags</li>
+					<li>
+						<a
+							className={activeResource === "tags" ? "active" : undefined}
+							href="#tags"
+							aria-current={activeResource === "tags" ? "page" : undefined}
+						>
+							- tags
+						</a>
+					</li>
 				</ul>
 				<p>UTILS</p>
 				<ul>

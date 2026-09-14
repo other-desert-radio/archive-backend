@@ -87,8 +87,8 @@ and Upload remain deferred. Archive resources remain read-only.
   `DatabaseTableView`, which owns the required header/body structure and
   loading, error, retry, and empty states for each resource view.
 - `src/admin-ui/components/tables/` contains the Shows and DJs tables.
-- `#shows` is the default route and `#djs` selects the DJ view. Tags and Upload
-  are visible sidebar placeholders without behavior.
+- `#shows` is the default route, `#djs` selects the DJ view, and `#tags` selects
+  the Tags view. Upload remains a visible sidebar placeholder.
 - `src/admin-ui/assets/background/README.md` marks the future background-asset
   location; the current background is gray.
 
@@ -102,8 +102,8 @@ Implement one item at a time and stop for review after each item:
    `src/admin-ui/pages/`, and `TagsTable` under
    `src/admin-ui/components/tables/`. Reuse `DatabaseTableView`, `Header`, and
    `Body`; include loading, empty, and error states plus loader tests.
-3. Connect the Tags sidebar item to `#tags` and verify Shows, DJs, and Tags
-   navigation without adding CRUD behavior.
+3. [x] Connect the Tags sidebar item to `#tags` and verify Shows, DJs, and Tags
+       navigation without adding CRUD behavior.
 4. When the background asset is ready, place it under
    `src/admin-ui/assets/background/` and replace only the gray background in a
    separate visual review chunk.

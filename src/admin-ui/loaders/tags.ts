@@ -8,7 +8,7 @@ export const loadTags = async (
 	const response = await fetcher("/api/admin/tags");
 
 	if (!response.ok) {
-		throw new Error("Unable to load shows");
+		throw new Error("Unable to load tags");
 	}
 
 	return (await response.json()) as TagsAdminRow[];
