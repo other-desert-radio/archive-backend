@@ -124,7 +124,6 @@ const contentTypeFor = (filePath: string): string => {
 			return "text/html";
 	}
 };
-
 export const adminRoutes = (
 	auth: BetterAuth,
 	database: AdminDatabase = defaultDb,
