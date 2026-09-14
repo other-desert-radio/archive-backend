@@ -1,3 +1,4 @@
+import { logger } from "../../utils/index.js";
 import type { TagsJSON, TransformTagsParams } from "./types.js";
 
 /**
@@ -24,6 +25,8 @@ import type { TagsJSON, TransformTagsParams } from "./types.js";
  * ```
  */
 export const transformTags = ({ tags }: TransformTagsParams): TagsJSON[] => {
+	logger.verbose("Transforming tags", { tagCount: tags.length });
+
 	return tags.map((tag) => ({
 		id: tag.id,
 		title: tag.title,

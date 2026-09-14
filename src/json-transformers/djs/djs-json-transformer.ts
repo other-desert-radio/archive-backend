@@ -1,3 +1,4 @@
+import { logger } from "../../utils/index.js";
 import {
 	groupRelationshipIds,
 	mergeRelationshipIds,
@@ -39,6 +40,13 @@ export const transformDJs = ({
 	djTags,
 	showTags,
 }: TransformDJsParams): DJsJSON[] => {
+	logger.verbose("Transforming DJs", {
+		djCount: djs.length,
+		showRelationshipCount: showDJs.length,
+		directTagRelationshipCount: djTags.length,
+		showTagRelationshipCount: showTags.length,
+	});
+
 	const showsByDj = groupRelationshipIds({
 		rows: showDJs,
 		groupKey: "dj_id",

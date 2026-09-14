@@ -1,3 +1,4 @@
+import { logger } from "../../utils/index.js";
 import { groupRelationshipIds } from "../utils/relationship-ids.js";
 import type { ShowsJSON, TransformShowsParams } from "./types.js";
 
@@ -38,6 +39,12 @@ export const transformShows = ({
 	showDJs,
 	showTags,
 }: TransformShowsParams): ShowsJSON[] => {
+	logger.verbose("Transforming shows", {
+		showCount: shows.length,
+		djRelationshipCount: showDJs.length,
+		tagRelationshipCount: showTags.length,
+	});
+
 	const djsForShow = groupRelationshipIds({
 		rows: showDJs,
 		groupKey: "show_id",
