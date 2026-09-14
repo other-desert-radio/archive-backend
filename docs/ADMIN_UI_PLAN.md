@@ -84,7 +84,8 @@ and Upload remain deferred. Archive resources remain read-only.
 - `src/admin-ui/pages/` contains `AdminPage`, `DJsPage`, and `ShowsPage`.
 - `src/admin-ui/loaders/` contains the DJ and Shows API loaders.
 - `src/admin-ui/components/database-table-view.tsx` provides the shared
-  `DatabaseTableView`, `Header({ title: string })`, and `Body` components.
+  `DatabaseTableView`, which owns the required header/body structure and
+  loading, error, retry, and empty states for each resource view.
 - `src/admin-ui/components/tables/` contains the Shows table; the DJ table is
   currently rendered inside `DJsPage` and can be extracted when that view next
   changes.
@@ -132,8 +133,9 @@ resource tables:
   `src/admin-ui/pages/`, and table components in
   `src/admin-ui/components/tables/`.
 - Wrap each database resource page with the shared `DatabaseTableView`, using
-  `Header({ title: string })` for the resource heading and `Body` for its table
-  and loading/error states.
+  its `title`, loading/error/retry, and empty-state props. The component renders
+  the resource heading and body and only renders table children after a
+  successful non-empty load.
 
 ## Delivery sequence
 

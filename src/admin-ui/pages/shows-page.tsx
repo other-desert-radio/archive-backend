@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-	Body,
-	DatabaseTableView,
-	Header,
-} from "../components/database-table-view.js";
+import { DatabaseTableView } from "../components/database-table-view.js";
 import { ShowsTable } from "../components/tables/shows-table.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 
@@ -27,25 +23,15 @@ export const ShowsPage = () => {
 	}, [refreshShows]);
 
 	return (
-		<DatabaseTableView>
-			<Header title="Shows" />
-			<Body>
-				{isLoading && <p className="status">Loading shows…</p>}
-				{error && (
-					<div className="message error" role="alert">
-						<p>{error}</p>
-						<button type="button" onClick={refreshShows}>
-							Try again
-						</button>
-					</div>
-				)}
-				{!isLoading && !error && shows.length === 0 && (
-					<p className="status">No shows have been added yet.</p>
-				)}
-				{!isLoading && !error && shows.length > 0 && (
-					<ShowsTable shows={shows} />
-				)}
-			</Body>
+		<DatabaseTableView
+			title="Shows"
+			isLoading={isLoading}
+			error={error}
+			onRetry={refreshShows}
+			isEmpty={shows.length === 0}
+			emptyMessage="No shows have been added yet."
+		>
+			<ShowsTable shows={shows} />
 		</DatabaseTableView>
 	);
 };
