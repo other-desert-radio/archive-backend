@@ -1,4 +1,4 @@
-import type { DJsJSON } from "../json-transformers/index.js";
+import type { DJsJSON } from "../../json-transformers/index.js";
 
 export const loadDJs = async (
 	fetcher: typeof fetch = fetch,

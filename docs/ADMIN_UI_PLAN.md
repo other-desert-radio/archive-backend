@@ -73,12 +73,67 @@ Markdownlint, and `git diff --check`. The configured auth tests cover sign-in
 request validation, no-session lookup, and sign-out without a session; they do
 not yet verify a successful credential sign-in with a seeded account.
 
-The next implementation slice is Phase 3 only: add `GET /api/admin/djs`, its
-documented response shape, basic error handling, and a focused route test. Do
-not add the React/Vite shell, relationships, or mutations in that slice. The
-initial DJ, show, and tag resource APIs and UI must remain read-only. The DJ
-endpoint is implemented, with focused success and database-error coverage. Pause
-for user review before starting the UI shell.
+As of 2026-09-14, the read-only DJ and Shows resource views are implemented. The
+shared Figma-inspired shell, Shows/DJs hash navigation, loader/page/component
+directory structure, and `DatabaseTableView` wrapper are also implemented. Tags
+and Upload remain deferred. Archive resources remain read-only.
+
+### Current implementation inventory
+
+- `src/admin-ui/main.tsx` is only the React entry point.
+- `src/admin-ui/pages/` contains `AdminPage`, `DJsPage`, and `ShowsPage`.
+- `src/admin-ui/loaders/` contains the DJ and Shows API loaders.
+- `src/admin-ui/components/database-table-view.tsx` provides the shared
+  `DatabaseTableView`, which owns the required header/body structure and
+  loading, error, retry, and empty states for each resource view.
+- `src/admin-ui/components/tables/` contains the Shows and DJs tables.
+- `#shows` is the default route, `#djs` selects the DJ view, and `#tags` selects
+  the Tags view. Upload remains a visible sidebar placeholder.
+- `src/admin-ui/assets/background/README.md` marks the future background-asset
+  location; the current background is gray.
+
+### Next-agent checklist
+
+Implement one item at a time and stop for review after each item:
+
+1. Add authenticated `GET /api/admin/tags` using `transformTags`, with focused
+   success and database-error route tests and documentation.
+2. Add `loadTags` under `src/admin-ui/loaders/`, `TagsPage` under
+   `src/admin-ui/pages/`, and `TagsTable` under
+   `src/admin-ui/components/tables/`. Reuse `DatabaseTableView`, `Header`, and
+   `Body`; include loading, empty, and error states plus loader tests.
+3. [x] Connect the Tags sidebar item to `#tags` and verify Shows, DJs, and Tags
+       navigation without adding CRUD behavior.
+4. When the background asset is ready, place it under
+   `src/admin-ui/assets/background/` and replace only the gray background in a
+   separate visual review chunk.
+
+Do not begin relationships, mutations, upload, filtering, or authentication
+changes as part of these resource-view chunks.
+
+### Admin UI visual and navigation rules
+
+The supplied Figma management sketch establishes the shared shell used by the
+resource tables:
+
+- Use a black, full-width 49px top bar with centered
+  `OTHER DESERT RADIO / MANAGEMENT` text.
+- Use a black 172px left sidebar below the top bar, with `DATABASE` entries for
+  shows, DJs, and tags, plus a `UTILS` entry for upload.
+- Render the active resource in bold. Shows is active for the Shows slice; DJs
+  remains reachable, while Tags and Upload remain deferred until implemented.
+- Use a monospace font stack and a gray page/content background for now.
+- Keep the eventual background asset in `src/admin-ui/assets/background/`; do
+  not add the texture asset until it is available.
+- Keep the layout usable on narrow screens by allowing the sidebar to flow above
+  the content and the tables to scroll horizontally.
+- Keep UI data loaders in `src/admin-ui/loaders/`, resource pages in
+  `src/admin-ui/pages/`, and table components in
+  `src/admin-ui/components/tables/`.
+- Wrap each database resource page with the shared `DatabaseTableView`, using
+  its `title`, loading/error/retry, and empty-state props. The component renders
+  the resource heading and body and only renders table children after a
+  successful non-empty load.
 
 ## Delivery sequence
 
@@ -162,9 +217,13 @@ assigned to the DJ's shows through `show_tags`. Database errors return
 `500 { "error": "Internal Server Error" }`.
 
 - [x] Serve the empty React/Vite shell at `/admin`.
-- [ ] Render the read-only DJ list with loading, empty, and error states.
-- [ ] Add a read-only shows API and UI list as a separate reviewed chunk.
-- [ ] Add a read-only tags API and UI list as a separate reviewed chunk.
+- [x] Render the read-only DJ list with loading, empty, and error states.
+- [x] Add the read-only shows API.
+- [x] Add the read-only shows UI list as a separate reviewed chunk.
+- [x] Add the shared Figma-inspired shell, gray background, and Shows/DJs
+      navigation.
+- [x] Add the shared `DatabaseTableView` wrapper with `Header` and `Body`.
+- [ ] Add a read-only tags API and UI list as separate reviewed chunks.
 - [ ] Keep DJ, show, and tag resources read-only in the initial release.
 - [ ] Defer archive-resource creation, editing, and deletion until explicitly
       approved.
@@ -255,7 +314,7 @@ Do not add archive CRUD behavior in this phase. Review cookie settings, secret
 management, session expiry, authentication schema, and deployment assumptions
 before continuing.
 
-### Phase 3: Add the first read-only API
+### Phase 3: Add the first read-only API — complete
 
 Implement only `GET /api/admin/djs`:
 
@@ -264,7 +323,8 @@ Implement only `GET /api/admin/djs`:
 - Add basic error handling and a focused route test.
 - Do not add create, update, delete, filtering, or relationship endpoints yet.
 
-Pause for review after this endpoint works.
+The DJ endpoint is implemented and covered by focused success and database error
+tests.
 
 ### Phase 4: Serve the empty admin shell
 
@@ -289,14 +349,13 @@ Add one read-only DJ table in the admin UI:
 
 Do not add editing or deletion until the list is reviewed.
 
-### Phase 6: Render read-only shows and tags
+### Phase 6: Render read-only shows and tags — in progress
 
 Add the remaining archive resources as read-only views only:
 
-1. read-only shows endpoint;
-2. read-only shows UI list;
-3. read-only tags endpoint;
-4. read-only tags UI list.
+1. read-only shows endpoint and UI list — complete;
+2. read-only tags endpoint;
+3. read-only tags UI list;
 
 Implement each endpoint and UI list as a separate reviewed chunk. Do not add
 archive-resource creation, editing, or deletion yet.

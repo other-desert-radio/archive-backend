@@ -22,10 +22,20 @@ const testDatabase = {
 	selectFrom: (table: string) => {
 		const rows = {
 			djs: [{ id: 1, title: "DJ One", bio: "<p>Bio</p>", image: null }],
+			shows: [
+				{
+					id: 10,
+					title: "Show One",
+					date: new Date("2026-01-01T00:00:00.000Z"),
+					duration: 3600,
+					image: null,
+					url: "https://example.com/show-one",
+				},
+			],
 			show_djs: [{ dj_id: 1, show_id: 10 }],
 			dj_tags: [{ dj_id: 1, tag_id: 20 }],
 			show_tags: [{ dj_id: 1, tag_id: 21 }],
-		}[table as "djs" | "show_djs" | "dj_tags" | "show_tags"];
+		}[table as "djs" | "shows" | "show_djs" | "dj_tags" | "show_tags"];
 		let joined = false;
 
 		type TestQuery = {
@@ -236,6 +246,51 @@ describe("admin route boundary", () => {
 				tags: [20, 21],
 			},
 		]);
+
+		await app.close();
+	});
+
+	test("returns shows with relationship IDs", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, testDatabase));
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/admin/shows",
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.json()).toEqual([
+			{
+				id: 10,
+				title: "Show One",
+				date: "2026-01-01T00:00:00.000Z",
+				duration: 3600,
+				djs: [1],
+				tags: [],
+				url: "https://example.com/show-one",
+			},
+		]);
+
+		await app.close();
+	});
+
+	test("returns a server error when shows cannot be loaded", async () => {
+		const failingDatabase = {
+			selectFrom: () => {
+				throw new Error("database unavailable");
+			},
+		} as never;
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, failingDatabase));
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/admin/shows",
+		});
+
+		expect(response.statusCode).toBe(500);
+		expect(response.json()).toEqual({ error: "Internal Server Error" });
 
 		await app.close();
 	});

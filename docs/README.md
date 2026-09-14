@@ -62,9 +62,11 @@ shell. The production container builds the shell into `dist/admin`; a missing
 bundle returns `503`. `GET /api/admin/djs` is read-only and returns a top-level
 DJ array with `id`, `title`, `bio`, optional `image`, `shows`, and `tags`; its
 relationship IDs are derived from the relationship tables. The UI now renders
-the read-only DJ list with loading, empty, and error states. DJ bios are
+the read-only DJ list with loading, empty, and error states. The read-only Shows
+API is also implemented and returns transformed relationship IDs. DJ bios are
 currently escaped as text until the planned sanitization phase. Keep all archive
-resources read-only and stop for review before adding shows or tags.
+resources read-only and implement the Shows UI and Tags resource in separate
+reviewable chunks.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the

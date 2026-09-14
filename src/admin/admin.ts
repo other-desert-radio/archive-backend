@@ -6,7 +6,11 @@ import type { Kysely } from "kysely";
 import type { auth } from "../auth/auth.js";
 import { db as defaultDb } from "../db/db.js";
 import type { Database } from "../db/types.js";
-import { transformDJs } from "../json-transformers/index.js";
+import {
+	transformDJs,
+	transformShows,
+	transformTags,
+} from "../json-transformers/index.js";
 
 type BetterAuth = typeof auth;
 
@@ -116,6 +120,50 @@ const adminApiRoutes = (database: AdminDatabase): FastifyPluginAsync => {
 				return transformDJs({ djs, showDJs, djTags, showTags });
 			} catch (error) {
 				request.log.error(error, "Unable to load DJs");
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		});
+
+		app.get("/shows", async (request, reply) => {
+			try {
+				const [shows, showDJs, showTags] = await Promise.all([
+					database
+						.selectFrom("shows")
+						.select(["id", "title", "date", "duration", "image", "url"])
+						.orderBy("id")
+						.execute(),
+					database
+						.selectFrom("show_djs")
+						.select(["show_id", "dj_id"])
+						.orderBy("show_id")
+						.orderBy("dj_id")
+						.execute(),
+					database
+						.selectFrom("show_tags")
+						.select(["show_id", "tag_id"])
+						.orderBy("show_id")
+						.orderBy("tag_id")
+						.execute(),
+				]);
+
+				return transformShows({ shows, showDJs, showTags });
+			} catch (error) {
+				request.log.error(error, "Unable to load shows");
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		});
+
+		app.get("/tags", async (request, reply) => {
+			try {
+				const tags = await database
+					.selectFrom("tags")
+					.select(["id", "title", "color"])
+					.orderBy("id")
+					.execute();
+
+				return transformTags({ tags });
+			} catch (error) {
+				request.log.error(error, "Unable to load tags");
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
 		});
