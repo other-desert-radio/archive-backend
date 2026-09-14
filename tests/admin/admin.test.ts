@@ -26,6 +26,7 @@ const testDatabase = {
 			dj_tags: [{ dj_id: 1, tag_id: 20 }],
 			show_tags: [{ dj_id: 1, tag_id: 21 }],
 		}[table as "djs" | "show_djs" | "dj_tags" | "show_tags"];
+		let joined = false;
 
 		type TestQuery = {
 			select: () => TestQuery;
@@ -36,9 +37,12 @@ const testDatabase = {
 
 		const query: TestQuery = {
 			select: () => query,
-			innerJoin: () => query,
+			innerJoin: () => {
+				joined = true;
+				return query;
+			},
 			orderBy: () => query,
-			execute: async () => rows ?? [],
+			execute: async () => (joined ? [{ dj_id: 1, tag_id: 21 }] : (rows ?? [])),
 		};
 
 		return query;
@@ -133,8 +137,8 @@ describe("admin route boundary", () => {
 			url: "/admin",
 		});
 
-		expect(uiResponse.statusCode).toBe(501);
-		expect(uiResponse.body).toContain("Admin UI is not implemented yet.");
+		expect(uiResponse.statusCode).toBe(200);
+		expect(uiResponse.body).toContain("Archive Admin");
 
 		await app.close();
 	});

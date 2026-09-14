@@ -13,7 +13,8 @@ app.addHook("onClose", async () => {
 const start = async () => {
 	// health check on the database
 	await sql`select 1`.execute(db);
-	await app.listen({ host: "0.0.0.0", port });
+	const address = await app.listen({ host: "0.0.0.0", port });
+	app.log.info(`Web server running at ${address}`);
 };
 
 start().catch(async (error: unknown) => {
