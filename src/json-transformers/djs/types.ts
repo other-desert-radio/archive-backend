@@ -6,7 +6,7 @@ import type {
 	ShowTagsTable,
 } from "../../db/types.js";
 
-export type DJsJson = {
+export type DJsJSON = {
 	id: number;
 	title: string;
 	bio: string;
@@ -15,7 +15,7 @@ export type DJsJson = {
 	tags: number[];
 };
 
-export type DJsSqlData = {
+export type TransformDJsParams = {
 	djs: Array<Selectable<DJsTable>>;
 	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
 	djTags: Array<Pick<Selectable<DjTagsTable>, "dj_id" | "tag_id">>;

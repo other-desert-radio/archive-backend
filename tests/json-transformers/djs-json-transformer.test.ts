@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { transformDJs } from "../../src/json-transformers/index.js";
+import { groupRelationshipIds } from "../../src/json-transformers/utils/index.js";
 
 describe("DJ JSON transformer", () => {
 	test("combines direct and show-derived tags", () => {
@@ -25,5 +26,24 @@ describe("DJ JSON transformer", () => {
 				tags: [20, 21],
 			},
 		]);
+	});
+
+	test("can group DJs by show", () => {
+		expect(
+			groupRelationshipIds({
+				rows: [
+					{ show_id: 10, dj_id: 2 },
+					{ show_id: 10, dj_id: 1 },
+					{ show_id: 11, dj_id: 3 },
+				],
+				groupKey: "show_id",
+				idKey: "dj_id",
+			}),
+		).toEqual(
+			new Map([
+				[10, [2, 1]],
+				[11, [3]],
+			]),
+		);
 	});
 });

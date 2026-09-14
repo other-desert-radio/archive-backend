@@ -31,8 +31,8 @@ export type ShowsTable = {
 
 export type TagsTable = {
 	id: Generated<number>;
-	name: string;
-	color: string | null;
+	title: string;
+	color: string;
 };
 
 export type ShowDJsTable = {

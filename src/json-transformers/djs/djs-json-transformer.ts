@@ -1,54 +1,68 @@
-import type { DJsJson, DJsSqlData } from "./types.js";
+import { logger } from "../../utils/index.js";
+import {
+	groupRelationshipIds,
+	mergeRelationshipIds,
+} from "../utils/relationship-ids.js";
+import type { DJsJSON, TransformDJsParams } from "./types.js";
 
-const groupRelationshipIds = <
-	K extends "show_id" | "tag_id",
-	T extends { dj_id: number } & Record<K, number>,
->(
-	rows: T[],
-	key: K,
-): Map<number, number[]> => {
-	const grouped = new Map<number, number[]>();
-
-	for (const row of rows) {
-		const ids = grouped.get(row.dj_id) ?? [];
-		ids.push(row[key]);
-		grouped.set(row.dj_id, ids);
-	}
-
-	return grouped;
-};
-
-const mergeRelationshipIds = (
-	first: Map<number, number[]>,
-	second: Map<number, number[]>,
-): Map<number, number[]> => {
-	const merged = new Map<number, number[]>();
-
-	for (const [djId, ids] of first) {
-		merged.set(djId, [...ids]);
-	}
-
-	for (const [djId, ids] of second) {
-		const existing = merged.get(djId) ?? [];
-		merged.set(
-			djId,
-			[...new Set([...existing, ...ids])].sort((a, b) => a - b),
-		);
-	}
-
-	return merged;
-};
-
+/**
+ * Converts DJ rows and relationship rows into the public DJ JSON shape.
+ *
+ * Each DJ includes the IDs of their related shows and tags. Tags assigned
+ * directly to a DJ and tags inherited through their shows are merged,
+ * deduplicated, and sorted. DJs without relationships receive empty arrays,
+ * and nullable images are omitted.
+ *
+ * @example
+ * ```json
+ * [
+ *   {
+ *     "id": 1,
+ *     "title": "DJ One",
+ *     "bio": "A resident DJ.",
+ *     "image": "dj-one.jpg",
+ *     "shows": [10, 11],
+ *     "tags": [20, 21]
+ *   },
+ *   {
+ *     "id": 2,
+ *     "title": "DJ Two",
+ *     "bio": "A guest DJ.",
+ *     "shows": [],
+ *     "tags": []
+ *   }
+ * ]
+ * ```
+ */
 export const transformDJs = ({
 	djs,
 	showDJs,
 	djTags,
 	showTags,
-}: DJsSqlData): DJsJson[] => {
-	const showsByDj = groupRelationshipIds(showDJs, "show_id");
+}: TransformDJsParams): DJsJSON[] => {
+	logger.verbose("Transforming DJs", {
+		djCount: djs.length,
+		showRelationshipCount: showDJs.length,
+		directTagRelationshipCount: djTags.length,
+		showTagRelationshipCount: showTags.length,
+	});
+
+	const showsByDj = groupRelationshipIds({
+		rows: showDJs,
+		groupKey: "dj_id",
+		idKey: "show_id",
+	});
 	const tagsByDj = mergeRelationshipIds(
-		groupRelationshipIds(djTags, "tag_id"),
-		groupRelationshipIds(showTags, "tag_id"),
+		groupRelationshipIds({
+			rows: djTags,
+			groupKey: "dj_id",
+			idKey: "tag_id",
+		}),
+		groupRelationshipIds({
+			rows: showTags,
+			groupKey: "dj_id",
+			idKey: "tag_id",
+		}),
 	);
 
 	return djs.map((dj) => ({

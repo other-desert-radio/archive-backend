@@ -1,11 +1,11 @@
 import { StrictMode, useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import type { DJsJson } from "../json-transformers/index.js";
+import type { DJsJSON } from "../json-transformers/index.js";
 import { loadDJs } from "./djs.js";
 import "./styles.css";
 
 const DJsPage = () => {
-	const [djs, setDJs] = useState<DJsJson[]>([]);
+	const [djs, setDJs] = useState<DJsJSON[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string>();
 
