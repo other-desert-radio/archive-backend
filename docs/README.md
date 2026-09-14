@@ -50,10 +50,11 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
-Phases 0–2 of the admin plan are implemented. The admin API and UI are still
-placeholders: `/api/admin` returns a boundary status object and `/admin`
-returns `501 Not Implemented`. The next narrowly scoped feature is
-`GET /api/admin/djs`, with its response documentation and focused test. Keep
+Phases 0–2 of the admin plan and the first Phase 3 resource endpoint are
+implemented. `/api/admin` still returns a boundary status object and `/admin`
+returns `501 Not Implemented`. `GET /api/admin/djs` is read-only and returns a
+top-level DJ array with `id`, `title`, `bio`, optional `image`, `shows`, and
+`tags`; its relationship IDs are derived from the relationship tables. Keep
 all archive resources read-only and stop for review before adding the
 React/Vite shell.
 

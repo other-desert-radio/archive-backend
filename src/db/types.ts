@@ -1,10 +1,10 @@
 import type { Generated } from "kysely";
 
 export type Database = {
-	djs: DjsTable;
+	djs: DJsTable;
 	shows: ShowsTable;
 	tags: TagsTable;
-	show_djs: ShowDjsTable;
+	show_djs: ShowDJsTable;
 	show_tags: ShowTagsTable;
 	dj_tags: DjTagsTable;
 	user: BetterAuthUserTable;
@@ -13,7 +13,7 @@ export type Database = {
 	verification: BetterAuthVerificationTable;
 };
 
-export type DjsTable = {
+export type DJsTable = {
 	id: Generated<number>;
 	title: string;
 	bio: string;
@@ -35,7 +35,7 @@ export type TagsTable = {
 	color: string | null;
 };
 
-export type ShowDjsTable = {
+export type ShowDJsTable = {
 	id: Generated<number>;
 	show_id: number;
 	dj_id: number;
