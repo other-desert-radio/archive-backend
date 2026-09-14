@@ -74,17 +74,17 @@ request validation, no-session lookup, and sign-out without a session; they do
 not yet verify a successful credential sign-in with a seeded account.
 
 The DJ API and read-only DJ UI are implemented with loading, empty, and error
-states. The next reviewable chunk is the read-only Shows API only. The Shows UI,
-Tags API, Tags UI, shared Figma-inspired shell, and background asset integration
-remain separate follow-up chunks. Archive resources remain read-only.
+states. The read-only Shows API and table are also implemented. The next
+reviewable chunks are the shared Figma-inspired shell and the Tags resource.
+Archive resources remain read-only.
 
 ### Admin UI visual and navigation rules
 
 The supplied Figma management sketch establishes the shared shell used by the
 resource tables:
 
-- Use a black, full-width 49px top bar with centered `OTHER DESERT RADIO /
-  MANAGEMENT` text.
+- Use a black, full-width 49px top bar with centered
+  `OTHER DESERT RADIO / MANAGEMENT` text.
 - Use a black 172px left sidebar below the top bar, with `DATABASE` entries for
   shows, DJs, and tags, plus a `UTILS` entry for upload.
 - Render the active resource in bold. Shows is active for the Shows slice; DJs
@@ -179,7 +179,7 @@ assigned to the DJ's shows through `show_tags`. Database errors return
 - [x] Serve the empty React/Vite shell at `/admin`.
 - [x] Render the read-only DJ list with loading, empty, and error states.
 - [x] Add the read-only shows API.
-- [ ] Add the read-only shows UI list as a separate reviewed chunk.
+- [x] Add the read-only shows UI list as a separate reviewed chunk.
 - [ ] Add a read-only tags API and UI list as a separate reviewed chunk.
 - [ ] Keep DJ, show, and tag resources read-only in the initial release.
 - [ ] Defer archive-resource creation, editing, and deletion until explicitly

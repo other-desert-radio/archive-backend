@@ -28,6 +28,14 @@ h1 {
 	font-size: 3rem;
 }
 
+.resource-section {
+	margin-top: 4rem;
+}
+
+h2 {
+	font-size: 2rem;
+}
+
 .status {
 	color: #52606d;
 }
@@ -85,4 +93,13 @@ td img {
 
 .muted {
 	color: #829ab1;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
 }
