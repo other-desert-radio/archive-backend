@@ -10,7 +10,9 @@ startup. The first six Kysely migrations create the `djs`, `shows`, `tags`,
 They were added one migration at a time for review.
 
 The seventh migration contains the reviewed Better Auth tables, and the eighth
-migration adds the server-owned admin role. Both have been applied locally.
+migration adds the server-owned admin role. Migration nine renames the tags
+table's name column to title to match the archive field contract. The first
+eight migrations have been applied locally.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is

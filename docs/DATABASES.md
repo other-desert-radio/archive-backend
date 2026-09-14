@@ -76,11 +76,11 @@ information so the exported value is unambiguous.
 
 ```text
 id          integer primary key
-name        text not null
-color       text
+title       text not null
+color       text not null
 ```
 
-Tags represent genres or other archive labels. Tag names should have an
+Tags represent genres or other archive labels. Tag titles should have an
 appropriate uniqueness rule, normally case-insensitive uniqueness.
 
 ## Relationship tables

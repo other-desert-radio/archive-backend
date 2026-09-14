@@ -40,7 +40,7 @@ files for the front end to consume:
 ```json
 [{
     id: 1,
-    name: "saad",
+    title: "saad",
     color: "#FF1100"
 }, ... ]
 ```
