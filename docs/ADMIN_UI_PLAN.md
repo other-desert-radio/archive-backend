@@ -86,9 +86,7 @@ and Upload remain deferred. Archive resources remain read-only.
 - `src/admin-ui/components/database-table-view.tsx` provides the shared
   `DatabaseTableView`, which owns the required header/body structure and
   loading, error, retry, and empty states for each resource view.
-- `src/admin-ui/components/tables/` contains the Shows table; the DJ table is
-  currently rendered inside `DJsPage` and can be extracted when that view next
-  changes.
+- `src/admin-ui/components/tables/` contains the Shows and DJs tables.
 - `#shows` is the default route and `#djs` selects the DJ view. Tags and Upload
   are visible sidebar placeholders without behavior.
 - `src/admin-ui/assets/background/README.md` marks the future background-asset

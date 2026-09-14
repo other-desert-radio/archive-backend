@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { DJsJSON } from "../../json-transformers/index.js";
 import { DatabaseTableView } from "../components/database-table-view.js";
+import { DJsTable } from "../components/tables/djs-table.js";
 import { loadDJs } from "../loaders/djs.js";
 
 export const DJsPage = () => {
@@ -31,34 +32,7 @@ export const DJsPage = () => {
 			isEmpty={djs.length === 0}
 			emptyMessage="No DJs have been added yet."
 		>
-			<div className="table-wrapper">
-				<table>
-					<thead>
-						<tr>
-							<th scope="col">ID</th>
-							<th scope="col">DJ</th>
-							<th scope="col">Bio</th>
-							<th scope="col">Image</th>
-						</tr>
-					</thead>
-					<tbody>
-						{djs.map((dj) => (
-							<tr key={dj.id}>
-								<td>{dj.id}</td>
-								<td>{dj.title}</td>
-								<td>{dj.bio}</td>
-								<td>
-									{dj.image ? (
-										<img src={dj.image} alt={`${dj.title} portrait`} />
-									) : (
-										<span className="muted">None</span>
-									)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+			<DJsTable djs={djs} />
 		</DatabaseTableView>
 	);
 };
