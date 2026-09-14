@@ -1,7 +1,7 @@
 :root {
 	font-family: monospace;
 	color: #111;
-	background: #999;
+	background: #efefef;
 }
 
 * {
@@ -24,7 +24,7 @@ a {
 .management-layout {
 	min-height: 100vh;
 	padding-top: 3.0625rem;
-	background: #999;
+	background: #efefef;
 }
 
 .management-header {
@@ -76,7 +76,7 @@ a {
 	min-height: calc(100vh - 3.0625rem);
 	margin-left: 10.75rem;
 	padding: 7rem clamp(1.25rem, 10vw, 16rem);
-	background: #999;
+	background: ##efefef;
 }
 
 .management-content .admin-shell {
