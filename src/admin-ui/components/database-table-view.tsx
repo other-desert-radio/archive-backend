@@ -10,14 +10,14 @@ type DatabaseTableViewProps = {
 	children: ReactNode;
 };
 
-export const Header = ({ title }: { title: string }) => (
+const Header = ({ title }: { title: string }) => (
 	<header className="database-table-header">
 		<p className="eyebrow">Archive</p>
 		<h1>{title}</h1>
 	</header>
 );
 
-export const Body = ({ children }: { children: ReactNode }) => (
+const Body = ({ children }: { children: ReactNode }) => (
 	<div className="database-table-body">{children}</div>
 );
 

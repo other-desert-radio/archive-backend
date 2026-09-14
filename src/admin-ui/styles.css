@@ -76,7 +76,7 @@ a {
 	min-height: calc(100vh - 3.0625rem);
 	margin-left: 10.75rem;
 	padding: 7rem clamp(1.25rem, 10vw, 16rem);
-	background: ##efefef;
+	background: #efefef;
 }
 
 .management-content .admin-shell {

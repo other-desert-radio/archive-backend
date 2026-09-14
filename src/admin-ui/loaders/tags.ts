@@ -3,13 +3,13 @@ import type { TagsJSON } from "../../json-transformers/index.js";
 export type TagsAdminRow = TagsJSON;
 
 export const loadTags = async (
-  fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = fetch,
 ): Promise<TagsAdminRow[]> => {
-  const response = await fetcher("/api/admin/tags");
+	const response = await fetcher("/api/admin/tags");
 
-  if (!response.ok) {
-    throw new Error("Unable to load shows");
-  }
+	if (!response.ok) {
+		throw new Error("Unable to load shows");
+	}
 
-  return (await response.json()) as TagsAdminRow[];
+	return (await response.json()) as TagsAdminRow[];
 };
