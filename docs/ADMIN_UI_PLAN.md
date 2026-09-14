@@ -78,6 +78,23 @@ states. The next reviewable chunk is the read-only Shows API only. The Shows UI,
 Tags API, Tags UI, shared Figma-inspired shell, and background asset integration
 remain separate follow-up chunks. Archive resources remain read-only.
 
+### Admin UI visual and navigation rules
+
+The supplied Figma management sketch establishes the shared shell used by the
+resource tables:
+
+- Use a black, full-width 49px top bar with centered `OTHER DESERT RADIO /
+  MANAGEMENT` text.
+- Use a black 172px left sidebar below the top bar, with `DATABASE` entries for
+  shows, DJs, and tags, plus a `UTILS` entry for upload.
+- Render the active resource in bold. Shows is active for the Shows slice; DJs
+  remains reachable, while Tags and Upload remain deferred until implemented.
+- Use a monospace font stack and a gray page/content background for now.
+- Keep the eventual background asset in `src/admin-ui/assets/background/`; do
+  not add the texture asset until it is available.
+- Keep the layout usable on narrow screens by allowing the sidebar to flow above
+  the content and the tables to scroll horizontally.
+
 ## Delivery sequence
 
 ### Phase 0: Confirm decisions — complete
