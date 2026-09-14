@@ -83,6 +83,57 @@ describe("admin route boundary", () => {
 		expect(uiResponse.statusCode).toBe(401);
 	});
 
+	test("challenges for temporary browser-based Basic Auth", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(
+			adminRoutes(testAuth, undefined, {
+				username: "admin",
+				password: "secret",
+			}),
+		);
+
+		for (const url of ["/api/admin", "/admin"]) {
+			const response = await app.inject({ method: "GET", url });
+
+			expect(response.statusCode).toBe(401);
+			expect(response.headers["www-authenticate"]).toBe(
+				'Basic realm="Archive Admin", charset="UTF-8"',
+			);
+
+			const invalidResponse = await app.inject({
+				method: "GET",
+				url,
+				headers: {
+					authorization: `Basic ${Buffer.from("admin:wrong").toString("base64")}`,
+				},
+			});
+
+			expect(invalidResponse.statusCode).toBe(401);
+		}
+
+		const authenticatedResponse = await app.inject({
+			method: "GET",
+			url: "/api/admin",
+			headers: {
+				authorization: `Basic ${Buffer.from("admin:secret").toString("base64")}`,
+			},
+		});
+
+		expect(authenticatedResponse.statusCode).toBe(200);
+
+		const authenticatedUiResponse = await app.inject({
+			method: "GET",
+			url: "/admin",
+			headers: {
+				authorization: `Basic ${Buffer.from("admin:secret").toString("base64")}`,
+			},
+		});
+
+		expect(authenticatedUiResponse.statusCode).toBe(200);
+
+		await app.close();
+	});
+
 	test("rejects admin requests without a Better Auth session", async () => {
 		const app = Fastify({ logger: false });
 		await app.register(

@@ -40,7 +40,11 @@ same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 The production admin routes require an authenticated Better Auth session.
 Requests to `/admin` and `/api/admin/*` are rejected with `401 Unauthorized`
 when no session is present and `403 Forbidden` when the authenticated user does
-not have the `admin` role. The application factory requires Better Auth.
+not have the `admin` role. Until the admin login page is added, an HTTP Basic
+Auth challenge provides the browser's native username/password dialog. Configure
+it with `ADMIN_BASIC_USERNAME` and `ADMIN_BASIC_PASSWORD`; the example local
+values are `admin` / `admin` and must be changed outside local development. The
+application factory requires Better Auth.
 
 The Better Auth configuration also requires `BETTER_AUTH_SECRET` and
 `BETTER_AUTH_URL`. The secret must be generated and stored outside Git. The
@@ -51,13 +55,14 @@ session and sign-out coverage is included in the authentication tests.
 ## Handoff
 
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
-boundary status object and `/admin`
-serves the authenticated empty React/Vite shell. The production container builds
-the shell into `dist/admin`; a missing bundle returns `503`.
-`GET /api/admin/djs` is read-only and returns a top-level DJ array with `id`,
-`title`, `bio`, optional `image`, `shows`, and `tags`; its relationship IDs are
-derived from the relationship tables. Keep all archive resources read-only and
-stop for review before adding the DJ list.
+boundary status object and `/admin` serves the authenticated empty React/Vite
+shell. The production container builds the shell into `dist/admin`; a missing
+bundle returns `503`. `GET /api/admin/djs` is read-only and returns a top-level
+DJ array with `id`, `title`, `bio`, optional `image`, `shows`, and `tags`; its
+relationship IDs are derived from the relationship tables. The UI now renders
+the read-only DJ list with loading, empty, and error states. DJ bios are
+currently escaped as text until the planned sanitization phase. Keep all archive
+resources read-only and stop for review before adding shows or tags.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the
