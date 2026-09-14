@@ -10,6 +10,41 @@ const testAuth = {
 	handler: async () => new Response(null, { status: 404 }),
 } as never;
 
+const adminSession = {
+	api: {
+		getSession: async () => ({
+			user: { id: "admin-user", role: "admin" },
+		}),
+	},
+} as never;
+
+const testDatabase = {
+	selectFrom: (table: string) => {
+		const rows = {
+			djs: [{ id: 1, title: "DJ One", bio: "<p>Bio</p>", image: null }],
+			show_djs: [{ dj_id: 1, show_id: 10 }],
+			dj_tags: [{ dj_id: 1, tag_id: 20 }],
+			show_tags: [{ dj_id: 1, tag_id: 21 }],
+		}[table as "djs" | "show_djs" | "dj_tags" | "show_tags"];
+
+		type TestQuery = {
+			select: () => TestQuery;
+			innerJoin: () => TestQuery;
+			orderBy: () => TestQuery;
+			execute: () => Promise<unknown[]>;
+		};
+
+		const query: TestQuery = {
+			select: () => query,
+			innerJoin: () => query,
+			orderBy: () => query,
+			execute: async () => rows ?? [],
+		};
+
+		return query;
+	},
+} as never;
+
 const apps = [] as ReturnType<typeof buildApp>[];
 
 afterEach(async () => {
@@ -123,6 +158,49 @@ describe("admin route boundary", () => {
 
 		expect(response.statusCode).toBe(403);
 		expect(response.json()).toEqual({ error: "Forbidden" });
+
+		await app.close();
+	});
+
+	test("returns DJs with relationship IDs", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, testDatabase));
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/admin/djs",
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.json()).toEqual([
+			{
+				id: 1,
+				title: "DJ One",
+				bio: "<p>Bio</p>",
+				shows: [10],
+				tags: [20, 21],
+			},
+		]);
+
+		await app.close();
+	});
+
+	test("returns a server error when DJs cannot be loaded", async () => {
+		const failingDatabase = {
+			selectFrom: () => {
+				throw new Error("database unavailable");
+			},
+		} as never;
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, failingDatabase));
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/admin/djs",
+		});
+
+		expect(response.statusCode).toBe(500);
+		expect(response.json()).toEqual({ error: "Internal Server Error" });
 
 		await app.close();
 	});

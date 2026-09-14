@@ -76,9 +76,9 @@ not yet verify a successful credential sign-in with a seeded account.
 The next implementation slice is Phase 3 only: add `GET /api/admin/djs`, its
 documented response shape, basic error handling, and a focused route test. Do
 not add the React/Vite shell, relationships, or mutations in that slice. The
-initial DJ, show, and tag resource APIs and UI must remain read-only. After the
-DJ endpoint is implemented and tested, pause for user review before starting
-the UI shell.
+initial DJ, show, and tag resource APIs and UI must remain read-only. The DJ
+endpoint is implemented, with focused success and database-error coverage.
+Pause for user review before starting the UI shell.
 
 ## Delivery sequence
 
@@ -137,7 +137,26 @@ These decisions are recorded before application implementation begins.
 
 ### Archive resources
 
-- [ ] Add the read-only DJ API and its documented response shape.
+- [x] Add the read-only DJ API and its documented response shape. `GET
+      /api/admin/djs` returns a top-level array in the format consumed by the
+      frontend:
+
+      ```json
+      [{
+        "id": 1,
+        "title": "name",
+        "bio": "safe html",
+        "image": "image_url",
+        "shows": [1, 2],
+        "tags": [3, 4]
+      }]
+      ```
+
+      `image` is omitted when the database value is `NULL`. Show IDs come from
+      `show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries
+      and tags assigned to the DJ's shows through `show_tags`. Database errors
+      return `500 { "error": "Internal Server Error" }`.
+
 - [ ] Serve the empty React/Vite shell at `/admin`.
 - [ ] Render the read-only DJ list with loading, empty, and error states.
 - [ ] Add a read-only shows API and UI list as a separate reviewed chunk.
