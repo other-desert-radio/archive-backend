@@ -30,7 +30,10 @@ const mergeRelationshipIds = (
 
 	for (const [djId, ids] of second) {
 		const existing = merged.get(djId) ?? [];
-		merged.set(djId, [...new Set([...existing, ...ids])].sort((a, b) => a - b));
+		merged.set(
+			djId,
+			[...new Set([...existing, ...ids])].sort((a, b) => a - b),
+		);
 	}
 
 	return merged;

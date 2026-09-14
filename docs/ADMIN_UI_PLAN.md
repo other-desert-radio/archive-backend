@@ -56,15 +56,15 @@ boundary is:
   `buildApp(auth)`.
 - `src/app.ts` requires an auth instance and always registers `/api/auth/*` and
   the authenticated admin routes.
-- `src/admin/admin.ts` protects both `/admin` and `/api/admin/*` with a
-  Better Auth session and the server-owned `admin` role. Missing sessions return
-  `401`; authenticated non-admin users return `403`.
+- `src/admin/admin.ts` protects both `/admin` and `/api/admin/*` with a Better
+  Auth session and the server-owned `admin` role. Missing sessions return `401`;
+  authenticated non-admin users return `403`.
 - `/health` remains public. `/api/admin` is still a boundary placeholder, and
-  `/admin` still returns a `501` placeholder because the React/Vite UI has not
-  been added yet.
-- `0007_create_better_auth_tables` and
-  `0008_add_better_auth_user_role` are applied to the local PostgreSQL
-  database. Migrations are not applied automatically in other environments.
+  `/admin` now serves the authenticated empty React/Vite shell from the
+  production bundle in `dist/admin`.
+- `0007_create_better_auth_tables` and `0008_add_better_auth_user_role` are
+  applied to the local PostgreSQL database. Migrations are not applied
+  automatically in other environments.
 - `.env` contains local mock values and is ignored by Git. Do not commit real
   secrets. `.env.example` contains the required Better Auth variables.
 
@@ -77,8 +77,8 @@ The next implementation slice is Phase 3 only: add `GET /api/admin/djs`, its
 documented response shape, basic error handling, and a focused route test. Do
 not add the React/Vite shell, relationships, or mutations in that slice. The
 initial DJ, show, and tag resource APIs and UI must remain read-only. The DJ
-endpoint is implemented, with focused success and database-error coverage.
-Pause for user review before starting the UI shell.
+endpoint is implemented, with focused success and database-error coverage. Pause
+for user review before starting the UI shell.
 
 ## Delivery sequence
 
@@ -137,27 +137,29 @@ These decisions are recorded before application implementation begins.
 
 ### Archive resources
 
-- [x] Add the read-only DJ API and its documented response shape. `GET
-      /api/admin/djs` returns a top-level array in the format consumed by the
-      frontend:
+- [x] Add the read-only DJ API and its documented response shape.
+  `GET /api/admin/djs` returns a top-level array in the format consumed by the
+  frontend:
 
-      ```json
-      [{
-        "id": 1,
-        "title": "name",
-        "bio": "safe html",
-        "image": "image_url",
-        "shows": [1, 2],
-        "tags": [3, 4]
-      }]
-      ```
+```json
+[
+  {
+    "id": 1,
+    "title": "name",
+    "bio": "safe html",
+    "image": "image_url",
+    "shows": [1, 2],
+    "tags": [3, 4]
+  }
+]
+```
 
-      `image` is omitted when the database value is `NULL`. Show IDs come from
-      `show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries
-      and tags assigned to the DJ's shows through `show_tags`. Database errors
-      return `500 { "error": "Internal Server Error" }`.
+  `image` is omitted when the database value is `NULL`. Show IDs come from
+  `show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries and
+  tags assigned to the DJ's shows through `show_tags`. Database errors return
+  `500 { "error": "Internal Server Error" }`.
 
-- [ ] Serve the empty React/Vite shell at `/admin`.
+- [x] Serve the empty React/Vite shell at `/admin`.
 - [ ] Render the read-only DJ list with loading, empty, and error states.
 - [ ] Add a read-only shows API and UI list as a separate reviewed chunk.
 - [ ] Add a read-only tags API and UI list as a separate reviewed chunk.
@@ -266,10 +268,10 @@ Pause for review after this endpoint works.
 
 Add the React/Vite build and serve it from Fastify at `/admin`:
 
-- Build a minimal application shell.
-- Verify that the production bundle is included in the container image.
-- Keep the shell behind the same authentication boundary.
-- Do not add data tables yet.
+- [x] Build a minimal React/Vite application shell.
+- [x] Configure the container image to build and include the production bundle.
+- [x] Keep the shell behind the same authentication boundary.
+- [x] Do not add data tables yet.
 
 Pause for review after the authenticated shell loads.
 

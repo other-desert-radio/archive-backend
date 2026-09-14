@@ -1,7 +1,7 @@
 import type { Selectable } from "kysely";
 import type {
-	DjTagsTable,
 	DJsTable,
+	DjTagsTable,
 	ShowDJsTable,
 	ShowTagsTable,
 } from "../../db/types.js";
@@ -17,8 +17,8 @@ export type DJsJson = {
 
 export type DJsSqlData = {
 	djs: Array<Selectable<DJsTable>>;
-	showDJs: Array<Selectable<ShowDJsTable>>;
-	djTags: Array<Selectable<DjTagsTable>>;
+	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
+	djTags: Array<Pick<Selectable<DjTagsTable>, "dj_id" | "tag_id">>;
 	showTags: Array<
 		Pick<Selectable<ShowDJsTable>, "dj_id"> &
 			Pick<Selectable<ShowTagsTable>, "tag_id">
