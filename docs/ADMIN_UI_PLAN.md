@@ -89,8 +89,10 @@ and Upload remain deferred. Archive resources remain read-only.
 - `src/admin-ui/components/tables/` contains the Shows and DJs tables.
 - `#shows` is the default route, `#djs` selects the DJ view, and `#tags` selects
   the Tags view. Upload remains a visible sidebar placeholder.
-- `src/admin-ui/assets/background/README.md` marks the future background-asset
-  location; the current background is gray.
+- `src/admin-ui/assets/background/background.jpeg` provides the textured page
+  background used by the admin UI.
+- `scripts/build-container-watch` runs the containerized API/PostgreSQL stack
+  with a host-side Vite build watcher for live admin UI updates.
 
 ### Next-agent checklist
 
@@ -104,9 +106,8 @@ Implement one item at a time and stop for review after each item:
    `Body`; include loading, empty, and error states plus loader tests.
 3. [x] Connect the Tags sidebar item to `#tags` and verify Shows, DJs, and Tags
        navigation without adding CRUD behavior.
-4. When the background asset is ready, place it under
-   `src/admin-ui/assets/background/` and replace only the gray background in a
-   separate visual review chunk.
+4. [x] Add the background asset and replace only the gray background in a
+       separate visual review chunk.
 
 Do not begin relationships, mutations, upload, filtering, or authentication
 changes as part of these resource-view chunks.
@@ -122,9 +123,8 @@ resource tables:
   shows, DJs, and tags, plus a `UTILS` entry for upload.
 - Render the active resource in bold. Shows is active for the Shows slice; DJs
   remains reachable, while Tags and Upload remain deferred until implemented.
-- Use a monospace font stack and a gray page/content background for now.
-- Keep the eventual background asset in `src/admin-ui/assets/background/`; do
-  not add the texture asset until it is available.
+- Use a monospace font stack and the textured page/content background asset in
+  `src/admin-ui/assets/background/`.
 - Keep the layout usable on narrow screens by allowing the sidebar to flow above
   the content and the tables to scroll horizontally.
 - Keep UI data loaders in `src/admin-ui/loaders/`, resource pages in

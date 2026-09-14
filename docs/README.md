@@ -91,6 +91,11 @@ test gaps, see the
 
 - `scripts/build-container` rebuilds and starts the Docker Compose stack in the
   background.
+- `scripts/build-container-watch` rebuilds and starts the Docker Compose stack,
+  then runs the Vite build watcher. The host `dist/admin` directory is mounted
+  into the API container, so `/admin` updates after each frontend rebuild. Stop
+  the watcher with `Ctrl-C`; stop the containers separately with
+  `docker compose down`.
 
 After the database check succeeds, startup logs the web server address, for
 example `Web server running at http://0.0.0.0:3000`.
@@ -104,6 +109,10 @@ result, and check the API with `curl http://localhost:3000/health`. Repeat the
 migration command after each review checkpoint, or run `scripts/run-migrations`
 to apply all pending migrations after the schema has been reviewed;
 `scripts/build-container` does not apply migrations.
+
+For admin UI work, use `scripts/build-container-watch` after the initial
+database setup. Open the authenticated `/admin` page and leave the watcher
+running while editing `src/admin-ui/`.
 
 ## Conventions
 
