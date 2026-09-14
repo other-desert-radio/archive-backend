@@ -1,4 +1,4 @@
-import type { ShowsJSON } from "../json-transformers/index.js";
+import type { ShowsJSON } from "../../json-transformers/index.js";
 
 export type ShowsAdminRow = Omit<ShowsJSON, "date"> & { date: string };
 

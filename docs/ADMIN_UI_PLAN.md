@@ -94,6 +94,9 @@ resource tables:
   not add the texture asset until it is available.
 - Keep the layout usable on narrow screens by allowing the sidebar to flow above
   the content and the tables to scroll horizontally.
+- Keep UI data loaders in `src/admin-ui/loaders/`, resource pages in
+  `src/admin-ui/pages/`, and table components in
+  `src/admin-ui/components/tables/`.
 
 ## Delivery sequence
 

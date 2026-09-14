@@ -1,4 +1,4 @@
-import type { ShowsAdminRow } from "../../shows.js";
+import type { ShowsAdminRow } from "../../loaders/shows.js";
 
 const formatDate = (value: string) => {
 	const iso = new Date(value).toISOString();

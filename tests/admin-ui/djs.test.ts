@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { loadDJs } from "../../src/admin-ui/djs.js";
+import { loadDJs } from "../../src/admin-ui/loaders/djs.js";
 
 describe("DJ admin data loader", () => {
 	test("returns the API response", async () => {

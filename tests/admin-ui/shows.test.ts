@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { loadShows } from "../../src/admin-ui/shows.js";
+import { loadShows } from "../../src/admin-ui/loaders/shows.js";
 
 describe("shows admin data loader", () => {
 	test("returns the API response", async () => {
