@@ -74,9 +74,10 @@ request validation, no-session lookup, and sign-out without a session; they do
 not yet verify a successful credential sign-in with a seeded account.
 
 The DJ API and read-only DJ UI are implemented with loading, empty, and error
-states. The read-only Shows API and table are also implemented. The next
-reviewable chunks are the shared Figma-inspired shell and the Tags resource.
-Archive resources remain read-only.
+states. The read-only Shows API and table are also implemented. The shared
+Figma-inspired shell and Shows/DJs navigation are implemented; Tags and Upload
+remain deferred. The next reviewable chunk is the Tags resource. Archive
+resources remain read-only.
 
 ### Admin UI visual and navigation rules
 
@@ -183,6 +184,8 @@ assigned to the DJ's shows through `show_tags`. Database errors return
 - [x] Render the read-only DJ list with loading, empty, and error states.
 - [x] Add the read-only shows API.
 - [x] Add the read-only shows UI list as a separate reviewed chunk.
+- [x] Add the shared Figma-inspired shell, gray background, and Shows/DJs
+      navigation.
 - [ ] Add a read-only tags API and UI list as a separate reviewed chunk.
 - [ ] Keep DJ, show, and tag resources read-only in the initial release.
 - [ ] Defer archive-resource creation, editing, and deletion until explicitly

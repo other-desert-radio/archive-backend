@@ -1,17 +1,87 @@
 :root {
-	font-family: system-ui, sans-serif;
-	color: #17202a;
-	background: #f4f6f8;
+	font-family: monospace;
+	color: #111;
+	background: #999;
+}
+
+* {
+	box-sizing: border-box;
 }
 
 body {
 	margin: 0;
+	min-width: 20rem;
+}
+
+a {
+	color: inherit;
 }
 
 .admin-shell {
-	max-width: 48rem;
-	margin: 0 auto;
-	padding: 5rem 1.5rem;
+	width: 100%;
+}
+
+.management-layout {
+	min-height: 100vh;
+	padding-top: 3.0625rem;
+	background: #999;
+}
+
+.management-header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 2;
+	width: 100%;
+	height: 3.0625rem;
+	display: grid;
+	place-items: center;
+	color: #fff;
+	background: #000;
+	font-size: 1rem;
+}
+
+.management-sidebar {
+	position: fixed;
+	top: 3.0625rem;
+	bottom: 0;
+	left: 0;
+	width: 10.75rem;
+	padding: 3.75rem 1.25rem;
+	color: #fff;
+	background: #000;
+}
+
+.management-sidebar p {
+	margin: 0 0 1.25rem;
+}
+.management-sidebar p + p {
+	margin-top: 2.5rem;
+}
+.management-sidebar ul {
+	display: grid;
+	gap: 1.25rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.management-sidebar a {
+	text-decoration: none;
+}
+.management-sidebar a.active {
+	font-weight: 700;
+}
+
+.management-content {
+	min-height: calc(100vh - 3.0625rem);
+	margin-left: 10.75rem;
+	padding: 7rem clamp(1.25rem, 10vw, 16rem);
+	background: #999;
+}
+
+.management-content .admin-shell {
+	max-width: none;
+	padding: 0;
 }
 
 .eyebrow {
@@ -92,7 +162,7 @@ td img {
 }
 
 .muted {
-	color: #829ab1;
+	color: #555;
 }
 
 .visually-hidden {
@@ -102,4 +172,19 @@ td img {
 	overflow: hidden;
 	clip: rect(0, 0, 0, 0);
 	white-space: nowrap;
+}
+
+@media (max-width: 42rem) {
+	.management-sidebar {
+		position: static;
+		width: 100%;
+		padding: 1.25rem;
+	}
+	.management-sidebar p + p {
+		margin-top: 1.5rem;
+	}
+	.management-content {
+		margin-left: 0;
+		padding: 2rem 1.25rem;
+	}
 }
