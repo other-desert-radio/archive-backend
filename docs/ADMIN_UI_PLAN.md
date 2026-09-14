@@ -98,6 +98,9 @@ resource tables:
 - Keep UI data loaders in `src/admin-ui/loaders/`, resource pages in
   `src/admin-ui/pages/`, and table components in
   `src/admin-ui/components/tables/`.
+- Wrap each database resource page with the shared `DatabaseTableView`, using
+  `Header({ title: string })` for the resource heading and `Body` for its table
+  and loading/error states.
 
 ## Delivery sequence
 

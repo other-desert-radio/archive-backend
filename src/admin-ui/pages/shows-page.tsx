@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+	Body,
+	DatabaseTableView,
+	Header,
+} from "../components/database-table-view.js";
 import { ShowsTable } from "../components/tables/shows-table.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 
@@ -22,21 +27,25 @@ export const ShowsPage = () => {
 	}, [refreshShows]);
 
 	return (
-		<section className="resource-section">
-			<h2>Shows</h2>
-			{isLoading && <p className="status">Loading shows…</p>}
-			{error && (
-				<div className="message error" role="alert">
-					<p>{error}</p>
-					<button type="button" onClick={refreshShows}>
-						Try again
-					</button>
-				</div>
-			)}
-			{!isLoading && !error && shows.length === 0 && (
-				<p className="status">No shows have been added yet.</p>
-			)}
-			{!isLoading && !error && shows.length > 0 && <ShowsTable shows={shows} />}
-		</section>
+		<DatabaseTableView>
+			<Header title="Shows" />
+			<Body>
+				{isLoading && <p className="status">Loading shows…</p>}
+				{error && (
+					<div className="message error" role="alert">
+						<p>{error}</p>
+						<button type="button" onClick={refreshShows}>
+							Try again
+						</button>
+					</div>
+				)}
+				{!isLoading && !error && shows.length === 0 && (
+					<p className="status">No shows have been added yet.</p>
+				)}
+				{!isLoading && !error && shows.length > 0 && (
+					<ShowsTable shows={shows} />
+				)}
+			</Body>
+		</DatabaseTableView>
 	);
 };

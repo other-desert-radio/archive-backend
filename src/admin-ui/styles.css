@@ -98,12 +98,16 @@ h1 {
 	font-size: 3rem;
 }
 
-.resource-section {
-	margin-top: 4rem;
+.database-table-view {
+	width: 100%;
 }
 
-h2 {
-	font-size: 2rem;
+.database-table-header h1 {
+	margin-bottom: 1.5rem;
+}
+
+.database-table-body {
+	width: 100%;
 }
 
 .status {
