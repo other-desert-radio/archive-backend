@@ -1,24 +1,24 @@
 import type { Selectable } from "kysely";
 import type {
-	DJsTable,
-	DjTagsTable,
 	ShowDJsTable,
+	ShowsTable,
 	ShowTagsTable,
 } from "../../db/types.js";
 
-export type DJsJSON = {
+export type ShowsJSON = {
 	id: number;
 	title: string;
-	bio: string;
+	date: Date;
 	image?: string;
-	shows: number[];
+	duration: number;
+	djs: number[];
 	tags: number[];
+	url: string;
 };
 
-export type TransformDJsParams = {
-	djs: Array<Selectable<DJsTable>>;
+export type TransformShowsParams = {
+	shows: Array<Selectable<ShowsTable>>;
 	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
-	djTags: Array<Pick<Selectable<DjTagsTable>, "dj_id" | "tag_id">>;
 	showTags: Array<
 		Pick<Selectable<ShowDJsTable>, "dj_id"> &
 			Pick<Selectable<ShowTagsTable>, "tag_id">
