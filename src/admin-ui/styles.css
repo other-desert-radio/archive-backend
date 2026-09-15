@@ -85,6 +85,11 @@ a {
 	padding: 0;
 }
 
+.dj-management-content {
+	padding-right: 0;
+	padding-left: 0;
+}
+
 .eyebrow {
 	margin: 0;
 	font-size: 0.75rem;
@@ -123,18 +128,37 @@ button {
 .dj-toolbar {
 	display: flex;
 	gap: 1rem;
+	justify-content: space-between;
+	padding-inline: 32px;
 	margin-bottom: 1.5rem;
 }
 
 .dj-toolbar input {
 	min-width: 18rem;
+	max-width: 400px;
 	flex: 1;
 	padding: 0.75rem;
 	border: 1px solid #000;
 	font: inherit;
 }
 
+.g8 {
+	gap: 8px;
+}
+
+.flex {
+	display: flex;
+	gap: 8px;
+}
+
+th button {
+	font-family: inherit;
+	border: none;
+}
+
 .view-switcher {
+	padding: 0px;
+	border: none;
 	display: flex;
 }
 
@@ -171,6 +195,8 @@ button {
 }
 
 .table-wrapper {
+	width: 100%;
+	padding: 0 24px;
 	overflow-x: auto;
 }
 
@@ -225,5 +251,8 @@ th button.active-sort {
 	.management-content {
 		margin-left: 0;
 		padding: 2rem 1.25rem;
+	}
+	.management-content.dj-management-content {
+		padding: 2rem 0 0;
 	}
 }

@@ -213,9 +213,9 @@ Checklist:
 - [x] Add pure helper tests for filtering and sorting.
 - [x] Run the admin build and stop for visual review.
 
-Keep loading, empty, and error handling. Extend `DatabaseTableView` with an
-optional heading visibility prop so the DJ page can omit the existing large
-`Archive / DJs` heading while Shows and Tags retain their current behavior.
+Keep loading, empty, and error handling directly in `DJsPage`. The DJ page does
+not use `DatabaseTableView`, `Header`, or `Body`; Shows and Tags retain their
+existing shared wrapper.
 
 `DJsPage` owns the search query, active sort column, sort direction, modal
 state, loaded DJs, and available tags.
@@ -232,7 +232,8 @@ is deferred as a nice-to-have.
 Render columns in Figma order. Render `tags` and `shows` as IDs, preserving the
 current relationship contract. Use loaded tag titles only to improve search
 matching. Render image paths/URLs as text and show `None` when absent. Preserve
-horizontal overflow.
+horizontal overflow. Keep a small, equal 16px inset on both sides of the table
+wrapper.
 
 Extract filtering, sorting, and search-value construction into pure helpers so
 they can be tested without a browser DOM.
@@ -270,10 +271,9 @@ Form fields:
 - `bio`: required multiline plain-text editor.
 
 Use plain text for all modal fields while preserving newlines and indentation.
-Do not add B/I
-controls in this first editor slice. Convert plain text to escaped safe HTML on
-submit, preserving line breaks and leading indentation. The server sanitizes the
-resulting HTML before persistence.
+Do not add B/I controls in this first editor slice. Convert plain text to
+escaped safe HTML on submit, preserving line breaks and leading indentation. The
+server sanitizes the resulting HTML before persistence.
 
 Image behavior is limited to URL/path text input. Do not implement browser
 drag-and-drop file path extraction; browsers do not expose a reliable full local
