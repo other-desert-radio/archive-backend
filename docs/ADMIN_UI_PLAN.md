@@ -106,8 +106,8 @@ and Upload remain deferred. Archive resources remain read-only.
 - The DJ page now renders its state, toolbar, and table directly. Its table
   scroll area keeps leading padding but extends to the right edge of the view;
   Shows and Tags still use `DatabaseTableView`.
-- The modal shell and plain-text field/validation slice is complete. The next
-  UI slice is the reusable tags component; API submission remains deferred.
+- The modal shell and plain-text field/validation slice is complete. The next UI
+  slice is the reusable tags component; API submission remains deferred.
 
 ### Next-agent checklist
 
