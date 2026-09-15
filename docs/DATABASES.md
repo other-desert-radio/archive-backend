@@ -37,9 +37,9 @@ format, not in the primary entity tables.
 ## Local dummy data
 
 `bun run db:seed:djs` inserts five standalone DJ records for local development.
-The fixtures intentionally do not create shows, tags, or relationship rows.
-The command only inserts data and does not clear existing records, so rerunning
-it adds another fixture batch.
+The fixtures intentionally do not create shows, tags, or relationship rows. The
+command only inserts data and does not clear existing records, so rerunning it
+adds another fixture batch.
 
 ## Authentication tables
 
