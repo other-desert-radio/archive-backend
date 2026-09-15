@@ -27,9 +27,9 @@ focused tests and documentation, then stopping for review.
 
 ## Reuse requirements
 
-Treat the DJ implementation as the first consumer of shared archive UI
-patterns. Components and helpers introduced here must be reusable by Shows and
-Tags wherever their behavior is not DJ-specific.
+Treat the DJ implementation as the first consumer of shared archive UI patterns.
+Components and helpers introduced here must be reusable by Shows and Tags
+wherever their behavior is not DJ-specific.
 
 - Keep modal shells, form layout, labels, text inputs, multiline editors,
   buttons, loading/error/empty states, and toolbar controls generic.
@@ -258,11 +258,11 @@ Shows and Tags.
 
 Checklist:
 
-- [ ] Open the modal from `+ DJ`.
-- [ ] Render a backdrop beginning below the fixed top bar; never dim the top
+- [x] Open the modal from `+ DJ`.
+- [x] Render a backdrop beginning below the fixed top bar; never dim the top
       bar.
-- [ ] Render the centered white modal, labels, fields, close control, and
-      shadowed Submit button.
+- [x] Render the centered white modal shell and close control; fields and
+      submit controls remain for later steps.
 - [ ] Add required title and bio validation.
 - [ ] Add optional image/path and socials fields.
 - [ ] Leave tags as plain text until the later tags-component slice.
@@ -273,10 +273,11 @@ Checklist:
 - [ ] Close and refresh the table after a successful callback while preserving
       search/sort state.
 - [ ] Add modal/form behavior tests or pure state tests.
-- [ ] Run the admin build and stop for visual review.
+- [x] Run the admin build and stop for visual review.
 
-Add a reusable modal and form shell, then compose an `OnboardDJModal` from it.
-Open the DJ-specific form from the table’s `+ DJ` button.
+The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
+`+ DJ` button. This first step includes only the overlay, white panel, title,
+and close control; add fields one at a time in subsequent review steps.
 
 Form fields:
 
@@ -289,10 +290,10 @@ Form fields:
 
 Use plain text for all modal fields while preserving newlines and indentation.
 Keep the field-row, input, textarea, validation-message, and submit-button
-primitives resource-agnostic so Shows and Tags can use the same form system.
-Do not add B/I controls in this first editor slice. Convert plain text to
-escaped safe HTML on submit, preserving line breaks and leading indentation. The
-server sanitizes the resulting HTML before persistence.
+primitives resource-agnostic so Shows and Tags can use the same form system. Do
+not add B/I controls in this first editor slice. Convert plain text to escaped
+safe HTML on submit, preserving line breaks and leading indentation. The server
+sanitizes the resulting HTML before persistence.
 
 Image behavior is limited to URL/path text input. Do not implement browser
 drag-and-drop file path extraction; browsers do not expose a reliable full local

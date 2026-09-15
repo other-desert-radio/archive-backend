@@ -1,10 +1,15 @@
 type DJToolbarProps = {
 	query: string;
 	onQueryChange: (query: string) => void;
+	onAddDJ: () => void;
 };
 
 /** Renders the DJ search, view switcher, and onboarding action controls. */
-export const DJToolbar = ({ query, onQueryChange }: DJToolbarProps) => (
+export const DJToolbar = ({
+	query,
+	onQueryChange,
+	onAddDJ,
+}: DJToolbarProps) => (
 	<div className="dj-toolbar g8">
 		<input
 			aria-label="Search DJs"
@@ -21,7 +26,7 @@ export const DJToolbar = ({ query, onQueryChange }: DJToolbarProps) => (
 					table
 				</button>
 			</fieldset>
-			<button type="button" className="add-dj-button">
+			<button type="button" className="add-dj-button" onClick={onAddDJ}>
 				+ DJ
 			</button>
 		</div>
