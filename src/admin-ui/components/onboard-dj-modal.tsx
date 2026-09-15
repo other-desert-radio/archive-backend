@@ -97,6 +97,9 @@ export const OnboardDJModal = ({ isOpen, onClose }: OnboardDJModalProps) => {
 						textarea
 					/>
 				</div>
+				<button type="button" className="submit-button">
+					Submit
+				</button>
 			</div>
 		</div>
 	);
