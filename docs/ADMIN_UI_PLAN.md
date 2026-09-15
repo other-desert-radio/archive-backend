@@ -100,6 +100,8 @@ and Upload remain deferred. Archive resources remain read-only.
 - The DJ view now has the Figma-aligned toolbar, seven-column horizontally
   scrollable table, client-side search, and sortable headers with ID descending
   as the initial state.
+- The next UI slice is the onboarding modal. Its first version accepts plain
+  text for all fields; the reusable tags component follows afterward.
 
 ### Next-agent checklist
 

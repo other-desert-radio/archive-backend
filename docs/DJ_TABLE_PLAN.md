@@ -237,51 +237,7 @@ horizontal overflow.
 Extract filtering, sorting, and search-value construction into pure helpers so
 they can be tested without a browser DOM.
 
-### 3. Build the reusable tags component
-
-Checklist:
-
-- [ ] Add a controlled tags input component.
-- [ ] Load and display matching existing tags in a dropdown.
-- [ ] Parse comma-separated input and paste values.
-- [ ] Trim and case-insensitively deduplicate tag titles.
-- [ ] Render removable colored chips.
-- [ ] Render unknown tags with the red error treatment and helper text.
-- [ ] Keep colors within the Figma-like bright palette.
-- [ ] Defer inline autocomplete and Tab completion.
-- [ ] Add pure helper tests for parsing and matching.
-- [ ] Run the admin build and stop for review.
-
-Create a controlled React tags input component that receives existing tags and
-emits tag titles.
-
-Base behavior:
-
-- Typing filters the existing tag list.
-- Matching existing tags appear in a dropdown.
-- Clicking a dropdown option adds/fills the tag.
-- Comma-separated typing or paste is split on commas.
-- Surrounding whitespace is trimmed.
-- Empty entries are ignored.
-- Existing tags match case-insensitively while preserving existing display
-  casing.
-- Submitted tag titles are deduplicated case-insensitively.
-- Completed editing or focus change converts pending text into chips.
-- Chips have an `x` removal control.
-- Unknown tags remain visible as red chips and display the helper message from
-  the Figma design.
-
-Deferred behavior:
-
-- Gray inline autocomplete text.
-- Tab-to-complete behavior.
-- Tag editing after a DJ is created.
-- Tag color management.
-
-Add pure helper tests for comma parsing, trimming, matching, deduplication,
-existing-tag selection, and unknown-tag detection.
-
-### 4. Build the onboarding modal
+### 3. Build the onboarding modal first
 
 Checklist:
 
@@ -292,7 +248,7 @@ Checklist:
       shadowed Submit button.
 - [ ] Add required title and bio validation.
 - [ ] Add optional image/path and socials fields.
-- [ ] Add the tags component.
+- [ ] Leave tags as plain text until the later tags-component slice.
 - [ ] Preserve plain-text line breaks and indentation.
 - [ ] Defer B/I controls while keeping editor geometry compatible with them
       later.
@@ -308,11 +264,13 @@ Form fields:
 
 - `title`: required.
 - `image`: optional URL/path text input.
-- `tags`: reusable tags component.
+- `tags`: plain-text input for this first modal slice; the reusable component is
+  added later.
 - `socials`: optional multiline plain-text editor.
 - `bio`: required multiline plain-text editor.
 
-Use plain text while preserving newlines and indentation. Do not add B/I
+Use plain text for all modal fields while preserving newlines and indentation.
+Do not add B/I
 controls in this first editor slice. Convert plain text to escaped safe HTML on
 submit, preserving line breaks and leading indentation. The server sanitizes the
 resulting HTML before persistence.
@@ -334,6 +292,14 @@ Modal behavior:
 
 Before adding the endpoint, test the modal with a local submit callback and
 verify the Figma layout using the production Vite build.
+
+### 4. Build the reusable tags component
+
+Implement the controlled tags input after the modal’s initial plain-text form
+has been reviewed. It should support matching existing tags, comma-separated
+input, trimming, case-insensitive deduplication, removable colored chips, and
+unknown-tag helper text. Add pure helper tests and stop for review after the
+admin build.
 
 ### 5. Add the create endpoint last
 
