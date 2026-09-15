@@ -18,6 +18,7 @@ export type DJsTable = {
 	title: string;
 	bio: string;
 	image: string | null;
+	socials: string | null;
 };
 
 export type ShowsTable = {

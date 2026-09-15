@@ -7,6 +7,8 @@ type DatabaseTableViewProps = {
 	onRetry: () => void;
 	isEmpty: boolean;
 	emptyMessage: string;
+	/** Hides the Archive/resource heading for compact Figma-aligned views. */
+	showHeading?: boolean;
 	children: ReactNode;
 };
 
@@ -31,10 +33,11 @@ export const DatabaseTableView = ({
 	onRetry,
 	isEmpty,
 	emptyMessage,
+	showHeading = true,
 	children,
 }: DatabaseTableViewProps) => (
 	<section className="database-table-view">
-		<Header title={title} />
+		{showHeading && <Header title={title} />}
 		<Body>
 			{isLoading && <p className="status">Loading {title}…</p>}
 			{error !== undefined && (

@@ -16,6 +16,12 @@ type ArchiveEntry = {
 };
 ```
 
+## Prefer switches for finite cases
+
+Use a `switch` statement when branching over a finite union or enum of known
+cases. Group cases that share behavior and use `default` for the remaining
+cases.
+
 ## Prefer undefined to null
 
 Use `undefined` for an absent value in backend application code, optional

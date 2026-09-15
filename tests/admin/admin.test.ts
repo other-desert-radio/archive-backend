@@ -21,7 +21,15 @@ const adminSession = {
 const testDatabase = {
 	selectFrom: (table: string) => {
 		const rows = {
-			djs: [{ id: 1, title: "DJ One", bio: "<p>Bio</p>", image: null }],
+			djs: [
+				{
+					id: 1,
+					title: "DJ One",
+					bio: "<p>Bio</p>",
+					image: null,
+					socials: "<p>@dj-one</p>",
+				},
+			],
 			shows: [
 				{
 					id: 10,
@@ -242,6 +250,7 @@ describe("admin route boundary", () => {
 				id: 1,
 				title: "DJ One",
 				bio: "<p>Bio</p>",
+				socials: "<p>@dj-one</p>",
 				shows: [10],
 				tags: [20, 21],
 			},

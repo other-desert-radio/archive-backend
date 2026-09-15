@@ -11,6 +11,7 @@ export type DJsJSON = {
 	title: string;
 	bio: string;
 	image?: string;
+	socials?: string;
 	shows: number[];
 	tags: number[];
 };

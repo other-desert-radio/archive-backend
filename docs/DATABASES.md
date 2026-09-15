@@ -34,6 +34,13 @@ relational data into three static JSON files for the GitHub-hosted frontend:
 The database is the source of truth. Arrays of IDs belong in the exported JSON
 format, not in the primary entity tables.
 
+## Local dummy data
+
+`bun run db:seed:djs` inserts five standalone DJ records for local development.
+The fixtures intentionally do not create shows, tags, or relationship rows. The
+command only inserts data and does not clear existing records, so rerunning it
+adds another fixture batch.
+
 ## Authentication tables
 
 Better Auth owns its authentication tables separately from archive entities.
@@ -53,10 +60,12 @@ id          integer primary key
 title       text not null
 bio         text
 image       text
+socials     text
 ```
 
-`bio` may contain HTML, but HTML must be sanitized before it is exposed to the
-frontend.
+`bio` and `socials` may contain limited HTML. Both are sanitized before they are
+exposed to the frontend; supported formatting is paragraphs, line breaks,
+strong/emphasis text, and basic lists.
 
 ### `shows`
 
