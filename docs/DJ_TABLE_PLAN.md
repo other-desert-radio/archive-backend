@@ -25,6 +25,21 @@ Current repository state:
 Follow the repository rule of implementing one small feature at a time, adding
 focused tests and documentation, then stopping for review.
 
+## Reuse requirements
+
+Treat the DJ implementation as the first consumer of shared archive UI
+patterns. Components and helpers introduced here must be reusable by Shows and
+Tags wherever their behavior is not DJ-specific.
+
+- Keep modal shells, form layout, labels, text inputs, multiline editors,
+  buttons, loading/error/empty states, and toolbar controls generic.
+- Keep filtering, sorting, normalization, ID formatting, and search-value
+  helpers data-driven or generic rather than tied to DJ property names.
+- Put resource-specific column definitions and field configuration at the page
+  boundary; do not duplicate shared component markup for Shows, DJs, or Tags.
+- The first onboarding form accepts plain text, but its form primitives must be
+  ready for reuse by future DJ, Show, and Tag forms.
+
 ## Figma Reference
 
 Use these exact Figma nodes:
@@ -235,8 +250,9 @@ matching. Render image paths/URLs as text and show `None` when absent. Preserve
 horizontal overflow. Keep a small, equal 16px inset on both sides of the table
 wrapper.
 
-Extract filtering, sorting, and search-value construction into pure helpers so
-they can be tested without a browser DOM.
+Extract filtering, sorting, and search-value construction into pure, reusable
+helpers so they can be tested without a browser DOM and later configured for
+Shows and Tags.
 
 ### 3. Build the onboarding modal first
 
@@ -259,7 +275,8 @@ Checklist:
 - [ ] Add modal/form behavior tests or pure state tests.
 - [ ] Run the admin build and stop for visual review.
 
-Add a reusable `OnboardDJModal` opened by the DJ table’s `+ DJ` button.
+Add a reusable modal and form shell, then compose an `OnboardDJModal` from it.
+Open the DJ-specific form from the table’s `+ DJ` button.
 
 Form fields:
 
@@ -271,6 +288,8 @@ Form fields:
 - `bio`: required multiline plain-text editor.
 
 Use plain text for all modal fields while preserving newlines and indentation.
+Keep the field-row, input, textarea, validation-message, and submit-button
+primitives resource-agnostic so Shows and Tags can use the same form system.
 Do not add B/I controls in this first editor slice. Convert plain text to
 escaped safe HTML on submit, preserving line breaks and leading indentation. The
 server sanitizes the resulting HTML before persistence.
