@@ -11,8 +11,9 @@ They were added one migration at a time for review.
 
 The seventh migration contains the reviewed Better Auth tables, and the eighth
 migration adds the server-owned admin role. Migration nine renames the tags
-table's name column to title to match the archive field contract. The first
-eight migrations have been applied locally.
+table's name column to title to match the archive field contract. Migration ten
+adds the nullable `djs.socials` field. The first eight migrations have been
+applied locally.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -60,13 +61,13 @@ Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing
 bundle returns `503`. `GET /api/admin/djs` is read-only and returns a top-level
-DJ array with `id`, `title`, `bio`, optional `image`, `shows`, and `tags`; its
-relationship IDs are derived from the relationship tables. The UI now renders
-the read-only DJ list with loading, empty, and error states. The read-only Shows
-API is also implemented and returns transformed relationship IDs. DJ bios are
-currently escaped as text until the planned sanitization phase. Keep all archive
-resources read-only and implement the Shows UI and Tags resource in separate
-reviewable chunks.
+DJ array with `id`, `title`, `bio`, optional `image` and `socials`, `shows`, and
+`tags`; its relationship IDs are derived from the relationship tables. The UI
+now renders the read-only DJ list with loading, empty, and error states. DJ bio
+and socials HTML are sanitized to the documented formatting subset. The
+read-only Shows API is also implemented and returns transformed relationship
+IDs. Keep all archive resources read-only and implement the Shows UI and Tags
+resource in separate reviewable chunks.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the

@@ -53,10 +53,12 @@ id          integer primary key
 title       text not null
 bio         text
 image       text
+socials     text
 ```
 
-`bio` may contain HTML, but HTML must be sanitized before it is exposed to the
-frontend.
+`bio` and `socials` may contain limited HTML. Both are sanitized before they are
+exposed to the frontend; supported formatting is paragraphs, line breaks,
+strong/emphasis text, and basic lists.
 
 ### `shows`
 

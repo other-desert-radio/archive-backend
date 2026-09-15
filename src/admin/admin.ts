@@ -93,7 +93,7 @@ const adminApiRoutes = (database: AdminDatabase): FastifyPluginAsync => {
 				const [djs, showDJs, djTags, showTags] = await Promise.all([
 					database
 						.selectFrom("djs")
-						.select(["id", "title", "bio", "image"])
+						.select(["id", "title", "bio", "image", "socials"])
 						.orderBy("id")
 						.execute(),
 					database
