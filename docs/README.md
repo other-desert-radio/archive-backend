@@ -84,6 +84,7 @@ test gaps, see the
 - `bun run db:migrate` applies one pending migration.
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
+- `bun run db:seed:djs` inserts five standalone dummy DJs.
 - `bun run format` formats source files with Biome and Markdown files with
   Prettier.
 - `bun run typecheck` runs TypeScript validation.
@@ -119,6 +120,8 @@ running while editing `src/admin-ui/`.
 
 - Keep the backend small until a concrete feature requires more structure.
 - Use Kysely for database access and migrations.
+- Seed data should be added with an explicit script and should not run during
+  application startup.
 - Apply one migration at a time and pause for review before continuing.
 - Keep `.env` local and untracked. Update `.env.example` when required variables
   change.

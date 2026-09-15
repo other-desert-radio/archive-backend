@@ -12,6 +12,7 @@
 		"db:migrate": "./scripts/migrate up",
 		"db:migrate:all": "./scripts/run-migrations",
 		"db:rollback": "./scripts/migrate down",
+		"db:seed:djs": "./scripts/seed-djs",
 		"format": "./scripts/format",
 		"lint": "./scripts/lint",
 		"typecheck": "tsc --noEmit",

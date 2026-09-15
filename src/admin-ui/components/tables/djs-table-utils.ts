@@ -41,14 +41,23 @@ export const sortDJs = (
 ): DJsJSON[] => {
 	const multiplier = direction === "asc" ? 1 : -1;
 	return [...djs].sort((left, right) => {
-		if (column === "id") return (left.id - right.id) * multiplier;
-		if (column === "tags" || column === "shows") {
-			return ((left[column][0] ?? -1) - (right[column][0] ?? -1)) * multiplier;
+		let comparison: number;
+		switch (column) {
+			case "id":
+				comparison = left.id - right.id;
+				break;
+			case "tags":
+			case "shows":
+				comparison = (left[column][0] ?? -1) - (right[column][0] ?? -1);
+				break;
+			default:
+				// Compare text alphabetically while treating uppercase and lowercase as equal.
+				comparison = textFor(left, column).localeCompare(
+					textFor(right, column),
+					undefined,
+					{ sensitivity: "base" },
+				);
 		}
-		return (
-			textFor(left, column).localeCompare(textFor(right, column), undefined, {
-				sensitivity: "base",
-			}) * multiplier
-		);
+		return comparison * multiplier;
 	});
 };
