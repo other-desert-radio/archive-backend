@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DJsJSON } from "../../json-transformers/index.js";
 import { DJToolbar } from "../components/dj-toolbar.js";
+import { OnboardDJModal } from "../components/onboard-dj-modal.js";
 import { DJsTable } from "../components/tables/djs-table.js";
 import {
 	type DJSortColumn,
@@ -17,6 +18,7 @@ export const DJsPage = () => {
 	const [query, setQuery] = useState("");
 	const [sortColumn, setSortColumn] = useState<DJSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string>();
 
@@ -64,17 +66,27 @@ export const DJsPage = () => {
 			{!isLoading && error === undefined && djs.length === 0 && (
 				<p className="status">No DJs have been added yet.</p>
 			)}
-			{!isLoading && error === undefined && djs.length > 0 && (
+			{!isLoading && error === undefined && (
 				<>
-					<DJToolbar query={query} onQueryChange={setQuery} />
-					<DJsTable
-						djs={visibleDJs}
-						sortColumn={sortColumn}
-						sortDirection={sortDirection}
-						onSort={handleSort}
+					<DJToolbar
+						query={query}
+						onQueryChange={setQuery}
+						onAddDJ={() => setIsModalOpen(true)}
 					/>
+					{djs.length > 0 && (
+						<DJsTable
+							djs={visibleDJs}
+							sortColumn={sortColumn}
+							sortDirection={sortDirection}
+							onSort={handleSort}
+						/>
+					)}
 				</>
 			)}
+			<OnboardDJModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+			/>
 		</div>
 	);
 };

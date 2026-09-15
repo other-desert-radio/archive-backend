@@ -25,6 +25,21 @@ Current repository state:
 Follow the repository rule of implementing one small feature at a time, adding
 focused tests and documentation, then stopping for review.
 
+## Reuse requirements
+
+Treat the DJ implementation as the first consumer of shared archive UI patterns.
+Components and helpers introduced here must be reusable by Shows and Tags
+wherever their behavior is not DJ-specific.
+
+- Keep modal shells, form layout, labels, text inputs, multiline editors,
+  buttons, loading/error/empty states, and toolbar controls generic.
+- Keep filtering, sorting, normalization, ID formatting, and search-value
+  helpers data-driven or generic rather than tied to DJ property names.
+- Put resource-specific column definitions and field configuration at the page
+  boundary; do not duplicate shared component markup for Shows, DJs, or Tags.
+- The first onboarding form accepts plain text, but its form primitives must be
+  ready for reuse by future DJ, Show, and Tag forms.
+
 ## Figma Reference
 
 Use these exact Figma nodes:
@@ -235,31 +250,36 @@ matching. Render image paths/URLs as text and show `None` when absent. Preserve
 horizontal overflow. Keep a small, equal 16px inset on both sides of the table
 wrapper.
 
-Extract filtering, sorting, and search-value construction into pure helpers so
-they can be tested without a browser DOM.
+Extract filtering, sorting, and search-value construction into pure, reusable
+helpers so they can be tested without a browser DOM and later configured for
+Shows and Tags.
 
 ### 3. Build the onboarding modal first
 
 Checklist:
 
-- [ ] Open the modal from `+ DJ`.
-- [ ] Render a backdrop beginning below the fixed top bar; never dim the top
+- [x] Open the modal from `+ DJ`.
+- [x] Render a backdrop beginning below the fixed top bar; never dim the top
       bar.
-- [ ] Render the centered white modal, labels, fields, close control, and
-      shadowed Submit button.
-- [ ] Add required title and bio validation.
-- [ ] Add optional image/path and socials fields.
-- [ ] Leave tags as plain text until the later tags-component slice.
-- [ ] Preserve plain-text line breaks and indentation.
+- [x] Render the centered white modal shell, close control, and Submit button.
+- [x] Add required title and bio validation.
+- [x] Add optional image/path and socials fields.
+- [x] Leave tags as plain text until the later tags-component slice.
+- [x] Preserve plain-text line breaks and indentation.
 - [ ] Defer B/I controls while keeping editor geometry compatible with them
       later.
 - [ ] Keep image drag/drop path extraction deferred.
 - [ ] Close and refresh the table after a successful callback while preserving
       search/sort state.
 - [ ] Add modal/form behavior tests or pure state tests.
-- [ ] Run the admin build and stop for visual review.
+- [x] Run the admin build and stop for visual review.
 
-Add a reusable `OnboardDJModal` opened by the DJ table’s `+ DJ` button.
+The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
+`+ DJ` button. All five form fields and a styled Submit button are now present.
+The fields are controlled plain-text inputs: `title`, optional `image` URL/path,
+`tags`, multiline `socials`, and multiline `bio`. Client-side validation now
+requires non-whitespace `title` and `bio`; API submission remains a subsequent
+review step.
 
 Form fields:
 
@@ -271,9 +291,11 @@ Form fields:
 - `bio`: required multiline plain-text editor.
 
 Use plain text for all modal fields while preserving newlines and indentation.
-Do not add B/I controls in this first editor slice. Convert plain text to
-escaped safe HTML on submit, preserving line breaks and leading indentation. The
-server sanitizes the resulting HTML before persistence.
+Keep the field-row, input, textarea, validation-message, and submit-button
+primitives resource-agnostic so Shows and Tags can use the same form system. Do
+not add B/I controls in this first editor slice. Convert plain text to escaped
+safe HTML on submit, preserving line breaks and leading indentation. The server
+sanitizes the resulting HTML before persistence.
 
 Image behavior is limited to URL/path text input. Do not implement browser
 drag-and-drop file path extraction; browsers do not expose a reliable full local

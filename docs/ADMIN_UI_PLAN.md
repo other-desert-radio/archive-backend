@@ -100,13 +100,14 @@ and Upload remain deferred. Archive resources remain read-only.
 - The DJ view now has the Figma-aligned toolbar, seven-column horizontally
   scrollable table, client-side search, and sortable headers with ID descending
   as the initial state.
-- The DJ toolbar is extracted into a reusable component; onboarding behavior for
-  its `+ DJ` action remains deferred to the modal slice.
+- The DJ toolbar is extracted into a reusable component, and its `+ DJ` action
+  now opens the reusable onboarding modal with all plain-text fields, Submit,
+  and required title/bio validation.
 - The DJ page now renders its state, toolbar, and table directly. Its table
   scroll area keeps leading padding but extends to the right edge of the view;
   Shows and Tags still use `DatabaseTableView`.
-- The next UI slice is the onboarding modal. Its first version accepts plain
-  text for all fields; the reusable tags component follows afterward.
+- The modal shell and plain-text field/validation slice is complete. The next UI
+  slice is the reusable tags component; API submission remains deferred.
 
 ### Next-agent checklist
 
