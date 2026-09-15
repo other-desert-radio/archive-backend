@@ -261,12 +261,11 @@ Checklist:
 - [x] Open the modal from `+ DJ`.
 - [x] Render a backdrop beginning below the fixed top bar; never dim the top
       bar.
-- [x] Render the centered white modal shell and close control; fields and submit
-      controls remain for later steps.
-- [ ] Add required title and bio validation.
-- [ ] Add optional image/path and socials fields.
-- [ ] Leave tags as plain text until the later tags-component slice.
-- [ ] Preserve plain-text line breaks and indentation.
+- [x] Render the centered white modal shell, close control, and Submit button.
+- [x] Add required title and bio validation.
+- [x] Add optional image/path and socials fields.
+- [x] Leave tags as plain text until the later tags-component slice.
+- [x] Preserve plain-text line breaks and indentation.
 - [ ] Defer B/I controls while keeping editor geometry compatible with them
       later.
 - [ ] Keep image drag/drop path extraction deferred.
@@ -278,8 +277,9 @@ Checklist:
 The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
 `+ DJ` button. All five form fields and a styled Submit button are now present.
 The fields are controlled plain-text inputs: `title`, optional `image` URL/path,
-`tags`, multiline `socials`, and multiline `bio`. Validation and submission
-behavior remain subsequent review steps.
+`tags`, multiline `socials`, and multiline `bio`. Client-side validation now
+requires non-whitespace `title` and `bio`; API submission remains a subsequent
+review step.
 
 Form fields:
 

@@ -257,6 +257,12 @@ th button {
 	font-weight: 700;
 }
 
+.modal-error {
+	margin: 1.5rem 0 0;
+	color: #ff2c2c;
+	text-align: center;
+}
+
 .status {
 	color: #52606d;
 }

@@ -51,6 +51,15 @@ export const OnboardDJModal = ({ isOpen, onClose }: OnboardDJModalProps) => {
 	const [tags, setTags] = useState("");
 	const [socials, setSocials] = useState("");
 	const [bio, setBio] = useState("");
+	const [validationError, setValidationError] = useState<string>();
+
+	const handleSubmit = () => {
+		if (title.trim() === "" || bio.trim() === "") {
+			setValidationError("Title and bio are required.");
+			return;
+		}
+		setValidationError(undefined);
+	};
 
 	if (!isOpen) return null;
 
@@ -97,7 +106,12 @@ export const OnboardDJModal = ({ isOpen, onClose }: OnboardDJModalProps) => {
 						textarea
 					/>
 				</div>
-				<button type="button" className="submit-button">
+				{validationError !== undefined && (
+					<p className="modal-error" role="alert">
+						{validationError}
+					</p>
+				)}
+				<button type="button" className="submit-button" onClick={handleSubmit}>
 					Submit
 				</button>
 			</div>
