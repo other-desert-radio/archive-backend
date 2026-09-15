@@ -276,9 +276,9 @@ Checklist:
 - [x] Run the admin build and stop for visual review.
 
 The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
-`+ DJ` button. The first two form fields are controlled plain-text `title` and
-optional `image` URL/path inputs; add remaining fields one at a time in
-subsequent review steps.
+`+ DJ` button. All five form fields are now present as controlled plain-text
+inputs: `title`, optional `image` URL/path, `tags`, multiline `socials`, and
+multiline `bio`. Validation and submission remain subsequent review steps.
 
 Form fields:
 

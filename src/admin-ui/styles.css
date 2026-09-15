@@ -231,12 +231,18 @@ th button {
 	display: contents;
 }
 
-.modal-field input {
+.modal-field input,
+.modal-field textarea {
 	width: 100%;
 	min-width: 0;
 	padding: 0.75rem;
 	border: 1px solid #000;
 	font: inherit;
+}
+
+.modal-field textarea {
+	min-height: 6rem;
+	resize: vertical;
 }
 
 .status {

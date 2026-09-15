@@ -5,10 +5,52 @@ type OnboardDJModalProps = {
 	onClose: () => void;
 };
 
+type FormControlProps = {
+	name: string;
+	label: string;
+	value: string;
+	onChange: (value: string) => void;
+	textarea?: boolean;
+};
+
+/** Renders a reusable labeled input or textarea form control. */
+export const FormInput = ({
+	name,
+	label,
+	value,
+	onChange,
+	textarea = false,
+}: FormControlProps) => {
+	const id = `onboard-dj-${name}-input`;
+	return (
+		<div className="modal-field">
+			<label htmlFor={id}>{label}</label>
+			{textarea ? (
+				<textarea
+					id={id}
+					name={name}
+					value={value}
+					onChange={(event) => onChange(event.target.value)}
+				/>
+			) : (
+				<input
+					id={id}
+					name={name}
+					value={value}
+					onChange={(event) => onChange(event.target.value)}
+				/>
+			)}
+		</div>
+	);
+};
+
 /** Provides the reusable overlay and panel shell for DJ onboarding. */
 export const OnboardDJModal = ({ isOpen, onClose }: OnboardDJModalProps) => {
 	const [title, setTitle] = useState("");
 	const [image, setImage] = useState("");
+	const [tags, setTags] = useState("");
+	const [socials, setSocials] = useState("");
+	const [bio, setBio] = useState("");
 
 	if (!isOpen) return null;
 
@@ -27,24 +69,33 @@ export const OnboardDJModal = ({ isOpen, onClose }: OnboardDJModalProps) => {
 					</button>
 				</div>
 				<div className="modal-form">
-					<div className="modal-field">
-						<label htmlFor="onboard-dj-title-input">title</label>
-						<input
-							id="onboard-dj-title-input"
-							name="title"
-							value={title}
-							onChange={(event) => setTitle(event.target.value)}
-						/>
-					</div>
-					<div className="modal-field">
-						<label htmlFor="onboard-dj-image-input">image</label>
-						<input
-							id="onboard-dj-image-input"
-							name="image"
-							value={image}
-							onChange={(event) => setImage(event.target.value)}
-						/>
-					</div>
+					<FormInput
+						name="title"
+						label="title"
+						value={title}
+						onChange={setTitle}
+					/>
+					<FormInput
+						name="image"
+						label="image"
+						value={image}
+						onChange={setImage}
+					/>
+					<FormInput name="tags" label="tags" value={tags} onChange={setTags} />
+					<FormInput
+						name="socials"
+						label="socials"
+						value={socials}
+						onChange={setSocials}
+						textarea
+					/>
+					<FormInput
+						name="bio"
+						label="bio"
+						value={bio}
+						onChange={setBio}
+						textarea
+					/>
 				</div>
 			</div>
 		</div>
