@@ -165,7 +165,7 @@ th button {
 .view-switcher button,
 .add-dj-button {
 	border-radius: 0;
-	background: #fff;
+	background: transparent;
 }
 
 .view-switcher button {
@@ -174,10 +174,12 @@ th button {
 
 .view-switcher .selected {
 	font-weight: 700;
+	background: #fff;
 }
 
 .add-dj-button {
 	font-weight: 700;
+	background: #fff;
 }
 
 .status {
@@ -211,7 +213,7 @@ th,
 td {
 	min-width: 9rem;
 	padding: 1.25rem;
-	border: 1px solid #000;
+	border: 0;
 	text-align: center;
 	vertical-align: top;
 }
@@ -220,6 +222,19 @@ th {
 	color: #111;
 	font-size: 0.875rem;
 	font-weight: 400;
+}
+
+th + th,
+td + td {
+	border-left: 1px solid #000;
+}
+
+tbody tr + tr > td {
+	border-top: 1px solid #000;
+}
+
+thead tr > th {
+	border-bottom: 3px double #000;
 }
 
 th button.active-sort {
