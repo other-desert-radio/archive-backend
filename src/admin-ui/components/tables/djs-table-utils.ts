@@ -11,9 +11,15 @@ export type DJSortColumn =
 export type SortDirection = "asc" | "desc";
 
 const textFor = (dj: DJsJSON, column: DJSortColumn): string => {
-	if (column === "id") return String(dj.id);
-	if (column === "tags" || column === "shows") return dj[column].join(", ");
-	return dj[column] ?? "";
+	switch (column) {
+		case "id":
+			return String(dj.id);
+		case "tags":
+		case "shows":
+			return dj[column].join(", ");
+		default:
+			return dj[column] ?? "";
+	}
 };
 
 export const getDJSearchValue = (dj: DJsJSON, tags: TagsJSON[]): string => {
