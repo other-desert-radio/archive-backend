@@ -51,6 +51,12 @@ export const ManagementShell = ({
 				</ul>
 			</nav>
 		</aside>
-		<section className="management-content">{children}</section>
+		<section
+			className={`management-content${
+				activeResource === "djs" ? " dj-management-content" : ""
+			}`}
+		>
+			{children}
+		</section>
 	</div>
 );

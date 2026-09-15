@@ -39,7 +39,11 @@ export const DJsTable = ({
 								onClick={() => onSort(column)}
 							>
 								{label}{" "}
-								{sortColumn === column && sortDirection === "desc" ? "▼" : "▽"}
+								{sortColumn === column
+									? sortDirection === "desc"
+										? "▼"
+										: "▲"
+									: "▽"}
 							</button>
 						</th>
 					))}

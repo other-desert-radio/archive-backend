@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DJsJSON } from "../../json-transformers/index.js";
-import { DatabaseTableView } from "../components/database-table-view.js";
+import { DJToolbar } from "../components/dj-toolbar.js";
 import { DJsTable } from "../components/tables/djs-table.js";
 import {
 	type DJSortColumn,
@@ -51,40 +51,30 @@ export const DJsPage = () => {
 	};
 
 	return (
-		<DatabaseTableView
-			title="DJs"
-			isLoading={isLoading}
-			error={error}
-			onRetry={refreshDJs}
-			isEmpty={djs.length === 0}
-			emptyMessage="No DJs have been added yet."
-			showHeading={false}
-		>
-			<div className="dj-toolbar">
-				<input
-					aria-label="Search DJs"
-					placeholder="search..."
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
-				/>
-				<fieldset className="view-switcher">
-					<button type="button" disabled>
-						grid
+		<div className="dj-page">
+			{isLoading && <p className="status">Loading DJs…</p>}
+			{error !== undefined && (
+				<div className="message error" role="alert">
+					<p>The DJs could not be loaded.</p>
+					<button type="button" onClick={refreshDJs}>
+						Try again
 					</button>
-					<button type="button" className="selected" aria-pressed="true">
-						table
-					</button>
-				</fieldset>
-				<button type="button" className="add-dj-button">
-					+ DJ
-				</button>
-			</div>
-			<DJsTable
-				djs={visibleDJs}
-				sortColumn={sortColumn}
-				sortDirection={sortDirection}
-				onSort={handleSort}
-			/>
-		</DatabaseTableView>
+				</div>
+			)}
+			{!isLoading && error === undefined && djs.length === 0 && (
+				<p className="status">No DJs have been added yet.</p>
+			)}
+			{!isLoading && error === undefined && djs.length > 0 && (
+				<>
+					<DJToolbar query={query} onQueryChange={setQuery} />
+					<DJsTable
+						djs={visibleDJs}
+						sortColumn={sortColumn}
+						sortDirection={sortDirection}
+						onSort={handleSort}
+					/>
+				</>
+			)}
+		</div>
 	);
 };
