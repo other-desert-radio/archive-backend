@@ -218,6 +218,25 @@ th button {
 	font: inherit;
 }
 
+.modal-form {
+	display: grid;
+	grid-template-columns: 7rem 1fr;
+	gap: 1.5rem 1rem;
+	align-items: center;
+	margin-top: 3rem;
+}
+
+.modal-field {
+	display: contents;
+}
+
+.modal-field input {
+	width: 100%;
+	padding: 0.75rem;
+	border: 1px solid #000;
+	font: inherit;
+}
+
 .status {
 	color: #52606d;
 }

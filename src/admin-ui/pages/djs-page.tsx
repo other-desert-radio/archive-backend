@@ -66,27 +66,27 @@ export const DJsPage = () => {
 			{!isLoading && error === undefined && djs.length === 0 && (
 				<p className="status">No DJs have been added yet.</p>
 			)}
-		{!isLoading && error === undefined && (
-			<>
-				<DJToolbar
-					query={query}
-					onQueryChange={setQuery}
-					onAddDJ={() => setIsModalOpen(true)}
-				/>
-				{djs.length > 0 && (
-					<DJsTable
-						djs={visibleDJs}
-						sortColumn={sortColumn}
-						sortDirection={sortDirection}
-						onSort={handleSort}
+			{!isLoading && error === undefined && (
+				<>
+					<DJToolbar
+						query={query}
+						onQueryChange={setQuery}
+						onAddDJ={() => setIsModalOpen(true)}
 					/>
-				)}
-			</>
-		)}
-		<OnboardDJModal
-			isOpen={isModalOpen}
-			onClose={() => setIsModalOpen(false)}
-		/>
+					{djs.length > 0 && (
+						<DJsTable
+							djs={visibleDJs}
+							sortColumn={sortColumn}
+							sortDirection={sortDirection}
+							onSort={handleSort}
+						/>
+					)}
+				</>
+			)}
+			<OnboardDJModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+			/>
 		</div>
 	);
 };

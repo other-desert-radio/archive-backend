@@ -261,8 +261,8 @@ Checklist:
 - [x] Open the modal from `+ DJ`.
 - [x] Render a backdrop beginning below the fixed top bar; never dim the top
       bar.
-- [x] Render the centered white modal shell and close control; fields and
-      submit controls remain for later steps.
+- [x] Render the centered white modal shell and close control; fields and submit
+      controls remain for later steps.
 - [ ] Add required title and bio validation.
 - [ ] Add optional image/path and socials fields.
 - [ ] Leave tags as plain text until the later tags-component slice.
@@ -276,8 +276,9 @@ Checklist:
 - [x] Run the admin build and stop for visual review.
 
 The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
-`+ DJ` button. This first step includes only the overlay, white panel, title,
-and close control; add fields one at a time in subsequent review steps.
+`+ DJ` button. The first two form fields are controlled plain-text `title` and
+optional `image` URL/path inputs; add remaining fields one at a time in
+subsequent review steps.
 
 Form fields:
 
