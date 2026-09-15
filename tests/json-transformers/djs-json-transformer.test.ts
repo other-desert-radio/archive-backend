@@ -6,7 +6,15 @@ describe("DJ JSON transformer", () => {
 	test("combines direct and show-derived tags", () => {
 		expect(
 			transformDJs({
-				djs: [{ id: 1, title: "DJ One", bio: "Bio", image: null }],
+				djs: [
+					{
+						id: 1,
+						title: "DJ One",
+						bio: "<p>Bio</p><script>alert(1)</script>",
+						image: null,
+						socials: "<strong>@dj-one</strong><iframe>bad</iframe>",
+					},
+				],
 				showDJs: [
 					{ dj_id: 1, show_id: 10 },
 					{ dj_id: 1, show_id: 11 },
@@ -21,7 +29,8 @@ describe("DJ JSON transformer", () => {
 			{
 				id: 1,
 				title: "DJ One",
-				bio: "Bio",
+				bio: "<p>Bio</p>",
+				socials: "<strong>@dj-one</strong>bad",
 				shows: [10, 11],
 				tags: [20, 21],
 			},

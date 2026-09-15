@@ -1,4 +1,5 @@
 import { logger } from "../../utils/index.js";
+import { sanitizeArchiveHtml } from "../../utils/sanitize-html.js";
 import {
 	groupRelationshipIds,
 	mergeRelationshipIds,
@@ -68,8 +69,11 @@ export const transformDJs = ({
 	return djs.map((dj) => ({
 		id: dj.id,
 		title: dj.title,
-		bio: dj.bio,
+		bio: sanitizeArchiveHtml(dj.bio),
 		...(dj.image === null ? {} : { image: dj.image }),
+		...(dj.socials === null
+			? {}
+			: { socials: sanitizeArchiveHtml(dj.socials) }),
 		shows: showsByDj.get(dj.id) ?? [],
 		tags: tagsByDj.get(dj.id) ?? [],
 	}));

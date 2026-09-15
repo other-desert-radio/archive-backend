@@ -93,6 +93,10 @@ and Upload remain deferred. Archive resources remain read-only.
   background used by the admin UI.
 - `scripts/build-container-watch` runs the containerized API/PostgreSQL stack
   with a host-side Vite build watcher for live admin UI updates.
+- `GET /api/admin/djs` now includes optional `socials`; DJ bio and socials HTML
+  are sanitized to the documented formatting subset. Migration `0010` adds the
+  nullable `djs.socials` column and still requires explicit review before it is
+  applied.
 
 ### Next-agent checklist
 
