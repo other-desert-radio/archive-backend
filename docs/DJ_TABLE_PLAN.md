@@ -201,17 +201,17 @@ Stop for migration and API review before continuing.
 
 Checklist:
 
-- [ ] Add the Figma toolbar layout and preserve the undimmed top bar.
-- [ ] Add the search field with the `search...` placeholder.
-- [ ] Add the disabled `grid | table` segmented control.
-- [ ] Add the `+ DJ` button without implementing modal submission yet.
-- [ ] Render all seven columns in the specified order.
-- [ ] Add client-side filtering and sortable headers with ID descending
+- [x] Add the Figma toolbar layout and preserve the undimmed top bar.
+- [x] Add the search field with the `search...` placeholder.
+- [x] Add the disabled `grid | table` segmented control.
+- [x] Add the `+ DJ` button without implementing modal submission yet.
+- [x] Render all seven columns in the specified order.
+- [x] Add client-side filtering and sortable headers with ID descending
       initially.
-- [ ] Render image paths as text and relationship values as IDs.
-- [ ] Preserve horizontal table scrolling and dense black borders.
-- [ ] Add pure helper tests for filtering and sorting.
-- [ ] Run the admin build and stop for visual review.
+- [x] Render image paths as text and relationship values as IDs.
+- [x] Preserve horizontal table scrolling and dense black borders.
+- [x] Add pure helper tests for filtering and sorting.
+- [x] Run the admin build and stop for visual review.
 
 Keep loading, empty, and error handling. Extend `DatabaseTableView` with an
 optional heading visibility prop so the DJ page can omit the existing large

@@ -97,6 +97,9 @@ and Upload remain deferred. Archive resources remain read-only.
   are sanitized to the documented formatting subset. Migration `0010` adds the
   nullable `djs.socials` column and still requires explicit review before it is
   applied.
+- The DJ view now has the Figma-aligned toolbar, seven-column horizontally
+  scrollable table, client-side search, and sortable headers with ID descending
+  as the initial state.
 
 ### Next-agent checklist
 
