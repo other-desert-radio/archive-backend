@@ -15,7 +15,7 @@ export const tagRoutes =
 				try {
 					const tags = await database
 						.selectFrom("tags")
-						.select(["id", "title", "color"])
+						.select(["id", "createdAt", "title", "color"])
 						.orderBy("id")
 						.execute();
 

@@ -16,7 +16,7 @@ export const djRoutes =
 					const [djs, showDJs, djTags, showTags] = await Promise.all([
 						database
 							.selectFrom("djs")
-							.select(["id", "title", "bio", "image", "socials"])
+							.select(["id", "createdAt", "title", "bio", "image", "socials"])
 							.orderBy("id")
 							.execute(),
 						database
