@@ -13,6 +13,8 @@ type FormControlProps = {
 	textarea?: boolean;
 };
 
+// TODO: Use CreateDJRequest from ../../admin/routes/djs/index.js for the submit payload.
+
 /** Renders a reusable labeled input or textarea form control. */
 export const FormInput = ({
 	name,

@@ -15,15 +15,23 @@ Current repository state:
 - React/Vite frontend under `src/admin-ui/`.
 - Fastify/Kysely/PostgreSQL backend.
 - Authenticated admin API namespace: `/api/admin/*`.
-- Existing read-only endpoints: `GET /api/admin/djs`, `/shows`, and `/tags`.
-- Existing DJ JSON fields: `id`, `title`, `bio`, optional `image`, `shows`, and
-  `tags`.
-- Existing `djs` columns: `id`, `title`, `bio`, nullable `image`.
+- Current resource endpoints: `GET /api/admin/djs`, `/shows`, and `/tags`.
+- Current validation endpoint: `POST /api/admin/validate-tags`.
+- Existing DJ JSON fields: `id`, `title`, `bio`, optional `image`, optional
+  `socials`, `shows`, and `tags`.
+- Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, and nullable
+  `socials`.
 - Existing tag JSON fields: `id`, `title`, and `color`.
-- Current DJ table only renders ID, DJ title, bio, and image.
+- The DJ table renders `id`, `title`, `image`, `tags`, `socials`, `bio`, and
+  `shows` with client-side filtering and sorting.
 
 Follow the repository rule of implementing one small feature at a time, adding
 focused tests and documentation, then stopping for review.
+
+API route structure, authentication boundaries, shared response types, and
+`ts-pattern` request validation are documented in
+[`docs/api-routes.md`](api-routes.md). Read that guide before changing or adding
+an API route.
 
 ## Reuse requirements
 
@@ -327,8 +335,11 @@ admin build.
 
 Checklist:
 
-- [ ] Define and validate `CreateDJRequest`.
-- [ ] Add authenticated `POST /api/admin/djs`.
+- [x] Define and validate `CreateDJRequest` with a `ts-pattern` pattern and
+      `P.infer`.
+- [x] Add the authenticated `POST /api/admin/create-dj` validation scaffold.
+- [ ] Rename the scaffold to the final authenticated `POST /api/admin/djs`
+      endpoint when persistence is implemented.
 - [ ] Convert submitted plain text to escaped safe HTML and sanitize it.
 - [ ] Resolve existing tag titles case-insensitively.
 - [ ] Create missing tags transactionally using the documented color palette.
@@ -338,16 +349,58 @@ Checklist:
 - [ ] Update API, database, and admin documentation.
 - [ ] Run the full relevant verification suite and stop for review.
 
-Add:
+The current DJ route scaffold exposes:
+
+```text
+GET  /api/admin/djs
+POST /api/admin/create-dj   # validates the request, persistence deferred
+POST /api/admin/modify-dj   # placeholder
+POST /api/admin/remove-dj   # placeholder
+```
+
+The final create route must use `/api/admin/djs`, matching the resource
+namespace. Do not add `/dj/create`.
+
+The current admin API also exposes:
+
+```text
+GET  /api/admin                    # authenticated status route
+GET  /api/admin/shows
+GET  /api/admin/tags
+POST /api/admin/validate-tags
+POST /api/admin/modify-tag         # placeholder
+```
+
+All of these routes are authenticated through the top-level admin boundary. The
+route plugin layout and shared `AdminApiReply`/`TypedDatabase` types are defined
+in [`docs/api-routes.md`](api-routes.md).
+
+Final create endpoint:
 
 ```text
 POST /api/admin/djs
 ```
 
-Do not add `/dj/create`; the authenticated admin namespace is the established
-API convention.
-
 Request type:
+
+```ts
+const CreateDJRequestPattern = {
+  title: P.string,
+  image: P.optional(P.string),
+  tags: P.optional(P.array(P.string)),
+  socials: P.optional(P.string),
+  bio: P.string,
+} as const;
+
+type CreateDJRequest = P.infer<typeof CreateDJRequestPattern>;
+```
+
+Keep the pattern and inferred type in `src/admin/routes/djs/types.ts`, export
+the type through `src/admin/routes/djs/index.ts`, and validate request bodies
+with `isMatching` before using them. Use the shared `AdminApiReply` response
+type and return `400` for validation failures.
+
+The inferred request shape is:
 
 ```ts
 type CreateDJRequest = {
@@ -403,6 +456,8 @@ Update documentation in the same implementation chunk as each behavior change:
 - `docs/ADMIN_UI_PLAN.md` for the incremental delivery sequence and current
   status.
 - `docs/README.md` for API behavior and verification commands.
+- `docs/api-routes.md` for route structure, authentication, and typing
+  conventions.
 - This plan remains the handoff document for later agents.
 
 Verification per chunk:
