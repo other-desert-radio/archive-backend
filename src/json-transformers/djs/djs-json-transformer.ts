@@ -4,7 +4,7 @@ import {
 	groupRelationshipIds,
 	mergeRelationshipIds,
 } from "../utils/relationship-ids.js";
-import type { DJsJSON, TransformDJsParams } from "./types.js";
+import type { DJJSON, TransformDJsParams } from "./types.js";
 
 /**
  * Converts DJ rows and relationship rows into the public DJ JSON shape.
@@ -40,7 +40,7 @@ export const transformDJs = ({
 	showDJs,
 	djTags,
 	showTags,
-}: TransformDJsParams): DJsJSON[] => {
+}: TransformDJsParams): DJJSON[] => {
 	logger.verbose("Transforming DJs", {
 		djCount: djs.length,
 		showRelationshipCount: showDJs.length,

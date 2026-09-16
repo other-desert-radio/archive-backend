@@ -1,8 +1,8 @@
-import type { DJsJSON } from "../../../json-transformers/index.js";
+import type { DJJSON } from "../../../json-transformers/index.js";
 import type { DJSortColumn, SortDirection } from "./djs-table-utils.js";
 
 type DJsTableProps = {
-	djs: DJsJSON[];
+	djs: DJJSON[];
 	sortColumn: DJSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: DJSortColumn) => void;

@@ -1,13 +1,13 @@
-import type { DJsJSON } from "../../json-transformers/index.js";
+import type { DJJSON } from "../../json-transformers/index.js";
 
 export const loadDJs = async (
 	fetcher: typeof fetch = fetch,
-): Promise<DJsJSON[]> => {
+): Promise<DJJSON[]> => {
 	const response = await fetcher("/api/admin/djs");
 
 	if (!response.ok) {
 		throw new Error("Unable to load DJs");
 	}
 
-	return (await response.json()) as DJsJSON[];
+	return (await response.json()) as DJJSON[];
 };
