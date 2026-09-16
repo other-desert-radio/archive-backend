@@ -38,6 +38,7 @@
 		"auth": "^1.7.4",
 		"markdownlint-cli2": "^0.23.2",
 		"prettier": "^3.9.6",
+		"ts-pattern": "^5.9.0",
 		"typescript": "latest",
 		"vite": "^8.3.0"
 	}

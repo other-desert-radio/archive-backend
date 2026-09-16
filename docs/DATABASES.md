@@ -15,6 +15,12 @@ Migrations will be run explicitly, one step at a time, rather than automatically
 when the API starts. API startup will continue to check only PostgreSQL
 connectivity.
 
+Archive tables use a `createdAt timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP`
+column. Migration `0011_add_created_at_to_archive_tables` adds it to `djs`,
+`shows`, `tags`, `show_djs`, `show_tags`, and `dj_tags`. Existing rows receive
+the migration time; new rows receive their insertion time from PostgreSQL.
+Better Auth tables have their own independently managed `createdAt` columns.
+
 All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ, show,
 or tag will therefore remove its dependent relationship rows automatically.
 
@@ -57,6 +63,7 @@ not archive resources.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 title       text not null
 bio         text
 image       text
@@ -71,6 +78,7 @@ strong/emphasis text, and basic lists.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 title       text not null
 date        timestamptz
 duration    integer       -- seconds
@@ -85,6 +93,7 @@ information so the exported value is unambiguous.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 title       text not null
 color       text not null
 ```
@@ -104,6 +113,7 @@ participate in multiple shows.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 show_id     integer not null references shows(id)
 dj_id       integer not null references djs(id)
 ```
@@ -124,6 +134,7 @@ Maps genres or labels to shows.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 show_id     integer not null references shows(id)
 tag_id      integer not null references tags(id)
 ```
@@ -137,6 +148,7 @@ broader than the tags on any individual show.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 dj_id       integer not null references djs(id)
 tag_id      integer not null references tags(id)
 ```

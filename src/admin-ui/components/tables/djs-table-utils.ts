@@ -1,4 +1,4 @@
-import type { DJsJSON, TagsJSON } from "../../../json-transformers/index.js";
+import type { DJJSON, TagsJSON } from "../../../json-transformers/index.js";
 
 export type DJSortColumn =
 	| "id"
@@ -10,7 +10,7 @@ export type DJSortColumn =
 	| "shows";
 export type SortDirection = "asc" | "desc";
 
-const textFor = (dj: DJsJSON, column: DJSortColumn): string => {
+const textFor = (dj: DJJSON, column: DJSortColumn): string => {
 	switch (column) {
 		case "id":
 			return String(dj.id);
@@ -22,7 +22,7 @@ const textFor = (dj: DJsJSON, column: DJSortColumn): string => {
 	}
 };
 
-export const getDJSearchValue = (dj: DJsJSON, tags: TagsJSON[]): string => {
+export const getDJSearchValue = (dj: DJJSON, tags: TagsJSON[]): string => {
 	const titles = dj.tags
 		.map((id) => tags.find((tag) => tag.id === id)?.title)
 		.filter((title): title is string => title !== undefined);
@@ -32,7 +32,7 @@ export const getDJSearchValue = (dj: DJsJSON, tags: TagsJSON[]): string => {
 };
 
 /** Returns DJs whose searchable fields or related tag titles match the query. */
-export const filterDJs = (djs: DJsJSON[], query: string, tags: TagsJSON[]) => {
+export const filterDJs = (djs: DJJSON[], query: string, tags: TagsJSON[]) => {
 	const normalizedQuery = query.trim().toLowerCase();
 	return normalizedQuery === ""
 		? djs
@@ -41,10 +41,10 @@ export const filterDJs = (djs: DJsJSON[], query: string, tags: TagsJSON[]) => {
 
 /** Returns a sorted copy of the DJ list, preserving the input array. */
 export const sortDJs = (
-	djs: DJsJSON[],
+	djs: DJJSON[],
 	column: DJSortColumn,
 	direction: SortDirection,
-): DJsJSON[] => {
+): DJJSON[] => {
 	const multiplier = direction === "asc" ? 1 : -1;
 	return [...djs].sort((left, right) => {
 		let comparison: number;

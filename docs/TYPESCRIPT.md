@@ -16,6 +16,25 @@ type ArchiveEntry = {
 };
 ```
 
+## Type explicit route contracts
+
+Add explicit types wherever TypeScript supports them, especially at framework
+boundaries. Fastify routes should declare their request and reply contracts with
+route generics instead of relying on inference alone.
+
+```ts
+app.get<{ Reply: { 200: ArchiveEntry[]; 500: ErrorResponse } }>(
+  "/entries",
+  async (_request, reply) => {
+    try {
+      return entries;
+    } catch {
+      return reply.code(500).send({ error: "Internal Server Error" });
+    }
+  },
+);
+```
+
 ## Prefer switches for finite cases
 
 Use a `switch` statement when branching over a finite union or enum of known

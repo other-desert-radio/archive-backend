@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DJsJSON } from "../../json-transformers/index.js";
+import type { DJJSON } from "../../json-transformers/index.js";
 import { DJToolbar } from "../components/dj-toolbar.js";
 import { OnboardDJModal } from "../components/onboard-dj-modal.js";
 import { DJsTable } from "../components/tables/djs-table.js";
@@ -13,7 +13,7 @@ import { loadDJs } from "../loaders/djs.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 
 export const DJsPage = () => {
-	const [djs, setDJs] = useState<DJsJSON[]>([]);
+	const [djs, setDJs] = useState<DJJSON[]>([]);
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
 	const [sortColumn, setSortColumn] = useState<DJSortColumn>("id");

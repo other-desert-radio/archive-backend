@@ -2,19 +2,26 @@ import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import type { Kysely } from "kysely";
 import type { auth } from "../auth/auth.js";
 import { db as defaultDb } from "../db/db.js";
-import type { Database } from "../db/types.js";
-import {
-	transformDJs,
-	transformShows,
-	transformTags,
-} from "../json-transformers/index.js";
+import { djRoutes } from "./routes/djs/index.js";
+import { showRoutes } from "./routes/shows/index.js";
+import { adminStatusRoutes } from "./routes/status.js";
+import { tagRoutes } from "./routes/tags/index.js";
+import type { ErrorResponse, TypedDatabase } from "./routes/types.js";
+
+export type { TypedDatabase } from "./routes/types.js";
 
 type BetterAuth = typeof auth;
 
-type AdminDatabase = Kysely<Database>;
+type AdminUiRoute = {
+	Params: { "*"?: string };
+	Reply: {
+		200: Buffer;
+		404: ErrorResponse;
+		503: ErrorResponse;
+	};
+};
 
 export type BasicAuthCredentials = {
 	username: string;
@@ -84,92 +91,22 @@ const requireAuthenticatedAdminAccess = (
 	};
 };
 
-const adminApiRoutes = (database: AdminDatabase): FastifyPluginAsync => {
+/**
+ * Registers the authenticated admin API and UI routes.
+ *
+ * The `/api/admin/*` and `/admin/*` routes are protected by the hook below.
+ * Public routes, including `/health`, are registered outside this function.
+ */
+const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 	return async (app) => {
-		app.get("/", async () => ({ status: "admin api boundary ready" }));
-
-		app.get("/djs", async (request, reply) => {
-			try {
-				const [djs, showDJs, djTags, showTags] = await Promise.all([
-					database
-						.selectFrom("djs")
-						.select(["id", "title", "bio", "image", "socials"])
-						.orderBy("id")
-						.execute(),
-					database
-						.selectFrom("show_djs")
-						.select(["dj_id", "show_id"])
-						.orderBy("dj_id")
-						.orderBy("show_id")
-						.execute(),
-					database
-						.selectFrom("dj_tags")
-						.select(["dj_id", "tag_id"])
-						.orderBy("dj_id")
-						.orderBy("tag_id")
-						.execute(),
-					database
-						.selectFrom("show_djs")
-						.innerJoin("show_tags", "show_tags.show_id", "show_djs.show_id")
-						.select(["show_djs.dj_id", "show_tags.tag_id"])
-						.orderBy("show_djs.dj_id")
-						.orderBy("show_tags.tag_id")
-						.execute(),
-				]);
-
-				return transformDJs({ djs, showDJs, djTags, showTags });
-			} catch (error) {
-				request.log.error(error, "Unable to load DJs");
-				return reply.code(500).send({ error: "Internal Server Error" });
-			}
-		});
-
-		app.get("/shows", async (request, reply) => {
-			try {
-				const [shows, showDJs, showTags] = await Promise.all([
-					database
-						.selectFrom("shows")
-						.select(["id", "title", "date", "duration", "image", "url"])
-						.orderBy("id")
-						.execute(),
-					database
-						.selectFrom("show_djs")
-						.select(["show_id", "dj_id"])
-						.orderBy("show_id")
-						.orderBy("dj_id")
-						.execute(),
-					database
-						.selectFrom("show_tags")
-						.select(["show_id", "tag_id"])
-						.orderBy("show_id")
-						.orderBy("tag_id")
-						.execute(),
-				]);
-
-				return transformShows({ shows, showDJs, showTags });
-			} catch (error) {
-				request.log.error(error, "Unable to load shows");
-				return reply.code(500).send({ error: "Internal Server Error" });
-			}
-		});
-
-		app.get("/tags", async (request, reply) => {
-			try {
-				const tags = await database
-					.selectFrom("tags")
-					.select(["id", "title", "color"])
-					.orderBy("id")
-					.execute();
-
-				return transformTags({ tags });
-			} catch (error) {
-				request.log.error(error, "Unable to load tags");
-				return reply.code(500).send({ error: "Internal Server Error" });
-			}
-		});
+		await app.register(adminStatusRoutes);
+		await app.register(djRoutes(database));
+		await app.register(showRoutes(database));
+		await app.register(tagRoutes(database));
 	};
 };
 
+/** Registers authenticated admin UI asset routes. */
 const adminUiRoutes: FastifyPluginAsync = async (app) => {
 	const adminUiRoot = resolve(process.cwd(), "dist/admin");
 
@@ -199,8 +136,8 @@ const adminUiRoutes: FastifyPluginAsync = async (app) => {
 		}
 	};
 
-	app.get("/", serveAdminFile);
-	app.get("/*", serveAdminFile);
+	app.get<AdminUiRoute>("/", serveAdminFile);
+	app.get<AdminUiRoute>("/*", serveAdminFile);
 };
 
 const contentTypeFor = (filePath: string): string => {
@@ -217,9 +154,16 @@ const contentTypeFor = (filePath: string): string => {
 			return "text/html";
 	}
 };
+/**
+ * Registers the authenticated admin boundary.
+ *
+ * Both `/api/admin/*` and `/admin/*` require an admin session or configured
+ * temporary Basic Auth credentials. This function does not register public
+ * routes; `/health` is registered separately in the application.
+ */
 export const adminRoutes = (
 	auth: BetterAuth,
-	database: AdminDatabase = defaultDb,
+	database: TypedDatabase = defaultDb,
 	credentials: BasicAuthCredentials = defaultBasicAuthCredentials,
 ): FastifyPluginAsync => {
 	return async (app) => {

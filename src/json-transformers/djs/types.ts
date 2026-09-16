@@ -6,7 +6,7 @@ import type {
 	ShowTagsTable,
 } from "../../db/types.js";
 
-export type DJsJSON = {
+export type DJJSON = {
 	id: number;
 	title: string;
 	bio: string;
