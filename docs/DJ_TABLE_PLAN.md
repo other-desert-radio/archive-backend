@@ -377,9 +377,13 @@ Checklist:
 - [x] Add the authenticated `POST /api/admin/create-dj` validation scaffold.
 - [x] Add focused route tests for the scaffold's valid and invalid request
       paths, including its authenticated admin boundary.
+- [x] Add a pure request-normalization helper that trims text and removes empty
+      tag entries.
+- [x] Add a pure plain-text-to-safe-HTML helper for bio and socials content.
 - [ ] Implement persistence behind the authenticated `POST /api/admin/create-dj`
       endpoint.
-- [ ] Convert submitted plain text to escaped safe HTML and sanitize it.
+- [x] Add plain-text escaping, line-break/indentation preservation, and archive
+      HTML sanitization helpers; wire them into persistence later.
 - [ ] Resolve existing tag titles case-insensitively.
 - [ ] Create missing tags transactionally using the documented color palette.
 - [ ] Insert the DJ and direct `dj_tags` rows in the same transaction.
