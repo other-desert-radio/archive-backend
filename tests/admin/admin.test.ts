@@ -426,22 +426,48 @@ describe("admin route boundary", () => {
 		await app.close();
 	});
 
-	test("validates a DJ creation request without persisting it", async () => {
+	test("creates a DJ without tags", async () => {
+		const createDatabase = {
+			transaction: () => ({
+				execute: async (callback: (transaction: never) => Promise<unknown>) =>
+					callback({
+						selectFrom: () => ({
+							select: () => ({ execute: async () => [] }),
+						}),
+						insertInto: () => {
+							const builder = {
+								values: () => builder,
+								returning: () => builder,
+								executeTakeFirstOrThrow: async () => ({ id: 42 }),
+								execute: async () => [],
+							};
+							return builder;
+						},
+					} as never),
+			}),
+		} as never;
 		const app = Fastify({ logger: false });
-		await app.register(adminRoutes(adminSession, testDatabase));
+		await app.register(adminRoutes(adminSession, createDatabase));
 
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/admin/create-dj",
 			payload: {
-				title: "DJ New",
-				bio: "Bio",
-				tags: ["dance"],
+				title: " DJ New ",
+				bio: "First line\nSecond line",
+				socials: " @dj-new ",
 			},
 		});
 
-		expect(response.statusCode).toBe(200);
-		expect(response.body).toBe("");
+		expect(response.statusCode).toBe(201);
+		expect(response.json()).toEqual({
+			id: 42,
+			title: "DJ New",
+			bio: "<p>First line<br />Second line</p>",
+			socials: "<p>@dj-new</p>",
+			shows: [],
+			tags: [],
+		});
 
 		await app.close();
 	});

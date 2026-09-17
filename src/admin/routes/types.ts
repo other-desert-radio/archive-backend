@@ -9,6 +9,7 @@ export type ErrorResponse = {
 
 export type AdminApiReply<T> = {
 	200: T;
+	201: T;
 	400: ErrorResponse;
 	500: ErrorResponse;
 };

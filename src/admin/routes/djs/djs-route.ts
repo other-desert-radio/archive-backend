@@ -2,7 +2,10 @@ import type { FastifyPluginAsync } from "fastify";
 import { isMatching } from "ts-pattern";
 import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
+import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
+import { createTags } from "../tags/tag-service.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
+import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
 import { type CreateDJRequest, CreateDJRequestPattern } from "./types.js";
 
 /** Registers authenticated DJ API routes. */
@@ -48,18 +51,70 @@ export const djRoutes =
 			},
 		);
 
-		app.post<{ Body: CreateDJRequest; Reply: AdminApiReply<unknown> }>(
+		app.post<{ Body: CreateDJRequest; Reply: AdminApiReply<DJJSON> }>(
 			"/create-dj",
 			async (request, reply) => {
 				if (!isMatching(CreateDJRequestPattern, request.body)) {
 					return reply.code(400).send({ error: "Validation error" });
 				}
 
-				// 1. validate body
-				// 2. validate tags -> insert invalid tags into table
-				//    TODO: add new tags field: reviewed? true if created, false if auto generated
-				// 3. insert into DJ table
-				return undefined;
+				try {
+					const normalized = normalizeCreateDJRequest(request.body);
+					const created = await database
+						.transaction()
+						.execute(async (transaction) => {
+							const createdTags = await createTags(
+								transaction,
+								normalized.tags.map((title) => ({ title })),
+							);
+							const tagIds = createdTags.map((tag) => tag.id);
+
+							const insertedDJ = await transaction
+								.insertInto("djs")
+								.values({
+									title: normalized.title,
+									bio: plainTextToSafeHtml(normalized.bio),
+									image: normalized.image,
+									socials:
+										normalized.socials === null
+											? null
+											: plainTextToSafeHtml(normalized.socials),
+								})
+								.returning("id")
+								.executeTakeFirstOrThrow();
+
+							if (tagIds.length > 0) {
+								await transaction
+									.insertInto("dj_tags")
+									.values(
+										tagIds.map((tagId) => ({
+											dj_id: insertedDJ.id,
+											tag_id: tagId,
+										})),
+									)
+									.execute();
+							}
+
+							return {
+								id: insertedDJ.id,
+								title: normalized.title,
+								bio: plainTextToSafeHtml(normalized.bio),
+								...(normalized.image === null
+									? {}
+									: { image: normalized.image }),
+								...(normalized.socials === null
+									? {}
+									: { socials: plainTextToSafeHtml(normalized.socials) }),
+								shows: [],
+								tags: tagIds,
+							};
+						});
+
+					return reply.code(201).send(created);
+				} catch (error) {
+					request.log.error(error, "Unable to create DJ");
+					return reply.code(500).send({ error: "Internal Server Error" });
+				}
 			},
 		);
 

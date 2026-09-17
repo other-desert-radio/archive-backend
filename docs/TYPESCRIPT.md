@@ -16,6 +16,29 @@ type ArchiveEntry = {
 };
 ```
 
+## Use `ts-pattern` for normalized boundary data
+
+Use `ts-pattern` as the runtime source of truth when validating or narrowing a
+typed value after normalization. This keeps the runtime check and the inferred
+branch type together instead of duplicating manual guards:
+
+```ts
+const normalized = {
+  title: input.title.trim(),
+  color: input.color?.trim(),
+};
+
+if (!isMatching({ title: P.string.minLength(1) }, normalized)) {
+  throw new Error("Title is required");
+}
+
+const validInput = normalized;
+```
+
+Use patterns such as `P.string.minLength(1)` for non-empty strings and
+`P.optional(...)` for optional fields. Normalize first when whitespace should be
+treated as empty, then match the normalized value.
+
 ## Type explicit route contracts
 
 Add explicit types wherever TypeScript supports them, especially at framework
@@ -55,3 +78,9 @@ represented as `T | null` in Kysely table types because PostgreSQL returns
 access layer when the rest of the backend does not need to preserve the SQL
 distinction. Non-null database columns should remain non-null in both the schema
 and their TypeScript types.
+
+When a normalized write payload is intentionally shaped for a database insert,
+it may retain `null` for nullable columns so the insert object matches the
+database contract directly. Keep that choice at the database-facing boundary;
+JSON response types should still omit absent optional properties when omission
+is the public contract.

@@ -96,10 +96,13 @@ id          integer primary key
 createdAt   timestamptz not null
 title       text not null
 color       text not null
+reviewed    boolean not null default false
 ```
 
 Tags represent genres or other archive labels. Tag titles should have an
-appropriate uniqueness rule, normally case-insensitive uniqueness.
+appropriate uniqueness rule, normally case-insensitive uniqueness. Tags created
+with an automatically generated color are unreviewed; tags created with an
+explicit color are marked reviewed.
 
 ## Relationship tables
 

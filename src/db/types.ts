@@ -37,6 +37,7 @@ export type TagsTable = {
 	createdAt: Generated<Date>;
 	title: string;
 	color: string;
+	reviewed: boolean;
 };
 
 export type ShowDJsTable = {

@@ -28,7 +28,13 @@ describe("normalizeCreateDJRequest", () => {
 				socials: "\n",
 				bio: "A bio",
 			}),
-		).toEqual({ title: "DJ New", tags: [], bio: "A bio" });
+		).toEqual({
+			title: "DJ New",
+			image: null,
+			tags: [],
+			socials: null,
+			bio: "A bio",
+		});
 	});
 
 	test("preserves duplicate tags for later resolution", () => {
@@ -40,7 +46,9 @@ describe("normalizeCreateDJRequest", () => {
 			}),
 		).toEqual({
 			title: "DJ New",
+			image: null,
 			tags: ["Dance", "dance"],
+			socials: null,
 			bio: "A bio",
 		});
 	});
