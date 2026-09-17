@@ -15,6 +15,12 @@ Migrations will be run explicitly, one step at a time, rather than automatically
 when the API starts. API startup will continue to check only PostgreSQL
 connectivity.
 
+Archive tables use a `createdAt timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP`
+column. Migration `0011_add_created_at_to_archive_tables` adds it to `djs`,
+`shows`, `tags`, `show_djs`, `show_tags`, and `dj_tags`. Existing rows receive
+the migration time; new rows receive their insertion time from PostgreSQL.
+Better Auth tables have their own independently managed `createdAt` columns.
+
 All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ, show,
 or tag will therefore remove its dependent relationship rows automatically.
 
@@ -34,6 +40,13 @@ relational data into three static JSON files for the GitHub-hosted frontend:
 The database is the source of truth. Arrays of IDs belong in the exported JSON
 format, not in the primary entity tables.
 
+## Local dummy data
+
+`bun run db:seed:djs` inserts five standalone DJ records for local development.
+The fixtures intentionally do not create shows, tags, or relationship rows. The
+command only inserts data and does not clear existing records, so rerunning it
+adds another fixture batch.
+
 ## Authentication tables
 
 Better Auth owns its authentication tables separately from archive entities.
@@ -50,18 +63,22 @@ not archive resources.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 title       text not null
 bio         text
 image       text
+socials     text
 ```
 
-`bio` may contain HTML, but HTML must be sanitized before it is exposed to the
-frontend.
+`bio` and `socials` may contain limited HTML. Both are sanitized before they are
+exposed to the frontend; supported formatting is paragraphs, line breaks,
+strong/emphasis text, and basic lists.
 
 ### `shows`
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 title       text not null
 date        timestamptz
 duration    integer       -- seconds
@@ -76,12 +93,16 @@ information so the exported value is unambiguous.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 title       text not null
 color       text not null
+reviewed    boolean not null default false
 ```
 
 Tags represent genres or other archive labels. Tag titles should have an
-appropriate uniqueness rule, normally case-insensitive uniqueness.
+appropriate uniqueness rule, normally case-insensitive uniqueness. Tags created
+with an automatically generated color are unreviewed; tags created with an
+explicit color are marked reviewed.
 
 ## Relationship tables
 
@@ -95,6 +116,7 @@ participate in multiple shows.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 show_id     integer not null references shows(id)
 dj_id       integer not null references djs(id)
 ```
@@ -115,6 +137,7 @@ Maps genres or labels to shows.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 show_id     integer not null references shows(id)
 tag_id      integer not null references tags(id)
 ```
@@ -128,6 +151,7 @@ broader than the tags on any individual show.
 
 ```text
 id          integer primary key
+createdAt   timestamptz not null
 dj_id       integer not null references djs(id)
 tag_id      integer not null references tags(id)
 ```

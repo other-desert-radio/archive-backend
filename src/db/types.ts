@@ -15,13 +15,16 @@ export type Database = {
 
 export type DJsTable = {
 	id: Generated<number>;
+	createdAt: Generated<Date>;
 	title: string;
 	bio: string;
 	image: string | null;
+	socials: string | null;
 };
 
 export type ShowsTable = {
 	id: Generated<number>;
+	createdAt: Generated<Date>;
 	title: string;
 	date: Date;
 	duration: number;
@@ -31,24 +34,29 @@ export type ShowsTable = {
 
 export type TagsTable = {
 	id: Generated<number>;
+	createdAt: Generated<Date>;
 	title: string;
 	color: string;
+	reviewed: boolean;
 };
 
 export type ShowDJsTable = {
 	id: Generated<number>;
+	createdAt: Generated<Date>;
 	show_id: number;
 	dj_id: number;
 };
 
 export type ShowTagsTable = {
 	id: Generated<number>;
+	createdAt: Generated<Date>;
 	show_id: number;
 	tag_id: number;
 };
 
 export type DjTagsTable = {
 	id: Generated<number>;
+	createdAt: Generated<Date>;
 	dj_id: number;
 	tag_id: number;
 };

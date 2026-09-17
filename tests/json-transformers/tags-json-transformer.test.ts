@@ -6,13 +6,13 @@ describe("tag JSON transformer", () => {
 		expect(
 			transformTags({
 				tags: [
-					{ id: 1, title: "Genre", color: "#00ff00" },
-					{ id: 2, title: "Mood", color: "#ff1100" },
+					{ id: 1, title: "Genre", color: "#00ff00", reviewed: true },
+					{ id: 2, title: "Mood", color: "#ff1100", reviewed: false },
 				],
 			}),
 		).toEqual([
-			{ id: 1, title: "Genre", color: "#00ff00" },
-			{ id: 2, title: "Mood", color: "#ff1100" },
+			{ id: 1, title: "Genre", color: "#00ff00", reviewed: true },
+			{ id: 2, title: "Mood", color: "#ff1100", reviewed: false },
 		]);
 	});
 });

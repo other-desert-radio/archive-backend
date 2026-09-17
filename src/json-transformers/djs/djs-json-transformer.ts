@@ -1,9 +1,10 @@
 import { logger } from "../../utils/index.js";
+import { sanitizeArchiveHtml } from "../../utils/sanitize-html.js";
 import {
 	groupRelationshipIds,
 	mergeRelationshipIds,
 } from "../utils/relationship-ids.js";
-import type { DJsJSON, TransformDJsParams } from "./types.js";
+import type { DJJSON, TransformDJsParams } from "./types.js";
 
 /**
  * Converts DJ rows and relationship rows into the public DJ JSON shape.
@@ -39,7 +40,7 @@ export const transformDJs = ({
 	showDJs,
 	djTags,
 	showTags,
-}: TransformDJsParams): DJsJSON[] => {
+}: TransformDJsParams): DJJSON[] => {
 	logger.verbose("Transforming DJs", {
 		djCount: djs.length,
 		showRelationshipCount: showDJs.length,
@@ -68,8 +69,11 @@ export const transformDJs = ({
 	return djs.map((dj) => ({
 		id: dj.id,
 		title: dj.title,
-		bio: dj.bio,
+		bio: sanitizeArchiveHtml(dj.bio),
 		...(dj.image === null ? {} : { image: dj.image }),
+		...(dj.socials === null
+			? {}
+			: { socials: sanitizeArchiveHtml(dj.socials) }),
 		shows: showsByDj.get(dj.id) ?? [],
 		tags: tagsByDj.get(dj.id) ?? [],
 	}));
