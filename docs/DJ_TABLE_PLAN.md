@@ -348,6 +348,10 @@ trimmed incoming spelling. The route is authenticated and returns `400` for a
 body that is not an object containing an array of strings, or `500` for an
 unexpected database failure.
 
+The route now uses the shared `AdminApiReply` response contract, and focused
+admin-boundary tests cover successful validation, invalid request bodies,
+database failures, unauthenticated requests, and non-admin requests.
+
 The onboarding modal now calls this endpoint when the plain-text tags field
 loses focus and displays only the missing-tag helper copy. It does not render
 the Figma tags breakout behavior yet; chip rendering, autocomplete, and other
@@ -420,8 +424,7 @@ POST /api/admin/modify-tag         # placeholder
 and returns the trimmed incoming values split into `valid` and `invalid` based
 on case-insensitive matches against existing database tag titles. It does not
 insert unknown tags, assign colors, or create DJ relationships. The pure
-normalization helper is covered separately; route-level success, invalid-body,
-database-failure, and authentication tests remain part of the API work.
+normalization helper and authenticated route behavior are covered separately.
 
 All of these routes are authenticated through the top-level admin boundary. The
 route plugin layout and shared `AdminApiReply`/`TypedDatabase` types are defined
@@ -517,6 +520,7 @@ Verification per chunk:
 - [ ] Focused Bun tests.
 - [ ] `bun run admin:build`.
 - [ ] `bun run typecheck`.
+- [ ] Run `bun run format` after the chunk and before review.
 - [ ] `bun run lint`.
 - [ ] `git diff --check`.
 - [ ] Visual verification through the authenticated `/admin#djs` page using the

@@ -43,7 +43,8 @@ const testDatabase = {
 			show_djs: [{ dj_id: 1, show_id: 10 }],
 			dj_tags: [{ dj_id: 1, tag_id: 20 }],
 			show_tags: [{ dj_id: 1, tag_id: 21 }],
-		}[table as "djs" | "shows" | "show_djs" | "dj_tags" | "show_tags"];
+			tags: [{ title: "Dance" }, { title: "Techno" }],
+		}[table as "djs" | "shows" | "tags" | "show_djs" | "dj_tags" | "show_tags"];
 		let joined = false;
 
 		type TestQuery = {
@@ -320,6 +321,107 @@ describe("admin route boundary", () => {
 
 		expect(response.statusCode).toBe(500);
 		expect(response.json()).toEqual({ error: "Internal Server Error" });
+
+		await app.close();
+	});
+
+	test("validates tags for an authenticated admin", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, testDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/validate-tags",
+			payload: { tags: [" dance ", "new tag"] },
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.json()).toEqual({
+			valid: ["dance"],
+			invalid: ["new tag"],
+		});
+
+		await app.close();
+	});
+
+	test("rejects an invalid tag-validation body", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, testDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/validate-tags",
+			payload: { tags: "dance" },
+		});
+
+		expect(response.statusCode).toBe(400);
+		expect(response.json()).toEqual({
+			error: "invalid request body, expected array of strings",
+		});
+
+		await app.close();
+	});
+
+	test("returns a server error when tags cannot be loaded", async () => {
+		const failingDatabase = {
+			selectFrom: () => {
+				throw new Error("database unavailable");
+			},
+		} as never;
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, failingDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/validate-tags",
+			payload: { tags: ["dance"] },
+		});
+
+		expect(response.statusCode).toBe(500);
+		expect(response.json()).toEqual({ error: "Internal Server Error" });
+
+		await app.close();
+	});
+
+	test("protects tag validation from unauthenticated users", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(testAuth, testDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/validate-tags",
+			payload: { tags: ["dance"] },
+		});
+
+		expect(response.statusCode).toBe(401);
+		expect(response.json()).toEqual({ error: "Unauthorized" });
+
+		await app.close();
+	});
+
+	test("protects tag validation from non-admin users", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(
+			adminRoutes(
+				{
+					api: {
+						getSession: async () => ({
+							user: { id: "regular-user", role: "user" },
+						}),
+					},
+				} as never,
+				testDatabase,
+			),
+		);
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/validate-tags",
+			payload: { tags: ["dance"] },
+		});
+
+		expect(response.statusCode).toBe(403);
+		expect(response.json()).toEqual({ error: "Forbidden" });
 
 		await app.close();
 	});

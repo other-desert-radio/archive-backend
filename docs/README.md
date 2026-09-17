@@ -122,6 +122,8 @@ running while editing `src/admin-ui/`.
 - Use Kysely for database access and migrations.
 - Seed data should be added with an explicit script and should not run during
   application startup.
+- Run `bun run format` after every small implementation chunk, before handing
+  the chunk off for review.
 - Apply one migration at a time and pause for review before continuing.
 - Keep `.env` local and untracked. Update `.env.example` when required variables
   change.

@@ -2,7 +2,10 @@ import type { FastifyPluginAsync } from "fastify";
 import { isMatching, P } from "ts-pattern";
 import type { TagsJSON } from "../../../json-transformers/index.js";
 import { transformTags } from "../../../json-transformers/index.js";
-import { validateTags } from "../../../utils/validate-tags.js";
+import {
+	type ValidateTagsResult,
+	validateTags,
+} from "../../../utils/validate-tags.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
 
 /** Registers authenticated Tags API routes. */
@@ -29,7 +32,7 @@ export const tagRoutes =
 
 		app.post<{
 			Body: { tags: string[] };
-			Reply: { valid: string[]; invalid: string[] } | { error: string };
+			Reply: AdminApiReply<ValidateTagsResult>;
 		}>("/validate-tags", async (request, reply) => {
 			try {
 				if (!isMatching({ tags: P.array(P.string) }, request.body)) {

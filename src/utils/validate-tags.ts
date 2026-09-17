@@ -3,7 +3,7 @@ type ValidateTagsParams = {
 	existingTags: string[];
 };
 
-type ValidateTagsResult = {
+export type ValidateTagsResult = {
 	valid: string[];
 	invalid: string[];
 };
