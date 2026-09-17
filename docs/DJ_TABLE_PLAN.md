@@ -293,8 +293,8 @@ The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
 `+ DJ` button. All five form fields and a styled Submit button are now present.
 The fields are controlled plain-text inputs: `title`, optional `image` URL/path,
 `tags`, multiline `socials`, and multiline `bio`. Client-side validation now
-requires non-whitespace `title` and `bio`; API submission remains a subsequent
-review step.
+requires non-empty `title` and `bio`; API submission remains a subsequent review
+step.
 
 Form fields:
 
@@ -375,7 +375,7 @@ Checklist:
 - [x] Define and validate `CreateDJRequest` with a `ts-pattern` pattern and
       `P.infer`.
 - [x] Add the authenticated `POST /api/admin/create-dj` validation scaffold.
-- [ ] Add focused route tests for the scaffold's valid and invalid request
+- [x] Add focused route tests for the scaffold's valid and invalid request
       paths, including its authenticated admin boundary.
 - [ ] Implement persistence behind the authenticated `POST /api/admin/create-dj`
       endpoint.
@@ -397,11 +397,11 @@ POST /api/admin/modify-dj   # placeholder
 POST /api/admin/remove-dj   # placeholder
 ```
 
-`POST /api/admin/create-dj` currently validates only the structural request
-shape from `CreateDJRequestPattern`. A valid request returns no created record
-and performs no database writes. Before persistence, bring its request/reply
-generics into the shared route convention (`Body` and `AdminApiReply`) and add
-focused route coverage; the scaffold does not persist data yet.
+`POST /api/admin/create-dj` validates the structural request shape from
+`CreateDJRequestPattern` and rejects empty required or optional string fields. A
+valid request returns no created record and performs no database writes. Its
+request/reply generics use the shared route convention (`Body` and
+`AdminApiReply`), and focused authenticated route coverage is in place.
 
 The create route remains `/api/admin/create-dj` throughout this feature.
 
@@ -440,11 +440,11 @@ Request type:
 
 ```ts
 const CreateDJRequestPattern = {
-  title: P.string,
-  image: P.optional(P.string),
-  tags: P.optional(P.array(P.string)),
-  socials: P.optional(P.string),
-  bio: P.string,
+  title: P.string.minLength(1),
+  image: P.optional(P.string.minLength(1)),
+  tags: P.optional(P.array(P.string.minLength(1))),
+  socials: P.optional(P.string.minLength(1)),
+  bio: P.string.minLength(1),
 } as const;
 
 type CreateDJRequest = P.infer<typeof CreateDJRequestPattern>;
@@ -469,10 +469,9 @@ type CreateDJRequest = {
 
 Validation:
 
-- `title` is required and must contain non-whitespace text.
-- `bio` is required and must contain non-whitespace text.
+- `title` and `bio` are required and must contain at least one character.
 - `image` and `socials` are optional.
-- Tags are optional.
+- Tags are optional, and each tag must contain at least one character.
 - Trim title, image, socials, and tag titles.
 - Remove empty tag titles.
 - Do not add a duplicate-title restriction for DJs because the current schema

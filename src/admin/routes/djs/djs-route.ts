@@ -48,15 +48,15 @@ export const djRoutes =
 			},
 		);
 
-		app.post<{ Request: CreateDJRequest; Reply: AdminApiReply<unknown> }>(
+		app.post<{ Body: CreateDJRequest; Reply: AdminApiReply<unknown> }>(
 			"/create-dj",
 			async (request, reply) => {
 				if (!isMatching(CreateDJRequestPattern, request.body)) {
-					// TODO; make generic
 					return reply.code(400).send({ error: "Validation error" });
 				}
+
 				// 1. validate body
-				// 2. validat tags -> insert invalid tags into table
+				// 2. validate tags -> insert invalid tags into table
 				//    TODO: add new tags field: reviewed? true if created, false if auto generated
 				// 3. insert into DJ table
 				return undefined;

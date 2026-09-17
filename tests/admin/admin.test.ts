@@ -425,4 +425,58 @@ describe("admin route boundary", () => {
 
 		await app.close();
 	});
+
+	test("validates a DJ creation request without persisting it", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, testDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/create-dj",
+			payload: {
+				title: "DJ New",
+				bio: "Bio",
+				tags: ["dance"],
+			},
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.body).toBe("");
+
+		await app.close();
+	});
+
+	test("rejects a structurally invalid DJ creation request", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, testDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/create-dj",
+			payload: { title: "DJ New" },
+		});
+
+		expect(response.statusCode).toBe(400);
+		expect(response.json()).toEqual({ error: "Validation error" });
+
+		await app.close();
+	});
+
+	test("rejects a DJ creation request with empty fields", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, testDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/create-dj",
+			payload: { title: "", bio: "" },
+		});
+
+		expect(response.statusCode).toBe(400);
+		expect(response.json()).toEqual({
+			error: "Validation error",
+		});
+
+		await app.close();
+	});
 });
