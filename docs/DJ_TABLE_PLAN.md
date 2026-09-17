@@ -15,8 +15,11 @@ Current repository state:
 - React/Vite frontend under `src/admin-ui/`.
 - Fastify/Kysely/PostgreSQL backend.
 - Authenticated admin API namespace: `/api/admin/*`.
-- Current resource endpoints: `GET /api/admin/djs`, `/shows`, and `/tags`.
-- Current validation endpoint: `POST /api/admin/validate-tags`.
+- Current read-only resource endpoints: `GET /api/admin/djs`, `/shows`, and
+  `/tags`.
+- Current tag-validation endpoint: `POST /api/admin/validate-tags`.
+- Current DJ creation scaffold: `POST /api/admin/create-dj` validates the
+  request shape but does not persist anything yet.
 - Existing DJ JSON fields: `id`, `title`, `bio`, optional `image`, optional
   `socials`, `shows`, and `tags`.
 - Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, and nullable
@@ -298,6 +301,14 @@ Form fields:
 - `socials`: optional multiline plain-text editor.
 - `bio`: required multiline plain-text editor.
 
+When the `tags` field is blurred, call the authenticated
+`POST /api/admin/validate-tags` endpoint with the comma-separated tag values.
+For now, if one or more submitted tags are missing from the database, show
+only the plain helper copy that those tags will be created after submit. Do not
+add chips, autocomplete, dropdowns, inline completion, or other fancy tags UI
+in this slice. Clear the helper copy when validation finds no missing tags or
+when the field is edited again.
+
 Use plain text for all modal fields while preserving newlines and indentation.
 Keep the field-row, input, textarea, validation-message, and submit-button
 primitives resource-agnostic so Shows and Tags can use the same form system. Do
@@ -325,11 +336,29 @@ verify the Figma layout using the production Vite build.
 
 ### 4. Build the reusable tags component
 
+The backend now provides the tag-validation primitive needed by onboarding:
+`POST /api/admin/validate-tags` accepts `{ tags: string[] }`, loads existing tag
+titles, and returns `{ valid: string[]; invalid: string[] }`. Matching is
+case-insensitive and trims incoming values; the returned values retain the
+trimmed incoming spelling. The route is authenticated and returns `400` for a
+body that is not an object containing an array of strings, or `500` for an
+unexpected database failure.
+
+The first onboarding integration should call this endpoint when the plain-text
+tags field loses focus and display only the missing-tag helper copy. It should
+not render the Figma tags breakout behavior yet; chip rendering, autocomplete,
+and other richer interactions remain deferred.
+
+This endpoint is validation support, not tag persistence. Unknown tags remain
+creation candidates until the final transactional DJ endpoint is implemented.
+
 Implement the controlled tags input after the modal’s initial plain-text form
 has been reviewed. It should support matching existing tags, comma-separated
 input, trimming, case-insensitive deduplication, removable colored chips, and
-unknown-tag helper text. Add pure helper tests and stop for review after the
-admin build.
+unknown-tag helper text. Use the loaded tag metadata for chip colors and the
+validation endpoint when server confirmation is useful; do not create or
+modify tags from the component. Add pure helper tests and stop for review after
+the admin build.
 
 ### 5. Add the create endpoint last
 
@@ -338,6 +367,8 @@ Checklist:
 - [x] Define and validate `CreateDJRequest` with a `ts-pattern` pattern and
       `P.infer`.
 - [x] Add the authenticated `POST /api/admin/create-dj` validation scaffold.
+- [ ] Add focused route tests for the scaffold's valid and invalid request
+      paths, including its authenticated admin boundary.
 - [ ] Rename the scaffold to the final authenticated `POST /api/admin/djs`
       endpoint when persistence is implemented.
 - [ ] Convert submitted plain text to escaped safe HTML and sanitize it.
@@ -358,6 +389,12 @@ POST /api/admin/modify-dj   # placeholder
 POST /api/admin/remove-dj   # placeholder
 ```
 
+`POST /api/admin/create-dj` currently validates only the structural request
+shape from `CreateDJRequestPattern`. A valid request returns no created record
+and performs no database writes. Before persistence, bring its request/reply
+generics into the shared route convention (`Body` and `AdminApiReply`) and add
+focused route coverage; the scaffold is not yet the final create API.
+
 The final create route must use `/api/admin/djs`, matching the resource
 namespace. Do not add `/dj/create`.
 
@@ -370,6 +407,18 @@ GET  /api/admin/tags
 POST /api/admin/validate-tags
 POST /api/admin/modify-tag         # placeholder
 ```
+
+`POST /api/admin/validate-tags` currently accepts:
+
+```json
+{ "tags": ["dance", " New Tag "] }
+```
+
+and returns the trimmed incoming values split into `valid` and `invalid` based
+on case-insensitive matches against existing database tag titles. It does not
+insert unknown tags, assign colors, or create DJ relationships. The pure
+normalization helper is covered separately; route-level success, invalid-body,
+database-failure, and authentication tests remain part of the API work.
 
 All of these routes are authenticated through the top-level admin boundary. The
 route plugin layout and shared `AdminApiReply`/`TypedDatabase` types are defined
