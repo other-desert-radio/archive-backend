@@ -8,20 +8,25 @@ Extend the existing authenticated React/Vite admin UI with:
 - Client-side search and sorting.
 - A reusable tag-input component.
 - A DJ onboarding modal.
-- A final transactional `POST /api/admin/djs` endpoint.
+- A final transactional `POST /api/admin/create-dj` endpoint.
 
 Current repository state:
 
 - React/Vite frontend under `src/admin-ui/`.
 - Fastify/Kysely/PostgreSQL backend.
 - Authenticated admin API namespace: `/api/admin/*`.
-- Current resource endpoints: `GET /api/admin/djs`, `/shows`, and `/tags`.
-- Current validation endpoint: `POST /api/admin/validate-tags`.
+- Current read-only resource endpoints: `GET /api/admin/djs`, `/shows`, and
+  `/tags`.
+- Current tag-validation endpoint: `POST /api/admin/validate-tags`.
+- Current DJ creation endpoint: `POST /api/admin/create-dj` validates,
+  normalizes, and persists the DJ and direct tag relationships transactionally.
+- The onboarding modal calls tag validation on blur and shows plain helper copy
+  for tags missing from the database; richer tag UI remains deferred.
 - Existing DJ JSON fields: `id`, `title`, `bio`, optional `image`, optional
   `socials`, `shows`, and `tags`.
 - Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, and nullable
   `socials`.
-- Existing tag JSON fields: `id`, `title`, and `color`.
+- Existing tag JSON fields: `id`, `title`, `color`, and `reviewed`.
 - The DJ table renders `id`, `title`, `image`, `tags`, `socials`, `bio`, and
   `shows` with client-side filtering and sorting.
 
@@ -90,10 +95,9 @@ Important visual details:
   and yellow `#ffe657`.
 - Unknown tags use a white chip with red border and red text plus gray helper
   text.
-- Tag colors should use a similar bright palette rather than arbitrary colors.
-  Reuse an existing tag’s stored color when available; new tags should use a
-  deterministic color from the documented palette, with `#ff03d1` as the default
-  when no palette selection is available.
+- Reuse an existing tag’s stored color when available. Auto-created tags use a
+  random six-digit hexadecimal color; explicitly colored tags are marked
+  reviewed.
 
 Do not copy generated Tailwind reference code directly. Adapt the design to the
 existing CSS and React component structure. Reuse the existing shell and
@@ -174,8 +178,9 @@ The tags breakout is a behavior diagram, not a separate page to reproduce:
   `when one doesn’t exist:` are explanatory annotations from the design
   document. Do not render those arrows or captions in the production form.
 - Existing tag colors are visual metadata. Reuse the API’s existing `color`
-  field when available; new tags use the agreed bright palette, beginning with
-  the default `#ff03d1` when no palette selection is available.
+  field when available; auto-created tags use random six-digit hexadecimal
+  colors and are marked unreviewed, while explicitly colored tags are marked
+  reviewed.
 
 ## Implementation Sequence
 
@@ -273,21 +278,23 @@ Checklist:
 - [x] Add required title and bio validation.
 - [x] Add optional image/path and socials fields.
 - [x] Leave tags as plain text until the later tags-component slice.
+- [x] Validate comma-separated tags on blur and show plain helper copy for
+      missing tags.
 - [x] Preserve plain-text line breaks and indentation.
 - [ ] Defer B/I controls while keeping editor geometry compatible with them
       later.
 - [ ] Keep image drag/drop path extraction deferred.
-- [ ] Close and refresh the table after a successful callback while preserving
-      search/sort state.
-- [ ] Add modal/form behavior tests or pure state tests.
+- [x] Submit through `POST /api/admin/create-dj`, then close and refresh the
+      table while preserving search/sort state.
+- [x] Add pure modal payload tests for submission field normalization.
 - [x] Run the admin build and stop for visual review.
 
 The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
 `+ DJ` button. All five form fields and a styled Submit button are now present.
 The fields are controlled plain-text inputs: `title`, optional `image` URL/path,
 `tags`, multiline `socials`, and multiline `bio`. Client-side validation now
-requires non-whitespace `title` and `bio`; API submission remains a subsequent
-review step.
+requires non-empty `title` and `bio`; submission uses the authenticated
+`POST /api/admin/create-dj` endpoint and keeps errors inside the modal.
 
 Form fields:
 
@@ -297,6 +304,14 @@ Form fields:
   added later.
 - `socials`: optional multiline plain-text editor.
 - `bio`: required multiline plain-text editor.
+
+When the `tags` field is blurred, call the authenticated
+`POST /api/admin/validate-tags` endpoint with the comma-separated tag values.
+For now, if one or more submitted tags are missing from the database, show only
+the plain helper copy that those tags will be created after submit. Do not add
+chips, autocomplete, dropdowns, inline completion, or other fancy tags UI in
+this slice. Clear the helper copy when validation finds no missing tags or when
+the field is edited again.
 
 Use plain text for all modal fields while preserving newlines and indentation.
 Keep the field-row, input, textarea, validation-message, and submit-button
@@ -325,10 +340,32 @@ verify the Figma layout using the production Vite build.
 
 ### 4. Build the reusable tags component
 
+The backend now provides the tag-validation primitive needed by onboarding:
+`POST /api/admin/validate-tags` accepts `{ tags: string[] }`, loads existing tag
+titles, and returns `{ valid: string[]; invalid: string[] }`. Matching is
+case-insensitive and trims incoming values; the returned values retain the
+trimmed incoming spelling. The route is authenticated and returns `400` for a
+body that is not an object containing an array of strings, or `500` for an
+unexpected database failure.
+
+The route now uses the shared `AdminApiReply` response contract, and focused
+admin-boundary tests cover successful validation, invalid request bodies,
+database failures, unauthenticated requests, and non-admin requests.
+
+The onboarding modal now calls this endpoint when the plain-text tags field
+loses focus and displays only the missing-tag helper copy. It does not render
+the Figma tags breakout behavior yet; chip rendering, autocomplete, and other
+richer interactions remain deferred.
+
+This endpoint is validation support, not tag persistence. Unknown tags remain
+creation candidates until the final transactional DJ endpoint is implemented.
+
 Implement the controlled tags input after the modal’s initial plain-text form
 has been reviewed. It should support matching existing tags, comma-separated
 input, trimming, case-insensitive deduplication, removable colored chips, and
-unknown-tag helper text. Add pure helper tests and stop for review after the
+unknown-tag helper text. Use the loaded tag metadata for chip colors and the
+validation endpoint when server confirmation is useful; do not create or modify
+tags from the component. Add pure helper tests and stop for review after the
 admin build.
 
 ### 5. Add the create endpoint last
@@ -338,28 +375,48 @@ Checklist:
 - [x] Define and validate `CreateDJRequest` with a `ts-pattern` pattern and
       `P.infer`.
 - [x] Add the authenticated `POST /api/admin/create-dj` validation scaffold.
-- [ ] Rename the scaffold to the final authenticated `POST /api/admin/djs`
-      endpoint when persistence is implemented.
-- [ ] Convert submitted plain text to escaped safe HTML and sanitize it.
-- [ ] Resolve existing tag titles case-insensitively.
-- [ ] Create missing tags transactionally using the documented color palette.
-- [ ] Insert the DJ and direct `dj_tags` rows in the same transaction.
-- [ ] Return HTTP `201` with the normalized DJ response.
-- [ ] Add validation, authorization, success, duplicate, and rollback tests.
-- [ ] Update API, database, and admin documentation.
-- [ ] Run the full relevant verification suite and stop for review.
+- [x] Add focused route tests for the scaffold's valid and invalid request
+      paths, including its authenticated admin boundary.
+- [x] Add a pure request-normalization helper that trims text and removes empty
+      tag entries.
+- [x] Add a pure plain-text-to-safe-HTML helper for bio and socials content.
+- [x] Implement transactional persistence behind the authenticated
+      `POST /api/admin/create-dj` endpoint.
+- [x] Add plain-text escaping, line-break/indentation preservation, and archive
+      HTML sanitization helpers and wire them into persistence.
+- [x] Resolve existing tag titles case-insensitively.
+- [x] Create missing tags transactionally using random colors and mark them
+      unreviewed; explicit colors mark tags reviewed.
+- [x] Insert the DJ and direct `dj_tags` rows in the same transaction.
+- [x] Return HTTP `201` with the normalized DJ response.
+- [x] Move tag creation and reuse into shared Tags-module functions used by both
+      tag routes and DJ onboarding.
+- [x] Add the `tags.reviewed` migration; autogenerated colors are unreviewed and
+      explicit colors are reviewed.
+- [x] Add route-level create-tag/create-tags coverage for color and review
+      behavior.
+- [x] Add validation, authorization, success, duplicate, and rollback tests.
+- [x] Update API, database, and admin documentation.
+- [x] Run the full relevant verification suite and stop for review.
 
 The current DJ route scaffold exposes:
 
 ```text
 GET  /api/admin/djs
-POST /api/admin/create-dj   # validates the request, persistence deferred
+POST /api/admin/create-dj   # creates a DJ transactionally
 POST /api/admin/modify-dj   # placeholder
 POST /api/admin/remove-dj   # placeholder
 ```
 
-The final create route must use `/api/admin/djs`, matching the resource
-namespace. Do not add `/dj/create`.
+`POST /api/admin/create-dj` validates the structural request shape from
+`CreateDJRequestPattern`, normalizes the accepted fields, converts bio/socials
+to sanitized archive HTML, resolves or creates tags, inserts the DJ and direct
+relationships in one transaction, and returns the created DJ with HTTP `201`.
+Its request/reply generics use the shared route convention (`Body` and
+`AdminApiReply`). Focused success and validation coverage is in place; tag
+reuse, rollback, and complete response-shape coverage remain to be added.
+
+The create route remains `/api/admin/create-dj` throughout this feature.
 
 The current admin API also exposes:
 
@@ -368,28 +425,41 @@ GET  /api/admin                    # authenticated status route
 GET  /api/admin/shows
 GET  /api/admin/tags
 POST /api/admin/validate-tags
+POST /api/admin/create-tag
+POST /api/admin/create-tags
 POST /api/admin/modify-tag         # placeholder
 ```
+
+`POST /api/admin/validate-tags` currently accepts:
+
+```json
+{ "tags": ["dance", " New Tag "] }
+```
+
+and returns the trimmed incoming values split into `valid` and `invalid` based
+on case-insensitive matches against existing database tag titles. It does not
+insert unknown tags, assign colors, or create DJ relationships. The pure
+normalization helper and authenticated route behavior are covered separately.
 
 All of these routes are authenticated through the top-level admin boundary. The
 route plugin layout and shared `AdminApiReply`/`TypedDatabase` types are defined
 in [`docs/api-routes.md`](api-routes.md).
 
-Final create endpoint:
+Create endpoint:
 
 ```text
-POST /api/admin/djs
+POST /api/admin/create-dj
 ```
 
 Request type:
 
 ```ts
 const CreateDJRequestPattern = {
-  title: P.string,
-  image: P.optional(P.string),
-  tags: P.optional(P.array(P.string)),
-  socials: P.optional(P.string),
-  bio: P.string,
+  title: P.string.minLength(1),
+  image: P.optional(P.string.minLength(1)),
+  tags: P.optional(P.array(P.string.minLength(1))),
+  socials: P.optional(P.string.minLength(1)),
+  bio: P.string.minLength(1),
 } as const;
 
 type CreateDJRequest = P.infer<typeof CreateDJRequestPattern>;
@@ -414,10 +484,9 @@ type CreateDJRequest = {
 
 Validation:
 
-- `title` is required and must contain non-whitespace text.
-- `bio` is required and must contain non-whitespace text.
+- `title` and `bio` are required and must contain at least one character.
 - `image` and `socials` are optional.
-- Tags are optional.
+- Tags are optional, and each tag must contain at least one character.
 - Trim title, image, socials, and tag titles.
 - Remove empty tag titles.
 - Do not add a duplicate-title restriction for DJs because the current schema
@@ -427,8 +496,8 @@ Persistence must occur inside one PostgreSQL transaction:
 
 1. Normalize and resolve submitted tag titles case-insensitively.
 2. Reuse existing tags when present.
-3. Insert missing tags with a deterministic color from the Figma-like palette;
-   use `#ff03d1` as the default starting color.
+3. Insert missing tags with a random six-digit hexadecimal color and
+   `reviewed: false`; explicit colors use `reviewed: true`.
 4. Insert the DJ.
 5. Insert all direct `dj_tags` relationships.
 6. Return the created DJ and relationship IDs.
@@ -465,6 +534,7 @@ Verification per chunk:
 - [ ] Focused Bun tests.
 - [ ] `bun run admin:build`.
 - [ ] `bun run typecheck`.
+- [ ] Run `bun run format` after the chunk and before review.
 - [ ] `bun run lint`.
 - [ ] `git diff --check`.
 - [ ] Visual verification through the authenticated `/admin#djs` page using the

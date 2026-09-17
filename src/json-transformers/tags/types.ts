@@ -5,6 +5,7 @@ export type TagsJSON = {
 	id: number;
 	title: string;
 	color: string;
+	reviewed: boolean;
 };
 
 export type TransformTagsParams = {

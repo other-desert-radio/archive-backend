@@ -46,7 +46,7 @@ Browser
 The UI should not access PostgreSQL directly. The API must enforce
 authentication and authorization independently of the UI.
 
-## Handoff for the next agent
+## Handoff for the next agent (historical snapshot)
 
 As of 2026-09-11, Phases 0–2 are implemented. The latest completed work is
 committed as `4947763` (`finish auth implementation!`). The current runtime
@@ -73,10 +73,11 @@ Markdownlint, and `git diff --check`. The configured auth tests cover sign-in
 request validation, no-session lookup, and sign-out without a session; they do
 not yet verify a successful credential sign-in with a seeded account.
 
-As of 2026-09-14, the read-only DJ and Shows resource views are implemented. The
-shared Figma-inspired shell, Shows/DJs hash navigation, loader/page/component
-directory structure, and `DatabaseTableView` wrapper are also implemented. Tags
-and Upload remain deferred. Archive resources remain read-only.
+As of 2026-09-14, the DJ and Shows resource views are implemented. The shared
+Figma-inspired shell, Shows/DJs hash navigation, loader/page/component directory
+structure, and `DatabaseTableView` wrapper are also implemented. The Tags UI and
+Upload remain deferred. DJ onboarding is now the first archive mutation; Shows
+and the Tags UI remain read-only.
 
 ### Current implementation inventory
 
@@ -95,8 +96,8 @@ and Upload remain deferred. Archive resources remain read-only.
   with a host-side Vite build watcher for live admin UI updates.
 - `GET /api/admin/djs` now includes optional `socials`; DJ bio and socials HTML
   are sanitized to the documented formatting subset. Migration `0010` adds the
-  nullable `djs.socials` column and still requires explicit review before it is
-  applied.
+  nullable `djs.socials` column, and migration `0012` adds the non-null
+  `tags.reviewed` column.
 - The DJ view now has the Figma-aligned toolbar, seven-column horizontally
   scrollable table, client-side search, and sortable headers with ID descending
   as the initial state.
@@ -106,19 +107,38 @@ and Upload remain deferred. Archive resources remain read-only.
 - The DJ page now renders its state, toolbar, and table directly. Its table
   scroll area keeps leading padding but extends to the right edge of the view;
   Shows and Tags still use `DatabaseTableView`.
-- The modal shell and plain-text field/validation slice is complete. The next UI
-  slice is the reusable tags component; API submission remains deferred.
+- The modal shell, plain-text field/validation slice, and API submission are
+  complete. The next UI slice is the reusable tags component.
+
+### Current status (2026-09-17)
+
+The DJ onboarding slice has progressed beyond the earlier read-only handoff:
+
+- `POST /api/admin/create-dj` now persists the DJ, direct `dj_tags` rows, and
+  missing tags transactionally, then returns `201`.
+- `POST /api/admin/create-tag` and `POST /api/admin/create-tags` use the shared
+  Tags-module service. Automatically colored tags are unreviewed; explicit
+  colors are reviewed. `tags.reviewed` is provided by migration `0012`.
+- The onboarding modal submits normalized plain-text fields, calls
+  `POST /api/admin/validate-tags` when the tags field is left, and only shows
+  helper copy for tags missing from the database. Chips, autocomplete, and other
+  richer tag UI remain deferred.
+- `DJsPage` refreshes the table after a successful submission while preserving
+  its search and sort state. The authenticated loader and focused frontend,
+  route, service, persistence, and transformer tests are in place.
+
+The next work should be reviewed in small chunks. The reusable tags component
+and any later tag-management UI remain separate from this onboarding behavior.
 
 ### Next-agent checklist
 
 Implement one item at a time and stop for review after each item:
 
-1. Add authenticated `GET /api/admin/tags` using `transformTags`, with focused
-   success and database-error route tests and documentation.
-2. Add `loadTags` under `src/admin-ui/loaders/`, `TagsPage` under
-   `src/admin-ui/pages/`, and `TagsTable` under
-   `src/admin-ui/components/tables/`. Reuse `DatabaseTableView`, `Header`, and
-   `Body`; include loading, empty, and error states plus loader tests.
+1. Review the completed DJ onboarding persistence and tag-creation behavior,
+   including the migration verification and current API documentation.
+2. Add the reusable tags component for chips, matching, and richer interaction
+   only after that review. Keep it separate from the already-working plain
+   helper-copy behavior on tags blur.
 3. [x] Connect the Tags sidebar item to `#tags` and verify Shows, DJs, and Tags
        navigation without adding CRUD behavior.
 4. [x] Add the background asset and replace only the gray background in a

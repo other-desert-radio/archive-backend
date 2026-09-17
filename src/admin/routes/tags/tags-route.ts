@@ -2,8 +2,18 @@ import type { FastifyPluginAsync } from "fastify";
 import { isMatching, P } from "ts-pattern";
 import type { TagsJSON } from "../../../json-transformers/index.js";
 import { transformTags } from "../../../json-transformers/index.js";
-import { validateTags } from "../../../utils/validate-tags.js";
+import {
+	type ValidateTagsResult,
+	validateTags,
+} from "../../../utils/validate-tags.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
+import { type CreatedTag, createTag, createTags } from "./tag-service.js";
+import {
+	type CreateTagRequest,
+	CreateTagRequestPattern,
+	type CreateTagsRequest,
+	CreateTagsRequestPattern,
+} from "./types.js";
 
 /** Registers authenticated Tags API routes. */
 export const tagRoutes =
@@ -15,7 +25,7 @@ export const tagRoutes =
 				try {
 					const tags = await database
 						.selectFrom("tags")
-						.select(["id", "createdAt", "title", "color"])
+						.select(["id", "createdAt", "title", "color", "reviewed"])
 						.orderBy("id")
 						.execute();
 
@@ -29,7 +39,7 @@ export const tagRoutes =
 
 		app.post<{
 			Body: { tags: string[] };
-			Reply: { valid: string[]; invalid: string[] } | { error: string };
+			Reply: AdminApiReply<ValidateTagsResult>;
 		}>("/validate-tags", async (request, reply) => {
 			try {
 				if (!isMatching({ tags: P.array(P.string) }, request.body)) {
@@ -50,6 +60,39 @@ export const tagRoutes =
 				});
 			} catch (error) {
 				request.log.error(error, "Unable to validate tags");
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		});
+
+		// input: { title: string } | { title: string, color: string }
+		app.post<{
+			Body: CreateTagRequest;
+			Reply: AdminApiReply<CreatedTag>;
+		}>("/create-tag", async (request, reply) => {
+			if (!isMatching(CreateTagRequestPattern, request.body)) {
+				return reply.code(400).send({ error: "Validation error" });
+			}
+
+			try {
+				return reply.code(201).send(await createTag(database, request.body));
+			} catch (error) {
+				request.log.error(error, "Unable to create tag");
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		});
+		// input: [{ title: string } | { title: string, color: string }]
+		app.post<{
+			Body: CreateTagsRequest;
+			Reply: AdminApiReply<CreatedTag[]>;
+		}>("/create-tags", async (request, reply) => {
+			if (!isMatching(CreateTagsRequestPattern, request.body)) {
+				return reply.code(400).send({ error: "Validation error" });
+			}
+
+			try {
+				return reply.code(201).send(await createTags(database, request.body));
+			} catch (error) {
+				request.log.error(error, "Unable to create tags");
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
 		});

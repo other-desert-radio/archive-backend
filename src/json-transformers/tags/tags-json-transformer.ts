@@ -19,7 +19,8 @@ import type { TagsJSON, TransformTagsParams } from "./types.js";
  *   {
  *     "id": 21,
  *     "title": "Guest Mix",
- *     "color": "#4dabf7"
+ *     "color": "#4dabf7",
+ *     "reviewed": true
  *   }
  * ]
  * ```
@@ -31,5 +32,6 @@ export const transformTags = ({ tags }: TransformTagsParams): TagsJSON[] => {
 		id: tag.id,
 		title: tag.title,
 		color: tag.color,
+		reviewed: tag.reviewed,
 	}));
 };

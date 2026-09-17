@@ -263,6 +263,13 @@ th button {
 	text-align: center;
 }
 
+.modal-helper {
+	grid-column: 2;
+	margin: -1rem 0 0;
+	color: #555;
+	font-size: 0.875rem;
+}
+
 .status {
 	color: #52606d;
 }

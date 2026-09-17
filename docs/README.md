@@ -12,8 +12,9 @@ They were added one migration at a time for review.
 The seventh migration contains the reviewed Better Auth tables, and the eighth
 migration adds the server-owned admin role. Migration nine renames the tags
 table's name column to title to match the archive field contract. Migration ten
-adds the nullable `djs.socials` field. The first eight migrations have been
-applied locally.
+adds the nullable `djs.socials` field, and migration twelve adds the non-null
+`tags.reviewed` flag. Migrations are applied explicitly, one at a time, after
+review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -60,14 +61,16 @@ session and sign-out coverage is included in the authentication tests.
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing
-bundle returns `503`. `GET /api/admin/djs` is read-only and returns a top-level
-DJ array with `id`, `title`, `bio`, optional `image` and `socials`, `shows`, and
-`tags`; its relationship IDs are derived from the relationship tables. The UI
-now renders the read-only DJ list with loading, empty, and error states. DJ bio
-and socials HTML are sanitized to the documented formatting subset. The
-read-only Shows API is also implemented and returns transformed relationship
-IDs. Keep all archive resources read-only and implement the Shows UI and Tags
-resource in separate reviewable chunks.
+bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
+`id`, `title`, `bio`, optional `image` and `socials`, `shows`, and `tags`; its
+relationship IDs are derived from the relationship tables.
+`POST /api/admin/create-dj` creates DJs transactionally and sanitizes
+bio/socials HTML. Tag creation is centralized in the Tags module and is
+available through `POST /api/admin/create-tag` and
+`POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
+explicitly colored tags are reviewed. The UI renders the DJ list with loading,
+empty, and error states. The read-only Shows API is also implemented and returns
+transformed relationship IDs.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the
@@ -122,6 +125,8 @@ running while editing `src/admin-ui/`.
 - Use Kysely for database access and migrations.
 - Seed data should be added with an explicit script and should not run during
   application startup.
+- Run `bun run format` after every small implementation chunk, before handing
+  the chunk off for review.
 - Apply one migration at a time and pause for review before continuing.
 - Keep `.env` local and untracked. Update `.env.example` when required variables
   change.
