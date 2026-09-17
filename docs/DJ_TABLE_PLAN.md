@@ -8,7 +8,7 @@ Extend the existing authenticated React/Vite admin UI with:
 - Client-side search and sorting.
 - A reusable tag-input component.
 - A DJ onboarding modal.
-- A final transactional `POST /api/admin/djs` endpoint.
+- A final transactional `POST /api/admin/create-dj` endpoint.
 
 Current repository state:
 
@@ -303,11 +303,11 @@ Form fields:
 
 When the `tags` field is blurred, call the authenticated
 `POST /api/admin/validate-tags` endpoint with the comma-separated tag values.
-For now, if one or more submitted tags are missing from the database, show
-only the plain helper copy that those tags will be created after submit. Do not
-add chips, autocomplete, dropdowns, inline completion, or other fancy tags UI
-in this slice. Clear the helper copy when validation finds no missing tags or
-when the field is edited again.
+For now, if one or more submitted tags are missing from the database, show only
+the plain helper copy that those tags will be created after submit. Do not add
+chips, autocomplete, dropdowns, inline completion, or other fancy tags UI in
+this slice. Clear the helper copy when validation finds no missing tags or when
+the field is edited again.
 
 Use plain text for all modal fields while preserving newlines and indentation.
 Keep the field-row, input, textarea, validation-message, and submit-button
@@ -356,9 +356,9 @@ Implement the controlled tags input after the modal’s initial plain-text form
 has been reviewed. It should support matching existing tags, comma-separated
 input, trimming, case-insensitive deduplication, removable colored chips, and
 unknown-tag helper text. Use the loaded tag metadata for chip colors and the
-validation endpoint when server confirmation is useful; do not create or
-modify tags from the component. Add pure helper tests and stop for review after
-the admin build.
+validation endpoint when server confirmation is useful; do not create or modify
+tags from the component. Add pure helper tests and stop for review after the
+admin build.
 
 ### 5. Add the create endpoint last
 
@@ -369,8 +369,8 @@ Checklist:
 - [x] Add the authenticated `POST /api/admin/create-dj` validation scaffold.
 - [ ] Add focused route tests for the scaffold's valid and invalid request
       paths, including its authenticated admin boundary.
-- [ ] Rename the scaffold to the final authenticated `POST /api/admin/djs`
-      endpoint when persistence is implemented.
+- [ ] Implement persistence behind the authenticated
+      `POST /api/admin/create-dj` endpoint.
 - [ ] Convert submitted plain text to escaped safe HTML and sanitize it.
 - [ ] Resolve existing tag titles case-insensitively.
 - [ ] Create missing tags transactionally using the documented color palette.
@@ -393,10 +393,9 @@ POST /api/admin/remove-dj   # placeholder
 shape from `CreateDJRequestPattern`. A valid request returns no created record
 and performs no database writes. Before persistence, bring its request/reply
 generics into the shared route convention (`Body` and `AdminApiReply`) and add
-focused route coverage; the scaffold is not yet the final create API.
+focused route coverage; the scaffold does not persist data yet.
 
-The final create route must use `/api/admin/djs`, matching the resource
-namespace. Do not add `/dj/create`.
+The create route remains `/api/admin/create-dj` throughout this feature.
 
 The current admin API also exposes:
 
@@ -424,10 +423,10 @@ All of these routes are authenticated through the top-level admin boundary. The
 route plugin layout and shared `AdminApiReply`/`TypedDatabase` types are defined
 in [`docs/api-routes.md`](api-routes.md).
 
-Final create endpoint:
+Create endpoint:
 
 ```text
-POST /api/admin/djs
+POST /api/admin/create-dj
 ```
 
 Request type:
