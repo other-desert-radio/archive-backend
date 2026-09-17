@@ -18,8 +18,8 @@ Current repository state:
 - Current read-only resource endpoints: `GET /api/admin/djs`, `/shows`, and
   `/tags`.
 - Current tag-validation endpoint: `POST /api/admin/validate-tags`.
-- Current DJ creation scaffold: `POST /api/admin/create-dj` validates the
-  request shape but does not persist anything yet.
+- Current DJ creation endpoint: `POST /api/admin/create-dj` validates,
+  normalizes, and persists the DJ and direct tag relationships transactionally.
 - The onboarding modal calls tag validation on blur and shows plain helper copy
   for tags missing from the database; richer tag UI remains deferred.
 - Existing DJ JSON fields: `id`, `title`, `bio`, optional `image`, optional
@@ -396,8 +396,8 @@ Checklist:
 - [x] Add route-level create-tag/create-tags coverage for color and review
       behavior.
 - [x] Add validation, authorization, success, duplicate, and rollback tests.
-- [ ] Update API, database, and admin documentation.
-- [ ] Run the full relevant verification suite and stop for review.
+- [x] Update API, database, and admin documentation.
+- [x] Run the full relevant verification suite and stop for review.
 
 The current DJ route scaffold exposes:
 

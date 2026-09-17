@@ -13,7 +13,8 @@ The seventh migration contains the reviewed Better Auth tables, and the eighth
 migration adds the server-owned admin role. Migration nine renames the tags
 table's name column to title to match the archive field contract. Migration ten
 adds the nullable `djs.socials` field, and migration twelve adds the non-null
-`tags.reviewed` flag. The first eight migrations have been applied locally.
+`tags.reviewed` flag. Migrations are applied explicitly, one at a time, after
+review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is

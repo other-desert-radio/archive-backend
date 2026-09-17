@@ -63,6 +63,7 @@ export type ErrorResponse = {
 
 export type AdminApiReply<T> = {
   200: T;
+  201: T;
   400: ErrorResponse;
   500: ErrorResponse;
 };
@@ -81,11 +82,11 @@ runtime source of truth:
 import { P } from "ts-pattern";
 
 export const CreateDJRequestPattern = {
-  title: P.string,
-  image: P.optional(P.string),
-  tags: P.optional(P.array(P.string)),
-  socials: P.optional(P.string),
-  bio: P.string,
+  title: P.string.minLength(1),
+  image: P.optional(P.string.minLength(1)),
+  tags: P.optional(P.array(P.string.minLength(1))),
+  socials: P.optional(P.string.minLength(1)),
+  bio: P.string.minLength(1),
 } as const;
 
 export type CreateDJRequest = P.infer<typeof CreateDJRequestPattern>;
@@ -114,6 +115,22 @@ app.post<{
 Use `400` for invalid client input and `500` for unexpected database or server
 failures. Log unexpected failures with `request.log.error` before returning the
 generic internal-error response.
+
+The current authenticated mutation routes are:
+
+```text
+POST /api/admin/create-dj
+POST /api/admin/create-tag
+POST /api/admin/create-tags
+```
+
+Tag creation accepts `{ title: string }` or `{ title: string, color: string }`
+for `create-tag`, and an array of those objects for `create-tags`. Tag titles
+are trimmed and reused case-insensitively. A color must match
+`/^#[0-9a-fA-F]{6}$/`; omitted colors receive a random six-digit hexadecimal
+color and `reviewed: false`, while explicit colors receive `reviewed: true`. The
+DJ route uses the shared tag service from the Tags module inside its own
+transaction rather than calling a Fastify route handler directly.
 
 ## Database access and tests
 
