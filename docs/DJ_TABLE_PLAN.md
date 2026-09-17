@@ -26,7 +26,7 @@ Current repository state:
   `socials`, `shows`, and `tags`.
 - Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, and nullable
   `socials`.
-- Existing tag JSON fields: `id`, `title`, and `color`.
+- Existing tag JSON fields: `id`, `title`, `color`, and `reviewed`.
 - The DJ table renders `id`, `title`, `image`, `tags`, `socials`, `bio`, and
   `shows` with client-side filtering and sorting.
 
