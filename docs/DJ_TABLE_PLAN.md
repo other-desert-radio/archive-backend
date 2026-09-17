@@ -20,6 +20,8 @@ Current repository state:
 - Current tag-validation endpoint: `POST /api/admin/validate-tags`.
 - Current DJ creation scaffold: `POST /api/admin/create-dj` validates the
   request shape but does not persist anything yet.
+- The onboarding modal calls tag validation on blur and shows plain helper copy
+  for tags missing from the database; richer tag UI remains deferred.
 - Existing DJ JSON fields: `id`, `title`, `bio`, optional `image`, optional
   `socials`, `shows`, and `tags`.
 - Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, and nullable
@@ -276,6 +278,8 @@ Checklist:
 - [x] Add required title and bio validation.
 - [x] Add optional image/path and socials fields.
 - [x] Leave tags as plain text until the later tags-component slice.
+- [x] Validate comma-separated tags on blur and show plain helper copy for
+      missing tags.
 - [x] Preserve plain-text line breaks and indentation.
 - [ ] Defer B/I controls while keeping editor geometry compatible with them
       later.
@@ -344,10 +348,10 @@ trimmed incoming spelling. The route is authenticated and returns `400` for a
 body that is not an object containing an array of strings, or `500` for an
 unexpected database failure.
 
-The first onboarding integration should call this endpoint when the plain-text
-tags field loses focus and display only the missing-tag helper copy. It should
-not render the Figma tags breakout behavior yet; chip rendering, autocomplete,
-and other richer interactions remain deferred.
+The onboarding modal now calls this endpoint when the plain-text tags field
+loses focus and displays only the missing-tag helper copy. It does not render
+the Figma tags breakout behavior yet; chip rendering, autocomplete, and other
+richer interactions remain deferred.
 
 This endpoint is validation support, not tag persistence. Unknown tags remain
 creation candidates until the final transactional DJ endpoint is implemented.
@@ -369,8 +373,8 @@ Checklist:
 - [x] Add the authenticated `POST /api/admin/create-dj` validation scaffold.
 - [ ] Add focused route tests for the scaffold's valid and invalid request
       paths, including its authenticated admin boundary.
-- [ ] Implement persistence behind the authenticated
-      `POST /api/admin/create-dj` endpoint.
+- [ ] Implement persistence behind the authenticated `POST /api/admin/create-dj`
+      endpoint.
 - [ ] Convert submitted plain text to escaped safe HTML and sanitize it.
 - [ ] Resolve existing tag titles case-insensitively.
 - [ ] Create missing tags transactionally using the documented color palette.
