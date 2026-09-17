@@ -9,6 +9,7 @@ import {
 	type SortDirection,
 	sortDJs,
 } from "../components/tables/djs-table-utils.js";
+import { createDJ } from "../loaders/create-dj.js";
 import { loadDJs } from "../loaders/djs.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 
@@ -51,6 +52,10 @@ export const DJsPage = () => {
 		setSortColumn(column);
 		setSortDirection("asc");
 	};
+	const handleCreateDJ = async (request: Parameters<typeof createDJ>[0]) => {
+		await createDJ(request);
+		refreshDJs();
+	};
 
 	return (
 		<div className="dj-page">
@@ -86,6 +91,7 @@ export const DJsPage = () => {
 			<OnboardDJModal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
+				onSubmit={handleCreateDJ}
 			/>
 		</div>
 	);

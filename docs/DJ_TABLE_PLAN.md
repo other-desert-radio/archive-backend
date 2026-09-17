@@ -284,17 +284,17 @@ Checklist:
 - [ ] Defer B/I controls while keeping editor geometry compatible with them
       later.
 - [ ] Keep image drag/drop path extraction deferred.
-- [ ] Close and refresh the table after a successful callback while preserving
-      search/sort state.
-- [ ] Add modal/form behavior tests or pure state tests.
+- [x] Submit through `POST /api/admin/create-dj`, then close and refresh the
+      table while preserving search/sort state.
+- [x] Add pure modal payload tests for submission field normalization.
 - [x] Run the admin build and stop for visual review.
 
 The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
 `+ DJ` button. All five form fields and a styled Submit button are now present.
 The fields are controlled plain-text inputs: `title`, optional `image` URL/path,
 `tags`, multiline `socials`, and multiline `bio`. Client-side validation now
-requires non-empty `title` and `bio`; API submission remains a subsequent review
-step.
+requires non-empty `title` and `bio`; submission uses the authenticated
+`POST /api/admin/create-dj` endpoint and keeps errors inside the modal.
 
 Form fields:
 
