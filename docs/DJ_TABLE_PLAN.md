@@ -395,7 +395,7 @@ Checklist:
       explicit colors are reviewed.
 - [x] Add route-level create-tag/create-tags coverage for color and review
       behavior.
-- [ ] Add validation, authorization, success, duplicate, and rollback tests.
+- [x] Add validation, authorization, success, duplicate, and rollback tests.
 - [ ] Update API, database, and admin documentation.
 - [ ] Run the full relevant verification suite and stop for review.
 
