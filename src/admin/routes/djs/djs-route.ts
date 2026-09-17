@@ -77,7 +77,7 @@ export const djRoutes =
 									image: normalized.image,
 									socials:
 										normalized.socials === null
-											? null
+											? undefined
 											: plainTextToSafeHtml(normalized.socials),
 								})
 								.returning("id")

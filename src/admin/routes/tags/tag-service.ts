@@ -1,6 +1,7 @@
 import type { Kysely, Selectable, Transaction } from "kysely";
 import { isMatching, P } from "ts-pattern";
 import type { Database, TagsTable } from "../../../db/types.js";
+import { undefinedOrEmpty } from "../../../utils/index.js";
 
 type TagDatabase = Kysely<Database> | Transaction<Database>;
 
@@ -43,7 +44,7 @@ export const createTag = async (
 	}
 
 	const { color, reviewed } = ((inputColor: string | undefined) => {
-		if (inputColor === undefined || inputColor === "") {
+		if (undefinedOrEmpty(inputColor)) {
 			return {
 				color: randomTagColor(),
 				reviewed: false,
@@ -72,7 +73,7 @@ export const createTag = async (
 		.insertInto("tags")
 		.values({
 			title,
-			color,
+			color: color ?? randomTagColor(),
 			reviewed,
 		})
 		.returning(["id", "title", "color", "reviewed"])

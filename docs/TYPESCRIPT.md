@@ -16,6 +16,23 @@ type ArchiveEntry = {
 };
 ```
 
+## Prefer index exports and imports
+
+Export reusable utilities from the nearest `index.ts` barrel and import them
+from that barrel. This keeps module boundaries stable and avoids coupling
+callers to a utility's implementation filename:
+
+```ts
+// src/utils/index.ts
+export * from "./undefined-or-empty.js";
+
+// Any caller
+import { undefinedOrEmpty } from "../utils/index.js";
+```
+
+Use a direct file import only when a module is intentionally private to its
+directory or when the barrel would introduce a circular dependency.
+
 ## Use `ts-pattern` for normalized boundary data
 
 Use `ts-pattern` as the runtime source of truth when validating or narrowing a
@@ -38,6 +55,18 @@ const validInput = normalized;
 Use patterns such as `P.string.minLength(1)` for non-empty strings and
 `P.optional(...)` for optional fields. Normalize first when whitespace should be
 treated as empty, then match the normalized value.
+
+For optional strings that have already been trimmed, use the shared
+`undefinedOrEmpty` helper from `src/utils/index.ts` instead of repeating an
+`undefined`/empty-string check:
+
+```ts
+const image = input.image?.trim();
+const normalizedImage = undefinedOrEmpty(image) ? null : image;
+```
+
+Use the helper consistently for optional text fields such as image, socials, and
+tag colors.
 
 ## Type explicit route contracts
 

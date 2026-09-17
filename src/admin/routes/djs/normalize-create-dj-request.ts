@@ -1,3 +1,4 @@
+import { undefinedOrEmpty } from "../../../utils/index.js";
 import type { CreateDJRequest } from "./types.js";
 
 export type NormalizedCreateDJRequest = {
@@ -26,10 +27,10 @@ export const normalizeCreateDJRequest = (
 
 	return {
 		title: request.title.trim(),
-		image: image === undefined || image === "" ? null : image,
+		image: undefinedOrEmpty(image) ? null : (image ?? null),
 		tags:
 			request.tags?.map((tag) => tag.trim()).filter((tag) => tag !== "") ?? [],
-		socials: socials === undefined || socials === "" ? null : socials,
+		socials: undefinedOrEmpty(socials) ? null : (socials ?? null),
 		bio: request.bio.trim(),
 	};
 };
