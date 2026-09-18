@@ -131,8 +131,8 @@ const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 			limits: {
 				fileSize: MAX_DJ_IMAGE_BYTES,
 				files: 1,
-				fields: 4,
-				parts: 5,
+				fields: 6,
+				parts: 7,
 			},
 		});
 		await app.register(adminStatusRoutes);

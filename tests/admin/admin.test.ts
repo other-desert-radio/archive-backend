@@ -481,6 +481,9 @@ describe("admin route boundary", () => {
 				title: " DJ New ",
 				bio: "First line\nSecond line",
 				socials: " @dj-new ",
+				showTitle: " Late Night Session ",
+				showDescription: " A late-night broadcast ",
+				image: new File(["image bytes"], "dj.png", { type: "image/png" }),
 			})),
 		});
 
@@ -489,7 +492,10 @@ describe("admin route boundary", () => {
 			id: 42,
 			title: "DJ New",
 			bio: "<p>First line<br />Second line</p>",
+			imagePath: "/api/admin/djs/42/image",
 			socials: "<p>@dj-new</p>",
+			showTitle: "Late Night Session",
+			showDescription: "A late-night broadcast",
 			shows: [],
 			tags: [],
 		});
