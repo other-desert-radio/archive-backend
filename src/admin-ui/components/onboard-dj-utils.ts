@@ -1,8 +1,16 @@
-import type { CreateDJRequest } from "../../admin/routes/djs/types.js";
+import { splitCommaSeparated } from "../../utils/index.js";
+
+export type CreateDJForm = {
+	title: string;
+	bio: string;
+	tags?: string[];
+	socials?: string;
+	image?: File;
+};
 
 export type OnboardDJFieldValues = {
 	title: string;
-	image: string;
+	image?: File;
 	tags: string;
 	socials: string;
 	bio: string;
@@ -19,19 +27,15 @@ export type OnboardDJFieldValues = {
  */
 export const buildCreateDJRequest = (
 	fields: OnboardDJFieldValues,
-): CreateDJRequest => {
-	const image = fields.image.trim();
+): CreateDJForm => {
 	const socials = fields.socials.trim();
-	const tags = fields.tags
-		.split(",")
-		.map((tag) => tag.trim())
-		.filter((tag) => tag !== "");
+	const tags = splitCommaSeparated(fields.tags);
 
 	return {
 		title: fields.title.trim(),
 		bio: fields.bio.trim(),
-		...(image === "" ? {} : { image }),
 		...(socials === "" ? {} : { socials }),
 		...(tags.length === 0 ? {} : { tags }),
+		...(fields.image === undefined ? {} : { image: fields.image }),
 	};
 };

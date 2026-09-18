@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import Fastify from "fastify";
 import { adminRoutes } from "../../src/admin/admin.js";
+import {
+	type MultipartTestField,
+	multipartPayload,
+} from "./multipart-test-utils.js";
 
 const adminSession = {
 	api: {
@@ -21,7 +25,8 @@ type DJRow = {
 	id: number;
 	title: string;
 	bio: string;
-	image: string | null;
+	image: Buffer | null;
+	image_filename: string | null;
 	socials: string | null;
 };
 
@@ -102,13 +107,29 @@ const createDJ = async (database: never, payload: unknown) => {
 	const response = await app.inject({
 		method: "POST",
 		url: "/api/admin/create-dj",
-		payload,
+		...(await multipartPayload(payload as Record<string, MultipartTestField>)),
 	});
 	await app.close();
 	return response;
 };
 
 describe("DJ creation persistence", () => {
+	test("persists an uploaded image and returns its image path", async () => {
+		const { database, state } = buildDatabase();
+		const response = await createDJ(database, {
+			title: "DJ Image",
+			bio: "A bio",
+			image: new File(["image bytes"], "portrait.PNG", {
+				type: "image/png",
+			}),
+		});
+
+		expect(response.statusCode).toBe(201);
+		expect(response.json().imagePath).toBe("/api/admin/djs/1/image");
+		expect(state.djs[0]?.image).toEqual(Buffer.from("image bytes"));
+		expect(state.djs[0]?.image_filename).toBe("portrait.png");
+	});
+
 	test("creates a DJ, new tags, and direct relationships", async () => {
 		const { database, state } = buildDatabase();
 		const response = await createDJ(database, {

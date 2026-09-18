@@ -19,6 +19,7 @@
 		"setup-hooks": "./scripts/setup-git-hooks"
 	},
 	"dependencies": {
+		"@fastify/multipart": "^10.1.1",
 		"better-auth": "^1.7.4",
 		"fastify": "latest",
 		"kysely": "latest",

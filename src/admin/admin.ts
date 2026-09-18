@@ -1,10 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
+import multipart from "@fastify/multipart";
 import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { auth } from "../auth/auth.js";
 import { db as defaultDb } from "../db/db.js";
-import { djRoutes } from "./routes/djs/index.js";
+import { clientDescription } from "./logging.js";
+import { djRoutes, MAX_DJ_IMAGE_BYTES } from "./routes/djs/index.js";
 import { showRoutes } from "./routes/shows/index.js";
 import { adminStatusRoutes } from "./routes/status.js";
 import { tagRoutes } from "./routes/tags/index.js";
@@ -99,6 +101,40 @@ const requireAuthenticatedAdminAccess = (
  */
 const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 	return async (app) => {
+		app.addHook("onRequest", async (request) => {
+			request.log.info(
+				{
+					method: request.method,
+					url: request.url,
+					contentType: request.headers["content-type"],
+					contentLength: request.headers["content-length"],
+					accept: request.headers.accept,
+					client: clientDescription(request),
+				},
+				`[Admin API] request received -- method: ${request.method}, url: ${request.url}`,
+			);
+		});
+		app.addHook("onError", async (request, reply, error) => {
+			request.log.error(
+				{
+					err: error,
+					method: request.method,
+					url: request.url,
+					statusCode: error.statusCode ?? reply.statusCode,
+					contentType: request.headers["content-type"],
+					client: clientDescription(request),
+				},
+				"[Admin API] request failed",
+			);
+		});
+		await app.register(multipart, {
+			limits: {
+				fileSize: MAX_DJ_IMAGE_BYTES,
+				files: 1,
+				fields: 4,
+				parts: 5,
+			},
+		});
 		await app.register(adminStatusRoutes);
 		await app.register(djRoutes(database));
 		await app.register(showRoutes(database));

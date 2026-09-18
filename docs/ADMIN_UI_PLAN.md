@@ -239,14 +239,14 @@ These decisions are recorded before application implementation begins.
     "id": 1,
     "title": "name",
     "bio": "safe html",
-    "image": "image_url",
+    "imagePath": "/api/admin/djs/1/image",
     "shows": [1, 2],
     "tags": [3, 4]
   }
 ]
 ```
 
-`image` is omitted when the database value is `NULL`. Show IDs come from
+`imagePath` is omitted when the database image is `NULL`. Show IDs come from
 `show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries and tags
 assigned to the DJ's shows through `show_tags`. Database errors return
 `500 { "error": "Internal Server Error" }`.

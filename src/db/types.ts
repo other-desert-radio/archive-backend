@@ -18,7 +18,8 @@ export type DJsTable = {
 	createdAt: Generated<Date>;
 	title: string;
 	bio: string;
-	image: string | null;
+	image: Buffer | null;
+	image_filename: string | null;
 	socials: string | null;
 };
 

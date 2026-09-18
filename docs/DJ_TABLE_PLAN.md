@@ -22,7 +22,7 @@ Current repository state:
   normalizes, and persists the DJ and direct tag relationships transactionally.
 - The onboarding modal calls tag validation on blur and shows plain helper copy
   for tags missing from the database; richer tag UI remains deferred.
-- Existing DJ JSON fields: `id`, `title`, `bio`, optional `image`, optional
+- Existing DJ JSON fields: `id`, `title`, `bio`, optional `imagePath`, optional
   `socials`, `shows`, and `tags`.
 - Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, and nullable
   `socials`.
@@ -208,7 +208,7 @@ type DJsJSON = {
   id: number;
   title: string;
   bio: string;
-  image?: string;
+  imagePath?: string;
   socials?: string;
   shows: number[];
   tags: number[];
@@ -216,7 +216,7 @@ type DJsJSON = {
 ```
 
 Nullable database values should be omitted from JSON, matching the existing
-`image` behavior.
+`imagePath` behavior.
 
 The first editor stores plain text converted to safe HTML. The server must
 sanitize stored/output HTML using an established sanitizer. Limit formatting to
@@ -276,14 +276,14 @@ Checklist:
       bar.
 - [x] Render the centered white modal shell, close control, and Submit button.
 - [x] Add required title and bio validation.
-- [x] Add optional image/path and socials fields.
+- [x] Add optional image upload and socials fields.
 - [x] Leave tags as plain text until the later tags-component slice.
 - [x] Validate comma-separated tags on blur and show plain helper copy for
       missing tags.
 - [x] Preserve plain-text line breaks and indentation.
 - [ ] Defer B/I controls while keeping editor geometry compatible with them
       later.
-- [ ] Keep image drag/drop path extraction deferred.
+- [x] Add image drag/drop and file-picker selection with client-side validation.
 - [x] Submit through `POST /api/admin/create-dj`, then close and refresh the
       table while preserving search/sort state.
 - [x] Add pure modal payload tests for submission field normalization.
@@ -291,15 +291,16 @@ Checklist:
 
 The reusable modal shell and `OnboardDJModal` are now opened by the DJ table’s
 `+ DJ` button. All five form fields and a styled Submit button are now present.
-The fields are controlled plain-text inputs: `title`, optional `image` URL/path,
-`tags`, multiline `socials`, and multiline `bio`. Client-side validation now
-requires non-empty `title` and `bio`; submission uses the authenticated
+The fields are controlled inputs: `title`, optional `image` file, `tags`,
+multiline `socials`, and multiline `bio`. Client-side validation now requires
+non-empty `title` and `bio`; submission uses the authenticated
 `POST /api/admin/create-dj` endpoint and keeps errors inside the modal.
 
 Form fields:
 
 - `title`: required.
-- `image`: optional URL/path text input.
+- `image`: optional JPEG, PNG, or WebP file up to 10 MiB, selected by drag/drop
+  or the file picker.
 - `tags`: plain-text input for this first modal slice; the reusable component is
   added later.
 - `socials`: optional multiline plain-text editor.
@@ -320,10 +321,12 @@ not add B/I controls in this first editor slice. Convert plain text to escaped
 safe HTML on submit, preserving line breaks and leading indentation. The server
 sanitizes the resulting HTML before persistence.
 
-Image behavior is limited to URL/path text input. Do not implement browser
-drag-and-drop file path extraction; browsers do not expose a reliable full local
-filesystem path. Defer real upload/storage until a separate image-serving or
-upload design exists.
+Image uploads use the browser `File` object and are submitted as multipart form
+data. The browser does not expose a reliable full local filesystem path, so the
+modal stores and submits the file itself. The API preserves the original bytes
+and filename metadata without compression; WebP conversion remains future work.
+If creation fails, the modal displays the HTTP status and the API's validation
+or server error description when one is available.
 
 Modal behavior:
 

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import Fastify from "fastify";
 import { adminRoutes } from "../../src/admin/admin.js";
 import { buildApp } from "../../src/app.js";
+import { multipartPayload } from "./multipart-test-utils.js";
 
 const testAuth = {
 	api: {
@@ -27,6 +28,7 @@ const testDatabase = {
 					title: "DJ One",
 					bio: "<p>Bio</p>",
 					image: null,
+					image_filename: null,
 					socials: "<p>@dj-one</p>",
 				},
 			],
@@ -475,11 +477,11 @@ describe("admin route boundary", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/admin/create-dj",
-			payload: {
+			...(await multipartPayload({
 				title: " DJ New ",
 				bio: "First line\nSecond line",
 				socials: " @dj-new ",
-			},
+			})),
 		});
 
 		expect(response.statusCode).toBe(201);
@@ -502,7 +504,7 @@ describe("admin route boundary", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/admin/create-dj",
-			payload: { title: "DJ New" },
+			...(await multipartPayload({ title: "DJ New" })),
 		});
 
 		expect(response.statusCode).toBe(400);
@@ -518,7 +520,7 @@ describe("admin route boundary", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/admin/create-dj",
-			payload: { title: "", bio: "" },
+			...(await multipartPayload({ title: "", bio: "" })),
 		});
 
 		expect(response.statusCode).toBe(400);

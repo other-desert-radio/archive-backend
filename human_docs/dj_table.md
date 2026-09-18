@@ -52,8 +52,13 @@ box.
 every field in the form lives in a flex box too. name -> input, image -> button.
 those are 2 flex boxes.
 
-image allows for a URL input. if you drag a file into here, it will grab the
-file's path and put that in for image.
+image accepts a JPEG, PNG, or WebP file through drag and drop or the file
+picker. The file itself is submitted to the API; browsers do not expose a
+reliable local filesystem path.
+
+If DJ creation fails, the modal shows the HTTP status and the API's error
+description when one is available, so the problem can be corrected or reported
+with useful context.
 
 ### tags
 

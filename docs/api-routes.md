@@ -132,6 +132,54 @@ color and `reviewed: false`, while explicit colors receive `reviewed: true`. The
 DJ route uses the shared tag service from the Tags module inside its own
 transaction rather than calling a Fastify route handler directly.
 
+`POST /api/admin/create-dj` accepts `multipart/form-data` with required `title`
+and `bio` text fields, optional `tags` and `socials` text fields, and an
+optional `image` file field. Tags are submitted as a comma-separated string.
+JSON requests are no longer accepted by this route. Admin API request logs
+include the request method, URL, content type, content length, and user agent.
+DJ multipart logs include field names and safe file metadata such as filename,
+MIME type, and byte length, but never image bytes or form contents. Application
+events use readable labels such as `[DJ Creation]` and
+`[DJ Creation [image upload]]` and include a shortened browser identifier.
+
+`GET /api/admin/djs/:id/image` returns the stored image bytes for a DJ using the
+authenticated admin boundary. It returns `404 { "error": "Not Found" }` when the
+DJ or image is absent.
+
+The upload validator accepts JPEG, PNG, and WebP MIME types with matching
+filename extensions up to 10 MiB. It stores the original bytes unchanged and
+normalizes only the filename metadata; compression and WebP conversion remain
+future work. MIME types and extensions are client-provided hints rather than a
+security boundary in this initial admin-only workflow.
+
+## Logging new features
+
+Every new backend feature or workflow must emit readable application events at
+the points where work starts, succeeds, is rejected, or fails unexpectedly. Use
+a bracketed feature label followed by the event and its key context in the
+message itself:
+
+```ts
+request.log.info(
+  { recordId: created.id, client: clientDescription(request) },
+  `[Feature Name] record created -- id: ${created.id}, name: ${created.title}`,
+);
+```
+
+Messages must answer “what happened, to what, and where?” without requiring the
+operator to expand the structured metadata. Include relevant IDs, names, URLs,
+field names, status codes, filenames, sizes, and a shortened client identifier
+where applicable. Keep additional machine-readable context in the structured
+object; the server formats it underneath the message in gray text. Use `info`
+for normal lifecycle events, `warn` for rejected input, and `error` with
+`{ err: error }` for unexpected failures before returning a generic server
+error.
+
+Never log passwords, authorization headers, full request bodies, form values,
+image/audio bytes, or other secrets. For uploads, log only safe metadata such as
+the field name, filename, MIME type, and byte length. Add focused tests when
+introducing a new logging formatter or event helper.
+
 ## Database access and tests
 
 Route plugins receive `TypedDatabase` as an argument; they should not import or

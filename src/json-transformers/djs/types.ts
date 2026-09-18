@@ -10,7 +10,7 @@ export type DJJSON = {
 	id: number;
 	title: string;
 	bio: string;
-	image?: string;
+	imagePath?: string;
 	socials?: string;
 	shows: number[];
 	tags: number[];

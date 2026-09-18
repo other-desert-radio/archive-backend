@@ -3,7 +3,7 @@ import type { DJJSON, TagsJSON } from "../../../json-transformers/index.js";
 export type DJSortColumn =
 	| "id"
 	| "title"
-	| "image"
+	| "imagePath"
 	| "tags"
 	| "socials"
 	| "bio"
@@ -26,7 +26,15 @@ export const getDJSearchValue = (dj: DJJSON, tags: TagsJSON[]): string => {
 	const titles = dj.tags
 		.map((id) => tags.find((tag) => tag.id === id)?.title)
 		.filter((title): title is string => title !== undefined);
-	return [dj.id, dj.title, dj.image, dj.socials, dj.bio, ...dj.tags, ...titles]
+	return [
+		dj.id,
+		dj.title,
+		dj.imagePath,
+		dj.socials,
+		dj.bio,
+		...dj.tags,
+		...titles,
+	]
 		.join(" ")
 		.toLowerCase();
 };

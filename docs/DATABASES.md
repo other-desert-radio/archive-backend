@@ -19,7 +19,11 @@ Archive tables use a `createdAt timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP`
 column. Migration `0011_add_created_at_to_archive_tables` adds it to `djs`,
 `shows`, `tags`, `show_djs`, `show_tags`, and `dj_tags`. Existing rows receive
 the migration time; new rows receive their insertion time from PostgreSQL.
-Better Auth tables have their own independently managed `createdAt` columns.
+Migration `0013_replace_dj_image_url_with_binary` replaces the nullable DJ image
+URL with nullable raw image bytes and filename metadata. Existing DJ image URL
+values are intentionally discarded because they are not used by the current
+dataset. Better Auth tables have their own independently managed `createdAt`
+columns.
 
 All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ, show,
 or tag will therefore remove its dependent relationship rows automatically.
@@ -66,13 +70,19 @@ id          integer primary key
 createdAt   timestamptz not null
 title       text not null
 bio         text
-image       text
+image       bytea
+image_filename text
 socials     text
 ```
 
 `bio` and `socials` may contain limited HTML. Both are sanitized before they are
 exposed to the frontend; supported formatting is paragraphs, line breaks,
 strong/emphasis text, and basic lists.
+
+`image` stores the original uploaded file bytes without compression. The
+short-term upload contract accepts JPEG, PNG, and WebP files up to 10 MiB.
+`image_filename` stores sanitized filename metadata, including the normalized
+extension. Future work will convert uploads to WebP before storage.
 
 ### `shows`
 
