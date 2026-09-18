@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
+import multipart from "@fastify/multipart";
 import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { auth } from "../auth/auth.js";
 import { db as defaultDb } from "../db/db.js";
-import { djRoutes } from "./routes/djs/index.js";
+import { djRoutes, MAX_DJ_IMAGE_BYTES } from "./routes/djs/index.js";
 import { showRoutes } from "./routes/shows/index.js";
 import { adminStatusRoutes } from "./routes/status.js";
 import { tagRoutes } from "./routes/tags/index.js";
@@ -99,6 +100,14 @@ const requireAuthenticatedAdminAccess = (
  */
 const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 	return async (app) => {
+		await app.register(multipart, {
+			limits: {
+				fileSize: MAX_DJ_IMAGE_BYTES,
+				files: 1,
+				fields: 4,
+				parts: 5,
+			},
+		});
 		await app.register(adminStatusRoutes);
 		await app.register(djRoutes(database));
 		await app.register(showRoutes(database));

@@ -1,11 +1,11 @@
-import type { AdminApiReply, TypedDatabase } from "../types.js";
-import type { DJJSON } from "../../../json-transformers/index.js";
 import type { FastifyPluginAsync } from "fastify";
-import { createTags } from "../tags/tag-service.js";
 import { isMatching } from "ts-pattern";
-import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
-import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
+import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
+import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
+import { createTags } from "../tags/tag-service.js";
+import type { AdminApiReply, TypedDatabase } from "../types.js";
+import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
 import { type CreateDJRequest, CreateDJRequestPattern } from "./types.js";
 
 /** Registers authenticated DJ API routes. */

@@ -1,6 +1,6 @@
 import { extname } from "node:path";
 
-const MAX_DJ_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_DJ_IMAGE_BYTES = 10 * 1024 * 1024;
 
 type DJImageFormat = {
 	extensions: string[];
