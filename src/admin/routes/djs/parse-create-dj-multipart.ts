@@ -1,4 +1,5 @@
 import type { FastifyRequest } from "fastify";
+import { clientDescription } from "../../logging.js";
 import type { DJImageUpload } from "./validate-dj-image.js";
 
 export type CreateDJMultipartForm = {
@@ -38,8 +39,9 @@ export const parseCreateDJMultipart = async (
 								contentType: part.mimetype,
 							}
 						: {}),
+					client: clientDescription(request),
 				},
-				"DJ multipart field received",
+				`[DJ Creation] multipart field received -- field: ${part.fieldname}, type: ${part.type}`,
 			);
 			if (seenFields.has(part.fieldname)) {
 				if (part.type === "file") await part.toBuffer();
@@ -58,8 +60,9 @@ export const parseCreateDJMultipart = async (
 						filename: part.filename,
 						contentType: part.mimetype,
 						byteLength: bytes.length,
+						client: clientDescription(request),
 					},
-					"DJ multipart file buffered",
+					`[DJ Creation [image upload]] image attached -- field: ${part.fieldname}, filename: ${part.filename}, content type: ${part.mimetype}, bytes: ${bytes.length}`,
 				);
 				if (part.fieldname !== "image") {
 					return {

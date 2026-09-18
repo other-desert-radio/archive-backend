@@ -5,6 +5,7 @@ import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { auth } from "../auth/auth.js";
 import { db as defaultDb } from "../db/db.js";
+import { clientDescription } from "./logging.js";
 import { djRoutes, MAX_DJ_IMAGE_BYTES } from "./routes/djs/index.js";
 import { showRoutes } from "./routes/shows/index.js";
 import { adminStatusRoutes } from "./routes/status.js";
@@ -108,9 +109,9 @@ const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 					contentType: request.headers["content-type"],
 					contentLength: request.headers["content-length"],
 					accept: request.headers.accept,
-					userAgent: request.headers["user-agent"],
+					client: clientDescription(request),
 				},
-				"Admin API request received",
+				`[Admin API] request received -- method: ${request.method}, url: ${request.url}`,
 			);
 		});
 		app.addHook("onError", async (request, reply, error) => {
@@ -121,8 +122,9 @@ const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 					url: request.url,
 					statusCode: error.statusCode ?? reply.statusCode,
 					contentType: request.headers["content-type"],
+					client: clientDescription(request),
 				},
-				"Admin API request failed",
+				"[Admin API] request failed",
 			);
 		});
 		await app.register(multipart, {

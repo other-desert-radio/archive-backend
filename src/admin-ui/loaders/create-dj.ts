@@ -1,3 +1,4 @@
+import { isMatching, P } from "ts-pattern";
 import type { DJJSON } from "../../json-transformers/index.js";
 import type { CreateDJForm } from "../components/onboard-dj-utils.js";
 
@@ -10,7 +11,7 @@ const describeCreateDJFailure = async (response: Response): Promise<string> => {
 
 	try {
 		const body = (await response.json()) as CreateDJErrorResponse;
-		if (typeof body.error === "string" && body.error.trim() !== "") {
+		if (isMatching({ error: P.string.minLength(1) }, body)) {
 			serverError = body.error;
 		}
 	} catch {

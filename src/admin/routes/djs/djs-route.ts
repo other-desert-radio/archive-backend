@@ -4,6 +4,7 @@ import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
 import { splitCommaSeparated } from "../../../utils/index.js";
 import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
+import { clientDescription } from "../../logging.js";
 import { createTags } from "../tags/tag-service.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
@@ -109,7 +110,10 @@ export const djRoutes =
 		app.post<{ Reply: AdminApiReply<DJJSON> }>(
 			"/create-dj",
 			async (request, reply) => {
-				request.log.info("DJ creation request started");
+				request.log.info(
+					{ client: clientDescription(request) },
+					"[DJ Creation] started",
+				);
 				try {
 					const parsed = await parseCreateDJMultipart(request);
 					if (!parsed.valid) {
@@ -213,8 +217,13 @@ export const djRoutes =
 						});
 
 					request.log.info(
-						{ djId: created.id, hasImage: image !== undefined },
-						"DJ created successfully",
+						{
+							djId: created.id,
+							djName: created.title,
+							hasImage: image !== undefined,
+							client: clientDescription(request),
+						},
+						`[DJ Creation] DJ created -- id: ${created.id}, name: ${created.title}`,
 					);
 					return reply.code(201).send(created);
 				} catch (error) {
