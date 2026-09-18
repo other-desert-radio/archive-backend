@@ -45,6 +45,14 @@ const formats: DJImageFormat[] = [
 const formatForContentType = (contentType: string): DJImageFormat | undefined =>
 	formats.find((format) => format.contentType === contentType);
 
+export const contentTypeForDJImageFilename = (
+	filename: string,
+): DJImageFormat["contentType"] | undefined => {
+	const extension = extname(filename).toLowerCase();
+	return formats.find((format) => format.extensions.includes(extension))
+		?.contentType;
+};
+
 const normalizeFilename = (
 	filename: string | undefined,
 	format: DJImageFormat,

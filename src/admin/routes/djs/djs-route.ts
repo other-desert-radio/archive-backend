@@ -8,7 +8,10 @@ import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
 import { parseCreateDJMultipart } from "./parse-create-dj-multipart.js";
 import { CreateDJRequestPattern } from "./types.js";
-import { validateDJImageUpload } from "./validate-dj-image.js";
+import {
+	contentTypeForDJImageFilename,
+	validateDJImageUpload,
+} from "./validate-dj-image.js";
 
 /** Registers authenticated DJ API routes. */
 export const djRoutes =
@@ -60,6 +63,47 @@ export const djRoutes =
 				}
 			},
 		);
+
+		app.get<{
+			Params: { id: string };
+			Reply: AdminApiReply<Buffer>;
+		}>("/djs/:id/image", async (request, reply) => {
+			const id = Number(request.params.id);
+			if (!Number.isSafeInteger(id) || id < 1) {
+				return reply.code(404).send({ error: "Not Found" });
+			}
+
+			try {
+				const dj = await database
+					.selectFrom("djs")
+					.select(["image", "image_filename"])
+					.where("id", "=", id)
+					.executeTakeFirst();
+
+				if (
+					dj?.image === null ||
+					dj?.image_filename === null ||
+					dj === undefined
+				) {
+					return reply.code(404).send({ error: "Not Found" });
+				}
+
+				const contentType = contentTypeForDJImageFilename(dj.image_filename);
+				if (contentType === undefined) {
+					request.log.error(
+						{ djId: id, filename: dj.image_filename },
+						"DJ image has an unsupported filename extension",
+					);
+					return reply.code(500).send({ error: "Internal Server Error" });
+				}
+
+				reply.type(contentType);
+				return reply.code(200).send(dj.image);
+			} catch (error) {
+				request.log.error(error, "Unable to load DJ image");
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		});
 
 		app.post<{ Reply: AdminApiReply<DJJSON> }>(
 			"/create-dj",

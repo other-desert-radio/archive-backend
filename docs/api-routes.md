@@ -137,6 +137,10 @@ and `bio` text fields, optional `tags` and `socials` text fields, and an
 optional `image` file field. Tags are submitted as a comma-separated string.
 JSON requests are no longer accepted by this route.
 
+`GET /api/admin/djs/:id/image` returns the stored image bytes for a DJ using the
+authenticated admin boundary. It returns `404 { "error": "Not Found" }` when the
+DJ or image is absent.
+
 The upload validator accepts JPEG, PNG, and WebP MIME types with matching
 filename extensions up to 10 MiB. It stores the original bytes unchanged and
 normalizes only the filename metadata; compression and WebP conversion remain
