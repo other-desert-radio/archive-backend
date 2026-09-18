@@ -31,14 +31,12 @@ export const normalizeCreateDJRequest = (
 
 	return {
 		title: request.title.trim(),
-		image: undefinedOrEmpty(image) ? null : (image ?? null),
+		image: undefinedOrEmpty(image) ? null : image,
 		tags:
 			request.tags?.map((tag) => tag.trim()).filter((tag) => tag !== "") ?? [],
-		socials: undefinedOrEmpty(socials) ? null : (socials ?? null),
-		showTitle: undefinedOrEmpty(showTitle) ? null : (showTitle ?? null),
-		showDescription: undefinedOrEmpty(showDescription)
-			? null
-			: (showDescription ?? null),
+		socials: undefinedOrEmpty(socials) ? null : socials,
+		showTitle: undefinedOrEmpty(showTitle) ? null : showTitle,
+		showDescription: undefinedOrEmpty(showDescription) ? null : showDescription,
 		bio: request.bio.trim(),
 	};
 };
