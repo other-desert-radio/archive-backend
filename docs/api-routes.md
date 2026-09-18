@@ -136,6 +136,12 @@ The DJ image URL field is no longer persisted. Until the multipart upload route
 is implemented, JSON `create-dj` requests that include `image` receive a `400`
 response explaining that image uploads require `multipart/form-data`.
 
+The upload validator accepts JPEG, PNG, and WebP MIME types with matching
+filename extensions up to 10 MiB. It stores the original bytes unchanged and
+normalizes only the filename metadata; compression and WebP conversion remain
+future work. MIME types and extensions are client-provided hints rather than a
+security boundary in this initial admin-only workflow.
+
 ## Database access and tests
 
 Route plugins receive `TypedDatabase` as an argument; they should not import or
