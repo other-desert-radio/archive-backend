@@ -20,6 +20,16 @@ const columns: Array<[DJSortColumn, string]> = [
 	["bio", "bio"],
 	["shows", "shows"],
 ];
+
+type SanitizedHTMLProps = {
+	html: string;
+};
+
+const SanitizedHTML = ({ html }: SanitizedHTMLProps) => (
+	// biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is sanitized by the authenticated API before rendering.
+	<span dangerouslySetInnerHTML={{ __html: html }} />
+);
+
 const formatIDs = (ids: number[]) =>
 	ids.length === 0 ? <span className="muted">None</span> : ids.join(", ");
 const formatDate = (value: string) => {
@@ -66,9 +76,15 @@ export const DJsTable = ({
 						<td>{dj.showDescription ?? <span className="muted">None</span>}</td>
 						<td>{dj.imagePath ?? <span className="muted">None</span>}</td>
 						<td>{formatIDs(dj.tags)}</td>
-						<td>{dj.socials ?? <span className="muted">None</span>}</td>
 						<td>
-							<div className="dj-bio">{dj.bio}</div>
+							{dj.socials === undefined ? (
+								<span className="muted">None</span>
+							) : (
+								<SanitizedHTML html={dj.socials} />
+							)}
+						</td>
+						<td>
+							<SanitizedHTML html={dj.bio} />
 						</td>
 						<td>{formatIDs(dj.shows)}</td>
 					</tr>

@@ -40,6 +40,7 @@ a {
 	color: #fff;
 	background: #000;
 	font-size: 1rem;
+  font-weight: bold;
 }
 
 .management-sidebar {
@@ -332,7 +333,7 @@ table {
 	width: max-content;
 	min-width: 100%;
 	border-collapse: collapse;
-	background: #fff;
+	background: transparent;
 }
 
 th,
@@ -362,8 +363,20 @@ tbody tr + tr > td {
 	border-top: 1px solid #000;
 }
 
+tbody tr {
+	background: rgb(255 255 255 / 30%);
+}
+
+tbody tr:hover {
+	background: rgb(255 255 255 / 80%);
+}
+
 thead tr > th {
 	border-bottom: 3px double #000;
+}
+
+thead tr {
+	background: #fff;
 }
 
 th button.active-sort {
@@ -372,13 +385,6 @@ th button.active-sort {
 
 .muted {
 	color: #555;
-}
-
-.dj-bio {
-	max-width: 250px;
-	min-height: 4.5em;
-	line-height: 1.5;
-	text-align: left;
 }
 
 .visually-hidden {

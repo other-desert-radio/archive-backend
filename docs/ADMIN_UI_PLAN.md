@@ -103,6 +103,8 @@ and the Tags UI remain read-only.
   as the initial state.
 - The DJ table surfaces the creation timestamp and supports sorting by it.
 - DJ table columns are capped at 250px and wrap long cell content.
+- DJ table data rows use an 80% opaque background and become fully opaque on
+  hover.
 - The DJ toolbar is extracted into a reusable component, and its `+ DJ` action
   now opens the reusable onboarding modal with all plain-text fields, Submit,
   and required title/bio validation.
@@ -384,8 +386,8 @@ Add one read-only DJ table in the admin UI:
 - [x] Connect the table to `GET /api/admin/djs`.
 - [x] Render the DJ ID, title, bio, and image fields.
 - [x] Add loading, empty, and error states.
-- [x] Add focused frontend data-loader coverage. The bio is displayed as escaped
-      text until the later sanitization phase is implemented.
+- [x] Add focused frontend data-loader coverage. The table renders the
+      server-sanitized bio and socials HTML.
 
 Do not add editing or deletion until the list is reviewed.
 
