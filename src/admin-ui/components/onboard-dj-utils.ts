@@ -1,4 +1,5 @@
 import type { CreateDJRequest } from "../../admin/routes/djs/types.js";
+import { splitCommaSeparated } from "../../utils/index.js";
 
 export type OnboardDJFieldValues = {
 	title: string;
@@ -22,10 +23,7 @@ export const buildCreateDJRequest = (
 ): CreateDJRequest => {
 	const image = fields.image.trim();
 	const socials = fields.socials.trim();
-	const tags = fields.tags
-		.split(",")
-		.map((tag) => tag.trim())
-		.filter((tag) => tag !== "");
+	const tags = splitCommaSeparated(fields.tags);
 
 	return {
 		title: fields.title.trim(),

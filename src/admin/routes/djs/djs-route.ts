@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { isMatching } from "ts-pattern";
 import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
+import { splitCommaSeparated } from "../../../utils/index.js";
 import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
 import { createTags } from "../tags/tag-service.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
@@ -117,10 +118,7 @@ export const djRoutes =
 					const tags =
 						parsed.form.tags === undefined
 							? undefined
-							: parsed.form.tags
-									.split(",")
-									.map((tag) => tag.trim())
-									.filter((tag) => tag !== "");
+							: splitCommaSeparated(parsed.form.tags);
 					const socials =
 						parsed.form.socials?.trim() === ""
 							? undefined

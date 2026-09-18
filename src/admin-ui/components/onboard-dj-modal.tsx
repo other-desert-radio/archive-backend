@@ -1,6 +1,7 @@
 import { logger } from "better-auth";
 import { useState } from "react";
 import type { CreateDJRequest } from "../../admin/routes/djs/types.js";
+import { splitCommaSeparated } from "../../utils/index.js";
 import { validateTags } from "../loaders/validate-tags.js";
 import { buildCreateDJRequest } from "./onboard-dj-utils.js";
 
@@ -85,10 +86,7 @@ export const OnboardDJModal = ({
 
 	/** Validates comma-separated tags after the field loses focus. */
 	const handleTagsBlur = async () => {
-		const submittedTags = tags
-			.split(",")
-			.map((tag) => tag.trim())
-			.filter((tag) => tag !== "");
+		const submittedTags = splitCommaSeparated(tags);
 
 		if (submittedTags.length === 0) {
 			setMissingTags([]);
