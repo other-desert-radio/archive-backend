@@ -77,11 +77,16 @@ bio         text
 image       bytea
 image_filename text
 socials     text
+showTitle   text
+showDescription text
 ```
 
 `bio` and `socials` may contain limited HTML. Both are sanitized before they are
 exposed to the frontend; supported formatting is paragraphs, line breaks,
 strong/emphasis text, and basic lists.
+
+`showTitle` and `showDescription` are optional plain-text metadata fields. Blank
+values are stored as `NULL` and nullable values are omitted from JSON output.
 
 `image` stores the original uploaded file bytes without compression. The
 short-term upload contract accepts JPEG, PNG, and WebP files up to 10 MiB.

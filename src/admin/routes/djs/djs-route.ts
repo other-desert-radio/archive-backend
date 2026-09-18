@@ -34,6 +34,8 @@ export const djRoutes =
 								"image",
 								"image_filename",
 								"socials",
+								"showTitle",
+								"showDescription",
 							])
 							.orderBy("id")
 							.execute(),
@@ -132,12 +134,22 @@ export const djRoutes =
 						parsed.form.socials?.trim() === ""
 							? undefined
 							: parsed.form.socials;
+					const showTitle =
+						parsed.form.showTitle?.trim() === ""
+							? undefined
+							: parsed.form.showTitle;
+					const showDescription =
+						parsed.form.showDescription?.trim() === ""
+							? undefined
+							: parsed.form.showDescription;
 
 					const textRequest = {
 						title: parsed.form.title ?? "",
 						bio: parsed.form.bio ?? "",
 						...(tags === undefined ? {} : { tags }),
 						...(socials === undefined ? {} : { socials }),
+						...(showTitle === undefined ? {} : { showTitle }),
+						...(showDescription === undefined ? {} : { showDescription }),
 					};
 
 					if (!isMatching(CreateDJRequestPattern, textRequest)) {
@@ -182,6 +194,12 @@ export const djRoutes =
 										normalized.socials === null
 											? undefined
 											: plainTextToSafeHtml(normalized.socials),
+									...(normalized.showTitle === null
+										? {}
+										: { showTitle: normalized.showTitle }),
+									...(normalized.showDescription === null
+										? {}
+										: { showDescription: normalized.showDescription }),
 								})
 								.returning("id")
 								.executeTakeFirstOrThrow();
@@ -211,6 +229,12 @@ export const djRoutes =
 								...(normalized.socials === null
 									? {}
 									: { socials: plainTextToSafeHtml(normalized.socials) }),
+								...(normalized.showTitle === null
+									? {}
+									: { showTitle: normalized.showTitle }),
+								...(normalized.showDescription === null
+									? {}
+									: { showDescription: normalized.showDescription }),
 								shows: [],
 								tags: tagIds,
 							};

@@ -9,6 +9,8 @@ describe("normalizeCreateDJRequest", () => {
 				image: " image.jpg ",
 				tags: [" dance ", "", "  ", "house"],
 				socials: " @dj-new ",
+				showTitle: " Late Night Session ",
+				showDescription: " A late-night broadcast. ",
 				bio: " A bio ",
 			}),
 		).toEqual({
@@ -16,6 +18,8 @@ describe("normalizeCreateDJRequest", () => {
 			image: "image.jpg",
 			tags: ["dance", "house"],
 			socials: "@dj-new",
+			showTitle: "Late Night Session",
+			showDescription: "A late-night broadcast.",
 			bio: "A bio",
 		});
 	});
@@ -26,6 +30,8 @@ describe("normalizeCreateDJRequest", () => {
 				title: "DJ New",
 				image: "  ",
 				socials: "\n",
+				showTitle: "\n",
+				showDescription: " ",
 				bio: "A bio",
 			}),
 		).toEqual({
@@ -33,6 +39,8 @@ describe("normalizeCreateDJRequest", () => {
 			image: null,
 			tags: [],
 			socials: null,
+			showTitle: null,
+			showDescription: null,
 			bio: "A bio",
 		});
 	});
@@ -49,6 +57,8 @@ describe("normalizeCreateDJRequest", () => {
 			image: null,
 			tags: ["Dance", "dance"],
 			socials: null,
+			showTitle: null,
+			showDescription: null,
 			bio: "A bio",
 		});
 	});

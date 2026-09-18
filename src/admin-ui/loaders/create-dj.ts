@@ -45,6 +45,10 @@ export const createDJ = async (
 	form.append("bio", request.bio);
 	if (request.tags !== undefined) form.append("tags", request.tags.join(","));
 	if (request.socials !== undefined) form.append("socials", request.socials);
+	if (request.showTitle !== undefined)
+		form.append("showTitle", request.showTitle);
+	if (request.showDescription !== undefined)
+		form.append("showDescription", request.showDescription);
 	if (request.image !== undefined) form.append("image", request.image);
 
 	const response = await fetcher("/api/admin/create-dj", {

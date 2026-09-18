@@ -28,6 +28,8 @@ type DJRow = {
 	image: Buffer | null;
 	image_filename: string | null;
 	socials: string | null;
+	showTitle: string | null;
+	showDescription: string | null;
 };
 
 const buildDatabase = (initialTags: TagRow[] = [], failOn?: string) => {
@@ -163,6 +165,26 @@ describe("DJ creation persistence", () => {
 		expect(response.statusCode).toBe(201);
 		expect(response.json().tags).toEqual([7]);
 		expect(state.tags).toHaveLength(1);
+	});
+
+	test("persists optional show metadata", async () => {
+		const { database, state } = buildDatabase();
+		const response = await createDJ(database, {
+			title: "DJ Show",
+			bio: "A bio",
+			showTitle: " Late Night Session ",
+			showDescription: " A late-night broadcast. ",
+		});
+
+		expect(response.statusCode).toBe(201);
+		expect(response.json()).toMatchObject({
+			showTitle: "Late Night Session",
+			showDescription: "A late-night broadcast.",
+		});
+		expect(state.djs[0]).toMatchObject({
+			showTitle: "Late Night Session",
+			showDescription: "A late-night broadcast.",
+		});
 	});
 
 	test("deduplicates submitted tags", async () => {
