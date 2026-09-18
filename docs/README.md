@@ -14,8 +14,9 @@ migration adds the server-owned admin role. Migration nine renames the tags
 table's name column to title to match the archive field contract. Migration ten
 adds the nullable `djs.socials` field, and migration twelve adds the non-null
 `tags.reviewed` flag. Migration thirteen replaces the nullable DJ image URL with
-raw binary image storage and filename metadata. Migrations are applied
-explicitly, one at a time, after review.
+raw binary image storage and filename metadata. Migration fourteen adds nullable
+DJ show metadata. Migrations are applied explicitly, one at a time, after
+review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -63,11 +64,11 @@ Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing
 bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
-`id`, `title`, `bio`, optional `imagePath` and `socials`, `shows`, and `tags`;
-its relationship IDs are derived from the relationship tables.
-`POST /api/admin/create-dj` creates DJs transactionally and sanitizes
-bio/socials HTML. Tag creation is centralized in the Tags module and is
-available through `POST /api/admin/create-tag` and
+`id`, `title`, `bio`, optional `imagePath`, `socials`, `showTitle`, and
+`showDescription`, `shows`, and `tags`; its relationship IDs are derived from
+the relationship tables. `POST /api/admin/create-dj` creates DJs transactionally
+and sanitizes bio/socials HTML. Tag creation is centralized in the Tags module
+and is available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,
 empty, and error states. The read-only Shows API is also implemented and returns

@@ -14,7 +14,12 @@ describe("createDJ loader", () => {
 		};
 
 		const result = await createDJ(
-			{ title: "DJ New", bio: "A bio" },
+			{
+				title: "DJ New",
+				bio: "A bio",
+				showTitle: "Late Night Session",
+				showDescription: "Late-night broadcast",
+			},
 			async (requestInput, requestInit) => {
 				input = requestInput;
 				init = requestInit;
@@ -29,6 +34,8 @@ describe("createDJ loader", () => {
 		expect(body).toBeInstanceOf(FormData);
 		expect(body.get("title")).toBe("DJ New");
 		expect(body.get("bio")).toBe("A bio");
+		expect(body.get("showTitle")).toBe("Late Night Session");
+		expect(body.get("showDescription")).toBe("Late-night broadcast");
 		expect(result).toEqual(dj);
 	});
 

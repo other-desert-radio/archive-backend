@@ -21,6 +21,8 @@ export type DJsTable = {
 	image: Buffer | null;
 	image_filename: string | null;
 	socials: string | null;
+	showTitle: string | null;
+	showDescription: string | null;
 };
 
 export type ShowsTable = {

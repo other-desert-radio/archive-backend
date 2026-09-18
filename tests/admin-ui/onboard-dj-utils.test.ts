@@ -12,6 +12,8 @@ describe("buildCreateDJRequest", () => {
 				image,
 				tags: " dance, , house ",
 				socials: " @dj-new ",
+				showTitle: " Late Night Session ",
+				showDescription: " Late-night broadcast ",
 				bio: " A bio ",
 			}),
 		).toEqual({
@@ -19,6 +21,8 @@ describe("buildCreateDJRequest", () => {
 			image,
 			tags: ["dance", "house"],
 			socials: "@dj-new",
+			showTitle: "Late Night Session",
+			showDescription: "Late-night broadcast",
 			bio: "A bio",
 		});
 	});
@@ -29,6 +33,8 @@ describe("buildCreateDJRequest", () => {
 				title: "DJ New",
 				tags: "",
 				socials: "\n",
+				showTitle: "\n",
+				showDescription: " ",
 				bio: "A bio",
 			}),
 		).toEqual({ title: "DJ New", bio: "A bio" });

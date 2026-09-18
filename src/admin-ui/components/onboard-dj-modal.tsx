@@ -73,6 +73,8 @@ export const OnboardDJModal = ({
 	const [image, setImage] = useState<File>();
 	const [imageError, setImageError] = useState<string>();
 	const [tags, setTags] = useState("");
+	const [showTitle, setShowTitle] = useState("");
+	const [showDescription, setShowDescription] = useState("");
 	const [socials, setSocials] = useState("");
 	const [bio, setBio] = useState("");
 	const [validationError, setValidationError] = useState<string>();
@@ -119,6 +121,8 @@ export const OnboardDJModal = ({
 
 		const request = buildCreateDJRequest({
 			title,
+			showTitle,
+			showDescription,
 			tags,
 			socials,
 			bio,
@@ -161,6 +165,19 @@ export const OnboardDJModal = ({
 						label="title"
 						value={title}
 						onChange={setTitle}
+					/>
+					<FormInput
+						name="showTitle"
+						label="show title"
+						value={showTitle}
+						onChange={setShowTitle}
+					/>
+					<FormInput
+						name="showDescription"
+						label="show description"
+						value={showDescription}
+						onChange={setShowDescription}
+						textarea
 					/>
 					<DJImageDropzone
 						{...(image === undefined ? {} : { file: image })}

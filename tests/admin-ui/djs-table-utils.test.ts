@@ -11,6 +11,8 @@ const djs = [
 		title: "Zulu",
 		bio: "Late night",
 		socials: "@zulu",
+		showTitle: "Night Drive",
+		showDescription: "A late-night broadcast",
 		shows: [10],
 		tags: [1],
 	},
@@ -22,6 +24,8 @@ describe("DJ table helpers", () => {
 		expect(
 			getDJSearchValue(djs[0], [{ id: 1, title: "Dance", color: "#f0f" }]),
 		).toContain("dance");
+		expect(getDJSearchValue(djs[0], [])).toContain("night drive");
+		expect(filterDJs(djs, "late-night broadcast", [])).toEqual([djs[0]]);
 		expect(
 			filterDJs(djs, "DANCE", [{ id: 1, title: "Dance", color: "#f0f" }]),
 		).toEqual([djs[0]]);

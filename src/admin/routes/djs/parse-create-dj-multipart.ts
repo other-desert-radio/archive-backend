@@ -7,6 +7,8 @@ export type CreateDJMultipartForm = {
 	bio?: string;
 	tags?: string;
 	socials?: string;
+	showTitle?: string;
+	showDescription?: string;
 	image?: DJImageUpload;
 };
 
@@ -14,7 +16,14 @@ export type CreateDJMultipartResult =
 	| { valid: true; form: CreateDJMultipartForm }
 	| { valid: false; error: string };
 
-const textFields = new Set(["title", "bio", "tags", "socials"]);
+const textFields = new Set([
+	"title",
+	"bio",
+	"tags",
+	"socials",
+	"showTitle",
+	"showDescription",
+]);
 
 /** Parses supported multipart fields without persisting or validating them. */
 export const parseCreateDJMultipart = async (
