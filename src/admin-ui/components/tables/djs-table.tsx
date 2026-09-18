@@ -11,7 +11,7 @@ type DJsTableProps = {
 const columns: Array<[DJSortColumn, string]> = [
 	["id", "id"],
 	["title", "title"],
-	["image", "image"],
+	["imagePath", "image"],
 	["tags", "tags"],
 	["socials", "socials"],
 	["bio", "bio"],
@@ -54,7 +54,7 @@ export const DJsTable = ({
 					<tr key={dj.id}>
 						<td>{dj.id}</td>
 						<td>{dj.title}</td>
-						<td>{dj.image ?? <span className="muted">None</span>}</td>
+						<td>{dj.imagePath ?? <span className="muted">None</span>}</td>
 						<td>{formatIDs(dj.tags)}</td>
 						<td>{dj.socials ?? <span className="muted">None</span>}</td>
 						<td>{dj.bio}</td>

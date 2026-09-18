@@ -27,6 +27,7 @@ const testDatabase = {
 					title: "DJ One",
 					bio: "<p>Bio</p>",
 					image: null,
+					image_filename: null,
 					socials: "<p>@dj-one</p>",
 				},
 			],

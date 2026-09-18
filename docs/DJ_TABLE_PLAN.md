@@ -22,7 +22,7 @@ Current repository state:
   normalizes, and persists the DJ and direct tag relationships transactionally.
 - The onboarding modal calls tag validation on blur and shows plain helper copy
   for tags missing from the database; richer tag UI remains deferred.
-- Existing DJ JSON fields: `id`, `title`, `bio`, optional `image`, optional
+- Existing DJ JSON fields: `id`, `title`, `bio`, optional `imagePath`, optional
   `socials`, `shows`, and `tags`.
 - Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, and nullable
   `socials`.
@@ -208,7 +208,7 @@ type DJsJSON = {
   id: number;
   title: string;
   bio: string;
-  image?: string;
+  imagePath?: string;
   socials?: string;
   shows: number[];
   tags: number[];
@@ -216,7 +216,7 @@ type DJsJSON = {
 ```
 
 Nullable database values should be omitted from JSON, matching the existing
-`image` behavior.
+`imagePath` behavior.
 
 The first editor stores plain text converted to safe HTML. The server must
 sanitize stored/output HTML using an established sanitizer. Limit formatting to

@@ -12,6 +12,7 @@ describe("DJ JSON transformer", () => {
 						title: "DJ One",
 						bio: "<p>Bio</p><script>alert(1)</script>",
 						image: null,
+						image_filename: null,
 						socials: "<strong>@dj-one</strong><iframe>bad</iframe>",
 					},
 				],
@@ -54,5 +55,34 @@ describe("DJ JSON transformer", () => {
 				[11, [3]],
 			]),
 		);
+	});
+
+	test("exposes stored images as image paths", () => {
+		expect(
+			transformDJs({
+				djs: [
+					{
+						id: 42,
+						title: "DJ Image",
+						bio: "Bio",
+						image: Buffer.from("image bytes"),
+						image_filename: "dj-image.png",
+						socials: null,
+					},
+				],
+				showDJs: [],
+				djTags: [],
+				showTags: [],
+			}),
+		).toEqual([
+			{
+				id: 42,
+				title: "DJ Image",
+				bio: "Bio",
+				imagePath: "/api/admin/djs/42/image",
+				shows: [],
+				tags: [],
+			},
+		]);
 	});
 });

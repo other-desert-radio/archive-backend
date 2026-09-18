@@ -13,8 +13,9 @@ The seventh migration contains the reviewed Better Auth tables, and the eighth
 migration adds the server-owned admin role. Migration nine renames the tags
 table's name column to title to match the archive field contract. Migration ten
 adds the nullable `djs.socials` field, and migration twelve adds the non-null
-`tags.reviewed` flag. Migrations are applied explicitly, one at a time, after
-review.
+`tags.reviewed` flag. Migration thirteen replaces the nullable DJ image URL with
+raw binary image storage and filename metadata. Migrations are applied
+explicitly, one at a time, after review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -62,8 +63,8 @@ Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing
 bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
-`id`, `title`, `bio`, optional `image` and `socials`, `shows`, and `tags`; its
-relationship IDs are derived from the relationship tables.
+`id`, `title`, `bio`, optional `imagePath` and `socials`, `shows`, and `tags`;
+its relationship IDs are derived from the relationship tables.
 `POST /api/admin/create-dj` creates DJs transactionally and sanitizes
 bio/socials HTML. Tag creation is centralized in the Tags module and is
 available through `POST /api/admin/create-tag` and

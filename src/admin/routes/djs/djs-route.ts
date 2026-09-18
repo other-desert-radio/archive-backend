@@ -19,7 +19,15 @@ export const djRoutes =
 					const [djs, showDJs, djTags, showTags] = await Promise.all([
 						database
 							.selectFrom("djs")
-							.select(["id", "createdAt", "title", "bio", "image", "socials"])
+							.select([
+								"id",
+								"createdAt",
+								"title",
+								"bio",
+								"image",
+								"image_filename",
+								"socials",
+							])
 							.orderBy("id")
 							.execute(),
 						database
@@ -57,6 +65,11 @@ export const djRoutes =
 				if (!isMatching(CreateDJRequestPattern, request.body)) {
 					return reply.code(400).send({ error: "Validation error" });
 				}
+				if (request.body.image !== undefined) {
+					return reply
+						.code(400)
+						.send({ error: "Image uploads require multipart/form-data" });
+				}
 
 				try {
 					const normalized = normalizeCreateDJRequest(request.body);
@@ -74,7 +87,8 @@ export const djRoutes =
 								.values({
 									title: normalized.title,
 									bio: plainTextToSafeHtml(normalized.bio),
-									image: normalized.image,
+									image: null,
+									image_filename: null,
 									socials:
 										normalized.socials === null
 											? undefined
@@ -99,9 +113,6 @@ export const djRoutes =
 								id: insertedDJ.id,
 								title: normalized.title,
 								bio: plainTextToSafeHtml(normalized.bio),
-								...(normalized.image === null
-									? {}
-									: { image: normalized.image }),
 								...(normalized.socials === null
 									? {}
 									: { socials: plainTextToSafeHtml(normalized.socials) }),
