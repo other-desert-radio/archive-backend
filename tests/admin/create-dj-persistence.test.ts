@@ -210,7 +210,7 @@ describe("DJ creation persistence", () => {
 		});
 
 		expect(response.statusCode).toBe(500);
-		expect(response.json()).toEqual({ error: "Internal Server Error" });
+		expect(response.json()).toEqual({ error: "insert failed" });
 		expect(state.tags).toEqual([]);
 		expect(state.djs).toEqual([]);
 		expect(state.djTags).toEqual([]);

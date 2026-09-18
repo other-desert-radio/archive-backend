@@ -50,7 +50,7 @@ describe("createDJ loader", () => {
 					}),
 			),
 		).rejects.toThrow(
-			"DJ could not be created. The server returned HTTP 400 (Bad Request): Image filename is invalid. Please correct this issue and try again.",
+			"DJ could not be created.\n\nImage filename is invalid\n\nStatus: HTTP 400 (Bad Request)\nPlease correct this issue and try again.",
 		);
 	});
 
@@ -65,7 +65,22 @@ describe("createDJ loader", () => {
 					}),
 			),
 		).rejects.toThrow(
-			"DJ could not be created. The server returned HTTP 500 (Internal Server Error). Please check the form and image, then try again.",
+			"DJ could not be created.\n\nStatus: HTTP 500 (Internal Server Error)\nPlease check the form and image, then try again.",
+		);
+	});
+
+	test("passes through the server error detail", async () => {
+		await expect(
+			createDJ(
+				{ title: "DJ New", bio: "A bio" },
+				async () =>
+					new Response(JSON.stringify({ error: "insert failed" }), {
+						status: 500,
+						statusText: "Internal Server Error",
+					}),
+			),
+		).rejects.toThrow(
+			"DJ could not be created.\n\ninsert failed\n\nStatus: HTTP 500 (Internal Server Error)\nPlease correct this issue and try again.",
 		);
 	});
 });

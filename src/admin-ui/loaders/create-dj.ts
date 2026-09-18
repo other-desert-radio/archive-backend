@@ -22,10 +22,14 @@ const describeCreateDJFailure = async (response: Response): Promise<string> => {
 		response.statusText === "" ? "" : ` (${response.statusText})`
 	}`;
 	if (serverError === undefined) {
-		return `DJ could not be created. The server returned ${status}. Please check the form and image, then try again.`;
+		return `DJ could not be created.\n\nStatus: ${status}\nPlease check the form and image, then try again.`;
 	}
 
-	return `DJ could not be created. The server returned ${status}: ${serverError}. Please correct this issue and try again.`;
+	const detail =
+		serverError === "Internal Server Error"
+			? "The server encountered an unexpected error."
+			: serverError;
+	return `DJ could not be created.\n\n${detail}\n\nStatus: ${status}\nPlease correct this issue and try again.`;
 };
 
 /**

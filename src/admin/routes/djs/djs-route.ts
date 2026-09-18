@@ -252,7 +252,9 @@ export const djRoutes =
 					return reply.code(201).send(created);
 				} catch (error) {
 					request.log.error({ err: error }, "Unable to create DJ");
-					return reply.code(500).send({ error: "Internal Server Error" });
+					return reply.code(500).send({
+						error: error instanceof Error ? error.message : String(error),
+					});
 				}
 			},
 		);

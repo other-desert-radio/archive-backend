@@ -283,7 +283,12 @@ th button {
 
 .modal-error {
 	margin: 1.5rem 0 0;
+	padding: 0.75rem 1rem;
+	border: 1px solid currentColor;
 	color: #ff2c2c;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	white-space: pre-line;
 	text-align: center;
 }
 
