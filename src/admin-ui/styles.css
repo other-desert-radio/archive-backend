@@ -371,6 +371,16 @@ th button.active-sort {
 	color: #555;
 }
 
+.dj-bio {
+	width: 24rem;
+	min-width: 24rem;
+	min-height: 4.5em;
+	line-height: 1.5;
+	text-align: left;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
 .visually-hidden {
 	position: absolute;
 	width: 1px;

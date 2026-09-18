@@ -61,7 +61,9 @@ export const DJsTable = ({
 						<td>{dj.imagePath ?? <span className="muted">None</span>}</td>
 						<td>{formatIDs(dj.tags)}</td>
 						<td>{dj.socials ?? <span className="muted">None</span>}</td>
-						<td>{dj.bio}</td>
+						<td>
+							<div className="dj-bio">{dj.bio}</div>
+						</td>
 						<td>{formatIDs(dj.shows)}</td>
 					</tr>
 				))}
