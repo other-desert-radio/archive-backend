@@ -9,6 +9,7 @@ describe("DJ JSON transformer", () => {
 				djs: [
 					{
 						id: 1,
+						createdAt: new Date("2026-01-01T00:00:00.000Z"),
 						title: "DJ One",
 						bio: "<p>Bio</p><script>alert(1)</script>",
 						image: null,
@@ -31,6 +32,7 @@ describe("DJ JSON transformer", () => {
 		).toEqual([
 			{
 				id: 1,
+				createdAt: new Date("2026-01-01T00:00:00.000Z"),
 				title: "DJ One",
 				bio: "<p>Bio</p>",
 				socials: "<strong>@dj-one</strong>bad",
@@ -67,6 +69,7 @@ describe("DJ JSON transformer", () => {
 				djs: [
 					{
 						id: 42,
+						createdAt: new Date("2026-01-02T00:00:00.000Z"),
 						title: "DJ Image",
 						bio: "Bio",
 						image: Buffer.from("image bytes"),
@@ -83,6 +86,7 @@ describe("DJ JSON transformer", () => {
 		).toEqual([
 			{
 				id: 42,
+				createdAt: new Date("2026-01-02T00:00:00.000Z"),
 				title: "DJ Image",
 				bio: "Bio",
 				imagePath: "/api/admin/djs/42/image",

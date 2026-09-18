@@ -8,6 +8,7 @@ import type {
 
 export type DJJSON = {
 	id: number;
+	createdAt: Date;
 	title: string;
 	bio: string;
 	imagePath?: string;

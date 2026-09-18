@@ -25,6 +25,7 @@ const testDatabase = {
 			djs: [
 				{
 					id: 1,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
 					title: "DJ One",
 					bio: "<p>Bio</p>",
 					image: null,
@@ -274,6 +275,7 @@ describe("admin route boundary", () => {
 		expect(response.json()).toEqual([
 			{
 				id: 1,
+				createdAt: "2026-01-01T00:00:00.000Z",
 				title: "DJ One",
 				bio: "<p>Bio</p>",
 				socials: "<p>@dj-one</p>",

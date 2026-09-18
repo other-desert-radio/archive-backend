@@ -1,6 +1,6 @@
 import { isMatching, P } from "ts-pattern";
-import type { DJJSON } from "../../json-transformers/index.js";
 import type { CreateDJForm } from "../components/onboard-dj-utils.js";
+import type { DJsAdminRow } from "./djs.js";
 
 type CreateDJErrorResponse = {
 	error?: unknown;
@@ -43,7 +43,7 @@ const describeCreateDJFailure = async (response: Response): Promise<string> => {
 export const createDJ = async (
 	request: CreateDJForm,
 	fetcher: typeof fetch = fetch,
-): Promise<DJJSON> => {
+): Promise<DJsAdminRow> => {
 	const form = new FormData();
 	form.append("title", request.title);
 	form.append("bio", request.bio);
@@ -64,5 +64,5 @@ export const createDJ = async (
 		throw new Error(await describeCreateDJFailure(response));
 	}
 
-	return (await response.json()) as DJJSON;
+	return (await response.json()) as DJsAdminRow;
 };

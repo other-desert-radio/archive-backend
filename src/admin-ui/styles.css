@@ -337,11 +337,14 @@ table {
 
 th,
 td {
+	max-width: 250px;
 	min-width: 9rem;
 	padding: 1.25rem;
 	border: 0;
+	overflow-wrap: anywhere;
 	text-align: center;
 	vertical-align: top;
+	white-space: normal;
 }
 
 th {
@@ -372,13 +375,10 @@ th button.active-sort {
 }
 
 .dj-bio {
-	width: 24rem;
-	min-width: 24rem;
+	max-width: 250px;
 	min-height: 4.5em;
 	line-height: 1.5;
 	text-align: left;
-	white-space: normal;
-	overflow-wrap: anywhere;
 }
 
 .visually-hidden {

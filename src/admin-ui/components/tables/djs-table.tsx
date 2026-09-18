@@ -1,8 +1,8 @@
-import type { DJJSON } from "../../../json-transformers/index.js";
+import type { DJsAdminRow } from "../../loaders/djs.js";
 import type { DJSortColumn, SortDirection } from "./djs-table-utils.js";
 
 type DJsTableProps = {
-	djs: DJJSON[];
+	djs: DJsAdminRow[];
 	sortColumn: DJSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: DJSortColumn) => void;
@@ -10,6 +10,7 @@ type DJsTableProps = {
 
 const columns: Array<[DJSortColumn, string]> = [
 	["id", "id"],
+	["createdAt", "created at"],
 	["title", "title"],
 	["showTitle", "show title"],
 	["showDescription", "show description"],
@@ -21,6 +22,10 @@ const columns: Array<[DJSortColumn, string]> = [
 ];
 const formatIDs = (ids: number[]) =>
 	ids.length === 0 ? <span className="muted">None</span> : ids.join(", ");
+const formatDate = (value: string) => {
+	const iso = new Date(value).toISOString();
+	return `${iso.slice(0, 19).replace("T", " ")} UTC`;
+};
 
 export const DJsTable = ({
 	djs,
@@ -55,6 +60,7 @@ export const DJsTable = ({
 				{djs.map((dj) => (
 					<tr key={dj.id}>
 						<td>{dj.id}</td>
+						<td>{formatDate(dj.createdAt)}</td>
 						<td>{dj.title}</td>
 						<td>{dj.showTitle ?? <span className="muted">None</span>}</td>
 						<td>{dj.showDescription ?? <span className="muted">None</span>}</td>

@@ -8,6 +8,7 @@ import {
 const djs = [
 	{
 		id: 2,
+		createdAt: "2026-01-02T00:00:00.000Z",
 		title: "Zulu",
 		bio: "Late night",
 		socials: "@zulu",
@@ -16,7 +17,14 @@ const djs = [
 		shows: [10],
 		tags: [1],
 	},
-	{ id: 1, title: "Alpha", bio: "Morning", shows: [], tags: [2] },
+	{
+		id: 1,
+		createdAt: "2026-01-01T00:00:00.000Z",
+		title: "Alpha",
+		bio: "Morning",
+		shows: [],
+		tags: [2],
+	},
 ];
 
 describe("DJ table helpers", () => {
@@ -33,6 +41,7 @@ describe("DJ table helpers", () => {
 
 	test("sorts without mutating the source array", () => {
 		expect(sortDJs(djs, "id", "desc").map((dj) => dj.id)).toEqual([2, 1]);
+		expect(sortDJs(djs, "createdAt", "asc").map((dj) => dj.id)).toEqual([1, 2]);
 		expect(sortDJs(djs, "title", "asc").map((dj) => dj.title)).toEqual([
 			"Alpha",
 			"Zulu",

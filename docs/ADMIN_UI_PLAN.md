@@ -101,6 +101,8 @@ and the Tags UI remain read-only.
 - The DJ view now has the Figma-aligned toolbar, nine-column horizontally
   scrollable table, client-side search, and sortable headers with ID descending
   as the initial state.
+- The DJ table surfaces the creation timestamp and supports sorting by it.
+- DJ table columns are capped at 250px and wrap long cell content.
 - The DJ toolbar is extracted into a reusable component, and its `+ DJ` action
   now opens the reusable onboarding modal with all plain-text fields, Submit,
   and required title/bio validation.

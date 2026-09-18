@@ -126,6 +126,9 @@ POST /api/admin/create-tag
 POST /api/admin/create-tags
 ```
 
+`GET /api/admin/djs` includes each DJ's `createdAt` timestamp in ISO JSON date
+format, alongside its identity, metadata, and relationship IDs.
+
 Tag creation accepts `{ title: string }` or `{ title: string, color: string }`
 for `create-tag`, and an array of those objects for `create-tags`. Tag titles
 are trimmed and reused case-insensitively. A color must match

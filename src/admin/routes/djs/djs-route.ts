@@ -201,7 +201,7 @@ export const djRoutes =
 										? {}
 										: { showDescription: normalized.showDescription }),
 								})
-								.returning("id")
+								.returning(["id", "createdAt"])
 								.executeTakeFirstOrThrow();
 
 							if (tagIds.length > 0) {
@@ -223,6 +223,7 @@ export const djRoutes =
 
 							return {
 								id: insertedDJ.id,
+								createdAt: insertedDJ.createdAt,
 								title: normalized.title,
 								bio: plainTextToSafeHtml(normalized.bio),
 								...(imagePath === undefined ? {} : { imagePath }),

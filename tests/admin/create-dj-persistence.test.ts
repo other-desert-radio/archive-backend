@@ -23,6 +23,7 @@ type TagRow = {
 
 type DJRow = {
 	id: number;
+	createdAt: Date;
 	title: string;
 	bio: string;
 	image: Buffer | null;
@@ -73,6 +74,7 @@ const buildDatabase = (initialTags: TagRow[] = [], failOn?: string) => {
 									}
 									const dj = {
 										id: nextDJId++,
+										createdAt: new Date("2026-01-01T00:00:00.000Z"),
 										...(values as Omit<DJRow, "id">),
 									};
 									state.djs.push(dj);

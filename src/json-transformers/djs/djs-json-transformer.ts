@@ -68,6 +68,7 @@ export const transformDJs = ({
 
 	return djs.map((dj) => ({
 		id: dj.id,
+		createdAt: dj.createdAt,
 		title: dj.title,
 		bio: sanitizeArchiveHtml(dj.bio),
 		...(dj.image_filename == null
