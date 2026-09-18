@@ -68,9 +68,6 @@ export const DJsPage = () => {
 					</button>
 				</div>
 			)}
-			{!isLoading && error === undefined && djs.length === 0 && (
-				<p className="status">No DJs have been added yet.</p>
-			)}
 			{!isLoading && error === undefined && (
 				<>
 					<DJToolbar
@@ -78,13 +75,17 @@ export const DJsPage = () => {
 						onQueryChange={setQuery}
 						onAddDJ={() => setIsModalOpen(true)}
 					/>
-					{djs.length > 0 && (
+					{djs.length > 0 ? (
 						<DJsTable
 							djs={visibleDJs}
 							sortColumn={sortColumn}
 							sortDirection={sortDirection}
 							onSort={handleSort}
 						/>
+					) : (
+						<div className="table-wrapper empty-table">
+							<p>No DJs have been added yet.</p>
+						</div>
 					)}
 				</>
 			)}

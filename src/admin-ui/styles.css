@@ -314,6 +314,15 @@ th button {
 	overflow-x: auto;
 }
 
+.empty-table {
+	display: grid;
+	place-items: center;
+	min-height: 200px;
+	padding-top: 24px;
+	padding-bottom: 24px;
+	background: #fff;
+}
+
 table {
 	width: max-content;
 	min-width: 100%;
