@@ -89,6 +89,8 @@ test gaps, see the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
+- `bun run db:delete:djs -- --confirm` permanently deletes all DJs and their
+  cascading relationship rows.
 - `bun run format` formats source files with Biome and Markdown files with
   Prettier.
 - `bun run typecheck` runs TypeScript validation.
