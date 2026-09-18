@@ -6,7 +6,9 @@ import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
 import { createTags } from "../tags/tag-service.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
-import { type CreateDJRequest, CreateDJRequestPattern } from "./types.js";
+import { parseCreateDJMultipart } from "./parse-create-dj-multipart.js";
+import { CreateDJRequestPattern } from "./types.js";
+import { validateDJImageUpload } from "./validate-dj-image.js";
 
 /** Registers authenticated DJ API routes. */
 export const djRoutes =
@@ -59,20 +61,49 @@ export const djRoutes =
 			},
 		);
 
-		app.post<{ Body: CreateDJRequest; Reply: AdminApiReply<DJJSON> }>(
+		app.post<{ Reply: AdminApiReply<DJJSON> }>(
 			"/create-dj",
 			async (request, reply) => {
-				if (!isMatching(CreateDJRequestPattern, request.body)) {
-					return reply.code(400).send({ error: "Validation error" });
-				}
-				if (request.body.image !== undefined) {
-					return reply
-						.code(400)
-						.send({ error: "Image uploads require multipart/form-data" });
-				}
-
 				try {
-					const normalized = normalizeCreateDJRequest(request.body);
+					const parsed = await parseCreateDJMultipart(request);
+					if (!parsed.valid) {
+						return reply.code(400).send({ error: parsed.error });
+					}
+
+					const tags =
+						parsed.form.tags === undefined
+							? undefined
+							: parsed.form.tags
+									.split(",")
+									.map((tag) => tag.trim())
+									.filter((tag) => tag !== "");
+					const socials =
+						parsed.form.socials?.trim() === ""
+							? undefined
+							: parsed.form.socials;
+
+					const textRequest = {
+						title: parsed.form.title ?? "",
+						bio: parsed.form.bio ?? "",
+						...(tags === undefined ? {} : { tags }),
+						...(socials === undefined ? {} : { socials }),
+					};
+
+					if (!isMatching(CreateDJRequestPattern, textRequest)) {
+						return reply.code(400).send({ error: "Validation error" });
+					}
+
+					const validatedImage =
+						parsed.form.image === undefined
+							? undefined
+							: validateDJImageUpload(parsed.form.image);
+					if (validatedImage?.valid === false) {
+						return reply.code(400).send({ error: validatedImage.error });
+					}
+
+					const image =
+						validatedImage?.valid === true ? validatedImage.image : undefined;
+					const normalized = normalizeCreateDJRequest(textRequest);
 					const created = await database
 						.transaction()
 						.execute(async (transaction) => {
@@ -87,8 +118,8 @@ export const djRoutes =
 								.values({
 									title: normalized.title,
 									bio: plainTextToSafeHtml(normalized.bio),
-									image: null,
-									image_filename: null,
+									image: image?.bytes ?? null,
+									image_filename: image?.filename ?? null,
 									socials:
 										normalized.socials === null
 											? undefined
@@ -109,10 +140,16 @@ export const djRoutes =
 									.execute();
 							}
 
+							const imagePath =
+								image === undefined
+									? undefined
+									: `/api/admin/djs/${insertedDJ.id}/image`;
+
 							return {
 								id: insertedDJ.id,
 								title: normalized.title,
 								bio: plainTextToSafeHtml(normalized.bio),
+								...(imagePath === undefined ? {} : { imagePath }),
 								...(normalized.socials === null
 									? {}
 									: { socials: plainTextToSafeHtml(normalized.socials) }),

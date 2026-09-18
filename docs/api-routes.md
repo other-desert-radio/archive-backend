@@ -132,9 +132,10 @@ color and `reviewed: false`, while explicit colors receive `reviewed: true`. The
 DJ route uses the shared tag service from the Tags module inside its own
 transaction rather than calling a Fastify route handler directly.
 
-The DJ image URL field is no longer persisted. Until the multipart upload route
-is implemented, JSON `create-dj` requests that include `image` receive a `400`
-response explaining that image uploads require `multipart/form-data`.
+`POST /api/admin/create-dj` accepts `multipart/form-data` with required `title`
+and `bio` text fields, optional `tags` and `socials` text fields, and an
+optional `image` file field. Tags are submitted as a comma-separated string.
+JSON requests are no longer accepted by this route.
 
 The upload validator accepts JPEG, PNG, and WebP MIME types with matching
 filename extensions up to 10 MiB. It stores the original bytes unchanged and
