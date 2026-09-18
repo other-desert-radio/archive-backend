@@ -135,7 +135,10 @@ transaction rather than calling a Fastify route handler directly.
 `POST /api/admin/create-dj` accepts `multipart/form-data` with required `title`
 and `bio` text fields, optional `tags` and `socials` text fields, and an
 optional `image` file field. Tags are submitted as a comma-separated string.
-JSON requests are no longer accepted by this route.
+JSON requests are no longer accepted by this route. Admin API request logs
+include the request method, URL, content type, content length, and user agent.
+DJ multipart logs include field names and safe file metadata such as filename,
+MIME type, and byte length, but never image bytes or form contents.
 
 `GET /api/admin/djs/:id/image` returns the stored image bytes for a DJ using the
 authenticated admin boundary. It returns `404 { "error": "Not Found" }` when the

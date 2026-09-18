@@ -100,6 +100,31 @@ const requireAuthenticatedAdminAccess = (
  */
 const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 	return async (app) => {
+		app.addHook("onRequest", async (request) => {
+			request.log.info(
+				{
+					method: request.method,
+					url: request.url,
+					contentType: request.headers["content-type"],
+					contentLength: request.headers["content-length"],
+					accept: request.headers.accept,
+					userAgent: request.headers["user-agent"],
+				},
+				"Admin API request received",
+			);
+		});
+		app.addHook("onError", async (request, reply, error) => {
+			request.log.error(
+				{
+					err: error,
+					method: request.method,
+					url: request.url,
+					statusCode: error.statusCode ?? reply.statusCode,
+					contentType: request.headers["content-type"],
+				},
+				"Admin API request failed",
+			);
+		});
 		await app.register(multipart, {
 			limits: {
 				fileSize: MAX_DJ_IMAGE_BYTES,

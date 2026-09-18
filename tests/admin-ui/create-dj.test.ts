@@ -24,10 +24,11 @@ describe("createDJ loader", () => {
 
 		expect(input).toBe("/api/admin/create-dj");
 		expect(init?.method).toBe("POST");
-		expect(JSON.parse(init?.body as string)).toEqual({
-			title: "DJ New",
-			bio: "A bio",
-		});
+		expect(init?.headers).toBeUndefined();
+		const body = init?.body as FormData;
+		expect(body).toBeInstanceOf(FormData);
+		expect(body.get("title")).toBe("DJ New");
+		expect(body.get("bio")).toBe("A bio");
 		expect(result).toEqual(dj);
 	});
 
@@ -35,8 +36,29 @@ describe("createDJ loader", () => {
 		await expect(
 			createDJ(
 				{ title: "DJ New", bio: "A bio" },
-				async () => new Response(null, { status: 500 }),
+				async () =>
+					new Response(JSON.stringify({ error: "Image filename is invalid" }), {
+						status: 400,
+						statusText: "Bad Request",
+					}),
 			),
-		).rejects.toThrow("Unable to create DJ");
+		).rejects.toThrow(
+			"DJ could not be created. The server returned HTTP 400 (Bad Request): Image filename is invalid. Please correct this issue and try again.",
+		);
+	});
+
+	test("describes failures without a JSON error body", async () => {
+		await expect(
+			createDJ(
+				{ title: "DJ New", bio: "A bio" },
+				async () =>
+					new Response(null, {
+						status: 500,
+						statusText: "Internal Server Error",
+					}),
+			),
+		).rejects.toThrow(
+			"DJ could not be created. The server returned HTTP 500 (Internal Server Error). Please check the form and image, then try again.",
+		);
 	});
 });

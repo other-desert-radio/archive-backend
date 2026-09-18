@@ -1,14 +1,14 @@
 import { logger } from "better-auth";
 import { useState } from "react";
-import type { CreateDJRequest } from "../../admin/routes/djs/types.js";
 import { splitCommaSeparated } from "../../utils/index.js";
 import { validateTags } from "../loaders/validate-tags.js";
-import { buildCreateDJRequest } from "./onboard-dj-utils.js";
+import { DJImageDropzone } from "./dj-image-dropzone.js";
+import { buildCreateDJRequest, type CreateDJForm } from "./onboard-dj-utils.js";
 
 type OnboardDJModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit: (request: CreateDJRequest) => Promise<void>;
+	onSubmit: (request: CreateDJForm) => Promise<void>;
 };
 
 type FormControlProps = {
@@ -70,7 +70,8 @@ export const OnboardDJModal = ({
 	onSubmit,
 }: OnboardDJModalProps) => {
 	const [title, setTitle] = useState("");
-	const [image, setImage] = useState("");
+	const [image, setImage] = useState<File>();
+	const [imageError, setImageError] = useState<string>();
 	const [tags, setTags] = useState("");
 	const [socials, setSocials] = useState("");
 	const [bio, setBio] = useState("");
@@ -108,23 +109,31 @@ export const OnboardDJModal = ({
 			setValidationError("Title and bio are required.");
 			return;
 		}
+		if (imageError !== undefined) {
+			setValidationError(imageError);
+			return;
+		}
 
 		setValidationError(undefined);
 		setIsSubmitting(true);
 
-		const request: CreateDJRequest = buildCreateDJRequest({
+		const request = buildCreateDJRequest({
 			title,
-			image,
 			tags,
 			socials,
 			bio,
+			...(image === undefined ? {} : { image }),
 		});
 
 		try {
 			await onSubmit(request);
 			onClose();
-		} catch {
-			setValidationError("The DJ could not be created.");
+		} catch (error) {
+			setValidationError(
+				error instanceof Error
+					? error.message
+					: "DJ could not be created. Please check the form and image, then try again.",
+			);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -153,12 +162,16 @@ export const OnboardDJModal = ({
 						value={title}
 						onChange={setTitle}
 					/>
-					<FormInput
-						name="image"
-						label="image"
-						value={image}
-						onChange={setImage}
+					<DJImageDropzone
+						{...(image === undefined ? {} : { file: image })}
+						onFileChange={setImage}
+						onError={setImageError}
 					/>
+					{imageError !== undefined && (
+						<p className="modal-helper modal-error" role="alert">
+							{imageError}
+						</p>
+					)}
 					<FormInput
 						name="tags"
 						label="tags"

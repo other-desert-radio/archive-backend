@@ -28,6 +28,19 @@ export const parseCreateDJMultipart = async (
 
 	try {
 		for await (const part of request.parts()) {
+			request.log.info(
+				{
+					field: part.fieldname,
+					partType: part.type,
+					...(part.type === "file"
+						? {
+								filename: part.filename,
+								contentType: part.mimetype,
+							}
+						: {}),
+				},
+				"DJ multipart field received",
+			);
 			if (seenFields.has(part.fieldname)) {
 				if (part.type === "file") await part.toBuffer();
 				return {
@@ -39,6 +52,15 @@ export const parseCreateDJMultipart = async (
 
 			if (part.type === "file") {
 				const bytes = await part.toBuffer();
+				request.log.info(
+					{
+						field: part.fieldname,
+						filename: part.filename,
+						contentType: part.mimetype,
+						byteLength: bytes.length,
+					},
+					"DJ multipart file buffered",
+				);
 				if (part.fieldname !== "image") {
 					return {
 						valid: false,

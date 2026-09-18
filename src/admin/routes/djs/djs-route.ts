@@ -109,9 +109,14 @@ export const djRoutes =
 		app.post<{ Reply: AdminApiReply<DJJSON> }>(
 			"/create-dj",
 			async (request, reply) => {
+				request.log.info("DJ creation request started");
 				try {
 					const parsed = await parseCreateDJMultipart(request);
 					if (!parsed.valid) {
+						request.log.warn(
+							{ reason: parsed.error },
+							"DJ creation request rejected during multipart parsing",
+						);
 						return reply.code(400).send({ error: parsed.error });
 					}
 
@@ -132,6 +137,9 @@ export const djRoutes =
 					};
 
 					if (!isMatching(CreateDJRequestPattern, textRequest)) {
+						request.log.warn(
+							"DJ creation request rejected during field validation",
+						);
 						return reply.code(400).send({ error: "Validation error" });
 					}
 
@@ -140,6 +148,10 @@ export const djRoutes =
 							? undefined
 							: validateDJImageUpload(parsed.form.image);
 					if (validatedImage?.valid === false) {
+						request.log.warn(
+							{ reason: validatedImage.error },
+							"DJ creation request rejected during image validation",
+						);
 						return reply.code(400).send({ error: validatedImage.error });
 					}
 
@@ -200,9 +212,13 @@ export const djRoutes =
 							};
 						});
 
+					request.log.info(
+						{ djId: created.id, hasImage: image !== undefined },
+						"DJ created successfully",
+					);
 					return reply.code(201).send(created);
 				} catch (error) {
-					request.log.error(error, "Unable to create DJ");
+					request.log.error({ err: error }, "Unable to create DJ");
 					return reply.code(500).send({ error: "Internal Server Error" });
 				}
 			},

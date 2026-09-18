@@ -45,6 +45,7 @@ const formats: DJImageFormat[] = [
 const formatForContentType = (contentType: string): DJImageFormat | undefined =>
 	formats.find((format) => format.contentType === contentType);
 
+/** Returns the response MIME type represented by a normalized image filename. */
 export const contentTypeForDJImageFilename = (
 	filename: string,
 ): DJImageFormat["contentType"] | undefined => {

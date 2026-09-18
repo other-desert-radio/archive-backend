@@ -3,17 +3,20 @@ import { buildCreateDJRequest } from "../../src/admin-ui/components/onboard-dj-u
 
 describe("buildCreateDJRequest", () => {
 	test("trims fields and parses comma-separated tags", () => {
+		const image = new File(["image bytes"], "image.jpg", {
+			type: "image/jpeg",
+		});
 		expect(
 			buildCreateDJRequest({
 				title: " DJ New ",
-				image: " image.jpg ",
+				image,
 				tags: " dance, , house ",
 				socials: " @dj-new ",
 				bio: " A bio ",
 			}),
 		).toEqual({
 			title: "DJ New",
-			image: "image.jpg",
+			image,
 			tags: ["dance", "house"],
 			socials: "@dj-new",
 			bio: "A bio",
@@ -24,7 +27,6 @@ describe("buildCreateDJRequest", () => {
 		expect(
 			buildCreateDJRequest({
 				title: "DJ New",
-				image: " ",
 				tags: "",
 				socials: "\n",
 				bio: "A bio",
