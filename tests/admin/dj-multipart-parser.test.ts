@@ -33,6 +33,8 @@ describe("parseCreateDJMultipart", () => {
 		form.append("bio", "A bio");
 		form.append("tags", "dance, house");
 		form.append("socials", "@dj-new");
+		form.append("showTitle", "Late Night Session");
+		form.append("showDescription", "A late-night desert broadcast.");
 		form.append(
 			"image",
 			new File(["image bytes"], "dj.png", { type: "image/png" }),
@@ -48,6 +50,8 @@ describe("parseCreateDJMultipart", () => {
 				bio: "A bio",
 				tags: "dance, house",
 				socials: "@dj-new",
+				showTitle: "Late Night Session",
+				showDescription: "A late-night desert broadcast.",
 				image: {
 					bytes: {
 						type: "Buffer",

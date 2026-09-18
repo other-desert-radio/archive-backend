@@ -94,11 +94,11 @@ and the Tags UI remain read-only.
   background used by the admin UI.
 - `scripts/build-container-watch` runs the containerized API/PostgreSQL stack
   with a host-side Vite build watcher for live admin UI updates.
-- `GET /api/admin/djs` now includes optional `socials`; DJ bio and socials HTML
-  are sanitized to the documented formatting subset. Migration `0010` adds the
-  nullable `djs.socials` column, and migration `0012` adds the non-null
-  `tags.reviewed` column.
-- The DJ view now has the Figma-aligned toolbar, seven-column horizontally
+- `GET /api/admin/djs` now includes optional `socials`, `showTitle`, and
+  `showDescription`; DJ bio and socials HTML are sanitized to the documented
+  formatting subset. Migration `0010` adds the nullable `djs.socials` column,
+  and migration `0012` adds the non-null `tags.reviewed` column.
+- The DJ view now has the Figma-aligned toolbar, nine-column horizontally
   scrollable table, client-side search, and sortable headers with ID descending
   as the initial state.
 - The DJ toolbar is extracted into a reusable component, and its `+ DJ` action
@@ -119,7 +119,8 @@ The DJ onboarding slice has progressed beyond the earlier read-only handoff:
 - `POST /api/admin/create-tag` and `POST /api/admin/create-tags` use the shared
   Tags-module service. Automatically colored tags are unreviewed; explicit
   colors are reviewed. `tags.reviewed` is provided by migration `0012`.
-- The onboarding modal submits normalized plain-text fields, calls
+- The onboarding modal submits normalized plain-text fields, including optional
+  show title and show description metadata, calls
   `POST /api/admin/validate-tags` when the tags field is left, and only shows
   helper copy for tags missing from the database. Chips, autocomplete, and other
   richer tag UI remain deferred.

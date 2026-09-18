@@ -23,9 +23,9 @@ Current repository state:
 - The onboarding modal calls tag validation on blur and shows plain helper copy
   for tags missing from the database; richer tag UI remains deferred.
 - Existing DJ JSON fields: `id`, `title`, `bio`, optional `imagePath`, optional
-  `socials`, `shows`, and `tags`.
-- Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, and nullable
-  `socials`.
+  `socials`, `showTitle`, and `showDescription`, `shows`, and `tags`.
+- Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, nullable
+  `socials`, nullable `showTitle`, and nullable `showDescription`.
 - Existing tag JSON fields: `id`, `title`, `color`, and `reviewed`.
 - The DJ table renders `id`, `title`, `image`, `tags`, `socials`, `bio`, and
   `shows` with client-side filtering and sorting.
@@ -80,7 +80,7 @@ Important visual details:
 - The table control remains visible with table selected; grid is
   disabled/deferred.
 - Table columns, in Figma order:
-  `id | title | image | tags | socials | bio | shows`.
+  `id | title | showTitle | showDescription | image | tags | socials | bio | shows`.
 - Table headers are centered.
 - Active sort header is bold with a filled arrow.
 - Inactive headers use normal weight with outlined arrows.
@@ -88,7 +88,8 @@ Important visual details:
 - Image cells show the image URL/path as text, not an image preview.
 - The modal overlay is black with approximately 60% opacity.
 - The modal panel is approximately 656×758px, white, and centered.
-- Modal fields appear in this order: `title | image | tags | socials | bio`.
+- Modal fields appear in this order:
+  `title | showTitle | showDescription | image | tags | socials | bio`.
 - Modal title is `Onboard DJ`; close control is `x`.
 - Submit button is approximately 128×52px with a black offset shadow.
 - Existing tag examples use magenta `#ff03d1`, red `#ff2c2c`, blue `#57cfff`,
@@ -277,6 +278,7 @@ Checklist:
 - [x] Render the centered white modal shell, close control, and Submit button.
 - [x] Add required title and bio validation.
 - [x] Add optional image upload and socials fields.
+- [x] Add optional show title and show description fields.
 - [x] Leave tags as plain text until the later tags-component slice.
 - [x] Validate comma-separated tags on blur and show plain helper copy for
       missing tags.
@@ -303,6 +305,8 @@ Form fields:
   or the file picker.
 - `tags`: plain-text input for this first modal slice; the reusable component is
   added later.
+- `showTitle`: optional plain-text input.
+- `showDescription`: optional multiline plain-text editor.
 - `socials`: optional multiline plain-text editor.
 - `bio`: required multiline plain-text editor.
 

@@ -12,6 +12,8 @@ export type DJJSON = {
 	bio: string;
 	imagePath?: string;
 	socials?: string;
+	showTitle?: string;
+	showDescription?: string;
 	shows: number[];
 	tags: number[];
 };

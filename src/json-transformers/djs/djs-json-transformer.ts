@@ -76,6 +76,10 @@ export const transformDJs = ({
 		...(dj.socials === null
 			? {}
 			: { socials: sanitizeArchiveHtml(dj.socials) }),
+		...(dj.showTitle === null ? {} : { showTitle: dj.showTitle }),
+		...(dj.showDescription === null
+			? {}
+			: { showDescription: dj.showDescription }),
 		shows: showsByDj.get(dj.id) ?? [],
 		tags: tagsByDj.get(dj.id) ?? [],
 	}));

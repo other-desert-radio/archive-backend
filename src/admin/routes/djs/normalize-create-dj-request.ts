@@ -6,6 +6,8 @@ export type NormalizedCreateDJRequest = {
 	image: string | null;
 	tags: string[];
 	socials: string | null;
+	showTitle: string | null;
+	showDescription: string | null;
 	bio: string;
 };
 
@@ -24,6 +26,8 @@ export const normalizeCreateDJRequest = (
 ): NormalizedCreateDJRequest => {
 	const image = request.image?.trim();
 	const socials = request.socials?.trim();
+	const showTitle = request.showTitle?.trim();
+	const showDescription = request.showDescription?.trim();
 
 	return {
 		title: request.title.trim(),
@@ -31,6 +35,10 @@ export const normalizeCreateDJRequest = (
 		tags:
 			request.tags?.map((tag) => tag.trim()).filter((tag) => tag !== "") ?? [],
 		socials: undefinedOrEmpty(socials) ? null : (socials ?? null),
+		showTitle: undefinedOrEmpty(showTitle) ? null : (showTitle ?? null),
+		showDescription: undefinedOrEmpty(showDescription)
+			? null
+			: (showDescription ?? null),
 		bio: request.bio.trim(),
 	};
 };
