@@ -1,5 +1,5 @@
 import { logger } from "better-auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { splitCommaSeparated } from "../../utils/index.js";
 import { validateTags } from "../loaders/validate-tags.js";
 import { DJImageDropzone } from "./dj-image-dropzone.js";
@@ -80,6 +80,25 @@ export const OnboardDJModal = ({
 	const [validationError, setValidationError] = useState<string>();
 	const [missingTags, setMissingTags] = useState<string[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [imageDropzoneKey, setImageDropzoneKey] = useState(0);
+
+	/** Clears all form state whenever a new onboarding session begins. */
+	useEffect(() => {
+		if (!isOpen) return;
+
+		setTitle("");
+		setImage(undefined);
+		setImageError(undefined);
+		setTags("");
+		setShowTitle("");
+		setShowDescription("");
+		setSocials("");
+		setBio("");
+		setValidationError(undefined);
+		setMissingTags([]);
+		setIsSubmitting(false);
+		setImageDropzoneKey((current) => current + 1);
+	}, [isOpen]);
 
 	/** Clears missing-tag feedback whenever the tags field is edited. */
 	const handleTagsChange = (value: string) => {
@@ -180,6 +199,7 @@ export const OnboardDJModal = ({
 						textarea
 					/>
 					<DJImageDropzone
+						key={imageDropzoneKey}
 						{...(image === undefined ? {} : { file: image })}
 						onFileChange={setImage}
 						onError={setImageError}

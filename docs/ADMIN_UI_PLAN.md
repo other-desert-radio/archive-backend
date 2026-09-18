@@ -124,6 +124,8 @@ The DJ onboarding slice has progressed beyond the earlier read-only handoff:
   `POST /api/admin/validate-tags` when the tags field is left, and only shows
   helper copy for tags missing from the database. Chips, autocomplete, and other
   richer tag UI remain deferred.
+- Each new onboarding session starts with an empty form, including the selected
+  image and validation feedback.
 - `DJsPage` refreshes the table after a successful submission while preserving
   its search and sort state. The authenticated loader and focused frontend,
   route, service, persistence, and transformer tests are in place.
