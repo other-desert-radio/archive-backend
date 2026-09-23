@@ -5,26 +5,26 @@ The archive front end that plugs into this is a GitHub static site.
 It will source data from static JSON files included in the GitHub repo.
 
 This backend will convert PostgreSQL data into static assets for the frontend.
-Until GitHub publication is implemented, the exporter will write this same
-layout to a local `archive-export/` directory:
+The exporter writes the DJ/tag portion of this layout to an absolute directory
+configured in the backend code. Set that directory to the Astro repository's
+`public/archive/` directory when exporting directly into the frontend project:
 
 ```text
 archive-export/
 ├── djs_brief.json
 ├── djs/
 │   └── 1.json
-├── shows.json
 ├── tags.json
 └── images/
     └── djs/
         └── 1.jpg
 ```
 
-When published to the Astro repository, these files belong in `public/archive/`.
-Astro copies `public/` into the built site unchanged, so the files are available
-beneath `archive/`. The frontend must construct URLs with Astro's
-`import.meta.env.BASE_URL`, which supports GitHub Pages project sites whose site
-URL includes the repository name.
+The top-level `shows.json` is deferred. When the assets are published to the
+Astro repository, they belong in `public/archive/`. Astro copies `public/` into
+the built site unchanged, so the files are available beneath `archive/`. The
+frontend must construct URLs with Astro's `import.meta.env.BASE_URL`, which
+supports GitHub Pages project sites whose site URL includes the repository name.
 
 ## `djs_brief.json`
 
@@ -70,8 +70,9 @@ dictionary.
 
 ## `shows.json`
 
-The scrolling show list loads this document. It embeds the small DJ card data
-needed for display; its `tagIds` are resolved through `tags.json`.
+This document is planned but is not written by the current exporter. It will
+power the scrolling show list and embed the small DJ card data needed for
+display; its `tagIds` will be resolved through `tags.json`.
 
 ```json
 [

@@ -34,20 +34,20 @@ until the schema has been built and reviewed.
 
 ## Purpose
 
-The backend stores archive data in PostgreSQL. A future archive exporter will
-write static assets to the local `archive-export/` directory:
+The backend stores archive data in PostgreSQL. `bun run db:export:archive`
+writes the currently implemented DJ/tag assets to the configured local output
+directory:
 
 - `djs_brief.json`, the compact DJ index;
 - `djs/{id}.json`, one detail document per DJ;
-- `shows.json`, the show index;
 - `tags.json`, the shared tag dictionary; and
 - `images/djs/{id}.{extension}`, copied DJ image assets.
 
-The GitHub publication step will copy this layout into `public/archive/` in the
-separate Astro frontend repository. Astro copies its `public/` directory into
-the deployed site without processing it. The database remains the source of
-truth. Arrays of IDs belong in exported documents, not in the primary entity
-tables.
+`shows.json` is intentionally deferred. The GitHub publication step will later
+copy this layout into `public/archive/` in the separate Astro frontend
+repository. Astro copies its `public/` directory into the deployed site without
+processing it. The database remains the source of truth. Arrays of IDs belong in
+exported documents, not in the primary entity tables.
 
 ## Local dummy data
 
@@ -214,10 +214,11 @@ relationships to be removed first.
 
 ## Static archive export rules
 
-The exporter produces the asset layout described in
+The exporter produces the DJ/tag portion of the asset layout described in
 [`human_docs/databases_human.md`](../human_docs/databases_human.md). All arrays
-are ordered deterministically: DJ indexes by title then ID, show indexes by date
-descending then ID, and relationship IDs numerically ascending.
+are ordered deterministically: DJ indexes by title then ID, tags by ID, and
+relationship IDs numerically ascending. The command logs its nested progress,
+including each generated JSON and image file.
 
 `tags.json` is the canonical tag dictionary. Every other exported document uses
 the `tagIds` field rather than duplicating tag titles and colors. The Astro
@@ -229,13 +230,12 @@ For a DJ, `tagIds` is the distinct union of:
 2. tags assigned to that DJ's shows through `show_djs` and `show_tags`.
 
 The DJ detail document embeds the associated shows. Each embedded show includes
-its own `tagIds`. The top-level `shows.json` embeds compact DJ cards for display
-and uses `tagIds` for its tags.
+its own `tagIds`. Generating the top-level `shows.json` remains deferred.
 
 The exporter writes raw DJ image bytes to `images/djs/{id}.{extension}` and uses
 the corresponding relative path in the JSON. It must never export the private
-`/api/admin/djs/{id}/image` URL. Show image values are the stored image URLs
-until show-image asset storage is added.
+`/api/admin/djs/{id}/image` URL. Show image values in DJ detail documents are
+the stored image URLs until show-image asset storage is added.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must

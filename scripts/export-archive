@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec bun src/db/export-djs-json.ts
+exec bun src/db/export-archive.ts

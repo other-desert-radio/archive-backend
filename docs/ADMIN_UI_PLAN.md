@@ -287,8 +287,10 @@ assigned to the DJ's shows through `show_tags`. Database errors return
 - [ ] Decide whether FFMPEG parsing is required for the first release.
 - [ ] If needed, add tracklist parsing and start/stop time editing.
 - [ ] Finalize show metadata after Mixcloud returns its URL.
-- [ ] Export the documented archive JSON and DJ image layout from PostgreSQL to
-      a local directory after a completed show.
+- [x] Export DJ indexes/details, tags, and DJ images from PostgreSQL to the
+      configured local archive directory.
+- [ ] Extend the exporter with the top-level show index after the show export
+      contract is implemented.
 - [ ] Trigger and verify GitHub Actions publication to `public/archive/` in the
       Astro archive repository.
 
@@ -424,8 +426,9 @@ chunks:
 - upload a show's MP3 and publish it to Mixcloud;
 - record the returned Mixcloud URL with the show's metadata;
 - decide whether optional FFMPEG parsing and tracklist time editing are needed;
-- export the documented archive asset layout locally and trigger GitHub Actions
-  publication to `public/archive/` in the Astro repository.
+- extend the local DJ/tag archive exporter with the documented show assets, then
+  trigger GitHub Actions publication to `public/archive/` in the Astro
+  repository.
 
 Do not combine the upload, publishing, metadata, parsing, export, and GitHub
 Actions work into one chunk.
