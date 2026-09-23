@@ -13,6 +13,7 @@
 		"db:migrate:all": "./scripts/run-migrations",
 		"db:rollback": "./scripts/migrate down",
 		"db:seed:djs": "./scripts/seed-djs",
+		"db:export:djs": "./scripts/export-djs-json",
 		"db:delete:djs": "./scripts/delete-djs",
 		"format": "./scripts/format",
 		"lint": "./scripts/lint",
