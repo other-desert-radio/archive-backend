@@ -90,8 +90,8 @@ test gaps, see the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
-- `bun run db:export:djs` writes the transformed DJ JSON to stdout, so it can be
-  redirected to a file or piped to the clipboard.
+- `bun run db:export:djs` writes the current, legacy DJ transformer output to
+  stdout for development. It does not produce the static archive asset layout.
 - `bun run db:delete:djs -- --confirm` permanently deletes all DJs and their
   cascading relationship rows.
 - `bun run format` formats source files with Biome and Markdown files with
@@ -107,6 +107,11 @@ test gaps, see the
   into the API container, so `/admin` updates after each frontend rebuild. Stop
   the watcher with `Ctrl-C`; stop the containers separately with
   `docker compose down`.
+
+The planned archive exporter will write its complete static output to the local
+`archive-export/` directory. A later, separate GitHub publication feature will
+copy that directory's contents to `public/archive/` in the Astro frontend
+repository; it will not write to this backend's `dist/` directory.
 
 After the database check succeeds, startup logs the web server address, for
 example `Web server running at http://0.0.0.0:3000`.

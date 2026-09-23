@@ -4,45 +4,103 @@ The archive front end that plugs into this is a GitHub static site.
 
 It will source data from static JSON files included in the GitHub repo.
 
-This backend will convert tables in the PostgreSQL database into three JSON
-files for the front end to consume:
+This backend will convert PostgreSQL data into static assets for the frontend.
+Until GitHub publication is implemented, the exporter will write this same
+layout to a local `archive-export/` directory:
 
-1. `djs.json`
-
-```json
-[{
-    id: 1,
-    title: "name",
-    bio: "safe html",
-    image: "image_url",
-    shows: [id, id, id],
-    tags: [id, id, id]
-}, ... ]
+```text
+archive-export/
+├── djs_brief.json
+├── djs/
+│   └── 1.json
+├── shows.json
+├── tags.json
+└── images/
+    └── djs/
+        └── 1.jpg
 ```
 
-1. `shows.json`
+When published to the Astro repository, these files belong in `public/archive/`.
+Astro copies `public/` into the built site unchanged, so the files are available
+beneath `archive/`. The frontend must construct URLs with Astro's
+`import.meta.env.BASE_URL`, which supports GitHub Pages project sites whose site
+URL includes the repository name.
+
+## `djs_brief.json`
+
+The scrolling DJ list loads this compact index.
 
 ```json
-[{
-    id: 1,
-    title: "title",
-    date: "date",
-    duration: 1234, // in seconds
-    djs: [id],
-    image: "...",
-    tags: [id, id],
-    url: "string", // where audio comes from
-}, ...]
+[
+  {
+    "id": 1,
+    "title": "DJ Example",
+    "image": "images/djs/1.jpg",
+    "tagIds": [2, 4]
+  }
+]
 ```
 
-1. `tags.json`
+## `djs/{id}.json`
+
+Selecting a DJ loads this detail document. Each embedded show includes enough
+metadata for the DJ page; `tagIds` are resolved through the shared `tags.json`
+dictionary.
 
 ```json
-[{
-    id: 1,
-    title: "saad",
-    color: "#FF1100"
-}, ... ]
+{
+  "id": 1,
+  "title": "DJ Example",
+  "bio": "<p>Safe HTML</p>",
+  "image": "images/djs/1.jpg",
+  "shows": [
+    {
+      "id": 10,
+      "title": "Example Show",
+      "date": "2026-01-01T00:00:00.000Z",
+      "duration": 1234,
+      "image": "https://example.com/show-image.jpg",
+      "tagIds": [2, 4],
+      "url": "https://example.com/audio"
+    }
+  ],
+  "tagIds": [2, 4]
+}
+```
+
+## `shows.json`
+
+The scrolling show list loads this document. It embeds the small DJ card data
+needed for display; its `tagIds` are resolved through `tags.json`.
+
+```json
+[
+  {
+    "id": 10,
+    "title": "Example Show",
+    "date": "2026-01-01T00:00:00.000Z",
+    "duration": 1234,
+    "djs": [{ "id": 1, "title": "DJ Example", "image": "images/djs/1.jpg" }],
+    "image": "https://example.com/show-image.jpg",
+    "tagIds": [2, 4],
+    "url": "https://example.com/audio"
+  }
+]
+```
+
+## `tags.json`
+
+This is the canonical, shared tag dictionary. The frontend downloads it once,
+indexes it by `id`, and resolves every `tagIds` array against it.
+
+```json
+[
+  {
+    "id": 2,
+    "title": "House",
+    "color": "#ff1100"
+  }
+]
 ```
 
 The database tables on the backend will be:
