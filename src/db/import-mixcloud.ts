@@ -55,80 +55,107 @@ type ParsedShow = {
   date: string;
   convertedDate: string;
   dateSource: string;
+  parser: ParserMetadata;
+};
+
+type ParserMetadata = {
+  index: number;
+  name: string;
 };
 
 type ParseShowNameResult =
   | {
       status: "success";
       data: ParsedShowName;
+      parser: ParserMetadata;
     }
   | {
       status: "failure";
       name: string;
     };
 
-type ShowNameParser = (name: string) => ParsedShowName | undefined;
+type ShowNameParser = {
+  name: string;
+  parse: (name: string) => ParsedShowName | undefined;
+};
 
-const parseWithPattern =
-  (pattern: RegExp): ShowNameParser =>
-  (name) => {
-    const match = pattern.exec(name);
+const parseWithPattern = (name: string, pattern: RegExp): ShowNameParser => ({
+  name,
+  parse: (value) => {
+    const match = pattern.exec(value);
     return match?.groups as ParsedShowName | undefined;
-  };
+  },
+});
 
-const parseShowNameAttempts: ShowNameParser[] = [
+const parseShowNameAttempts: Array<ShowNameParser & { index: number }> = [
+  // trailing-apostrophe DJ name with month and year
+  // "Andrew Storrs' From the Vault 5 - Terry Allen LIVE @ Zebulon LA, February 2020"
+  parseWithPattern(
+    "trailing-apostrophe DJ name with month and year",
+    /^(?<djName>.+?)' (?<title>.+), (?<date>[A-Z][a-z]+ \d{4})$/,
+  ),
+
   // possessive DJ name
   // "Ethan Primason's Yugoslav Special - August 10, 2020"
   // "K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't",
   // Drop the possessive suffix and use the remaining text as the show title.
   parseWithPattern(
+    "possessive DJ name with date",
     /^(?<djName>.+?)'s (?<title>.+) - (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
   ),
   // The common case
   // "Ethan - Side A, April 6, 2020"
   parseWithPattern(
+    "common comma date",
     /^(?<djName>.+?) - (?<title>.+), (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
   ),
 
   // hyphen divider
   // "Caroline - Mojave Window Optics pt. 2 - June 1, 2020"
   parseWithPattern(
+    "hyphen date",
     /^(?<djName>.+?) - (?<title>.+) - (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
   ),
 
   // colon divider
   // Justin Paszul: An Evening of Stand-Up Cosmogony, Hour #1, March 3, 2025
   parseWithPattern(
+    "colon date",
     /^(?<djName>.+?): (?<title>.+), (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
   ),
 
   // broadcast date suffix
   // "Ethan and Caroline - 24 Hour Drone Live Set 2020, Broadcast on April 25, 2020"
   parseWithPattern(
+    "broadcast date",
     /^(?<djName>.+?) - (?<title>.+), Broadcast on (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
   ),
 
   // possessive DJ name without a date
   // "K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't"
   parseWithPattern(
+    "possessive DJ name without date",
     /^(?!.*[A-Z][a-z]+ \d{1,2}, \d{4}$)(?<djName>.+?)'s (?<title>.+ - .+)$/,
   ),
 
   // hypen divider, no date
   // Florina - ASEDR 6
   // NATIONWIDEONYRSIDE - Tight Joints Cousin - Side B 2019
-  parseWithPattern(/^(?<djName>.+?) - (?<title>.+)$/),
+  parseWithPattern("hyphen without date", /^(?<djName>.+?) - (?<title>.+)$/),
 
-  // support
-  //  "Andrew Storrs' From the Vault 5 - Terry Allen LIVE @ Zebulon LA, February 2020",
-  //  date output: Feburary 2020
-];
+  // "NATIONWIDEONYRSIDE - Live at Lander's Brew - Side B 2019",
+  // apostorpohe in the show title
+].map((parser, index) => ({ ...parser, index: index + 1 }));
 
 const parseShowName = (name: string): ParseShowNameResult => {
   for (const parseAttempt of parseShowNameAttempts) {
-    const data = parseAttempt(name);
+    const data = parseAttempt.parse(name);
     if (data) {
-      return { status: "success", data };
+      return {
+        status: "success",
+        data,
+        parser: { index: parseAttempt.index, name: parseAttempt.name },
+      };
     }
   }
 
@@ -150,10 +177,17 @@ const parseShowName = (name: string): ParseShowNameResult => {
     const knownDJPattern = new RegExp(
       `^(?<djName>${escapedDJ})(?:\\s*-\\s*|\\s+)(?<title>.+?)[,:] (?<date>[A-Z][a-z]+ \\d{1,2}, \\d{4})$`,
     );
-    const data = parseWithPattern(knownDJPattern)(name);
+    const data = parseWithPattern("known DJ name", knownDJPattern).parse(name);
 
     if (data) {
-      return { status: "success", data };
+      return {
+        status: "success",
+        data,
+        parser: {
+          index: parseShowNameAttempts.length + 1,
+          name: "known DJ name",
+        },
+      };
     }
   }
 
@@ -193,6 +227,7 @@ if (import.meta.main) {
     }
 
     const { djName, title, date } = parsedShowName.data;
+    const { parser } = parsedShowName;
     const dateSource = date ? "parsed" : "fallback";
     const showDate = date ?? entry.created_time;
     const convertedDate = date
@@ -200,7 +235,7 @@ if (import.meta.main) {
       : new Date(entry.created_time).toISOString();
 
     console.log(
-      `parsing "${entry.name}",\n | dj_name: ${djName}\n | title: ${title}\n | date: ${showDate}\n | converted_date: ${convertedDate}\n | date_source: ${dateSource}\n\n`,
+      `parsing "${entry.name}",\n | parser: ${parser.index} (${parser.name})\n | dj_name: ${djName}\n | title: ${title}\n | date: ${showDate}\n | converted_date: ${convertedDate}\n | date_source: ${dateSource}\n\n`,
     );
 
     collection.push({
@@ -209,6 +244,7 @@ if (import.meta.main) {
       date: showDate,
       convertedDate,
       dateSource,
+      parser,
     });
   }
 
@@ -237,8 +273,33 @@ if (import.meta.main) {
   const fallbacks = collection.filter(
     (entry) => entry.dateSource === "fallback",
   );
+  const fallbackParserCounts = new Map<
+    number,
+    { parser: ParserMetadata; count: number }
+  >();
+  for (const entry of fallbacks) {
+    const existing = fallbackParserCounts.get(entry.parser.index);
+    fallbackParserCounts.set(entry.parser.index, {
+      parser: entry.parser,
+      count: (existing?.count ?? 0) + 1,
+    });
+  }
 
   console.log(`\nsuccess count: ${collection.length}`);
   console.error(red(`failure count: ${parseFailures.length}`));
-  console.error(red(`fallback date count: ${fallbacks.length}`));
+  console.error(
+    red(
+      `fallback date count: ${fallbacks.length}\n${[
+        ...fallbackParserCounts.values(),
+      ]
+        .sort(
+          ({ parser: first }, { parser: second }) => first.index - second.index,
+        )
+        .map(
+          ({ parser, count }) =>
+            ` | parser ${parser.index} (${parser.name}): ${count}`,
+        )
+        .join("\n")}`,
+    ),
+  );
 }
