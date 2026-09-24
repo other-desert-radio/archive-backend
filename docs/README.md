@@ -94,10 +94,10 @@ test gaps, see the
   prints parsed DJ names, titles, source dates, and ISO dates for names in the
   supported `DJ - Title, Month Day, Year`, `DJ - Title - Month Day, Year`, and
   no-date hyphen formats. Missing dates use the Mixcloud `created_time` value
-  and are marked in the collected show records. Output ends with grouped DJ
-  show counts in the `DJ name | count` format. Names that do not match the
-  formats are reported in red. Database writes and interactive import choices
-  are intentionally deferred.
+  and are marked in the collected show records. Output ends with grouped DJ show
+  counts in the `DJ name | count` format. Names that do not match the formats
+  are reported in red. Database writes and interactive import choices are
+  intentionally deferred.
 - `scripts/fetch-mixcloud` fetches every public Other Desert Radio Mixcloud
   cloudcast page and writes one combined JSON document to
   `src/res/mixcloud.json`.
