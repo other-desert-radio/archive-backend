@@ -25,7 +25,15 @@ export const tagRoutes =
 				try {
 					const tags = await database
 						.selectFrom("tags")
-						.select(["id", "createdAt", "title", "color", "reviewed"])
+						.select([
+							"id",
+							"createdAt",
+							"title",
+							"color",
+							"reviewed",
+							"mixcloud_key",
+							"mixcloud_url",
+						])
 						.orderBy("id")
 						.execute();
 

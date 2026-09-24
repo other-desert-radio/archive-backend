@@ -59,8 +59,20 @@ describe("archive export documents", () => {
 				},
 			] as never,
 			tags: [
-				{ id: 2, title: "House", color: "#ff1100" },
-				{ id: 4, title: "Ambient", color: "#2255cc" },
+				{
+					id: 2,
+					title: "House",
+					color: "#ff1100",
+					mixcloud_key: "/genres/house/",
+					mixcloud_url: "https://www.mixcloud.com/genres/house/",
+				},
+				{
+					id: 4,
+					title: "Ambient",
+					color: "#2255cc",
+					mixcloud_key: null,
+					mixcloud_url: null,
+				},
 			],
 			showDJs: [{ dj_id: 1, show_id: 10 }],
 			djTags: [{ dj_id: 1, tag_id: 4 }],
@@ -101,7 +113,13 @@ describe("archive export documents", () => {
 			tagIds: [2, 4],
 		});
 		expect(documents.tags).toEqual([
-			{ id: 2, title: "House", color: "#ff1100" },
+			{
+				id: 2,
+				title: "House",
+				color: "#ff1100",
+				mixcloud_key: "/genres/house/",
+				mixcloud_url: "https://www.mixcloud.com/genres/house/",
+			},
 			{ id: 4, title: "Ambient", color: "#2255cc" },
 		]);
 		expect(documents.images).toEqual([
