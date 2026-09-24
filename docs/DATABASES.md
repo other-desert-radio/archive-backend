@@ -55,6 +55,14 @@ The fixtures intentionally do not create shows, tags, or relationship rows. The
 command only inserts data and does not clear existing records, so rerunning it
 adds another fixture batch.
 
+`bun run db:seed:shows` inserts five standalone show records for local
+development. The fixtures intentionally do not create DJs, tags, or relationship
+rows. The command only inserts data and does not clear existing records, so
+rerunning it adds another fixture batch.
+
+`bun run db:delete:shows -- --confirm` permanently deletes every show and its
+cascading relationship rows. The explicit confirmation flag is required.
+
 `bun run db:delete:djs -- --confirm` permanently deletes every DJ. Relationship
 rows referencing those DJs are removed by the database's `ON DELETE CASCADE`
 constraints. The explicit confirmation flag is required.
