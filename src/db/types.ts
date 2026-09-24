@@ -20,6 +20,8 @@ export type DJsTable = {
 	bio: string;
 	image: Buffer | null;
 	image_filename: string | null;
+	image_1024_webp: Buffer | null;
+	image_400_webp: Buffer | null;
 	socials: string | null;
 	showTitle: string | null;
 	showDescription: string | null;

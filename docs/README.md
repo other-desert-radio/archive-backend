@@ -15,8 +15,8 @@ table's name column to title to match the archive field contract. Migration ten
 adds the nullable `djs.socials` field, and migration twelve adds the non-null
 `tags.reviewed` flag. Migration thirteen replaces the nullable DJ image URL with
 raw binary image storage and filename metadata. Migration fourteen adds nullable
-DJ show metadata. Migrations are applied explicitly, one at a time, after
-review.
+DJ show metadata. Migration fifteen adds cached 400px and 1024px WebP DJ archive
+derivatives. Migrations are applied explicitly, one at a time, after review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -90,9 +90,10 @@ test gaps, see the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
-- `bun run db:export:archive` writes DJ detail/index JSON, tags, and DJ images
-  to the configured local Astro archive directory. It logs each build stage and
-  generated file; the top-level show index is deferred.
+- `bun run db:export:archive` creates missing cached DJ WebP derivatives, then
+  writes DJ detail/index JSON, tags, and DJ images to the configured local Astro
+  archive directory. It logs each build stage and generated file; the top-level
+  show index is deferred.
 - `bun run db:delete:djs -- --confirm` permanently deletes all DJs and their
   cascading relationship rows.
 - `bun run format` formats source files with Biome and Markdown files with

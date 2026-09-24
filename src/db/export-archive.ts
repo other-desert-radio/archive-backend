@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Kysely, Selectable } from "kysely";
 import { sanitizeArchiveHtml } from "../utils/sanitize-html.js";
 import { db } from "./db.js";
+import { cacheDJWebPImageDerivatives } from "./dj-image-derivatives.js";
 import type {
 	Database,
 	DJsTable,
@@ -20,7 +21,7 @@ export const ARCHIVE_OUTPUT_DIRECTORY =
 type ArchiveDJImage = {
 	id: number;
 	bytes: Buffer;
-	extension: ".jpg" | ".png" | ".webp";
+	width: 400 | 1024;
 };
 
 type ArchiveShow = {
@@ -74,19 +75,6 @@ export type BuildArchiveDocumentsParams = {
 	showTags: Array<Pick<Selectable<ShowTagsTable>, "show_id" | "tag_id">>;
 };
 
-const staticImageExtension = (
-	filename: string,
-): ArchiveDJImage["extension"] | undefined => {
-	const extension = path.extname(filename).toLowerCase();
-	if (extension === ".jpeg" || extension === ".jpg") {
-		return ".jpg";
-	}
-	if (extension === ".png" || extension === ".webp") {
-		return extension;
-	}
-	return undefined;
-};
-
 const groupIds = <T extends Record<Key, number>, Key extends string>(
 	rows: T[],
 	groupKey: Key,
@@ -101,22 +89,18 @@ const groupIds = <T extends Record<Key, number>, Key extends string>(
 	return groups;
 };
 
-const imageForDJ = (dj: Selectable<DJsTable>): ArchiveDJImage | undefined => {
-	if (dj.image === null && dj.image_filename === null) {
-		return undefined;
+const imagesForDJ = (dj: Selectable<DJsTable>): ArchiveDJImage[] => {
+	if (dj.image_1024_webp === null && dj.image_400_webp === null) {
+		return [];
 	}
-	if (dj.image === null || dj.image_filename === null) {
-		throw new Error(`DJ ${dj.id} has incomplete image metadata`);
-	}
-
-	const extension = staticImageExtension(dj.image_filename);
-	if (extension === undefined) {
-		throw new Error(
-			`DJ ${dj.id} has an unsupported image filename: ${dj.image_filename}`,
-		);
+	if (dj.image_1024_webp === null || dj.image_400_webp === null) {
+		throw new Error(`DJ ${dj.id} has an incomplete WebP image cache`);
 	}
 
-	return { id: dj.id, bytes: dj.image, extension };
+	return [
+		{ id: dj.id, bytes: dj.image_400_webp, width: 400 },
+		{ id: dj.id, bytes: dj.image_1024_webp, width: 1024 },
+	];
 };
 
 /** Builds the public static-archive documents without writing to disk. */
@@ -128,14 +112,11 @@ export const buildArchiveDocuments = ({
 	djTags,
 	showTags,
 }: BuildArchiveDocumentsParams): ArchiveDocuments => {
-	const images = djs.flatMap((dj) => {
-		const image = imageForDJ(dj);
-		return image === undefined ? [] : [image];
-	});
+	const images = djs.flatMap(imagesForDJ);
 	const imagePaths = new Map(
 		images.map((image) => [
-			image.id,
-			`images/djs/${image.id}${image.extension}`,
+			`${image.id}-${image.width}`,
+			`images/djs/${image.id}-${image.width}.webp`,
 		]),
 	);
 	const showsById = new Map(shows.map((show) => [show.id, show]));
@@ -174,7 +155,7 @@ export const buildArchiveDocuments = ({
 	});
 
 	const djsBrief = djsWithTags.map(({ dj, tagIds }) => {
-		const image = imagePaths.get(dj.id);
+		const image = imagePaths.get(`${dj.id}-400`);
 		return {
 			id: dj.id,
 			title: dj.title,
@@ -183,7 +164,7 @@ export const buildArchiveDocuments = ({
 		};
 	});
 	const archiveDJs = djsWithTags.map(({ dj, tagIds, shows: djShows }) => {
-		const image = imagePaths.get(dj.id);
+		const image = imagePaths.get(`${dj.id}-1024`);
 		return {
 			id: dj.id,
 			title: dj.title,
@@ -265,7 +246,7 @@ export const writeArchiveDocuments = async (
 			recursive: true,
 		});
 		for (const [index, image] of documents.images.entries()) {
-			const relativePath = `images/djs/${image.id}${image.extension}`;
+			const relativePath = `images/djs/${image.id}-${image.width}.webp`;
 			await fs.writeFile(path.join(outputDirectory, relativePath), image.bytes);
 			const branch = index === documents.images.length - 1 ? "└─" : "├─";
 			reporter.log(`│  ${branch} ${relativePath}`);
@@ -327,9 +308,16 @@ export const exportArchive = async (
 	reporter.log(`│  ├─ DJ/show relationships: ${showDJs.length}`);
 	reporter.log(`│  ├─ Direct DJ tags: ${djTags.length}`);
 	reporter.log(`│  └─ Show tags: ${showTags.length}`);
+	reporter.log("├─ Resolving cached WebP images");
+	const imageCaches = await cacheDJWebPImageDerivatives(database, djs);
+	const djsWithImageCaches = djs.map((dj) => ({
+		...dj,
+		...(imageCaches.get(dj.id) ?? {}),
+	}));
+	reporter.log(`│  └─ Cached image pairs: ${imageCaches.size}`);
 	reporter.log("├─ Building archive documents");
 	const documents = buildArchiveDocuments({
-		djs,
+		djs: djsWithImageCaches,
 		shows,
 		tags,
 		showDJs,

@@ -31,7 +31,6 @@ export const djRoutes =
 								"createdAt",
 								"title",
 								"bio",
-								"image",
 								"image_filename",
 								"socials",
 								"showTitle",

@@ -153,10 +153,11 @@ authenticated admin boundary. It returns `404 { "error": "Not Found" }` when the
 DJ or image is absent.
 
 The upload validator accepts JPEG, PNG, and WebP MIME types with matching
-filename extensions up to 10 MiB. It stores the original bytes unchanged and
-normalizes only the filename metadata; compression and WebP conversion remain
-future work. MIME types and extensions are client-provided hints rather than a
-security boundary in this initial admin-only workflow.
+filename extensions up to 1.5 MiB. It stores the original bytes unchanged and
+normalizes only the filename metadata. The archive exporter later creates and
+caches 400px and 1024px WebP derivatives in PostgreSQL. MIME types and
+extensions are client-provided hints rather than a security boundary in this
+initial admin-only workflow.
 
 ## Logging new features
 
