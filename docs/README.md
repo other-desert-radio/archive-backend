@@ -20,7 +20,9 @@ review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
-formatted with Prettier and linted with markdownlint-cli2.
+formatted with Prettier and linted with markdownlint-cli2. The checked-in
+`.markdownlint-cli2.yaml` disables MD024, so documents may use multiple
+headings with the same text.
 
 TypeScript-specific conventions, including the preference for `type` aliases and
 `undefined` over `null`, are documented in [`TYPESCRIPT.md`](TYPESCRIPT.md).
