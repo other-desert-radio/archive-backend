@@ -1,4 +1,4 @@
-import { ResourceToolbar } from "./resource-toolbar.js";
+import { ResourceToolbar } from "../shared/resource-toolbar.js";
 
 type DJToolbarProps = {
 	query: string;

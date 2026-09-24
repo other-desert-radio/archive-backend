@@ -1,4 +1,10 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+	type FormEvent,
+	type ReactNode,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 
 type OnboardingModalProps = {
 	isOpen: boolean;
@@ -70,7 +76,7 @@ export const OnboardingModal = ({
 	const dismiss = () => {
 		if (!isSubmitting) onClose();
 	};
-	const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+	const submit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setError(undefined);
 		setIsSubmitting(true);

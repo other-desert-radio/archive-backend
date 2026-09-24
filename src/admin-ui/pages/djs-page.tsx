@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DJToolbar } from "../components/dj-toolbar.js";
-import { OnboardDJModal } from "../components/onboard-dj-modal.js";
-import { ResourceView } from "../components/resource-view.js";
-import { DJsTable } from "../components/tables/djs-table.js";
+import { DJToolbar } from "../components/dj/dj-toolbar.js";
+import { DJsTable } from "../components/dj/djs-table.js";
 import {
 	type DJSortColumn,
 	filterDJs,
 	type SortDirection,
 	sortDJs,
-} from "../components/tables/djs-table-utils.js";
+} from "../components/dj/djs-table-utils.js";
+import { OnboardDJModal } from "../components/dj/onboard-dj-modal.js";
+import { ResourceView } from "../components/shared/resource-view.js";
 import { createDJ } from "../loaders/create-dj.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";

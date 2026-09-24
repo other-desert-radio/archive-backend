@@ -84,10 +84,11 @@ and the Tags UI remain read-only.
 - `src/admin-ui/main.tsx` is only the React entry point.
 - `src/admin-ui/pages/` contains `AdminPage`, `DJsPage`, and `ShowsPage`.
 - `src/admin-ui/loaders/` contains the DJ and Shows API loaders.
-- `src/admin-ui/components/database-table-view.tsx` provides the shared
+- `src/admin-ui/components/shared/database-table-view.tsx` provides the shared
   `DatabaseTableView`, which owns the required header/body structure and
   loading, error, retry, and empty states for each resource view.
-- `src/admin-ui/components/tables/` contains the Shows and DJs tables.
+- `src/admin-ui/components/` is organized by responsibility: `dj/`, `shows/`,
+  `tags/`, `shared/`, and `layout/`.
 - `#shows` is the default route, `#djs` selects the DJ view, and `#tags` selects
   the Tags view. Upload remains a visible sidebar placeholder.
 - `src/admin-ui/assets/background/background.jpeg` provides the textured page
@@ -170,8 +171,9 @@ resource tables:
 - Keep the layout usable on narrow screens by allowing the sidebar to flow above
   the content and the tables to scroll horizontally.
 - Keep UI data loaders in `src/admin-ui/loaders/`, resource pages in
-  `src/admin-ui/pages/`, and table components in
-  `src/admin-ui/components/tables/`.
+  `src/admin-ui/pages/`, and resource components in their corresponding
+  `src/admin-ui/components/<resource>/` directories. Put reusable primitives in
+  `src/admin-ui/components/shared/`.
 - Wrap each database resource page with the shared `DatabaseTableView`, using
   its `title`, loading/error/retry, and empty-state props. The component renders
   the resource heading and body and only renders table children after a

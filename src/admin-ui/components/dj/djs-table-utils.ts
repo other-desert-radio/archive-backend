@@ -4,7 +4,7 @@ import {
 	filterResourceRows,
 	type SortDirection,
 	sortResourceRows,
-} from "../resource-table.js";
+} from "../shared/resource-table.js";
 import { djColumns } from "./djs-table.js";
 
 export type DJSortColumn =
@@ -18,7 +18,7 @@ export type DJSortColumn =
 	| "socials"
 	| "bio"
 	| "shows";
-export type { SortDirection } from "../resource-table.js";
+export type { SortDirection } from "../shared/resource-table.js";
 
 export const getDJSearchValue = (dj: DJsAdminRow, tags: TagsJSON[]): string => {
 	const titles = dj.tags

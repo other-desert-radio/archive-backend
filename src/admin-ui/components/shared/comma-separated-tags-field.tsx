@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { splitCommaSeparated } from "../../utils/index.js";
-import { validateTags } from "../loaders/validate-tags.js";
+import { splitCommaSeparated } from "../../../utils/index.js";
+import { validateTags } from "../../loaders/validate-tags.js";
 import { LabeledFormControl } from "./labeled-form-control.js";
 
 type CommaSeparatedTagsFieldProps = {

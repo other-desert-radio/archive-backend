@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { DatabaseTableView } from "../components/database-table-view.js";
-import { TagsTable } from "../components/tables/tags-table.js";
+import { DatabaseTableView } from "../components/shared/database-table-view.js";
+import { TagsTable } from "../components/tags/tags-table.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 
 export const TagsPage = () => {

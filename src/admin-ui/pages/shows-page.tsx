@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { DatabaseTableView } from "../components/database-table-view.js";
-import { ShowsTable } from "../components/tables/shows-table.js";
+import { DatabaseTableView } from "../components/shared/database-table-view.js";
+import { ShowsTable } from "../components/shows/shows-table.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 
 export const ShowsPage = () => {

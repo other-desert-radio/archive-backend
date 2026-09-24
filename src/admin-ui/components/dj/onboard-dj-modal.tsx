@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { CommaSeparatedTagsField } from "./comma-separated-tags-field.js";
+import { CommaSeparatedTagsField } from "../shared/comma-separated-tags-field.js";
+import { LabeledFormControl } from "../shared/labeled-form-control.js";
+import { OnboardingModal } from "../shared/onboarding-modal.js";
 import { DJImageDropzone } from "./dj-image-dropzone.js";
-import { LabeledFormControl } from "./labeled-form-control.js";
 import { buildCreateDJRequest, type CreateDJForm } from "./onboard-dj-utils.js";
-import { OnboardingModal } from "./onboarding-modal.js";
 
 type OnboardDJModalProps = {
 	isOpen: boolean;

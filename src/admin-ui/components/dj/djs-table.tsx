@@ -1,10 +1,13 @@
 import type { DJsAdminRow } from "../../loaders/djs.js";
-import { ResourceTable, type ResourceTableColumn } from "../resource-table.js";
+import {
+	ResourceTable,
+	type ResourceTableColumn,
+} from "../shared/resource-table.js";
 import {
 	formatMissing,
 	formatRelationshipIDs,
 	formatUTCDateTime,
-} from "../table-formatters.js";
+} from "../shared/table-formatters.js";
 import type { DJSortColumn, SortDirection } from "./djs-table-utils.js";
 
 type DJsTableProps = {
