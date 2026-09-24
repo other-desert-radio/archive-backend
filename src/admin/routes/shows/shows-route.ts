@@ -1,13 +1,13 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { ShowsJSON } from "../../../json-transformers/index.js";
 import { transformShows } from "../../../json-transformers/index.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
+import type { AdminShowsJSON } from "./types.js";
 
 /** Registers authenticated Shows API routes. */
 export const showRoutes =
 	(database: TypedDatabase): FastifyPluginAsync =>
 	async (app) => {
-		app.get<{ Reply: AdminApiReply<ShowsJSON[]> }>(
+		app.get<{ Reply: AdminApiReply<AdminShowsJSON[]> }>(
 			"/shows",
 			async (request, reply) => {
 				try {
@@ -39,7 +39,18 @@ export const showRoutes =
 							.execute(),
 					]);
 
-					return transformShows({ shows, showDJs, showTags });
+					const createdAtByShowId = new Map(
+						shows.map((show) => [show.id, show.createdAt]),
+					);
+					return transformShows({ shows, showDJs, showTags }).map((show) => {
+						const createdAt = createdAtByShowId.get(show.id);
+						if (createdAt === undefined) {
+							throw new Error(
+								`Show ${show.id} is missing its creation timestamp`,
+							);
+						}
+						return { ...show, createdAt };
+					});
 				} catch (error) {
 					request.log.error(error, "Unable to load shows");
 					return reply.code(500).send({ error: "Internal Server Error" });

@@ -21,8 +21,8 @@ review.
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
 formatted with Prettier and linted with markdownlint-cli2. The checked-in
-`.markdownlint-cli2.yaml` disables MD024, so documents may use multiple
-headings with the same text.
+`.markdownlint-cli2.yaml` disables MD024, so documents may use multiple headings
+with the same text.
 
 TypeScript-specific conventions, including the preference for `type` aliases and
 `undefined` over `null`, are documented in [`TYPESCRIPT.md`](TYPESCRIPT.md).
@@ -62,14 +62,14 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
-The first Show UI implementation chunk is complete and awaiting review. DJs now
-use reusable resource toolbar, table, state-view, and onboarding primitives. The
-shared onboarding shell traps focus, returns focus to its opener, supports
-Escape dismissal while idle, prevents duplicate submission, and keeps its
-content scrollable within the available viewport. The comma-separated tags field
-is reusable and ignores stale validation responses; a validation-service failure
-does not prevent final submission. Shows and Tags have not been migrated in this
-chunk.
+The first Show UI implementation chunk is complete. DJs use reusable resource
+toolbar, table, state-view, and onboarding primitives. The shared onboarding
+shell traps focus, returns focus to its opener, supports Escape dismissal while
+idle, prevents duplicate submission, and keeps its content scrollable within the
+available viewport. The comma-separated tags field is reusable and ignores stale
+validation responses; a validation-service failure does not prevent final
+submission. Chunk 2 migrates the read-only Shows table to the same resource
+view, with search and sorting; Show onboarding remains deferred to Chunk 3.
 
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
@@ -82,8 +82,9 @@ transactionally and sanitizes bio/socials HTML. Tag creation is centralized in
 the Tags module and is available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,
-empty, and error states. The read-only Shows API is also implemented and returns
-transformed relationship IDs.
+empty, and error states. The read-only Shows API returns transformed
+relationship IDs plus its admin-only `createdAt` timestamp; public archive
+response contracts remain unchanged.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the

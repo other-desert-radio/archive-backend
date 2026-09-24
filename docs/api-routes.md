@@ -129,6 +129,11 @@ POST /api/admin/create-tags
 `GET /api/admin/djs` includes each DJ's `createdAt` timestamp in ISO JSON date
 format, alongside its identity, metadata, and relationship IDs.
 
+`GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
+ISO JSON date format. The public Show transformer remains unchanged; `date` is a
+broadcast calendar date stored at midnight UTC and returned as an ISO timestamp
+for compatibility.
+
 Tag creation accepts `{ title: string }` or `{ title: string, color: string }`
 for `create-tag`, and an array of those objects for `create-tags`. Tag titles
 are trimmed and reused case-insensitively. A color must match
