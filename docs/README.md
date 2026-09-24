@@ -90,6 +90,10 @@ test gaps, see the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
+- `bun src/db/import-mixcloud.ts` loads the checked-in Mixcloud show export and
+  prints parsed DJ names, titles, source dates, and ISO dates for names in the
+  supported `DJ - Title, Month Day, Year` format. Database writes and
+  interactive import choices are intentionally deferred.
 - `bun run db:export:archive` writes DJ detail/index JSON and tags to the
   configured Astro `src/res/` directory, and DJ images to `public/assets/`. It
   logs each build stage and generated file; the top-level show index is
