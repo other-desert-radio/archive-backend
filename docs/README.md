@@ -90,6 +90,9 @@ test gaps, see the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
+- `bun run db:seed:shows` inserts five standalone dummy shows.
+- `bun run db:delete:shows -- --confirm` permanently deletes all shows and their
+  cascading relationship rows.
 - `bun src/db/import-mixcloud.ts` loads the checked-in Mixcloud show export and
   prints parsed DJ names, titles, source dates, and ISO dates for names in the
   supported `DJ - Title, Month Day, Year`, `DJ - Title - Month Day, Year`,

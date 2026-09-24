@@ -13,6 +13,8 @@
 		"db:migrate:all": "./scripts/run-migrations",
 		"db:rollback": "./scripts/migrate down",
 		"db:seed:djs": "./scripts/seed-djs",
+		"db:seed:shows": "./scripts/seed-shows",
+		"db:delete:shows": "./scripts/delete-shows",
 		"db:export:archive": "./scripts/export-archive",
 		"db:delete:djs": "./scripts/delete-djs",
 		"format": "./scripts/format",
