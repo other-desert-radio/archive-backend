@@ -90,9 +90,10 @@ test gaps, see the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
-- `bun run db:export:archive` writes DJ detail/index JSON, tags, and DJ images
-  to the configured local Astro archive directory. It logs each build stage and
-  generated file; the top-level show index is deferred.
+- `bun run db:export:archive` writes DJ detail/index JSON and tags to the
+  configured Astro `src/res/` directory, and DJ images to `public/assets/`. It
+  logs each build stage and generated file; the top-level show index is
+  deferred.
 - `bun run db:delete:djs -- --confirm` permanently deletes all DJs and their
   cascading relationship rows.
 - `bun run format` formats source files with Biome and Markdown files with
@@ -109,11 +110,12 @@ test gaps, see the
   the watcher with `Ctrl-C`; stop the containers separately with
   `docker compose down`.
 
-The archive exporter writes its DJ/tag output to the absolute
-`ARCHIVE_OUTPUT_DIRECTORY` constant in `src/db/export-archive.ts`. Set it to the
-Astro frontend's `public/archive/` directory before running the command. A
-later, separate GitHub publication feature will copy these assets to the
-frontend repository; it will not write to this backend's `dist/` directory.
+The archive exporter writes JSON to the absolute `ARCHIVE_RESOURCE_DIRECTORY`
+constant and images to `ARCHIVE_ASSET_DIRECTORY` in `src/db/export-archive.ts`.
+They default to the Astro frontend's `src/res/` and `public/assets/`
+directories. A later, separate GitHub publication feature will copy these assets
+to the frontend repository; it will not write to this backend's `dist/`
+directory.
 
 After the database check succeeds, startup logs the web server address, for
 example `Web server running at http://0.0.0.0:3000`.

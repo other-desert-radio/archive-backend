@@ -22,8 +22,8 @@ describe a DigitalOcean Droplet deployment with two related responsibilities:
 
 The longer-term workflow may also include FFMPEG parsing and a UI for setting
 tracklist start and stop times. Once a show is complete, the backend should
-generate static archive assets locally, then trigger GitHub Actions to copy them
-to `public/archive/` in the Astro GitHub Pages repository.
+generate archive JSON in `src/res/` and image assets in `public/assets/`, then
+trigger GitHub Actions to publish them to the Astro GitHub Pages repository.
 
 This context does not change the confirmed framework decisions: Fastify, Kysely,
 and PostgreSQL remain the backend stack; the admin UI remains a custom
@@ -291,8 +291,8 @@ assigned to the DJ's shows through `show_tags`. Database errors return
       configured local archive directory.
 - [ ] Extend the exporter with the top-level show index after the show export
       contract is implemented.
-- [ ] Trigger and verify GitHub Actions publication to `public/archive/` in the
-      Astro archive repository.
+- [ ] Trigger and verify GitHub Actions publication of JSON to `src/res/` and
+      images to `public/assets/` in the Astro archive repository.
 
 ### Hardening and operations
 
@@ -427,8 +427,8 @@ chunks:
 - record the returned Mixcloud URL with the show's metadata;
 - decide whether optional FFMPEG parsing and tracklist time editing are needed;
 - extend the local DJ/tag archive exporter with the documented show assets, then
-  trigger GitHub Actions publication to `public/archive/` in the Astro
-  repository.
+  trigger GitHub Actions publication to the Astro repository's `src/res/` and
+  `public/assets/` directories.
 
 Do not combine the upload, publishing, metadata, parsing, export, and GitHub
 Actions work into one chunk.

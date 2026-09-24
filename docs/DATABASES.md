@@ -35,18 +35,17 @@ until the schema has been built and reviewed.
 ## Purpose
 
 The backend stores archive data in PostgreSQL. `bun run db:export:archive`
-writes the currently implemented DJ/tag assets to the configured local output
-directory:
+writes the currently implemented DJ/tag assets to the configured Astro frontend
+directories:
 
-- `djs_brief.json`, the compact DJ index;
-- `djs/{id}.json`, one detail document per DJ;
-- `tags.json`, the shared tag dictionary; and
-- `images/djs/{id}.{extension}`, copied DJ image assets.
+- `src/res/djs_brief.json`, the compact DJ index;
+- `src/res/djs/{id}.json`, one detail document per DJ;
+- `src/res/tags.json`, the shared tag dictionary; and
+- `public/assets/djs/{id}.{extension}`, copied DJ image assets.
 
-`shows.json` is intentionally deferred. The GitHub publication step will later
-copy this layout into `public/archive/` in the separate Astro frontend
-repository. Astro copies its `public/` directory into the deployed site without
-processing it. The database remains the source of truth. Arrays of IDs belong in
+`shows.json` is intentionally deferred. Astro imports JSON from `src/res/` as
+part of the site build and copies `public/assets/` into the deployed site
+unchanged. The database remains the source of truth. Arrays of IDs belong in
 exported documents, not in the primary entity tables.
 
 ## Local dummy data
@@ -232,10 +231,11 @@ For a DJ, `tagIds` is the distinct union of:
 The DJ detail document embeds the associated shows. Each embedded show includes
 its own `tagIds`. Generating the top-level `shows.json` remains deferred.
 
-The exporter writes raw DJ image bytes to `images/djs/{id}.{extension}` and uses
-the corresponding relative path in the JSON. It must never export the private
-`/api/admin/djs/{id}/image` URL. Show image values in DJ detail documents are
-the stored image URLs until show-image asset storage is added.
+The exporter writes raw DJ image bytes to `public/assets/djs/{id}.{extension}`
+and uses the corresponding `assets/djs/{id}.{extension}` path in JSON. It must
+never export the private `/api/admin/djs/{id}/image` URL. Show image values in
+DJ detail documents are the stored image URLs until show-image asset storage is
+added.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must

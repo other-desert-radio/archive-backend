@@ -74,7 +74,7 @@ describe("archive export documents", () => {
 			{
 				id: 1,
 				title: "DJ One",
-				image: "images/djs/1.png",
+				image: "assets/djs/1.png",
 				tagIds: [2, 4],
 			},
 			{ id: 2, title: "DJ Two", tagIds: [] },
@@ -82,7 +82,7 @@ describe("archive export documents", () => {
 		expect(documents.djs[0]).toEqual({
 			id: 1,
 			title: "DJ One",
-			image: "images/djs/1.png",
+			image: "assets/djs/1.png",
 			bio: "<p>Bio</p>",
 			socials: "<strong>@dj-one</strong>bad",
 			showTitle: "Late Night",
@@ -131,22 +131,19 @@ describe("archive export documents", () => {
 
 describe("archive export writer", () => {
 	test("replaces managed DJ files, preserves other output, and logs each file", async () => {
-		const outputDirectory = await mkdtemp(
-			path.join(tmpdir(), "archive-export-"),
-		);
-		temporaryDirectories.push(outputDirectory);
-		await mkdir(path.join(outputDirectory, "djs"), { recursive: true });
-		await mkdir(path.join(outputDirectory, "images", "djs"), {
+		const rootDirectory = await mkdtemp(path.join(tmpdir(), "archive-export-"));
+		temporaryDirectories.push(rootDirectory);
+		const resourceDirectory = path.join(rootDirectory, "res");
+		const assetDirectory = path.join(rootDirectory, "assets");
+		await mkdir(path.join(resourceDirectory, "djs"), { recursive: true });
+		await mkdir(path.join(assetDirectory, "djs"), {
 			recursive: true,
 		});
-		await mkdir(path.join(outputDirectory, "shows"), { recursive: true });
-		await writeFile(path.join(outputDirectory, "djs", "stale.json"), "stale");
+		await mkdir(path.join(resourceDirectory, "shows"), { recursive: true });
+		await writeFile(path.join(resourceDirectory, "djs", "stale.json"), "stale");
+		await writeFile(path.join(assetDirectory, "djs", "stale.jpg"), "stale");
 		await writeFile(
-			path.join(outputDirectory, "images", "djs", "stale.jpg"),
-			"stale",
-		);
-		await writeFile(
-			path.join(outputDirectory, "shows", "10.json"),
+			path.join(resourceDirectory, "shows", "10.json"),
 			"future show",
 		);
 
@@ -166,27 +163,28 @@ describe("archive export writer", () => {
 				tags: [{ id: 2, title: "House", color: "#ff1100" }],
 				images: [{ id: 1, bytes: Buffer.from("image"), extension: ".jpg" }],
 			},
-			outputDirectory,
+			resourceDirectory,
+			assetDirectory,
 			{ log: (message) => logs.push(message) },
 		);
 
 		expect(
 			JSON.parse(
-				await readFile(path.join(outputDirectory, "djs_brief.json"), "utf8"),
+				await readFile(path.join(resourceDirectory, "djs_brief.json"), "utf8"),
 			),
 		).toEqual([{ id: 1, title: "DJ One", tagIds: [] }]);
 		expect(
-			await readFile(path.join(outputDirectory, "djs", "1.json"), "utf8"),
+			await readFile(path.join(resourceDirectory, "djs", "1.json"), "utf8"),
 		).toContain('"title": "DJ One"');
+		expect(await readFile(path.join(assetDirectory, "djs", "1.jpg"))).toEqual(
+			Buffer.from("image"),
+		);
 		expect(
-			await readFile(path.join(outputDirectory, "images", "djs", "1.jpg")),
-		).toEqual(Buffer.from("image"));
-		expect(
-			await readFile(path.join(outputDirectory, "shows", "10.json"), "utf8"),
+			await readFile(path.join(resourceDirectory, "shows", "10.json"), "utf8"),
 		).toBe("future show");
-		expect(logs).toContain("├─ Refreshing managed output");
+		expect(logs).toContain("├─ Refreshing managed JSON output");
 		expect(logs).toContain("│  ├─ djs/1.json");
-		expect(logs).toContain("│  └─ images/djs/1.jpg");
+		expect(logs).toContain("│  └─ assets/djs/1.jpg");
 		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 tags, 1 images");
 	});
 });
