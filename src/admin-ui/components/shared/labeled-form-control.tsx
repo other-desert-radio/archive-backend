@@ -5,7 +5,7 @@ type LabeledFormControlProps = {
 	value: string;
 	onChange: (value: string) => void;
 	onBlur?: () => void;
-	type?: "text" | "url";
+	type?: "text" | "url" | "date";
 	required?: boolean;
 	textarea?: boolean;
 	helper?: string;

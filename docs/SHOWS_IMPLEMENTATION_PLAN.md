@@ -243,7 +243,8 @@ complete loading/empty/error states.
 - [x] Document the admin-only response addition and Shows table behavior.
 - [x] Complete common checks below, except browser verification: no browser
       surface is available in this environment.
-- [ ] Stop for user review of the Shows table.
+- [x] Reviewed: approved by the user with browser verification unavailable in
+      this environment; Chunk 2 is complete.
 
 ## Chunk 3 — Complete Show onboarding
 
