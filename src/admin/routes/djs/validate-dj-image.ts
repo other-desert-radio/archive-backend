@@ -1,6 +1,6 @@
 import { extname } from "node:path";
 
-export const MAX_DJ_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_DJ_IMAGE_BYTES = 1.5 * 1024 * 1024;
 
 type DJImageFormat = {
 	extensions: string[];
@@ -72,7 +72,7 @@ export const validateDJImageUpload = (
 	upload: DJImageUpload,
 ): DJImageValidationResult => {
 	if (upload.bytes.length > MAX_DJ_IMAGE_BYTES) {
-		return { valid: false, error: "Image must be 10 MiB or smaller" };
+		return { valid: false, error: "Image must be 1.5 MiB or smaller" };
 	}
 
 	const format = formatForContentType(upload.contentType);

@@ -22,8 +22,9 @@ the migration time; new rows receive their insertion time from PostgreSQL.
 Migration `0013_replace_dj_image_url_with_binary` replaces the nullable DJ image
 URL with nullable raw image bytes and filename metadata. Existing DJ image URL
 values are intentionally discarded because they are not used by the current
-dataset. Better Auth tables have their own independently managed `createdAt`
-columns.
+dataset. Migration `0015_add_dj_webp_image_cache` adds the two nullable cached
+WebP derivative columns. Better Auth tables have their own independently managed
+`createdAt` columns.
 
 All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ, show,
 or tag will therefore remove its dependent relationship rows automatically.
@@ -81,6 +82,8 @@ title       text not null
 bio         text
 image       bytea
 image_filename text
+image_400_webp bytea
+image_1024_webp bytea
 socials     text
 showTitle   text
 showDescription text
@@ -93,10 +96,12 @@ strong/emphasis text, and basic lists.
 `showTitle` and `showDescription` are optional plain-text metadata fields. Blank
 values are stored as `NULL` and nullable values are omitted from JSON output.
 
-`image` stores the original uploaded file bytes without compression. The
-short-term upload contract accepts JPEG, PNG, and WebP files up to 10 MiB.
-`image_filename` stores sanitized filename metadata, including the normalized
-extension. Future work will convert uploads to WebP before storage.
+`image` stores the original uploaded file bytes without compression. The upload
+contract accepts JPEG, PNG, and WebP files up to 1.5 MiB. `image_filename`
+stores sanitized filename metadata, including the normalized extension.
+`image_400_webp` and `image_1024_webp` cache the two generated archive WebP
+files. They are both `NULL` before the first archive export and are generated
+together from the original; a complete pair is reused by later exports.
 
 ### `shows`
 
@@ -232,10 +237,13 @@ For a DJ, `tagIds` is the distinct union of:
 The DJ detail document embeds the associated shows. Each embedded show includes
 its own `tagIds`. Generating the top-level `shows.json` remains deferred.
 
-The exporter writes raw DJ image bytes to `images/djs/{id}.{extension}` and uses
-the corresponding relative path in the JSON. It must never export the private
-`/api/admin/djs/{id}/image` URL. Show image values in DJ detail documents are
-the stored image URLs until show-image asset storage is added.
+The exporter writes cached DJ WebP bytes to `images/djs/{id}-400.webp` and
+`images/djs/{id}-1024.webp`. `djs_brief.json` uses the 400px path and each DJ
+detail document uses the 1024px path. Each variant preserves the source aspect
+ratio, is constrained only by width, and is never enlarged or cropped. It must
+never export the private `/api/admin/djs/{id}/image` URL. Show image values in
+DJ detail documents are the stored image URLs until show-image asset storage is
+added.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must

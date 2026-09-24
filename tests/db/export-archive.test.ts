@@ -31,6 +31,8 @@ describe("archive export documents", () => {
 					bio: "<p>Bio</p><script>bad()</script>",
 					image: Buffer.from("portrait"),
 					image_filename: "portrait.png",
+					image_400_webp: Buffer.from("portrait-400"),
+					image_1024_webp: Buffer.from("portrait-1024"),
 					socials: "<strong>@dj-one</strong><iframe>bad</iframe>",
 					showTitle: "Late Night",
 					showDescription: "A weekly program.",
@@ -42,6 +44,8 @@ describe("archive export documents", () => {
 					bio: "Bio",
 					image: null,
 					image_filename: null,
+					image_400_webp: null,
+					image_1024_webp: null,
 					socials: null,
 					showTitle: null,
 					showDescription: null,
@@ -74,7 +78,7 @@ describe("archive export documents", () => {
 			{
 				id: 1,
 				title: "DJ One",
-				image: "images/djs/1.png",
+				image: "images/djs/1-400.webp",
 				tagIds: [2, 4],
 			},
 			{ id: 2, title: "DJ Two", tagIds: [] },
@@ -82,7 +86,7 @@ describe("archive export documents", () => {
 		expect(documents.djs[0]).toEqual({
 			id: 1,
 			title: "DJ One",
-			image: "images/djs/1.png",
+			image: "images/djs/1-1024.webp",
 			bio: "<p>Bio</p>",
 			socials: "<strong>@dj-one</strong>bad",
 			showTitle: "Late Night",
@@ -105,18 +109,21 @@ describe("archive export documents", () => {
 			{ id: 4, title: "Ambient", color: "#2255cc" },
 		]);
 		expect(documents.images).toEqual([
-			{ id: 1, bytes: Buffer.from("portrait"), extension: ".png" },
+			{ id: 1, bytes: Buffer.from("portrait-400"), width: 400 },
+			{ id: 1, bytes: Buffer.from("portrait-1024"), width: 1024 },
 		]);
 	});
 
-	test("rejects unsupported stored image filenames", () => {
+	test("rejects incomplete cached image pairs", () => {
 		expect(() =>
 			buildArchiveDocuments({
 				djs: [
 					{
 						id: 1,
 						image: Buffer.from("image"),
-						image_filename: "portrait.gif",
+						image_filename: "portrait.png",
+						image_400_webp: Buffer.from("small"),
+						image_1024_webp: null,
 					},
 				] as never,
 				shows: [],
@@ -125,7 +132,7 @@ describe("archive export documents", () => {
 				djTags: [],
 				showTags: [],
 			}),
-		).toThrow("DJ 1 has an unsupported image filename: portrait.gif");
+		).toThrow("DJ 1 has an incomplete WebP image cache");
 	});
 });
 
@@ -164,7 +171,10 @@ describe("archive export writer", () => {
 					},
 				],
 				tags: [{ id: 2, title: "House", color: "#ff1100" }],
-				images: [{ id: 1, bytes: Buffer.from("image"), extension: ".jpg" }],
+				images: [
+					{ id: 1, bytes: Buffer.from("small"), width: 400 },
+					{ id: 1, bytes: Buffer.from("large"), width: 1024 },
+				],
 			},
 			outputDirectory,
 			{ log: (message) => logs.push(message) },
@@ -179,14 +189,19 @@ describe("archive export writer", () => {
 			await readFile(path.join(outputDirectory, "djs", "1.json"), "utf8"),
 		).toContain('"title": "DJ One"');
 		expect(
-			await readFile(path.join(outputDirectory, "images", "djs", "1.jpg")),
-		).toEqual(Buffer.from("image"));
+			await readFile(path.join(outputDirectory, "images", "djs", "1-400.webp")),
+		).toEqual(Buffer.from("small"));
+		expect(
+			await readFile(
+				path.join(outputDirectory, "images", "djs", "1-1024.webp"),
+			),
+		).toEqual(Buffer.from("large"));
 		expect(
 			await readFile(path.join(outputDirectory, "shows", "10.json"), "utf8"),
 		).toBe("future show");
 		expect(logs).toContain("├─ Refreshing managed output");
 		expect(logs).toContain("│  ├─ djs/1.json");
-		expect(logs).toContain("│  └─ images/djs/1.jpg");
-		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 tags, 1 images");
+		expect(logs).toContain("│  └─ images/djs/1-1024.webp");
+		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 tags, 2 images");
 	});
 });

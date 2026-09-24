@@ -22,16 +22,16 @@ describe("validateDJImageFile", () => {
 		});
 	});
 
-	test("rejects files larger than 10 MiB", () => {
+	test("rejects files larger than 1.5 MiB", () => {
 		const file = new File(
-			[new Uint8Array(10 * 1024 * 1024 + 1)],
+			[new Uint8Array(1.5 * 1024 * 1024 + 1)],
 			"portrait.png",
 			{ type: "image/png" },
 		);
 
 		expect(validateDJImageFile(file)).toEqual({
 			valid: false,
-			error: "Image must be 10 MiB or smaller",
+			error: "Image must be 1.5 MiB or smaller",
 		});
 	});
 });

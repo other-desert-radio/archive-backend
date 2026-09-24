@@ -20,7 +20,19 @@ export type DJJSON = {
 };
 
 export type TransformDJsParams = {
-	djs: Array<Selectable<DJsTable>>;
+	djs: Array<
+		Pick<
+			Selectable<DJsTable>,
+			| "id"
+			| "createdAt"
+			| "title"
+			| "bio"
+			| "image_filename"
+			| "socials"
+			| "showTitle"
+			| "showDescription"
+		>
+	>;
 	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
 	djTags: Array<Pick<Selectable<DjTagsTable>, "dj_id" | "tag_id">>;
 	showTags: Array<
