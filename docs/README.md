@@ -93,9 +93,10 @@ test gaps, see the
 - `bun src/db/import-mixcloud.ts` loads the checked-in Mixcloud show export and
   prints parsed DJ names, titles, source dates, and ISO dates for names in the
   supported `DJ - Title, Month Day, Year`, `DJ - Title - Month Day, Year`,
-  `DJ: Title, Month Day, Year`, `DJ - Title, Broadcast on Month Day, Year`, and
-  possessive DJ-name formats, month-and-year date formats, known-DJ-name
-  formats, and no-date hyphen formats. Missing dates use the Mixcloud
+  `DJ: Title, Month Day, Year`, `DJ - Title, Broadcast on Month Day, Year`,
+  hyphen dividers and date commas with inconsistent spacing, and possessive
+  DJ-name formats, month-and-year date formats, known-DJ-name formats, and
+  no-date hyphen formats. Missing dates use the Mixcloud
   `created_time` value and are marked in the collected show records. Output
   includes the successful parser index and name, ends with grouped DJ show
   counts in the `DJ name | count` format, and reports fallback-date counts by

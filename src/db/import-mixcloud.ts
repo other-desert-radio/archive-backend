@@ -48,6 +48,7 @@ type ParsedShowName = {
 };
 
 const red = (text: string): string => `\u001b[31m${text}\u001b[0m`;
+const gray = (text: string): string => `\u001b[90m${text}\u001b[0m`;
 
 type ParsedShow = {
   djName: string;
@@ -99,11 +100,35 @@ const parseShowNameAttempts: Array<ShowNameParser & { index: number }> = [
   // "Ethan Primason's Yugoslav Special - August 10, 2020"
   // "K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't",
   // Drop the possessive suffix and use the remaining text as the show title.
-  parseWithPattern(
-    "possessive DJ name with date",
-    /^(?<djName>.+?)'s (?<title>.+) - (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
-  ),
-  // The common case
+	parseWithPattern(
+		"possessive DJ name with date",
+		/^(?<djName>.+?)'s (?<title>.+) - (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
+	),
+	// K Sera Sarah's dated shows
+	parseWithPattern(
+		"K Sera Sarah possessive DJ name with date",
+		/^(?<djName>K Ser(?:a|ah) Sarah)\s*'s (?<title>.+), (?<date>[A-Z][a-z]+ \d{1,2}, ?\d{4})$/,
+	),
+	// trailing apostrophe before a hyphen divider
+	// "Derek Monypeny' - Freedom Overspill Radio Hour #32, Sudanese 60s-70s, September 7, 2026"
+	parseWithPattern(
+		"trailing-apostrophe DJ name with date",
+		/^(?<djName>.+?)'\s*-\s*(?<title>.+),\s*(?<date>[A-Z][a-z]+ \d{1,2},\s?\d{4})$/,
+	),
+	// hyphen divider and date comma with inconsistent spacing
+	// "Derek Monypeny -Freedom Overspill Episode Eight, Terry Riley + Don Cherry, Unreleased, March 8, 2021"
+	// "Derek Monypeny-Freedom Overspill Radio Hour Ep. 15, Devotional Music of Alice Coltrane, Sept 13,2021"
+	parseWithPattern(
+		"common comma date with flexible spacing",
+		/^(?<djName>[^:]+?)\s*-\s*(?<title>.+),\s*(?<date>[A-Z][a-z]+ \d{1,2},\s?\d{4})$/,
+	),
+	// colon divider
+	// Justin Paszul: An Evening of Stand-Up Cosmogony, Hour #1, March 3, 2025
+	parseWithPattern(
+		"colon date",
+		/^(?<djName>.+?): (?<title>.+), (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
+	),
+	// The common case
   // "Ethan - Side A, April 6, 2020"
   parseWithPattern(
     "common comma date",
@@ -117,13 +142,6 @@ const parseShowNameAttempts: Array<ShowNameParser & { index: number }> = [
     /^(?<djName>.+?) - (?<title>.+) - (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
   ),
 
-  // colon divider
-  // Justin Paszul: An Evening of Stand-Up Cosmogony, Hour #1, March 3, 2025
-  parseWithPattern(
-    "colon date",
-    /^(?<djName>.+?): (?<title>.+), (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
-  ),
-
   // broadcast date suffix
   // "Ethan and Caroline - 24 Hour Drone Live Set 2020, Broadcast on April 25, 2020"
   parseWithPattern(
@@ -131,14 +149,35 @@ const parseShowNameAttempts: Array<ShowNameParser & { index: number }> = [
     /^(?<djName>.+?) - (?<title>.+), Broadcast on (?<date>[A-Z][a-z]+ \d{1,2}, \d{4})$/,
   ),
 
+	// trailing apostrophe in the DJ name without a parsed date
+	// "Andrew Storrs' From the Vault 4 - Sounds from 6th and Market, 2012"
+	parseWithPattern(
+		"trailing-apostrophe DJ name without date",
+		/^(?<djName>.+?)' (?<title>.+)$/,
+	),
+
+	// hyphen divider with an apostrophe in the show title
+	// "NATIONWIDEONYRSIDE - Live at Lander's Brew - Side B 2019"
+	parseWithPattern(
+		"hyphen without date with apostrophe in title",
+		/^(?<djName>.+?) - (?<title>.+'.+)$/,
+	),
+
   // possessive DJ name without a date
   // "K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't"
-  parseWithPattern(
-    "possessive DJ name without date",
-    /^(?!.*[A-Z][a-z]+ \d{1,2}, \d{4}$)(?<djName>.+?)'s (?<title>.+ - .+)$/,
-  ),
+	parseWithPattern(
+		"possessive DJ name without date",
+		/^(?!.*[A-Z][a-z]+ \d{1,2}, \d{4}$)(?<djName>.+?)'s (?<title>.+ - .+)$/,
+	),
 
-  // hypen divider, no date
+	// colon divider without a date
+	// "Peacetime Product: Episode 1 - Old Beginnings + New Endings"
+	parseWithPattern(
+		"colon without date",
+		/^(?<djName>Peacetime Product): (?<title>.+)$/,
+	),
+
+	// hypen divider, no date
   // Florina - ASEDR 6
   // NATIONWIDEONYRSIDE - Tight Joints Cousin - Side B 2019
   parseWithPattern("hyphen without date", /^(?<djName>.+?) - (?<title>.+)$/),
@@ -235,7 +274,7 @@ if (import.meta.main) {
       : new Date(entry.created_time).toISOString();
 
     console.log(
-      `parsing "${entry.name}",\n | parser: ${parser.index} (${parser.name})\n | dj_name: ${djName}\n | title: ${title}\n | date: ${showDate}\n | converted_date: ${convertedDate}\n | date_source: ${dateSource}\n\n`,
+      `parsing "${entry.name}",\n | ${gray(`parser: ${parser.index} (${parser.name})`)}\n | dj_name: ${djName}\n | title: ${title}\n | date: ${showDate}\n | converted_date: ${convertedDate}\n | date_source: ${dateSource}\n\n`,
     );
 
     collection.push({
@@ -254,15 +293,40 @@ if (import.meta.main) {
       .map((e) => `${e.djName} ---------------------- ${e.title}`)
       .join("\n"),
   );
-  const djCounts = new Map<string, number>();
-  for (const { djName } of collection) {
-    djCounts.set(djName, (djCounts.get(djName) ?? 0) + 1);
+  const djCounts = new Map<
+    string,
+    { count: number; parsers: Map<number, ParserMetadata> }
+  >();
+  for (const { djName, parser } of collection) {
+    const existing = djCounts.get(djName) ?? {
+      count: 0,
+      parsers: new Map<number, ParserMetadata>(),
+    };
+    existing.count += 1;
+    existing.parsers.set(parser.index, parser);
+    djCounts.set(djName, existing);
   }
+  const maxDJNameLength = Math.max(
+    0,
+    ...Array.from(djCounts.keys(), (djName) => djName.length),
+  );
+  const maxDJCountLength = Math.max(
+    1,
+    ...Array.from(djCounts.values(), ({ count }) => String(count).length),
+  );
 
   console.log(
     [...djCounts]
       .sort(([firstName], [secondName]) => firstName.localeCompare(secondName))
-      .map(([djName, count]) => `${djName} | ${count}`)
+      .map(
+        ([djName, { count, parsers }]) =>
+          `${djName.padEnd(maxDJNameLength)} | ${String(count).padStart(maxDJCountLength)} | ${gray(
+            [...parsers.values()]
+              .sort((first, second) => first.index - second.index)
+              .map(({ index, name }) => `${index} (${name})`)
+              .join(", "),
+          )}`,
+      )
       .join("\n"),
   );
 
