@@ -101,8 +101,8 @@ test gaps, see the
   parser index and name, ends with grouped DJ show counts in the
   `DJ name | count` format, applies exact manual DJ renames or splits, and
   reports fallback-date counts by parser. Names that do not match the formats,
-  including explicitly excluded names, are reported in red. Database writes
-  and interactive import choices are intentionally deferred.
+  including explicitly excluded names, are reported in red. Database writes and
+  interactive import choices are intentionally deferred.
 - `scripts/fetch-mixcloud` fetches every public Other Desert Radio Mixcloud
   cloudcast page and writes one combined JSON document to
   `src/res/mixcloud.json`.
