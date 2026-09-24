@@ -1,5 +1,25 @@
 # Reusable admin tables and Show onboarding
 
+## Implementation status
+
+### Chunk 1 — reusable components, demonstrated through DJs
+
+- [x] Implemented: resource-neutral toolbar, typed sortable table, resource
+      state view, table presentation helpers, onboarding modal, labeled form
+      controls, comma-separated tags field, and shared mutation-error formatter.
+- [x] Implemented: DJs migrated to the shared toolbar, table, state view, and
+      onboarding primitives; the Tags page remains on its existing view.
+- [x] Verified: focused shared/DJ tests, type checking, production admin build,
+      formatter, code lint, and diff checks.
+- [ ] Verified: Markdown lint is blocked by duplicate
+      `Verification and review     gate` headings already present in the source
+      plan and retained in this working copy; the original plan file was not
+      modified.
+- [x] Verified: browser checks against the watcher-served local UI, including
+      sorting, no results, Escape dismissal, short/narrow modal layouts, and
+      Tags navigation. Screenshots are in `/tmp/shows-chunk1-*.png`.
+- [ ] Reviewed: awaiting user review before beginning Chunk 2.
+
 ## Summary and confirmed decisions
 
 Deliver this work in three review chunks, stopping after each for user review:

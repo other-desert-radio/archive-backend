@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DJToolbar } from "../components/dj-toolbar.js";
 import { OnboardDJModal } from "../components/onboard-dj-modal.js";
+import { ResourceView } from "../components/resource-view.js";
 import { DJsTable } from "../components/tables/djs-table.js";
 import {
 	type DJSortColumn,
@@ -58,36 +59,30 @@ export const DJsPage = () => {
 
 	return (
 		<div className="dj-page">
-			{isLoading && <p className="status">Loading DJs…</p>}
-			{error !== undefined && (
-				<div className="message error" role="alert">
-					<p>The DJs could not be loaded.</p>
-					<button type="button" onClick={refreshDJs}>
-						Try again
-					</button>
-				</div>
-			)}
-			{!isLoading && error === undefined && (
-				<>
+			<ResourceView
+				title="DJs"
+				isLoading={isLoading}
+				error={error}
+				onRetry={refreshDJs}
+				isEmpty={djs.length === 0}
+				emptyMessage="No DJs have been added yet."
+				hasNoResults={djs.length > 0 && visibleDJs.length === 0}
+				noResultsMessage="No DJs match your search."
+				toolbar={
 					<DJToolbar
 						query={query}
 						onQueryChange={setQuery}
 						onAddDJ={() => setIsModalOpen(true)}
 					/>
-					{djs.length > 0 ? (
-						<DJsTable
-							djs={visibleDJs}
-							sortColumn={sortColumn}
-							sortDirection={sortDirection}
-							onSort={handleSort}
-						/>
-					) : (
-						<div className="table-wrapper empty-table">
-							<p>No DJs have been added yet.</p>
-						</div>
-					)}
-				</>
-			)}
+				}
+			>
+				<DJsTable
+					djs={visibleDJs}
+					sortColumn={sortColumn}
+					sortDirection={sortDirection}
+					onSort={handleSort}
+				/>
+			</ResourceView>
 			<OnboardDJModal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}

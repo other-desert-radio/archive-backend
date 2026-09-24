@@ -1,4 +1,10 @@
 import type { DJsAdminRow } from "../../loaders/djs.js";
+import { ResourceTable, type ResourceTableColumn } from "../resource-table.js";
+import {
+	formatMissing,
+	formatRelationshipIDs,
+	formatUTCDateTime,
+} from "../table-formatters.js";
 import type { DJSortColumn, SortDirection } from "./djs-table-utils.js";
 
 type DJsTableProps = {
@@ -8,34 +14,81 @@ type DJsTableProps = {
 	onSort: (column: DJSortColumn) => void;
 };
 
-const columns: Array<[DJSortColumn, string]> = [
-	["id", "id"],
-	["createdAt", "created at"],
-	["title", "title"],
-	["showTitle", "show title"],
-	["showDescription", "show description"],
-	["imagePath", "image"],
-	["tags", "tags"],
-	["socials", "socials"],
-	["bio", "bio"],
-	["shows", "shows"],
-];
-
-type SanitizedHTMLProps = {
-	html: string;
-};
-
-const SanitizedHTML = ({ html }: SanitizedHTMLProps) => (
+const SanitizedHTML = ({ html }: { html: string }) => (
 	// biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is sanitized by the authenticated API before rendering.
 	<span dangerouslySetInnerHTML={{ __html: html }} />
 );
+const compareText = (left: string | undefined, right: string | undefined) =>
+	(left ?? "").localeCompare(right ?? "", undefined, { sensitivity: "base" });
 
-const formatIDs = (ids: number[]) =>
-	ids.length === 0 ? <span className="muted">None</span> : ids.join(", ");
-const formatDate = (value: string) => {
-	const iso = new Date(value).toISOString();
-	return `${iso.slice(0, 19).replace("T", " ")} UTC`;
-};
+export const djColumns: ResourceTableColumn<DJsAdminRow, DJSortColumn>[] = [
+	{
+		key: "id",
+		label: "id",
+		render: (dj) => dj.id,
+		compare: (left, right) => left.id - right.id,
+	},
+	{
+		key: "createdAt",
+		label: "created at",
+		render: (dj) => formatUTCDateTime(dj.createdAt),
+		compare: (left, right) => left.createdAt.localeCompare(right.createdAt),
+	},
+	{
+		key: "title",
+		label: "title",
+		render: (dj) => dj.title,
+		compare: (left, right) => compareText(left.title, right.title),
+	},
+	{
+		key: "showTitle",
+		label: "show title",
+		render: (dj) => formatMissing(dj.showTitle),
+		compare: (left, right) => compareText(left.showTitle, right.showTitle),
+	},
+	{
+		key: "showDescription",
+		label: "show description",
+		render: (dj) => formatMissing(dj.showDescription),
+		compare: (left, right) =>
+			compareText(left.showDescription, right.showDescription),
+	},
+	{
+		key: "imagePath",
+		label: "image",
+		render: (dj) => formatMissing(dj.imagePath),
+		compare: (left, right) => compareText(left.imagePath, right.imagePath),
+	},
+	{
+		key: "tags",
+		label: "tags",
+		render: (dj) => formatRelationshipIDs(dj.tags),
+		compare: (left, right) => (left.tags[0] ?? -1) - (right.tags[0] ?? -1),
+	},
+	{
+		key: "socials",
+		label: "socials",
+		render: (dj) =>
+			dj.socials === undefined ? (
+				formatMissing(undefined)
+			) : (
+				<SanitizedHTML html={dj.socials} />
+			),
+		compare: (left, right) => compareText(left.socials, right.socials),
+	},
+	{
+		key: "bio",
+		label: "bio",
+		render: (dj) => <SanitizedHTML html={dj.bio} />,
+		compare: (left, right) => compareText(left.bio, right.bio),
+	},
+	{
+		key: "shows",
+		label: "shows",
+		render: (dj) => formatRelationshipIDs(dj.shows),
+		compare: (left, right) => (left.shows[0] ?? -1) - (right.shows[0] ?? -1),
+	},
+];
 
 export const DJsTable = ({
 	djs,
@@ -43,53 +96,13 @@ export const DJsTable = ({
 	sortDirection,
 	onSort,
 }: DJsTableProps) => (
-	<div className="table-wrapper">
-		<table>
-			<caption className="visually-hidden">DJs</caption>
-			<thead>
-				<tr>
-					{columns.map(([column, label]) => (
-						<th scope="col" key={column}>
-							<button
-								type="button"
-								className={sortColumn === column ? "active-sort" : undefined}
-								onClick={() => onSort(column)}
-							>
-								{label}{" "}
-								{sortColumn === column
-									? sortDirection === "desc"
-										? "▼"
-										: "▲"
-									: "▽"}
-							</button>
-						</th>
-					))}
-				</tr>
-			</thead>
-			<tbody>
-				{djs.map((dj) => (
-					<tr key={dj.id}>
-						<td>{dj.id}</td>
-						<td>{formatDate(dj.createdAt)}</td>
-						<td>{dj.title}</td>
-						<td>{dj.showTitle ?? <span className="muted">None</span>}</td>
-						<td>{dj.showDescription ?? <span className="muted">None</span>}</td>
-						<td>{dj.imagePath ?? <span className="muted">None</span>}</td>
-						<td>{formatIDs(dj.tags)}</td>
-						<td>
-							{dj.socials === undefined ? (
-								<span className="muted">None</span>
-							) : (
-								<SanitizedHTML html={dj.socials} />
-							)}
-						</td>
-						<td>
-							<SanitizedHTML html={dj.bio} />
-						</td>
-						<td>{formatIDs(dj.shows)}</td>
-					</tr>
-				))}
-			</tbody>
-		</table>
-	</div>
+	<ResourceTable
+		rows={djs}
+		rowKey={(dj) => dj.id}
+		caption="DJs"
+		columns={djColumns}
+		sortColumn={sortColumn}
+		sortDirection={sortDirection}
+		onSort={onSort}
+	/>
 );

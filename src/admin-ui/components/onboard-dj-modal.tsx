@@ -1,9 +1,9 @@
-import { logger } from "better-auth";
 import { useEffect, useState } from "react";
-import { splitCommaSeparated } from "../../utils/index.js";
-import { validateTags } from "../loaders/validate-tags.js";
+import { CommaSeparatedTagsField } from "./comma-separated-tags-field.js";
 import { DJImageDropzone } from "./dj-image-dropzone.js";
+import { LabeledFormControl } from "./labeled-form-control.js";
 import { buildCreateDJRequest, type CreateDJForm } from "./onboard-dj-utils.js";
+import { OnboardingModal } from "./onboarding-modal.js";
 
 type OnboardDJModalProps = {
 	isOpen: boolean;
@@ -11,59 +11,7 @@ type OnboardDJModalProps = {
 	onSubmit: (request: CreateDJForm) => Promise<void>;
 };
 
-type FormControlProps = {
-	name: string;
-	label: string;
-	value: string;
-	onChange: (value: string) => void;
-	onBlur?: () => void;
-	textarea?: boolean;
-};
-
-/**
- * Renders a reusable labeled input or textarea form control.
- *
- * @param props - The field label, value, change handler, and optional blur
- * handler.
- */
-export const FormInput = ({
-	name,
-	label,
-	value,
-	onChange,
-	onBlur,
-	textarea = false,
-}: FormControlProps) => {
-	const id = `onboard-dj-${name}-input`;
-	return (
-		<div className="modal-field">
-			<label htmlFor={id}>{label}</label>
-			{textarea ? (
-				<textarea
-					id={id}
-					name={name}
-					value={value}
-					onChange={(event) => onChange(event.target.value)}
-					onBlur={onBlur}
-				/>
-			) : (
-				<input
-					id={id}
-					name={name}
-					value={value}
-					onChange={(event) => onChange(event.target.value)}
-					onBlur={onBlur}
-				/>
-			)}
-		</div>
-	);
-};
-
-/**
- * Provides the reusable overlay and panel shell for DJ onboarding.
- *
- * @param props - The modal visibility and close callback.
- */
+/** Supplies DJ-specific values and validation to the shared onboarding modal. */
 export const OnboardDJModal = ({
 	isOpen,
 	onClose,
@@ -77,15 +25,10 @@ export const OnboardDJModal = ({
 	const [showDescription, setShowDescription] = useState("");
 	const [socials, setSocials] = useState("");
 	const [bio, setBio] = useState("");
-	const [validationError, setValidationError] = useState<string>();
-	const [missingTags, setMissingTags] = useState<string[]>([]);
-	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [imageDropzoneKey, setImageDropzoneKey] = useState(0);
 
-	/** Clears all form state whenever a new onboarding session begins. */
 	useEffect(() => {
 		if (!isOpen) return;
-
 		setTitle("");
 		setImage(undefined);
 		setImageError(undefined);
@@ -94,162 +37,93 @@ export const OnboardDJModal = ({
 		setShowDescription("");
 		setSocials("");
 		setBio("");
-		setValidationError(undefined);
-		setMissingTags([]);
-		setIsSubmitting(false);
 		setImageDropzoneKey((current) => current + 1);
 	}, [isOpen]);
 
-	/** Clears missing-tag feedback whenever the tags field is edited. */
-	const handleTagsChange = (value: string) => {
-		setTags(value);
-		setMissingTags([]);
-	};
-
-	/** Validates comma-separated tags after the field loses focus. */
-	const handleTagsBlur = async () => {
-		const submittedTags = splitCommaSeparated(tags);
-
-		if (submittedTags.length === 0) {
-			setMissingTags([]);
-			return;
-		}
-
-		try {
-			const result = await validateTags(submittedTags);
-			setMissingTags(result.invalid);
-		} catch (e) {
-			logger.error("error validating tags", e);
-			setMissingTags([]);
-		}
-	};
-
-	/** Validates the form and submits the DJ to the parent callback. */
-	const handleSubmit = async () => {
+	const submit = async () => {
 		if (title.trim() === "" || bio.trim() === "") {
-			setValidationError("Title and bio are required.");
-			return;
+			throw new Error("Title and bio are required.");
 		}
-		if (imageError !== undefined) {
-			setValidationError(imageError);
-			return;
-		}
-
-		setValidationError(undefined);
-		setIsSubmitting(true);
-
-		const request = buildCreateDJRequest({
-			title,
-			showTitle,
-			showDescription,
-			tags,
-			socials,
-			bio,
-			...(image === undefined ? {} : { image }),
-		});
-
-		try {
-			await onSubmit(request);
-			onClose();
-		} catch (error) {
-			setValidationError(
-				error instanceof Error
-					? error.message
-					: "DJ could not be created. Please check the form and image, then try again.",
-			);
-		} finally {
-			setIsSubmitting(false);
-		}
+		if (imageError !== undefined) throw new Error(imageError);
+		await onSubmit(
+			buildCreateDJRequest({
+				title,
+				showTitle,
+				showDescription,
+				tags,
+				socials,
+				bio,
+				...(image === undefined ? {} : { image }),
+			}),
+		);
 	};
-
-	if (!isOpen) return null;
 
 	return (
-		<div className="modal-overlay">
-			<div
-				className="modal-panel"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="onboard-dj-title"
-			>
-				<div className="modal-header">
-					<h2 id="onboard-dj-title">Onboard DJ</h2>
-					<button type="button" aria-label="Close" onClick={onClose}>
-						x
-					</button>
-				</div>
-				<div className="modal-form">
-					<FormInput
-						name="title"
-						label="title"
-						value={title}
-						onChange={setTitle}
-					/>
-					<FormInput
-						name="showTitle"
-						label="show title"
-						value={showTitle}
-						onChange={setShowTitle}
-					/>
-					<FormInput
-						name="showDescription"
-						label="show description"
-						value={showDescription}
-						onChange={setShowDescription}
-						textarea
-					/>
-					<DJImageDropzone
-						key={imageDropzoneKey}
-						{...(image === undefined ? {} : { file: image })}
-						onFileChange={setImage}
-						onError={setImageError}
-					/>
-					{imageError !== undefined && (
-						<p className="modal-helper modal-error" role="alert">
-							{imageError}
-						</p>
-					)}
-					<FormInput
-						name="tags"
-						label="tags"
-						value={tags}
-						onChange={handleTagsChange}
-						onBlur={handleTagsBlur}
-					/>
-					{missingTags.length > 0 && (
-						<p className="modal-helper">
-							These tags will be created after submit: {missingTags.join(", ")}.
-						</p>
-					)}
-					<FormInput
-						name="socials"
-						label="socials"
-						value={socials}
-						onChange={setSocials}
-						textarea
-					/>
-					<FormInput
-						name="bio"
-						label="bio"
-						value={bio}
-						onChange={setBio}
-						textarea
-					/>
-				</div>
-				{validationError !== undefined && (
-					<p className="modal-error" role="alert">
-						{validationError}
-					</p>
-				)}
-				<button
-					type="button"
-					className="submit-button"
-					onClick={handleSubmit}
-					disabled={isSubmitting}
+		<OnboardingModal
+			isOpen={isOpen}
+			title="Onboard DJ"
+			onClose={onClose}
+			onSubmit={submit}
+		>
+			<LabeledFormControl
+				id="onboard-dj-title-input"
+				name="title"
+				label="title"
+				value={title}
+				onChange={setTitle}
+				required
+			/>
+			<LabeledFormControl
+				id="onboard-dj-show-title-input"
+				name="showTitle"
+				label="show title"
+				value={showTitle}
+				onChange={setShowTitle}
+			/>
+			<LabeledFormControl
+				id="onboard-dj-show-description-input"
+				name="showDescription"
+				label="show description"
+				value={showDescription}
+				onChange={setShowDescription}
+				textarea
+			/>
+			<DJImageDropzone
+				key={imageDropzoneKey}
+				{...(image === undefined ? {} : { file: image })}
+				onFileChange={setImage}
+				onError={setImageError}
+			/>
+			{imageError !== undefined && (
+				<p
+					className="onboarding-modal-helper onboarding-modal-field-error"
+					role="alert"
 				>
-					{isSubmitting ? "Submitting…" : "Submit"}
-				</button>
-			</div>
-		</div>
+					{imageError}
+				</p>
+			)}
+			<CommaSeparatedTagsField
+				id="onboard-dj-tags-input"
+				value={tags}
+				onChange={setTags}
+			/>
+			<LabeledFormControl
+				id="onboard-dj-socials-input"
+				name="socials"
+				label="socials"
+				value={socials}
+				onChange={setSocials}
+				textarea
+			/>
+			<LabeledFormControl
+				id="onboard-dj-bio-input"
+				name="bio"
+				label="bio"
+				value={bio}
+				onChange={setBio}
+				textarea
+				required
+			/>
+		</OnboardingModal>
 	);
 };

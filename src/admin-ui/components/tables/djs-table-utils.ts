@@ -1,5 +1,11 @@
 import type { TagsJSON } from "../../../json-transformers/index.js";
 import type { DJsAdminRow } from "../../loaders/djs.js";
+import {
+	filterResourceRows,
+	type SortDirection,
+	sortResourceRows,
+} from "../resource-table.js";
+import { djColumns } from "./djs-table.js";
 
 export type DJSortColumn =
 	| "id"
@@ -12,19 +18,7 @@ export type DJSortColumn =
 	| "socials"
 	| "bio"
 	| "shows";
-export type SortDirection = "asc" | "desc";
-
-const textFor = (dj: DJsAdminRow, column: DJSortColumn): string => {
-	switch (column) {
-		case "id":
-			return String(dj.id);
-		case "tags":
-		case "shows":
-			return dj[column].join(", ");
-		default:
-			return dj[column] ?? "";
-	}
-};
+export type { SortDirection } from "../resource-table.js";
 
 export const getDJSearchValue = (dj: DJsAdminRow, tags: TagsJSON[]): string => {
 	const titles = dj.tags
@@ -51,10 +45,7 @@ export const filterDJs = (
 	query: string,
 	tags: TagsJSON[],
 ) => {
-	const normalizedQuery = query.trim().toLowerCase();
-	return normalizedQuery === ""
-		? djs
-		: djs.filter((dj) => getDJSearchValue(dj, tags).includes(normalizedQuery));
+	return filterResourceRows(djs, query, (dj) => getDJSearchValue(dj, tags));
 };
 
 /** Returns a sorted copy of the DJ list, preserving the input array. */
@@ -63,28 +54,5 @@ export const sortDJs = (
 	column: DJSortColumn,
 	direction: SortDirection,
 ): DJsAdminRow[] => {
-	const multiplier = direction === "asc" ? 1 : -1;
-	return [...djs].sort((left, right) => {
-		let comparison: number;
-		switch (column) {
-			case "id":
-				comparison = left.id - right.id;
-				break;
-			case "createdAt":
-				comparison = left.createdAt.localeCompare(right.createdAt);
-				break;
-			case "tags":
-			case "shows":
-				comparison = (left[column][0] ?? -1) - (right[column][0] ?? -1);
-				break;
-			default:
-				// Compare text alphabetically while treating uppercase and lowercase as equal.
-				comparison = textFor(left, column).localeCompare(
-					textFor(right, column),
-					undefined,
-					{ sensitivity: "base" },
-				);
-		}
-		return comparison * multiplier;
-	});
+	return sortResourceRows(djs, djColumns, column, direction);
 };

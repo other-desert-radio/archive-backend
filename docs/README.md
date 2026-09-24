@@ -60,6 +60,15 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
+The first Show UI implementation chunk is complete and awaiting review. DJs now
+use reusable resource toolbar, table, state-view, and onboarding primitives. The
+shared onboarding shell traps focus, returns focus to its opener, supports
+Escape dismissal while idle, prevents duplicate submission, and keeps its
+content scrollable within the available viewport. The comma-separated tags field
+is reusable and ignores stale validation responses; a validation-service failure
+does not prevent final submission. Shows and Tags have not been migrated in this
+chunk.
+
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing

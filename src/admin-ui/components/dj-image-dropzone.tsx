@@ -30,7 +30,7 @@ export const DJImageDropzone = ({
 	};
 
 	return (
-		<div className="modal-field">
+		<div className="onboarding-modal-field">
 			<label htmlFor="onboard-dj-image-input">image</label>
 			<section
 				aria-label="DJ image upload"
