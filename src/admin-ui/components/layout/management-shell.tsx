@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import styles from "./management-shell.module.css";
 
 type ManagementShellProps = {
 	activeResource: "shows" | "djs" | "tags";
@@ -9,17 +10,15 @@ export const ManagementShell = ({
 	activeResource,
 	children,
 }: ManagementShellProps) => (
-	<div className="management-layout">
-		<header className="management-header">
-			OTHER DESERT RADIO / MANAGEMENT
-		</header>
-		<aside className="management-sidebar" aria-label="Admin navigation">
+	<div className={styles.layout}>
+		<header className={styles.header}>OTHER DESERT RADIO / MANAGEMENT</header>
+		<aside className={styles.sidebar} aria-label="Admin navigation">
 			<nav>
 				<p>DATABASE</p>
 				<ul>
 					<li>
 						<a
-							className={activeResource === "shows" ? "active" : undefined}
+							className={activeResource === "shows" ? styles.active : undefined}
 							href="#shows"
 							aria-current={activeResource === "shows" ? "page" : undefined}
 						>
@@ -52,9 +51,7 @@ export const ManagementShell = ({
 			</nav>
 		</aside>
 		<section
-			className={`management-content${
-				activeResource === "djs" ? " dj-management-content" : ""
-			}`}
+			className={`${styles.content}${activeResource === "djs" ? ` ${styles.djContent}` : ""}`}
 		>
 			{children}
 		</section>

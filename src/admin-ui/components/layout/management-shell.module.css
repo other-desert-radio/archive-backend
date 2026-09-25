@@ -1,0 +1,70 @@
+.layout {
+	min-height: 100vh;
+	padding-top: 3.0625rem;
+}
+.header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 2;
+	display: grid;
+	width: 100%;
+	height: 3.0625rem;
+	place-items: center;
+	color: #fff;
+	background: #000;
+	font-size: 1rem;
+	font-weight: bold;
+}
+.sidebar {
+	position: fixed;
+	top: 3.0625rem;
+	bottom: 0;
+	left: 0;
+	width: 10.75rem;
+	padding: 3.75rem 1.25rem;
+	color: #fff;
+	background: #000;
+}
+.sidebar p {
+	margin: 0 0 1.25rem;
+}
+.sidebar p + p {
+	margin-top: 2.5rem;
+}
+.sidebar ul {
+	display: grid;
+	gap: 1.25rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.sidebar a {
+	text-decoration: none;
+}
+.active {
+	font-weight: 700;
+}
+.content {
+	min-height: calc(100vh - 3.0625rem);
+	margin-left: 10.75rem;
+	padding: 7rem clamp(1.25rem, 10vw, 16rem);
+}
+.djContent {
+	padding-right: 0;
+	padding-left: 0;
+}
+@media (max-width: 42rem) {
+	.sidebar {
+		position: static;
+		width: 100%;
+		padding: 1.25rem;
+	}
+	.content {
+		margin-left: 0;
+		padding: 2rem 1.25rem;
+	}
+	.djContent {
+		padding: 2rem 0 0;
+	}
+}

@@ -1,0 +1,21 @@
+.view {
+	width: 100%;
+}
+.status {
+	color: #52606d;
+}
+.message {
+	padding: 1rem;
+	border-radius: 0.5rem;
+}
+.error {
+	color: #8a1c1c;
+	background: #fdecec;
+}
+.empty {
+	display: grid;
+	place-items: center;
+	min-height: 200px;
+	padding: 24px;
+	background: #fff;
+}

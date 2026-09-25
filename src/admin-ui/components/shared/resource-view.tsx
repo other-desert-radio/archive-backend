@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import styles from "./resource-view.module.css";
 
 type ResourceViewProps = {
 	title: string;
@@ -26,10 +27,10 @@ export const ResourceView = ({
 	toolbar,
 	children,
 }: ResourceViewProps) => (
-	<section className="resource-view">
-		{isLoading && <p className="status">Loading {title}…</p>}
+	<section className={styles.view}>
+		{isLoading && <p className={styles.status}>Loading {title}…</p>}
 		{error !== undefined && (
-			<div className="message error" role="alert">
+			<div className={`${styles.message} ${styles.error}`} role="alert">
 				<p>The {title} could not be loaded.</p>
 				<button type="button" onClick={onRetry}>
 					Try again
@@ -40,11 +41,11 @@ export const ResourceView = ({
 			<>
 				{toolbar}
 				{isEmpty ? (
-					<div className="resource-table-wrapper empty-table">
+					<div className={styles.empty}>
 						<p>{emptyMessage}</p>
 					</div>
 				) : hasNoResults ? (
-					<div className="resource-table-wrapper empty-table">
+					<div className={styles.empty}>
 						<p>{noResultsMessage}</p>
 					</div>
 				) : (

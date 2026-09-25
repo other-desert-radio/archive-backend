@@ -1,0 +1,57 @@
+.wrapper {
+	width: 100%;
+	padding: 0 24px;
+	overflow-x: auto;
+}
+.table {
+	width: max-content;
+	min-width: 100%;
+	border-collapse: collapse;
+	background: transparent;
+}
+.table th,
+.table td {
+	max-width: 250px;
+	min-width: 9rem;
+	padding: 1.25rem;
+	border: 0;
+	overflow-wrap: anywhere;
+	text-align: center;
+	vertical-align: top;
+	white-space: normal;
+}
+.table th {
+	color: #111;
+	font-size: 0.875rem;
+	font-weight: 400;
+}
+.table th + th,
+.table td + td {
+	border-left: 1px solid #000;
+}
+.table tbody tr + tr > td {
+	border-top: 1px solid #000;
+}
+.table tbody tr {
+	background: rgb(255 255 255 / 30%);
+}
+.table tbody tr:hover {
+	background: rgb(255 255 255 / 80%);
+}
+.table thead tr > th {
+	border-bottom: 3px double #000;
+}
+.table thead tr {
+	background: #fff;
+}
+.activeSort {
+	font-weight: 700;
+}
+.hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+}

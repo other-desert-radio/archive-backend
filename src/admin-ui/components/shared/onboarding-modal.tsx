@@ -5,6 +5,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import styles from "./onboarding-modal.module.css";
 
 type OnboardingModalProps = {
 	isOpen: boolean;
@@ -94,15 +95,15 @@ export const OnboardingModal = ({
 		}
 	};
 	return (
-		<div className="onboarding-modal-overlay">
+		<div className={styles.overlay}>
 			<div
 				ref={panelRef}
-				className="onboarding-modal-panel"
+				className={styles.panel}
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="onboarding-modal-title"
 			>
-				<div className="onboarding-modal-header">
+				<div className={styles.header}>
 					<h2 id="onboarding-modal-title">{title}</h2>
 					<button
 						type="button"
@@ -114,17 +115,17 @@ export const OnboardingModal = ({
 					</button>
 				</div>
 				<form onSubmit={submit}>
-					<fieldset disabled={isSubmitting} className="onboarding-modal-form">
+					<fieldset disabled={isSubmitting} className={styles.form}>
 						{children}
 					</fieldset>
 					{error !== undefined && (
-						<p className="onboarding-modal-error" role="alert">
+						<p className={styles.error} role="alert">
 							{error}
 						</p>
 					)}
 					<button
 						type="submit"
-						className="submit-button"
+						className={styles.submit}
 						disabled={isSubmitting}
 					>
 						{isSubmitting ? "Submitting…" : "Submit"}

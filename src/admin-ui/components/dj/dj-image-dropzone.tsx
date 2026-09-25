@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import fieldStyles from "../shared/labeled-form-control.module.css";
+import styles from "./dj-image-dropzone.module.css";
 import { validateDJImageFile } from "./dj-image-utils.js";
 
 type DJImageDropzoneProps = {
@@ -30,13 +32,11 @@ export const DJImageDropzone = ({
 	};
 
 	return (
-		<div className="onboarding-modal-field">
+		<div className={fieldStyles.field}>
 			<label htmlFor="onboard-dj-image-input">image</label>
 			<section
 				aria-label="DJ image upload"
-				className={`image-dropzone${isDragging ? " is-dragging" : ""}${
-					file === undefined || isDragging ? "" : " has-file"
-				}`}
+				className={`${styles.dropzone}${isDragging ? ` ${styles.dragging}` : ""}${file === undefined || isDragging ? "" : ` ${styles.hasFile}`}`}
 				onDragEnter={(event) => {
 					event.preventDefault();
 					setIsDragging(true);
@@ -60,7 +60,7 @@ export const DJImageDropzone = ({
 				/>
 				<button
 					type="button"
-					className="image-dropzone-button"
+					className={styles.button}
 					onClick={() => inputRef.current?.click()}
 				>
 					{isDragging

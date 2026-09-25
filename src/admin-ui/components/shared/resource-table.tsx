@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import styles from "./resource-table.module.css";
 
 export type SortDirection = "asc" | "desc";
 
@@ -29,9 +30,9 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 	sortDirection,
 	onSort,
 }: ResourceTableProps<Row, ColumnKey>) => (
-	<div className="resource-table-wrapper">
-		<table>
-			<caption className="visually-hidden">{caption}</caption>
+	<div className={styles.wrapper}>
+		<table className={styles.table}>
+			<caption className={styles.hidden}>{caption}</caption>
 			<thead>
 				<tr>
 					{columns.map((column) => {
@@ -50,7 +51,7 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 							>
 								<button
 									type="button"
-									className={isActive ? "active-sort" : undefined}
+									className={isActive ? styles.activeSort : undefined}
 									onClick={() => onSort(column.key)}
 								>
 									{column.label}{" "}

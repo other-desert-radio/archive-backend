@@ -1,0 +1,40 @@
+.toolbar {
+	display: flex;
+	gap: 1rem;
+	justify-content: space-between;
+	padding-inline: 32px;
+	margin-bottom: 1.5rem;
+}
+.toolbar input {
+	min-width: 18rem;
+	max-width: 400px;
+	flex: 1;
+	padding: 0.75rem;
+	border: 1px solid #000;
+	font: inherit;
+}
+.actions {
+	display: flex;
+	gap: 8px;
+}
+.switcher {
+	padding: 0;
+	border: none;
+	display: flex;
+}
+.switcher button,
+.add {
+	border-radius: 0;
+	background: transparent;
+}
+.switcher button {
+	width: 5rem;
+}
+.selected {
+	font-weight: 700;
+	background: #fff;
+}
+.add {
+	font-weight: 700;
+	background: #fff;
+}

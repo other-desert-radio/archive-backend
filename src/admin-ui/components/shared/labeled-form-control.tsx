@@ -1,3 +1,5 @@
+import styles from "./labeled-form-control.module.css";
+
 type LabeledFormControlProps = {
 	id: string;
 	name: string;
@@ -26,7 +28,7 @@ export const LabeledFormControl = ({
 	helper,
 	error,
 }: LabeledFormControlProps) => (
-	<div className="onboarding-modal-field">
+	<div className={styles.field}>
 		<label htmlFor={id}>{label}</label>
 		<div>
 			{textarea ? (
@@ -64,8 +66,8 @@ export const LabeledFormControl = ({
 					id={`${id}-help`}
 					className={
 						error === undefined
-							? "onboarding-modal-helper"
-							: "onboarding-modal-helper onboarding-modal-field-error"
+							? styles.helper
+							: `${styles.helper} ${styles.fieldError}`
 					}
 				>
 					{error ?? helper}

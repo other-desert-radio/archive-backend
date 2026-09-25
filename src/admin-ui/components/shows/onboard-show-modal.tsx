@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CommaSeparatedTagsField } from "../shared/comma-separated-tags-field.js";
 import { LabeledFormControl } from "../shared/labeled-form-control.js";
+import fieldStyles from "../shared/labeled-form-control.module.css";
 import { OnboardingModal } from "../shared/onboarding-modal.js";
 import {
 	buildCreateShowRequest,
@@ -105,7 +106,7 @@ export const OnboardShowModal = ({ isOpen, djs, onClose, onSubmit }: Props) => {
 				value={image}
 				onChange={setImage}
 			/>
-			<div className="onboarding-modal-field">
+			<div className={fieldStyles.field}>
 				<span>DJs</span>
 				<div>
 					{djs.length === 0 ? (
