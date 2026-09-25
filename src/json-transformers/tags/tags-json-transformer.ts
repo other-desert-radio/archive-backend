@@ -33,5 +33,7 @@ export const transformTags = ({ tags }: TransformTagsParams): TagsJSON[] => {
 		title: tag.title,
 		color: tag.color,
 		reviewed: tag.reviewed,
+		...(tag.mixcloud_key === null ? {} : { mixcloud_key: tag.mixcloud_key }),
+		...(tag.mixcloud_url === null ? {} : { mixcloud_url: tag.mixcloud_url }),
 	}));
 };

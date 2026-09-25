@@ -66,6 +66,8 @@ export type ArchiveTag = {
 	id: number;
 	title: string;
 	color: string;
+	mixcloud_key?: string;
+	mixcloud_url?: string;
 };
 
 export type ArchiveDocuments = {
@@ -83,7 +85,12 @@ export type ArchiveExportReporter = {
 export type BuildArchiveDocumentsParams = {
 	djs: Array<Selectable<DJsTable>>;
 	shows: Array<Selectable<ShowsTable>>;
-	tags: Array<Pick<Selectable<TagsTable>, "id" | "title" | "color">>;
+	tags: Array<
+		Pick<
+			Selectable<TagsTable>,
+			"id" | "title" | "color" | "mixcloud_key" | "mixcloud_url"
+		>
+	>;
 	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
 	djTags: Array<Pick<Selectable<DjTagsTable>, "dj_id" | "tag_id">>;
 	showTags: Array<Pick<Selectable<ShowTagsTable>, "show_id" | "tag_id">>;
@@ -249,6 +256,8 @@ export const buildArchiveDocuments = ({
 			id: tag.id,
 			title: tag.title,
 			color: tag.color,
+			...(tag.mixcloud_key === null ? {} : { mixcloud_key: tag.mixcloud_key }),
+			...(tag.mixcloud_url === null ? {} : { mixcloud_url: tag.mixcloud_url }),
 		})),
 		images,
 	};
@@ -357,7 +366,7 @@ export const exportArchive = async (
 			.execute(),
 		database
 			.selectFrom("tags")
-			.select(["id", "title", "color"])
+			.select(["id", "title", "color", "mixcloud_key", "mixcloud_url"])
 			.orderBy("id")
 			.execute(),
 		database

@@ -354,6 +354,65 @@ describe("admin route boundary", () => {
 		await app.close();
 	});
 
+	test("returns optional Mixcloud metadata for authenticated tag requests", async () => {
+		const tagsDatabase = {
+			selectFrom: () => {
+				const query = {
+					select: () => query,
+					orderBy: () => query,
+					execute: async () => [
+						{
+							id: 1,
+							createdAt: new Date("2026-01-01T00:00:00.000Z"),
+							title: "Experimental",
+							color: "#123456",
+							reviewed: true,
+							mixcloud_key: "/genres/experimental/",
+							mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
+						},
+						{
+							id: 2,
+							createdAt: new Date("2026-01-01T00:00:00.000Z"),
+							title: "Ambient",
+							color: "#654321",
+							reviewed: false,
+							mixcloud_key: null,
+							mixcloud_url: null,
+						},
+					],
+				};
+				return query;
+			},
+		} as never;
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, tagsDatabase));
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/admin/tags",
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.json()).toEqual([
+			{
+				id: 1,
+				title: "Experimental",
+				color: "#123456",
+				reviewed: true,
+				mixcloud_key: "/genres/experimental/",
+				mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
+			},
+			{
+				id: 2,
+				title: "Ambient",
+				color: "#654321",
+				reviewed: false,
+			},
+		]);
+
+		await app.close();
+	});
+
 	test("validates tags for an authenticated admin", async () => {
 		const app = Fastify({ logger: false });
 		await app.register(adminRoutes(adminSession, testDatabase));
@@ -576,6 +635,30 @@ describe("admin route boundary", () => {
 			title: "Dance",
 			color: "#ABC123",
 			reviewed: true,
+		});
+
+		await app.close();
+	});
+
+	test("creates a tag with optional Mixcloud metadata", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, createTagsDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/create-tag",
+			payload: {
+				title: "Experimental",
+				mixcloud_key: "/genres/experimental/",
+				mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
+			},
+		});
+
+		expect(response.statusCode).toBe(201);
+		expect(response.json()).toMatchObject({
+			title: "Experimental",
+			mixcloud_key: "/genres/experimental/",
+			mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
 		});
 
 		await app.close();

@@ -15,8 +15,9 @@ table's name column to title to match the archive field contract. Migration ten
 adds the nullable `djs.socials` field, and migration twelve adds the non-null
 `tags.reviewed` flag. Migration thirteen replaces the nullable DJ image URL with
 raw binary image storage and filename metadata. Migration fourteen adds nullable
-DJ show metadata. Migrations are applied explicitly, one at a time, after
-review.
+DJ show metadata. Migration fifteen adds optional `tags.mixcloud_key` and
+`tags.mixcloud_url` source metadata. Migrations are applied explicitly, one at a
+time, after review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -109,6 +110,25 @@ archive dataset, use the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
+- `bun run db:seed:shows` inserts five standalone dummy shows.
+- `bun run db:delete:shows -- --confirm` permanently deletes all shows and their
+  cascading relationship rows.
+- `bun src/db/import-mixcloud.ts` loads the checked-in Mixcloud show export and
+  prints parsed DJ names, titles, source dates, and ISO dates for names in the
+  supported `DJ - Title, Month Day, Year`, `DJ - Title - Month Day, Year`,
+  `DJ: Title, Month Day, Year`, `DJ - Title, Broadcast on Month Day, Year`,
+  hyphen dividers and date commas with inconsistent spacing, and possessive
+  DJ-name formats, month-and-year date formats, known-DJ-name formats, and
+  no-date hyphen formats. Missing dates use the Mixcloud `created_time` value
+  and are marked in the collected show records. Output includes the successful
+  parser index and name, ends with grouped DJ show counts in the
+  `DJ name | count` format, applies exact manual DJ renames or splits, and
+  reports fallback-date counts by parser. Names that do not match the formats,
+  including explicitly excluded names, are reported in red. Database writes and
+  interactive import choices are intentionally deferred.
+- `scripts/fetch-mixcloud` fetches every public Other Desert Radio Mixcloud
+  cloudcast page and writes one combined JSON document to
+  `src/res/mixcloud.json`.
 - `bun run db:export:archive` writes DJ detail/index JSON, the top-level show
   index, and tags to the configured Astro `src/res/` directory, and DJ images to
   `public/assets/`. It logs each build stage and generated file.

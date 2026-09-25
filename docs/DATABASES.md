@@ -55,6 +55,14 @@ The fixtures intentionally do not create shows, tags, or relationship rows. The
 command only inserts data and does not clear existing records, so rerunning it
 adds another fixture batch.
 
+`bun run db:seed:shows` inserts five standalone show records for local
+development. The fixtures intentionally do not create DJs, tags, or relationship
+rows. The command only inserts data and does not clear existing records, so
+rerunning it adds another fixture batch.
+
+`bun run db:delete:shows -- --confirm` permanently deletes every show and its
+cascading relationship rows. The explicit confirmation flag is required.
+
 `bun run db:delete:djs -- --confirm` permanently deletes every DJ. Relationship
 rows referencing those DJs are removed by the database's `ON DELETE CASCADE`
 constraints. The explicit confirmation flag is required.
@@ -121,12 +129,19 @@ createdAt   timestamptz not null
 title       text not null
 color       text not null
 reviewed    boolean not null default false
+mixcloud_key text
+mixcloud_url text
 ```
 
 Tags represent genres or other archive labels. Tag titles should have an
 appropriate uniqueness rule, normally case-insensitive uniqueness. Tags created
 with an automatically generated color are unreviewed; tags created with an
 explicit color are marked reviewed.
+
+`mixcloud_key` and `mixcloud_url` are optional source metadata for the matching
+Mixcloud genre, for example `/genres/experimental/` and
+`https://www.mixcloud.com/genres/experimental/`. They are omitted from exported
+JSON when absent.
 
 ## Relationship tables
 
@@ -222,7 +237,9 @@ including each generated JSON and image file.
 
 `tags.json` is the canonical tag dictionary. Every other exported document uses
 the `tagIds` field rather than duplicating tag titles and colors. The Astro
-frontend loads `tags.json` once and resolves those IDs locally.
+frontend loads `tags.json` once and resolves those IDs locally. When present, a
+tag's `mixcloud_key` and `mixcloud_url` are included in this dictionary as
+Mixcloud source metadata.
 
 For a DJ, `tagIds` is the distinct union of:
 
