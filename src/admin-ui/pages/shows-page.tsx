@@ -23,6 +23,8 @@ export const ShowsPage = () => {
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string>();
+	const [isDJsLoading, setIsDJsLoading] = useState(false);
+	const [djsError, setDJsError] = useState<string>();
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const loadVersion = useRef(0);
 
@@ -46,6 +48,14 @@ export const ShowsPage = () => {
 			.finally(() => {
 				if (version === loadVersion.current) setIsLoading(false);
 			});
+	}, []);
+	const refreshDJs = useCallback(() => {
+		setIsDJsLoading(true);
+		setDJsError(undefined);
+		loadDJs()
+			.then(setDJs)
+			.catch(() => setDJsError("DJs could not be loaded."))
+			.finally(() => setIsDJsLoading(false));
 	}, []);
 
 	useEffect(() => {
@@ -116,6 +126,9 @@ export const ShowsPage = () => {
 			<OnboardShowModal
 				isOpen={isModalOpen}
 				djs={djs}
+				isDJsLoading={isDJsLoading}
+				{...(djsError === undefined ? {} : { djsError })}
+				onRetryDJs={refreshDJs}
 				onClose={() => setIsModalOpen(false)}
 				onSubmit={handleCreateShow}
 			/>

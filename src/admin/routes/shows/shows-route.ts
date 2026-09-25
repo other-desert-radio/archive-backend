@@ -157,13 +157,4 @@ export const showRoutes =
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
 		});
-
-		app.post("/modify-show", async () => {
-			return undefined;
-		});
-
-		app.post("/remove-show", async () => {
-			// soft delete
-			return undefined;
-		});
 	};

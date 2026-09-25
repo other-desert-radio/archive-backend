@@ -294,8 +294,7 @@ assigned to the DJ's shows through `show_tags`. Database errors return
 - [ ] Finalize show metadata after Mixcloud returns its URL.
 - [x] Export DJ indexes/details, tags, and DJ images from PostgreSQL to the
       configured local archive directory.
-- [ ] Extend the exporter with the top-level show index after the show export
-      contract is implemented.
+- [x] Export the top-level show index with compact related DJ cards and tag IDs.
 - [ ] Trigger and verify GitHub Actions publication of JSON to `src/res/` and
       images to `public/assets/` in the Astro archive repository.
 

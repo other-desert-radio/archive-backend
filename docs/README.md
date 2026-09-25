@@ -102,10 +102,9 @@ test gaps, see the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
-- `bun run db:export:archive` writes DJ detail/index JSON and tags to the
-  configured Astro `src/res/` directory, and DJ images to `public/assets/`. It
-  logs each build stage and generated file; the top-level show index is
-  deferred.
+- `bun run db:export:archive` writes DJ detail/index JSON, the top-level show
+  index, and tags to the configured Astro `src/res/` directory, and DJ images to
+  `public/assets/`. It logs each build stage and generated file.
 - `bun run db:delete:djs -- --confirm` permanently deletes all DJs and their
   cascading relationship rows.
 - `bun run format` formats source files with Biome and Markdown files with
@@ -155,7 +154,8 @@ inspect its accessibility snapshot or save a screenshot for visual review.
 Interact with the changed control when the behavior is interactive:
 
 ```sh
-agent-browser --session admin-ui-verify open http://admin:admin@localhost:3000/admin/#djs
+agent-browser --session admin-ui-verify set credentials admin admin
+agent-browser --session admin-ui-verify open http://localhost:3000/admin/#djs
 agent-browser --session admin-ui-verify wait 500
 agent-browser --session admin-ui-verify snapshot -i
 agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
@@ -164,7 +164,11 @@ agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
 The browser CLI stores its session socket outside the workspace sandbox, so an
 agent may need to request the approved elevated permission for these local,
 read-only inspection commands. Use `#shows` and `#tags` to check the other
-resource views. Do not use the local credentials outside local development.
+resource views. Do not embed the local credentials in the URL: this version of
+`agent-browser` preserves them in the document URL, which makes relative admin
+API fetches fail. Set credentials on the session first, then open the
+credential-free local URL. Do not use the local credentials outside local
+development.
 
 ## Conventions
 

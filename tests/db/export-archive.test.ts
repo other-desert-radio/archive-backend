@@ -100,6 +100,24 @@ describe("archive export documents", () => {
 			],
 			tagIds: [2, 4],
 		});
+		expect(documents.shows).toEqual([
+			{
+				id: 10,
+				title: "Newer Show",
+				date: new Date("2026-02-01T00:00:00.000Z"),
+				duration: 3600,
+				image: "https://example.com/show.jpg",
+				djs: [
+					{
+						id: 1,
+						title: "DJ One",
+						image: "assets/djs/1.png",
+					},
+				],
+				tagIds: [2, 4],
+				url: "https://example.com/audio",
+			},
+		]);
 		expect(documents.tags).toEqual([
 			{ id: 2, title: "House", color: "#ff1100" },
 			{ id: 4, title: "Ambient", color: "#2255cc" },
@@ -141,6 +159,7 @@ describe("archive export writer", () => {
 		});
 		await mkdir(path.join(resourceDirectory, "shows"), { recursive: true });
 		await writeFile(path.join(resourceDirectory, "djs", "stale.json"), "stale");
+		await writeFile(path.join(resourceDirectory, "shows.json"), "stale");
 		await writeFile(path.join(assetDirectory, "djs", "stale.jpg"), "stale");
 		await writeFile(
 			path.join(resourceDirectory, "shows", "10.json"),
@@ -160,6 +179,17 @@ describe("archive export writer", () => {
 						tagIds: [],
 					},
 				],
+				shows: [
+					{
+						id: 10,
+						title: "Show One",
+						date: new Date("2026-01-01T00:00:00.000Z"),
+						duration: 3600,
+						djs: [{ id: 1, title: "DJ One" }],
+						tagIds: [],
+						url: "https://example.com/audio",
+					},
+				],
 				tags: [{ id: 2, title: "House", color: "#ff1100" }],
 				images: [{ id: 1, bytes: Buffer.from("image"), extension: ".jpg" }],
 			},
@@ -176,6 +206,21 @@ describe("archive export writer", () => {
 		expect(
 			await readFile(path.join(resourceDirectory, "djs", "1.json"), "utf8"),
 		).toContain('"title": "DJ One"');
+		expect(
+			JSON.parse(
+				await readFile(path.join(resourceDirectory, "shows.json"), "utf8"),
+			),
+		).toEqual([
+			{
+				id: 10,
+				title: "Show One",
+				date: "2026-01-01T00:00:00.000Z",
+				duration: 3600,
+				djs: [{ id: 1, title: "DJ One" }],
+				tagIds: [],
+				url: "https://example.com/audio",
+			},
+		]);
 		expect(await readFile(path.join(assetDirectory, "djs", "1.jpg"))).toEqual(
 			Buffer.from("image"),
 		);
@@ -185,6 +230,7 @@ describe("archive export writer", () => {
 		expect(logs).toContain("├─ Refreshing managed JSON output");
 		expect(logs).toContain("│  ├─ djs/1.json");
 		expect(logs).toContain("│  └─ assets/djs/1.jpg");
-		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 tags, 1 images");
+		expect(logs).toContain("│  ├─ shows.json: 1 shows");
+		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 shows, 1 tags, 1 images");
 	});
 });

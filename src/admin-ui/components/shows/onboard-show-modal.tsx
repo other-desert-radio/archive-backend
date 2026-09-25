@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { CommaSeparatedTagsField } from "../shared/comma-separated-tags-field.js";
 import { LabeledFormControl } from "../shared/labeled-form-control.js";
-import fieldStyles from "../shared/labeled-form-control.module.css";
 import { OnboardingModal } from "../shared/onboarding-modal.js";
+import {
+	SearchableMultiSelect,
+	type SearchableMultiSelectOption,
+} from "../shared/searchable-multi-select.js";
 import {
 	buildCreateShowRequest,
 	type CreateShowForm,
@@ -11,10 +14,22 @@ import {
 type Props = {
 	isOpen: boolean;
 	djs: { id: number; title: string }[];
+	isDJsLoading: boolean;
+	djsError?: string;
+	onRetryDJs: () => void;
 	onClose: () => void;
 	onSubmit: (request: CreateShowForm) => Promise<void>;
 };
-export const OnboardShowModal = ({ isOpen, djs, onClose, onSubmit }: Props) => {
+/** Supplies Show-specific values and validation to the shared onboarding modal. */
+export const OnboardShowModal = ({
+	isOpen,
+	djs,
+	isDJsLoading,
+	djsError,
+	onRetryDJs,
+	onClose,
+	onSubmit,
+}: Props) => {
 	const [title, setTitle] = useState("");
 	const [date, setDate] = useState("");
 	const [hours, setHours] = useState("");
@@ -35,9 +50,17 @@ export const OnboardShowModal = ({ isOpen, djs, onClose, onSubmit }: Props) => {
 			setTags("");
 			setUrl("");
 			setSelected([]);
+			onRetryDJs();
 		}
-	}, [isOpen]);
+	}, [isOpen, onRetryDJs]);
+	const djOptions: SearchableMultiSelectOption[] = djs.map((dj) => ({
+		id: dj.id,
+		label: `${dj.title} (#${dj.id})`,
+		searchText: `${dj.title} ${dj.id}`,
+	}));
 	const submit = async () => {
+		if (isDJsLoading || djsError !== undefined)
+			throw new Error("DJs must finish loading before submitting.");
 		if (selected.length === 0) throw new Error("Select at least one DJ.");
 		await onSubmit(
 			buildCreateShowRequest({
@@ -106,31 +129,16 @@ export const OnboardShowModal = ({ isOpen, djs, onClose, onSubmit }: Props) => {
 				value={image}
 				onChange={setImage}
 			/>
-			<div className={fieldStyles.field}>
-				<span>DJs</span>
-				<div>
-					{djs.length === 0 ? (
-						<p>Create a DJ first.</p>
-					) : (
-						djs.map((dj) => (
-							<label key={dj.id}>
-								<input
-									type="checkbox"
-									checked={selected.includes(dj.id)}
-									onChange={() =>
-										setSelected((value) =>
-											value.includes(dj.id)
-												? value.filter((id) => id !== dj.id)
-												: [...value, dj.id],
-										)
-									}
-								/>{" "}
-								{dj.title} (#{dj.id})
-							</label>
-						))
-					)}
-				</div>
-			</div>
+			<SearchableMultiSelect
+				id="show-djs"
+				label="DJs"
+				options={djOptions}
+				selectedIds={selected}
+				onChange={setSelected}
+				isLoading={isDJsLoading}
+				{...(djsError === undefined ? {} : { error: djsError })}
+				onRetry={onRetryDJs}
+			/>
 			<CommaSeparatedTagsField id="show-tags" value={tags} onChange={setTags} />
 			<LabeledFormControl
 				id="show-url"
