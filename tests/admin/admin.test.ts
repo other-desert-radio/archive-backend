@@ -36,6 +36,7 @@ const testDatabase = {
 			shows: [
 				{
 					id: 10,
+					createdAt: new Date("2026-01-02T00:00:00.000Z"),
 					title: "Show One",
 					date: new Date("2026-01-01T00:00:00.000Z"),
 					duration: 3600,
@@ -300,6 +301,7 @@ describe("admin route boundary", () => {
 		expect(response.json()).toEqual([
 			{
 				id: 10,
+				createdAt: "2026-01-02T00:00:00.000Z",
 				title: "Show One",
 				date: "2026-01-01T00:00:00.000Z",
 				duration: 3600,

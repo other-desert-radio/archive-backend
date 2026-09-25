@@ -37,6 +37,16 @@ type ArchiveShow = {
 	url: string;
 };
 
+type ArchiveShowDJ = {
+	id: number;
+	title: string;
+	image?: string;
+};
+
+export type ArchiveShowIndex = ArchiveShow & {
+	djs: ArchiveShowDJ[];
+};
+
 export type ArchiveDJBrief = {
 	id: number;
 	title: string;
@@ -63,6 +73,7 @@ export type ArchiveTag = {
 export type ArchiveDocuments = {
 	djsBrief: ArchiveDJBrief[];
 	djs: ArchiveDJDetail[];
+	shows: ArchiveShowIndex[];
 	tags: ArchiveTag[];
 	images: ArchiveDJImage[];
 };
@@ -150,7 +161,9 @@ export const buildArchiveDocuments = ({
 		]),
 	);
 	const showsById = new Map(shows.map((show) => [show.id, show]));
+	const djsById = new Map(djs.map((dj) => [dj.id, dj]));
 	const showIdsByDJ = groupIds(showDJs, "dj_id", "show_id");
+	const djIdsByShow = groupIds(showDJs, "show_id", "dj_id");
 	const directTagIdsByDJ = groupIds(djTags, "dj_id", "tag_id");
 	const tagIdsByShow = groupIds(showTags, "show_id", "tag_id");
 
@@ -211,10 +224,34 @@ export const buildArchiveDocuments = ({
 			tagIds,
 		};
 	});
+	const archiveShows = shows.map((show) => ({
+		id: show.id,
+		title: show.title,
+		date: show.date,
+		duration: show.duration,
+		...(show.image === null ? {} : { image: show.image }),
+		djs: (djIdsByShow.get(show.id) ?? []).flatMap((djId) => {
+			const dj = djsById.get(djId);
+			if (dj === undefined) {
+				return [];
+			}
+			const image = imagePaths.get(dj.id);
+			return [
+				{
+					id: dj.id,
+					title: dj.title,
+					...(image === undefined ? {} : { image }),
+				},
+			];
+		}),
+		tagIds: tagIdsByShow.get(show.id) ?? [],
+		url: show.url,
+	}));
 
 	return {
 		djsBrief,
 		djs: archiveDJs,
+		shows: archiveShows,
 		tags: tags.map((tag) => ({
 			id: tag.id,
 			title: tag.title,
@@ -243,7 +280,12 @@ export const writeArchiveDocuments = async (
 
 	reporter.log("├─ Refreshing managed JSON output");
 	await fs.mkdir(resourceDirectory, { recursive: true });
-	for (const relativePath of ["djs", "djs_brief.json", "tags.json"]) {
+	for (const relativePath of [
+		"djs",
+		"djs_brief.json",
+		"shows.json",
+		"tags.json",
+	]) {
 		await fs.rm(path.join(resourceDirectory, relativePath), {
 			recursive: true,
 			force: true,
@@ -271,6 +313,8 @@ export const writeArchiveDocuments = async (
 		await writeJSON(path.join(resourceDirectory, "djs", `${dj.id}.json`), dj);
 		reporter.log(`│  ├─ djs/${dj.id}.json`);
 	}
+	await writeJSON(path.join(resourceDirectory, "shows.json"), documents.shows);
+	reporter.log(`│  ├─ shows.json: ${documents.shows.length} shows`);
 	await writeJSON(path.join(resourceDirectory, "tags.json"), documents.tags);
 	reporter.log(`│  └─ tags.json: ${documents.tags.length} tags`);
 
@@ -292,7 +336,7 @@ export const writeArchiveDocuments = async (
 		}
 	}
 	reporter.log(
-		`└─ Complete: ${documents.djs.length} DJs, ${documents.tags.length} tags, ${documents.images.length} images`,
+		`└─ Complete: ${documents.djs.length} DJs, ${documents.shows.length} shows, ${documents.tags.length} tags, ${documents.images.length} images`,
 	);
 };
 
@@ -360,6 +404,7 @@ export const exportArchive = async (
 	});
 	reporter.log(`│  ├─ DJ details: ${documents.djs.length}`);
 	reporter.log(`│  ├─ DJ briefs: ${documents.djsBrief.length}`);
+	reporter.log(`│  ├─ Shows: ${documents.shows.length}`);
 	reporter.log(`│  ├─ Tags: ${documents.tags.length}`);
 	reporter.log(`│  └─ Images: ${documents.images.length}`);
 
@@ -371,7 +416,6 @@ export const exportArchive = async (
 	);
 };
 
-// TODO: Export the top-level shows.json index in a separate feature.
 if (import.meta.main) {
 	try {
 		await exportArchive();

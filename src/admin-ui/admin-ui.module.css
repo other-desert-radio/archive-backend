@@ -1,0 +1,78 @@
+:global(.admin-shell) {
+	width: 100%;
+}
+:global(.database-table-view) {
+	width: 100%;
+}
+:global(.database-table-header h1) {
+	margin-bottom: 1.5rem;
+}
+:global(.database-table-body) {
+	width: 100%;
+}
+:global(.image-dropzone) {
+	min-width: 0;
+	padding: 0.5rem;
+	border: 1px dashed #000;
+	background: #fafafa;
+}
+:global(.image-dropzone.is-dragging) {
+	background: #e8e8e8;
+}
+:global(.image-dropzone.has-file) {
+	border-style: solid;
+	background: #fff;
+}
+:global(.image-dropzone-button) {
+	width: 100%;
+	border: 0;
+	border-radius: 0;
+	font: inherit;
+	text-align: left;
+}
+:global(.muted) {
+	color: #555;
+}
+:global(.visually-hidden) {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+}
+:global(.table-wrapper) {
+	width: 100%;
+	padding: 0 24px;
+	overflow-x: auto;
+}
+:global(.table-wrapper table) {
+	width: max-content;
+	min-width: 100%;
+	border-collapse: collapse;
+}
+:global(.table-wrapper th),
+:global(.table-wrapper td) {
+	max-width: 250px;
+	min-width: 9rem;
+	padding: 1.25rem;
+	text-align: center;
+	vertical-align: top;
+	overflow-wrap: anywhere;
+}
+:global(.table-wrapper th + th),
+:global(.table-wrapper td + td) {
+	border-left: 1px solid #000;
+}
+:global(.table-wrapper tbody tr + tr > td) {
+	border-top: 1px solid #000;
+}
+:global(.table-wrapper thead tr > th) {
+	border-bottom: 3px double #000;
+}
+:global(.table-wrapper tbody tr) {
+	background: rgb(255 255 255 / 30%);
+}
+:global(.table-wrapper tbody tr:hover) {
+	background: rgb(255 255 255 / 80%);
+}
