@@ -15,7 +15,7 @@
 }
 .helper {
 	grid-column: 2;
-	margin: -1rem 0 0;
+	margin: 0.5rem 0 0;
 	color: #555;
 	font-size: 0.875rem;
 }

@@ -16,7 +16,7 @@ export const ShowsToolbar = ({
 		query={query}
 		onQueryChange={onQueryChange}
 		searchLabel="Search Shows"
-		createLabel="+ Show"
+		createLabel="+ show"
 		onCreate={onAddShow}
 	/>
 );
