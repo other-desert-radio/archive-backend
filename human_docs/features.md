@@ -17,7 +17,7 @@ finishes, it'll return a mixcloud URL to us. we will take that URL and then the
 user will input information about the show -- who the DJ was, things like that,
 and store that into the database.
 
-once that action is complete, we will generate the archive asset layout locally
-and publish it to `public/archive/` in the Astro GitHub Pages repository via
-actions. Astro will copy those static JSON and image files unchanged into the
-deployed site.
+once that action is complete, we will generate JSON in `src/res/` and images in
+`public/assets/` in the Astro GitHub Pages repository via actions. Astro imports
+the JSON during its build and copies image assets unchanged into the deployed
+site.

@@ -122,12 +122,27 @@ The current authenticated mutation routes are:
 
 ```text
 POST /api/admin/create-dj
+POST /api/admin/create-show
 POST /api/admin/create-tag
 POST /api/admin/create-tags
 ```
 
 `GET /api/admin/djs` includes each DJ's `createdAt` timestamp in ISO JSON date
 format, alongside its identity, metadata, and relationship IDs.
+
+`GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
+ISO JSON date format. The public Show transformer remains unchanged; `date` is a
+broadcast calendar date stored at midnight UTC and returned as an ISO timestamp
+for compatibility.
+
+`POST /api/admin/create-show` accepts JSON with required `title`, strict
+`YYYY-MM-DD` `date`, positive whole-second `duration`, absolute HTTP(S) `url`,
+and one or more existing DJ IDs in `djs`. Optional `image` must be an absolute
+HTTP(S) URL; optional `tags` are titles. The route trims text, validates real
+calendar dates and URLs, deduplicates DJ IDs and tag titles, and stores the date
+at midnight UTC. It creates the Show, relationships, and any missing unreviewed
+tags in one transaction, returning `201` with the same admin Show shape as the
+list response.
 
 Tag creation accepts `{ title: string }` or `{ title: string, color: string }`
 for `create-tag`, and an array of those objects for `create-tags`. Tag titles

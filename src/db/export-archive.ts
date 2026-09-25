@@ -14,9 +14,13 @@ import type {
 	TagsTable,
 } from "./types.js";
 
-/** Set this to the Astro frontend's public/archive directory before exporting. */
-export const ARCHIVE_OUTPUT_DIRECTORY =
-	"/home/garrepi/dev/odr/archive-site/public/archive";
+/** Directory where Astro imports archive JSON during the site build. */
+export const ARCHIVE_RESOURCE_DIRECTORY =
+	"/home/garrepi/dev/odr/archive-site/src/res";
+
+/** Directory where Astro serves copied DJ image assets. */
+export const ARCHIVE_ASSET_DIRECTORY =
+	"/home/garrepi/dev/odr/archive-site/public/assets";
 
 type ArchiveDJImage = {
 	id: number;
@@ -32,6 +36,16 @@ type ArchiveShow = {
 	image?: string;
 	tagIds: number[];
 	url: string;
+};
+
+type ArchiveShowDJ = {
+	id: number;
+	title: string;
+	image?: string;
+};
+
+export type ArchiveShowIndex = ArchiveShow & {
+	djs: ArchiveShowDJ[];
 };
 
 export type ArchiveDJBrief = {
@@ -58,6 +72,7 @@ export type ArchiveTag = {
 export type ArchiveDocuments = {
 	djsBrief: ArchiveDJBrief[];
 	djs: ArchiveDJDetail[];
+	shows: ArchiveShowIndex[];
 	tags: ArchiveTag[];
 	images: ArchiveDJImage[];
 };
@@ -120,7 +135,9 @@ export const buildArchiveDocuments = ({
 		]),
 	);
 	const showsById = new Map(shows.map((show) => [show.id, show]));
+	const djsById = new Map(djs.map((dj) => [dj.id, dj]));
 	const showIdsByDJ = groupIds(showDJs, "dj_id", "show_id");
+	const djIdsByShow = groupIds(showDJs, "show_id", "dj_id");
 	const directTagIdsByDJ = groupIds(djTags, "dj_id", "tag_id");
 	const tagIdsByShow = groupIds(showTags, "show_id", "tag_id");
 
@@ -181,10 +198,34 @@ export const buildArchiveDocuments = ({
 			tagIds,
 		};
 	});
+	const archiveShows = shows.map((show) => ({
+		id: show.id,
+		title: show.title,
+		date: show.date,
+		duration: show.duration,
+		...(show.image === null ? {} : { image: show.image }),
+		djs: (djIdsByShow.get(show.id) ?? []).flatMap((djId) => {
+			const dj = djsById.get(djId);
+			if (dj === undefined) {
+				return [];
+			}
+			const image = imagePaths.get(`${dj.id}-400`);
+			return [
+				{
+					id: dj.id,
+					title: dj.title,
+					...(image === undefined ? {} : { image }),
+				},
+			];
+		}),
+		tagIds: tagIdsByShow.get(show.id) ?? [],
+		url: show.url,
+	}));
 
 	return {
 		djsBrief,
 		djs: archiveDJs,
+		shows: archiveShows,
 		tags: tags.map((tag) => ({
 			id: tag.id,
 			title: tag.title,
@@ -201,70 +242,83 @@ const writeJSON = async (file: string, value: unknown): Promise<void> => {
 /** Replaces exporter-owned DJ assets while preserving unrelated archive files. */
 export const writeArchiveDocuments = async (
 	documents: ArchiveDocuments,
-	outputDirectory: string,
+	resourceDirectory: string,
+	assetDirectory: string,
 	reporter: ArchiveExportReporter = { log: console.log },
 ): Promise<void> => {
-	if (!path.isAbsolute(outputDirectory)) {
-		throw new Error("Archive output directory must be an absolute path");
+	if (!path.isAbsolute(resourceDirectory) || !path.isAbsolute(assetDirectory)) {
+		throw new Error("Archive output directories must be absolute paths");
 	}
 
-	reporter.log("├─ Refreshing managed output");
-	await fs.mkdir(outputDirectory, { recursive: true });
+	reporter.log("├─ Refreshing managed JSON output");
+	await fs.mkdir(resourceDirectory, { recursive: true });
 	for (const relativePath of [
 		"djs",
-		"images/djs",
 		"djs_brief.json",
+		"shows.json",
 		"tags.json",
 	]) {
-		await fs.rm(path.join(outputDirectory, relativePath), {
+		await fs.rm(path.join(resourceDirectory, relativePath), {
 			recursive: true,
 			force: true,
 		});
 		reporter.log(`│  ├─ Removed ${relativePath}`);
 	}
-	reporter.log("│  └─ Preserved unrelated archive files");
+	reporter.log("│  └─ Preserved unrelated JSON resources");
+	reporter.log("├─ Refreshing managed image output");
+	await fs.mkdir(assetDirectory, { recursive: true });
+	await fs.rm(path.join(assetDirectory, "images", "djs"), {
+		recursive: true,
+		force: true,
+	});
+	reporter.log("│  ├─ Removed images/djs/");
+	reporter.log("│  └─ Preserved unrelated image assets");
 
 	reporter.log("├─ Writing JSON");
-	await fs.mkdir(path.join(outputDirectory, "djs"), { recursive: true });
+	await fs.mkdir(path.join(resourceDirectory, "djs"), { recursive: true });
 	await writeJSON(
-		path.join(outputDirectory, "djs_brief.json"),
+		path.join(resourceDirectory, "djs_brief.json"),
 		documents.djsBrief,
 	);
 	reporter.log(`│  ├─ djs_brief.json: ${documents.djsBrief.length} DJs`);
 	for (const dj of documents.djs) {
-		await writeJSON(path.join(outputDirectory, "djs", `${dj.id}.json`), dj);
+		await writeJSON(path.join(resourceDirectory, "djs", `${dj.id}.json`), dj);
 		reporter.log(`│  ├─ djs/${dj.id}.json`);
 	}
-	await writeJSON(path.join(outputDirectory, "tags.json"), documents.tags);
+	await writeJSON(path.join(resourceDirectory, "shows.json"), documents.shows);
+	reporter.log(`│  ├─ shows.json: ${documents.shows.length} shows`);
+	await writeJSON(path.join(resourceDirectory, "tags.json"), documents.tags);
 	reporter.log(`│  └─ tags.json: ${documents.tags.length} tags`);
 
 	reporter.log("├─ Writing image assets");
 	if (documents.images.length === 0) {
 		reporter.log("│  └─ No DJ images");
 	} else {
-		await fs.mkdir(path.join(outputDirectory, "images", "djs"), {
+		await fs.mkdir(path.join(assetDirectory, "images", "djs"), {
 			recursive: true,
 		});
 		for (const [index, image] of documents.images.entries()) {
 			const relativePath = `images/djs/${image.id}-${image.width}.webp`;
-			await fs.writeFile(path.join(outputDirectory, relativePath), image.bytes);
+			await fs.writeFile(path.join(assetDirectory, relativePath), image.bytes);
 			const branch = index === documents.images.length - 1 ? "└─" : "├─";
 			reporter.log(`│  ${branch} ${relativePath}`);
 		}
 	}
 	reporter.log(
-		`└─ Complete: ${documents.djs.length} DJs, ${documents.tags.length} tags, ${documents.images.length} images`,
+		`└─ Complete: ${documents.djs.length} DJs, ${documents.shows.length} shows, ${documents.tags.length} tags, ${documents.images.length} images`,
 	);
 };
 
 /** Loads archive data, builds public files, and writes the DJ export. */
 export const exportArchive = async (
 	database: Kysely<Database> = db,
-	outputDirectory: string = ARCHIVE_OUTPUT_DIRECTORY,
+	resourceDirectory: string = ARCHIVE_RESOURCE_DIRECTORY,
+	assetDirectory: string = ARCHIVE_ASSET_DIRECTORY,
 	reporter: ArchiveExportReporter = { log: console.log },
 ): Promise<void> => {
 	reporter.log("Archive export");
-	reporter.log(`├─ Destination: ${outputDirectory}`);
+	reporter.log(`├─ JSON destination: ${resourceDirectory}`);
+	reporter.log(`├─ Image destination: ${assetDirectory}`);
 	reporter.log("├─ Reading database");
 	const [djs, shows, tags, showDJs, djTags, showTags] = await Promise.all([
 		database
@@ -326,13 +380,18 @@ export const exportArchive = async (
 	});
 	reporter.log(`│  ├─ DJ details: ${documents.djs.length}`);
 	reporter.log(`│  ├─ DJ briefs: ${documents.djsBrief.length}`);
+	reporter.log(`│  ├─ Shows: ${documents.shows.length}`);
 	reporter.log(`│  ├─ Tags: ${documents.tags.length}`);
 	reporter.log(`│  └─ Images: ${documents.images.length}`);
 
-	await writeArchiveDocuments(documents, outputDirectory, reporter);
+	await writeArchiveDocuments(
+		documents,
+		resourceDirectory,
+		assetDirectory,
+		reporter,
+	);
 };
 
-// TODO: Export the top-level shows.json index in a separate feature.
 if (import.meta.main) {
 	try {
 		await exportArchive();

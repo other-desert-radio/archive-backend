@@ -104,6 +104,24 @@ describe("archive export documents", () => {
 			],
 			tagIds: [2, 4],
 		});
+		expect(documents.shows).toEqual([
+			{
+				id: 10,
+				title: "Newer Show",
+				date: new Date("2026-02-01T00:00:00.000Z"),
+				duration: 3600,
+				image: "https://example.com/show.jpg",
+				djs: [
+					{
+						id: 1,
+						title: "DJ One",
+						image: "images/djs/1-400.webp",
+					},
+				],
+				tagIds: [2, 4],
+				url: "https://example.com/audio",
+			},
+		]);
 		expect(documents.tags).toEqual([
 			{ id: 2, title: "House", color: "#ff1100" },
 			{ id: 4, title: "Ambient", color: "#2255cc" },
@@ -138,22 +156,23 @@ describe("archive export documents", () => {
 
 describe("archive export writer", () => {
 	test("replaces managed DJ files, preserves other output, and logs each file", async () => {
-		const outputDirectory = await mkdtemp(
-			path.join(tmpdir(), "archive-export-"),
-		);
-		temporaryDirectories.push(outputDirectory);
-		await mkdir(path.join(outputDirectory, "djs"), { recursive: true });
-		await mkdir(path.join(outputDirectory, "images", "djs"), {
+		const rootDirectory = await mkdtemp(path.join(tmpdir(), "archive-export-"));
+		temporaryDirectories.push(rootDirectory);
+		const resourceDirectory = path.join(rootDirectory, "res");
+		const assetDirectory = path.join(rootDirectory, "assets");
+		await mkdir(path.join(resourceDirectory, "djs"), { recursive: true });
+		await mkdir(path.join(assetDirectory, "images", "djs"), {
 			recursive: true,
 		});
-		await mkdir(path.join(outputDirectory, "shows"), { recursive: true });
-		await writeFile(path.join(outputDirectory, "djs", "stale.json"), "stale");
+		await mkdir(path.join(resourceDirectory, "shows"), { recursive: true });
+		await writeFile(path.join(resourceDirectory, "djs", "stale.json"), "stale");
+		await writeFile(path.join(resourceDirectory, "shows.json"), "stale");
 		await writeFile(
-			path.join(outputDirectory, "images", "djs", "stale.jpg"),
+			path.join(assetDirectory, "images", "djs", "stale.webp"),
 			"stale",
 		);
 		await writeFile(
-			path.join(outputDirectory, "shows", "10.json"),
+			path.join(resourceDirectory, "shows", "10.json"),
 			"future show",
 		);
 
@@ -170,38 +189,64 @@ describe("archive export writer", () => {
 						tagIds: [],
 					},
 				],
+				shows: [
+					{
+						id: 10,
+						title: "Show One",
+						date: new Date("2026-01-01T00:00:00.000Z"),
+						duration: 3600,
+						djs: [{ id: 1, title: "DJ One" }],
+						tagIds: [],
+						url: "https://example.com/audio",
+					},
+				],
 				tags: [{ id: 2, title: "House", color: "#ff1100" }],
 				images: [
 					{ id: 1, bytes: Buffer.from("small"), width: 400 },
 					{ id: 1, bytes: Buffer.from("large"), width: 1024 },
 				],
 			},
-			outputDirectory,
+			resourceDirectory,
+			assetDirectory,
 			{ log: (message) => logs.push(message) },
 		);
 
 		expect(
 			JSON.parse(
-				await readFile(path.join(outputDirectory, "djs_brief.json"), "utf8"),
+				await readFile(path.join(resourceDirectory, "djs_brief.json"), "utf8"),
 			),
 		).toEqual([{ id: 1, title: "DJ One", tagIds: [] }]);
 		expect(
-			await readFile(path.join(outputDirectory, "djs", "1.json"), "utf8"),
+			await readFile(path.join(resourceDirectory, "djs", "1.json"), "utf8"),
 		).toContain('"title": "DJ One"');
 		expect(
-			await readFile(path.join(outputDirectory, "images", "djs", "1-400.webp")),
+			await readFile(path.join(assetDirectory, "images", "djs", "1-400.webp")),
 		).toEqual(Buffer.from("small"));
 		expect(
-			await readFile(
-				path.join(outputDirectory, "images", "djs", "1-1024.webp"),
-			),
+			await readFile(path.join(assetDirectory, "images", "djs", "1-1024.webp")),
 		).toEqual(Buffer.from("large"));
 		expect(
-			await readFile(path.join(outputDirectory, "shows", "10.json"), "utf8"),
+			JSON.parse(
+				await readFile(path.join(resourceDirectory, "shows.json"), "utf8"),
+			),
+		).toEqual([
+			{
+				id: 10,
+				title: "Show One",
+				date: "2026-01-01T00:00:00.000Z",
+				duration: 3600,
+				djs: [{ id: 1, title: "DJ One" }],
+				tagIds: [],
+				url: "https://example.com/audio",
+			},
+		]);
+		expect(
+			await readFile(path.join(resourceDirectory, "shows", "10.json"), "utf8"),
 		).toBe("future show");
-		expect(logs).toContain("├─ Refreshing managed output");
+		expect(logs).toContain("├─ Refreshing managed JSON output");
 		expect(logs).toContain("│  ├─ djs/1.json");
 		expect(logs).toContain("│  └─ images/djs/1-1024.webp");
-		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 tags, 2 images");
+		expect(logs).toContain("│  ├─ shows.json: 1 shows");
+		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 shows, 1 tags, 2 images");
 	});
 });

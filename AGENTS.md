@@ -11,3 +11,28 @@ at a time, include focused tests and documentation, then stop and ask the user
 for review or input before beginning the next feature. Do not bundle unrelated
 backend, frontend, authentication, database, or deployment work into a single
 chunk.
+
+## Visual admin UI checks
+
+For any admin UI layout, styling, or interaction work, use `agent-browser`
+before handoff. This is a required acceptance check, not an optional diagnostic:
+start the local stack, open the affected authenticated view, wait for it to
+settle, and inspect its snapshot or screenshot. Exercise the affected control
+when the change is interactive.
+
+```sh
+agent-browser --session admin-ui-verify set credentials admin admin
+agent-browser --session admin-ui-verify open http://localhost:3000/admin/#djs
+agent-browser --session admin-ui-verify wait 500
+agent-browser --session admin-ui-verify snapshot -i
+agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
+```
+
+The browser session uses a socket outside the workspace sandbox, so request
+approved elevated permission when necessary. The documented credentials are for
+local development only; never use them outside that environment. Do not embed
+the credentials in the URL: this version of `agent-browser` preserves them in
+the document URL, causing relative admin API fetches to fail. Set credentials on
+the session first, then open the credential-free local URL. Check `#shows` and
+`#tags` as applicable. Report what was verified, or clearly state the local
+runtime blocker that prevented verification.

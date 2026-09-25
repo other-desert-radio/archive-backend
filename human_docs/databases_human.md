@@ -5,26 +5,26 @@ The archive front end that plugs into this is a GitHub static site.
 It will source data from static JSON files included in the GitHub repo.
 
 This backend will convert PostgreSQL data into static assets for the frontend.
-The exporter writes the DJ/tag portion of this layout to an absolute directory
-configured in the backend code. Set that directory to the Astro repository's
-`public/archive/` directory when exporting directly into the frontend project:
+The exporter writes JSON and images to separate absolute directories configured
+in the backend code:
 
 ```text
-archive-export/
-├── djs_brief.json
-├── djs/
-│   └── 1.json
-├── tags.json
-└── images/
+archive-site/
+├── src/res/
+│   ├── djs_brief.json
+│   ├── djs/
+│   │   └── 1.json
+│   ├── shows.json
+│   └── tags.json
+└── public/assets/
     └── djs/
         └── 1.jpg
 ```
 
-The top-level `shows.json` is deferred. When the assets are published to the
-Astro repository, they belong in `public/archive/`. Astro copies `public/` into
-the built site unchanged, so the files are available beneath `archive/`. The
-frontend must construct URLs with Astro's `import.meta.env.BASE_URL`, which
-supports GitHub Pages project sites whose site URL includes the repository name.
+Astro imports JSON from `src/res/` during its site build. It copies
+`public/assets/` into the built site unchanged, so the frontend must construct
+image URLs with Astro's `import.meta.env.BASE_URL`, which supports GitHub Pages
+project sites whose site URL includes the repository name.
 
 ## `djs_brief.json`
 
@@ -35,7 +35,7 @@ The scrolling DJ list loads this compact index.
   {
     "id": 1,
     "title": "DJ Example",
-    "image": "images/djs/1.jpg",
+    "image": "assets/djs/1.jpg",
     "tagIds": [2, 4]
   }
 ]
@@ -52,7 +52,7 @@ dictionary.
   "id": 1,
   "title": "DJ Example",
   "bio": "<p>Safe HTML</p>",
-  "image": "images/djs/1.jpg",
+  "image": "assets/djs/1.jpg",
   "shows": [
     {
       "id": 10,
@@ -70,9 +70,9 @@ dictionary.
 
 ## `shows.json`
 
-This document is planned but is not written by the current exporter. It will
-power the scrolling show list and embed the small DJ card data needed for
-display; its `tagIds` will be resolved through `tags.json`.
+This document powers the scrolling show list and embeds the small DJ card data
+needed for display; its `tagIds` are resolved through `tags.json`. Shows are
+ordered by descending date, then ID; related DJ and tag IDs are ascending.
 
 ```json
 [
@@ -81,7 +81,7 @@ display; its `tagIds` will be resolved through `tags.json`.
     "title": "Example Show",
     "date": "2026-01-01T00:00:00.000Z",
     "duration": 1234,
-    "djs": [{ "id": 1, "title": "DJ Example", "image": "images/djs/1.jpg" }],
+    "djs": [{ "id": 1, "title": "DJ Example", "image": "assets/djs/1.jpg" }],
     "image": "https://example.com/show-image.jpg",
     "tagIds": [2, 4],
     "url": "https://example.com/audio"
