@@ -1,5 +1,224 @@
 # Admin UI Implementation Plan
 
+## Active MVP plan — 2026-09-25
+
+This section supersedes the historical roadmap below. The user approved this
+completion plan on 2026-09-25. Approval of the plan is not review of its future
+implementation chunks: stop for user review after each chunk.
+
+### Finish line and confirmed decisions
+
+Administrators can sign in, create and edit DJs, Shows, and Tags, manage their
+assignments, and sign out through consistent, reusable controls. Keep Fastify,
+Kysely, PostgreSQL, React/Vite, and Better Auth. Support multiple accounts with
+one server-owned admin role and public signup disabled.
+
+Browser authentication is in scope now and will replace temporary Basic Auth.
+Provisioning and password recovery use operator commands; no email
+infrastructure is planned. Reusable tag chips/autocomplete and a basic
+formatting editor for DJ bio/socials are included.
+
+Deletion, audio upload/Mixcloud, FFMPEG, GitHub publication, server pagination,
+and production deployment remain separate milestones. Local archive export
+already exists and its output contract must remain compatible. Broader audit
+logging, security headers, and backup/recovery operations remain on the deferred
+roadmap; mutation CSRF protection and login rate limiting are part of this MVP.
+
+### Implementation inventory
+
+The following is established by code inspection, not a claim of fresh browser or
+production verification:
+
+- DJs, Shows, and Tags have list APIs and sortable tables. DJs and Shows also
+  have client-side search and working onboarding.
+- DJ creation stores multipart image uploads and metadata, direct DJ tags, and
+  missing tags transactionally. Show creation stores metadata, existing-DJ
+  assignments, and reused/new tags transactionally.
+- Tags has read-only UI; tag creation and validation APIs exist. Modification
+  and removal routes for DJs/Tags are placeholders, not working management
+  features.
+- All three pages use shared `ResourceView` and `ResourceTable` components.
+  DJs/Shows share toolbar, modal, and form primitives. `DatabaseTableView` is an
+  older component, not the current page composition.
+- Hash navigation supports `#shows` (default), `#djs`, and `#tags`. There is no
+  Upload sidebar item in the current shell.
+- Bio/socials HTML is sanitized. Rich editing, tag chips, and autocomplete are
+  not implemented; onboarding currently uses comma-separated tags.
+- DJ list tag IDs combine direct and inherited tags. Editing must distinguish
+  those sources to avoid persisting inherited tags as direct assignments.
+- Better Auth routes and session/role guards exist. Configured Basic Auth
+  credentials independently grant admin access; they are not a Better Auth
+  sign-in. Successful real-database credential login is not covered yet.
+- Migrations through `0014` exist. This inventory does not establish which are
+  applied to any particular database; never apply them automatically at startup.
+- Local export includes DJ indexes/details/images, tags, and the show index.
+
+The three Show implementation chunks are recorded as reviewed in
+[`SHOWS_IMPLEMENTATION_PLAN.md`](SHOWS_IMPLEMENTATION_PLAN.md). Earlier plans
+and checkboxes below are historical evidence, not the remaining-work queue.
+
+### Review chunks
+
+Each numbered item is a separate implementation and review checkpoint. Include
+focused tests and documentation with each behavior change. Split backend and
+frontend work at the explicit checkpoints below.
+
+1. **Documentation and baseline.** Reconcile current-status guidance, install
+   locked dependencies, and run the existing checks. Record actual results and
+   blockers without claiming fresh browser verification.
+2. **Account provisioning and real authentication.** Extract an injectable auth
+   factory shared by runtime/tests. Add operator account-creation and
+   password-reset commands with hidden password prompts, Better Auth password
+   hashing, transactional writes, and session revocation on reset. Reject
+   duplicates without overwriting accounts. Prove login, cookie reuse, and
+   logout against isolated PostgreSQL.
+3. **Cookie mutation protection.** Add a shared guard for unsafe admin API
+   requests requiring the configured exact origin and an application-specific
+   header, including multipart requests. Migrate all loaders/mutations to a
+   shared request helper. Keep Better Auth's own auth-endpoint CSRF checks;
+   configure trusted origins, explicit cookie/session settings, and login rate
+   limiting.
+4. **Browser authentication.** Add a login page, shared auth client/provider,
+   session gate, logout, and centralized expired-session/forbidden handling.
+   Expose only login and required static assets without authentication; archive
+   APIs and image routes remain protected. Preserve the selected resource
+   through login. Verify browser login before removing Basic Auth.
+5. **Basic Auth removal and auth handoff.** Remove the bypass, challenge, and
+   environment variables. Update account setup, recovery, revocation, local
+   startup, and browser-verification runbooks. Prove Basic credentials alone no
+   longer grant access.
+6. **Reusable tag picker.** Use one controlled component in DJ/Show onboarding
+   with autocomplete, comma-separated paste, removable colored chips, keyboard
+   navigation, case-insensitive deduplication, and unknown-tag feedback. Never
+   persist tags until the parent form saves.
+7. **Tags list and creation UI.** Add the shared search/create toolbar, reviewed
+   status, color swatches, and an unreviewed filter. Reuse tag creation and
+   modal primitives; preserve search/sort after save.
+8. **Tag-title uniqueness.** Add a separately reviewed migration enforcing
+   normalized title uniqueness and make shared creation concurrency-safe.
+   Preflight existing collisions; report them without automatic merging or
+   deletion. Apply migrations explicitly after review.
+9. **Tag modification API.** Implement typed title/color/reviewed updates,
+   missing-record errors, and duplicate-title conflicts. Preserve IDs and
+   relationships.
+10. **Tag editing/review UI.** Reuse the tag form in edit mode. Support explicit
+    review approval without requiring a color change, inline errors, and
+    refreshed results.
+11. **Reusable formatting editor.** Use Tiptap React restricted to paragraphs,
+    line breaks, bold, italic, and lists. Use it for DJ bio/socials creation and
+    editing; preserve supported formatting and authoritative server
+    sanitization.
+12. **DJ modification API.** Add edit detail with direct/inherited tag IDs.
+    Implement transactional multipart metadata/direct-tag updates and explicit
+    image keep/replace/remove actions. Inherited tags remain derived from shows.
+13. **DJ editing UI.** Add an explicit row action opening prefilled shared form
+    controls, editor, tag picker, and image controls. Explain read-only
+    inherited tags and preserve table search/sort after save.
+14. **Show modification API.** Reuse creation validation/services to atomically
+    update metadata and replace DJ/tag assignments. Preserve date-only
+    semantics, positive duration, and the requirement for at least one existing
+    DJ.
+15. **Show editing UI and final acceptance.** Reuse onboarding fields and
+    selectors in a prefilled edit modal. Verify the complete workflow, export
+    compatibility, and final documentation.
+
+### Interface and reuse requirements
+
+- Preserve creation endpoints and public archive JSON. Add
+  `GET /api/admin/djs/:id`, `GET /api/admin/shows/:id`, and
+  `POST /api/admin/modify-{dj,show,tag}`. DJ detail separates direct/inherited
+  tag IDs; list `tags` remains the combined set.
+- Modification requests include the ID and complete editable values. Empty
+  optional fields clear values; relationship collections replace editable
+  assignments. Return the updated admin resource on success.
+- Extend shared reply types for `401`, `403`, `404`, and `409`. Use existing
+  `ts-pattern` conventions and follow [`api-routes.md`](api-routes.md).
+- Manage show/DJ assignments from Show forms and direct DJ tags from DJ forms.
+  Do not add duplicate relationship-management screens.
+- Share modal mechanics, resource forms, request/error handling, auth state, tag
+  matching, and transaction services; keep resource validation explicit.
+- Failed saves retain values. Session expiry requires reauthentication and
+  explicit resubmission, never automatic mutation replay. Drafts remain only in
+  memory and clear on logout or account change.
+- Use server-backed sessions, HTTP-only/SameSite cookies, Secure cookies under
+  HTTPS, and explicit seven-day expiry with daily renewal. Do not trust
+  arbitrary forwarded host/protocol headers. Preserve separate `Set-Cookie`
+  headers.
+- Remove unused deletion placeholders during the respective resource API chunk
+  so deferred operations cannot appear to succeed.
+
+### Acceptance and documentation
+
+Authentication needs focused tests plus real-database coverage for valid/invalid
+credentials, disabled signup, multiple administrators, cookie forwarding,
+expiry/revocation, logout, password reset, non-admin rejection, CSRF, rate
+limiting, and secret-free logging. Document setup, recovery, session revocation,
+cookie settings, troubleshooting, and public/protected route boundaries.
+
+Resource tests cover validation, formatting round trips, tag matching/conflicts,
+image actions, relationship replacement, inherited tags, concurrent tag
+creation, and transaction rollback. Follow
+[`DATABASE_E2E_TESTING.md`](DATABASE_E2E_TESTING.md) for mutation verification;
+do not add fixtures to the normal local dataset.
+
+Every UI chunk requires authenticated `agent-browser` verification, including
+the changed interaction, keyboard use, narrow/short layouts, and loading/error
+states. After auth cutover, use provisioned accounts rather than Basic Auth. Run
+focused tests, typecheck, admin build, format, lint, and diff checks per chunk;
+run the full suite at auth completion and final acceptance. Record actual
+results, screenshots, and blockers. Keep implemented, verified, and reviewed
+statuses distinct.
+
+Reference documentation:
+
+- [Better Auth security](https://better-auth.com/docs/reference/security)
+- [Better Auth Fastify integration](https://better-auth.com/docs/integrations/fastify)
+- [Tiptap React integration](https://tiptap.dev/docs/editor/getting-started/install/react)
+
+### Chunk status
+
+| Chunk                          | Implemented | Verified | User reviewed |
+| ------------------------------ | ----------- | -------- | ------------- |
+| 1 — documentation and baseline | Yes         | Yes      | Pending       |
+| 2–15                           | No          | No       | No            |
+
+### Baseline verification — 2026-09-25
+
+- `bun install --frozen-lockfile` succeeded without changing the lockfile.
+- Bare `bun run test` initially failed: `src/db/db.ts` is imported before the
+  auth test sets its environment, causing a missing database-configuration error
+  and downstream module-initialization failures.
+- With the placeholder configuration below, all 103 tests across 34 files passed
+  (246 assertions), including the production admin build. These are the existing
+  tests, not successful real-database login coverage.
+- Typecheck, repository formatting, lint, and diff checks passed. The tests emit
+  an existing Fastify `disableRequestLogging` deprecation warning.
+- No runtime code, database data, or migrations changed. Browser verification is
+  not applicable to this documentation-only chunk and was not performed.
+- Chunk 2 must remove the tests' reliance on environment initialization order
+  through the injectable auth/test setup, and add real-database auth coverage.
+
+Reproduce the existing suite without creating a local `.env`:
+
+```sh
+DATABASE_URL=postgres://auth-test:auth-test@localhost:5432/auth-test bun run test
+bun run typecheck
+bun run lint
+git diff --check
+```
+
+The URL above is non-production test configuration. It is not an instruction to
+create, seed, or migrate that database; real-database tests use the isolated
+runbook and will be added in the next chunk.
+
+## Historical roadmap
+
+Everything below records earlier plans and handoffs. Dates, runtime
+descriptions, review gates, and incomplete checkboxes here must not override the
+active MVP plan above. In particular, the original read-only release restriction
+is superseded by approved creation/editing work, and browser auth/CSRF now
+precede further management features.
+
 ## Goal
 
 Build a private admin UI for managing DJs, shows, tags, and their relationships.
