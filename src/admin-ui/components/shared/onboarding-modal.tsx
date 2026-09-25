@@ -48,6 +48,7 @@ export const OnboardingModal = ({
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.defaultPrevented) return;
 			if (event.key === "Escape" && !isSubmitting) {
 				event.preventDefault();
 				onClose();
