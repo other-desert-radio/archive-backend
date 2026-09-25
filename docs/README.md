@@ -69,7 +69,9 @@ idle, prevents duplicate submission, and keeps its content scrollable within the
 available viewport. The comma-separated tags field is reusable and ignores stale
 validation responses; a validation-service failure does not prevent final
 submission. Chunk 2 migrates the read-only Shows table to the same resource
-view, with search and sorting; Show onboarding remains deferred to Chunk 3.
+view, with search and sorting. Show onboarding uses the shared modal, date-only
+and duration inputs, a searchable existing-DJ selector, optional image URL and
+tags, and a transactional JSON creation endpoint.
 
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
@@ -82,13 +84,18 @@ transactionally and sanitizes bio/socials HTML. Tag creation is centralized in
 the Tags module and is available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,
-empty, and error states. The read-only Shows API returns transformed
-relationship IDs plus its admin-only `createdAt` timestamp; public archive
-response contracts remain unchanged.
+empty, and error states. The Shows API returns transformed relationship IDs plus
+its admin-only `createdAt` timestamp; `POST /api/admin/create-show` validates
+and atomically persists Shows, existing-DJ links, and reused or newly created
+tags. Public archive response contracts remain unchanged.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the
 [admin plan handoff](ADMIN_UI_PLAN.md#handoff-for-the-next-agent).
+
+For real-database feature verification that must not alter the normal local
+archive dataset, use the
+[isolated database end-to-end testing runbook](DATABASE_E2E_TESTING.md).
 
 ## Commands
 

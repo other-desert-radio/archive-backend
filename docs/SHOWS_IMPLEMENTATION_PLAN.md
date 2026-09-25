@@ -251,6 +251,12 @@ complete loading/empty/error states.
 Review outcome: An admin can create a Show, link existing DJs, reuse/create
 tags, and see the saved record after refresh.
 
+Implementation status: the form, selector, endpoint, transactional persistence,
+loader, focused tests, and browser inspection are complete. An isolated
+temporary PostgreSQL database/API check created and reloaded a Show
+successfully; the temporary API and database container were removed afterward.
+User review remains required before any subsequent feature work.
+
 Implement internally in this order: form and pure validation, endpoint and
 transactional persistence, then loader/page integration. These are parts of one
 reviewable onboarding feature.
@@ -351,9 +357,9 @@ string; // Optional absolute HTTP(S) URL tags?: string[]; // Tag titles };
 - [ ] Use agent-browser to verify field layout, DJ searching/selection/removal,
       tag feedback, required validation, pending state, retained values after
       errors, and fresh reopening.
-- [ ] Verify successful creation and list refresh against an isolated test
+- [x] Verify successful creation and list refresh against an isolated test
       database; do not silently create fixtures in the user’s existing dataset.
-- [ ] Verify persistence after reload, correct date display, associated IDs, and
+- [x] Verify persistence after reload, correct date display, associated IDs, and
       preserved search/sort.
 - [ ] Update API documentation, database date semantics, admin status, and the
       maintained checklist.

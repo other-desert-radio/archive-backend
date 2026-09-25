@@ -32,7 +32,7 @@ The browser session uses a socket outside the workspace sandbox, so request
 approved elevated permission when necessary. The documented credentials are for
 local development only; never use them outside that environment. Do not embed
 the credentials in the URL: this version of `agent-browser` preserves them in
-the document URL, causing relative admin API fetches to fail. Set credentials
-on the session first, then open the credential-free local URL. Check `#shows`
-and `#tags` as applicable. Report what was verified, or clearly state the local
+the document URL, causing relative admin API fetches to fail. Set credentials on
+the session first, then open the credential-free local URL. Check `#shows` and
+`#tags` as applicable. Report what was verified, or clearly state the local
 runtime blocker that prevented verification.

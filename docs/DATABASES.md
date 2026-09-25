@@ -109,8 +109,9 @@ image       text
 url         text          -- audio source URL
 ```
 
-`duration` is measured in whole seconds. `date` should retain timezone
-information so the exported value is unambiguous.
+`duration` is measured in whole seconds. `date` represents a broadcast calendar
+day and is stored explicitly at midnight UTC, so its timestamp remains
+unambiguous without a local-time interpretation.
 
 ### `tags`
 
