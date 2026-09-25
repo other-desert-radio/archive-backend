@@ -1,15 +1,17 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { buildApp } from "../../src/app.js";
+import { Pool } from "pg";
+import { createAuth } from "../../src/auth/index.js";
 
-process.env.NODE_ENV = "test";
-process.env.DATABASE_URL =
-	"postgres://auth-test:auth-test@localhost:5432/auth-test";
-process.env.BETTER_AUTH_SECRET =
-	"test-secret-that-is-at-least-32-characters-long";
-process.env.BETTER_AUTH_URL = "http://localhost:3000";
-
-const { auth } = await import("../../src/auth/auth.js");
-const { pool } = await import("../../src/db/db.js");
+const pool = new Pool({
+	connectionString: "postgres://auth-test:auth-test@127.0.0.1:1/auth-test",
+});
+const auth = createAuth({
+	database: pool,
+	secret: "test-secret-that-is-at-least-32-characters-long",
+	baseURL: "http://localhost:3000",
+	validateSchema: false,
+});
 
 afterAll(async () => {
 	await pool.end();

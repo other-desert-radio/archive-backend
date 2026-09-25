@@ -45,14 +45,16 @@ For commands run locally, the backend constructs the connection URL from those
 same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 `DATABASE_URL` takes precedence. The `.env` file is ignored by Git.
 
-The production admin routes require an authenticated Better Auth session.
-Requests to `/admin` and `/api/admin/*` are rejected with `401 Unauthorized`
-when no session is present and `403 Forbidden` when the authenticated user does
-not have the `admin` role. Until the admin login page is added, an HTTP Basic
-Auth challenge provides the browser's native username/password dialog. Configure
-it with `ADMIN_BASIC_USERNAME` and `ADMIN_BASIC_PASSWORD`; the example local
-values are `admin` / `admin` and must be changed outside local development. The
-application factory requires Better Auth.
+The admin routes currently accept either an authenticated Better Auth admin
+session or configured temporary HTTP Basic Auth credentials. Basic Auth grants
+access independently; it does not establish a Better Auth session. Without valid
+Basic credentials, requests to `/admin` and `/api/admin/*` return `401` when no
+session is present and `403` when the session user lacks the `admin` role. Until
+browser login replaces Basic Auth, a challenge provides the browser's native
+username/password dialog. Configure it with `ADMIN_BASIC_USERNAME` and
+`ADMIN_BASIC_PASSWORD`; the example local values are `admin` / `admin` and must
+be changed outside local development. The application factory requires Better
+Auth.
 
 The Better Auth configuration also requires `BETTER_AUTH_SECRET` and
 `BETTER_AUTH_URL`. The secret must be generated and stored outside Git. The
@@ -62,26 +64,29 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
-The first Show UI implementation chunk is complete. DJs use reusable resource
-toolbar, table, state-view, and onboarding primitives. The shared onboarding
-shell traps focus, returns focus to its opener, supports Escape dismissal while
-idle, prevents duplicate submission, and keeps its content scrollable within the
-available viewport. The comma-separated tags field is reusable and ignores stale
-validation responses; a validation-service failure does not prevent final
-submission. Chunk 2 migrates the read-only Shows table to the same resource
-view, with search and sorting. Show onboarding uses the shared modal, date-only
-and duration inputs, a searchable existing-DJ selector, optional image URL and
-tags, and a transactional JSON creation endpoint.
+All three Show UI implementation chunks are recorded as reviewed in
+[`SHOWS_IMPLEMENTATION_PLAN.md`](SHOWS_IMPLEMENTATION_PLAN.md). DJs and Shows
+use reusable resource toolbar, table, state-view, and onboarding primitives. The
+shared onboarding shell traps focus, returns focus to its opener, supports
+Escape dismissal while idle, prevents duplicate submission, and keeps its
+content scrollable within the available viewport. The comma-separated tags field
+is reusable and ignores stale validation responses; a validation-service failure
+does not prevent final submission. The Shows table uses the same resource view,
+with search and sorting. Show onboarding uses the shared modal, date-only and
+duration inputs, a searchable existing-DJ selector, optional image URL and tags,
+and a transactional JSON creation endpoint.
 
-Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
-boundary status object and `/admin` serves the authenticated empty React/Vite
-shell. The production container builds the shell into `dist/admin`; a missing
-bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
-`id`, `createdAt`, `title`, `bio`, optional `imagePath`, `socials`, `showTitle`,
-and `showDescription`, `shows`, and `tags`; its relationship IDs are derived
-from the relationship tables. `POST /api/admin/create-dj` creates DJs
-transactionally and sanitizes bio/socials HTML. Tag creation is centralized in
-the Tags module and is available through `POST /api/admin/create-tag` and
+`/api/admin` still returns a boundary status object and `/admin` serves the
+authenticated React/Vite application with Shows, DJs, and Tags hash navigation.
+All three pages use shared `ResourceView` and `ResourceTable` components. Tags
+currently has a read-only sortable table without a search/create toolbar. The
+production container builds the application into `dist/admin`; a missing bundle
+returns `503`. `GET /api/admin/djs` returns a top-level DJ array with `id`,
+`createdAt`, `title`, `bio`, optional `imagePath`, `socials`, `showTitle`, and
+`showDescription`, `shows`, and `tags`; its relationship IDs are derived from
+the relationship tables. `POST /api/admin/create-dj` creates DJs transactionally
+and sanitizes bio/socials HTML. Tag creation is centralized in the Tags module
+and is available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,
 empty, and error states. The Shows API returns transformed relationship IDs plus
@@ -89,9 +94,14 @@ its admin-only `createdAt` timestamp; `POST /api/admin/create-show` validates
 and atomically persists Shows, existing-DJ links, and reused or newly created
 tags. Public archive response contracts remain unchanged.
 
-For detailed runtime state, migration status, verification results, and known
-test gaps, see the
-[admin plan handoff](ADMIN_UI_PLAN.md#handoff-for-the-next-agent).
+The approved next milestone adds browser login, operator account provisioning
+and recovery (no email infrastructure), reusable tag/formatting controls, and
+resource editing. Basic Auth removal follows verified browser login. Deletion,
+audio publishing, GitHub publication, and deployment remain deferred. Follow the
+[active admin MVP plan](ADMIN_UI_PLAN.md#active-mvp-plan--2026-09-25), one
+reviewed chunk at a time. The configured auth tests do not yet prove successful
+credential login against a real database; the next feature chunk closes that
+gap.
 
 For real-database feature verification that must not alter the normal local
 archive dataset, use the
@@ -119,6 +129,12 @@ archive dataset, use the
 - `bun run typecheck` runs TypeScript validation.
 - `bun run lint` runs Biome and Markdown checks.
 - `bun run setup-hooks` configures the tracked Git pre-commit hook.
+
+In a checkout without database environment configuration, the current test
+imports require a placeholder `DATABASE_URL` before the process starts. See the
+[baseline verification](ADMIN_UI_PLAN.md#baseline-verification--2026-09-25) for
+the reproducible command and the planned test-setup fix. This does not replace
+isolated real-database verification.
 
 - `scripts/build-container` rebuilds and starts the Docker Compose stack in the
   background.

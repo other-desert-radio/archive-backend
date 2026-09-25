@@ -254,7 +254,8 @@ Implementation status: the form, selector, endpoint, transactional persistence,
 loader, focused tests, and browser inspection are complete. An isolated
 temporary PostgreSQL database/API check created and reloaded a Show
 successfully; the temporary API and database container were removed afterward.
-User review remains required before any subsequent feature work.
+User review of this chunk is recorded below as complete. Subsequent work follows
+the active MVP sequence in [`ADMIN_UI_PLAN.md`](ADMIN_UI_PLAN.md).
 
 Implement internally in this order: form and pure validation, endpoint and
 transactional persistence, then loader/page integration. These are parts of one
