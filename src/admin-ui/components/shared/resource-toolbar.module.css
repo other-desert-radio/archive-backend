@@ -30,7 +30,7 @@
 .switcher button {
 	width: 5rem;
 }
-.selected {
+.switcher button.selected {
 	font-weight: 700;
 	background: #fff;
 }

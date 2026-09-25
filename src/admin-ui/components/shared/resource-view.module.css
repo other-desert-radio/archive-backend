@@ -1,6 +1,9 @@
 .view {
 	width: 100%;
 }
+.header h1 {
+	margin: 0;
+}
 .status {
 	color: #52606d;
 }

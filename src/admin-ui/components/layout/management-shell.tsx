@@ -27,7 +27,7 @@ export const ManagementShell = ({
 					</li>
 					<li>
 						<a
-							className={activeResource === "djs" ? "active" : undefined}
+							className={activeResource === "djs" ? styles.active : undefined}
 							href="#djs"
 							aria-current={activeResource === "djs" ? "page" : undefined}
 						>
@@ -36,7 +36,7 @@ export const ManagementShell = ({
 					</li>
 					<li>
 						<a
-							className={activeResource === "tags" ? "active" : undefined}
+							className={activeResource === "tags" ? styles.active : undefined}
 							href="#tags"
 							aria-current={activeResource === "tags" ? "page" : undefined}
 						>
@@ -50,10 +50,6 @@ export const ManagementShell = ({
 				</ul>
 			</nav>
 		</aside>
-		<section
-			className={`${styles.content}${activeResource === "djs" ? ` ${styles.djContent}` : ""}`}
-		>
-			{children}
-		</section>
+		<section className={styles.content}>{children}</section>
 	</div>
 );

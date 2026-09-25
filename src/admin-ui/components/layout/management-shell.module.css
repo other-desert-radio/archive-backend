@@ -48,11 +48,7 @@
 .content {
 	min-height: calc(100vh - 3.0625rem);
 	margin-left: 10.75rem;
-	padding: 7rem clamp(1.25rem, 10vw, 16rem);
-}
-.djContent {
-	padding-right: 0;
-	padding-left: 0;
+	padding: 2rem clamp(1.25rem, 10vw, 16rem);
 }
 @media (max-width: 42rem) {
 	.sidebar {
@@ -63,8 +59,5 @@
 	.content {
 		margin-left: 0;
 		padding: 2rem 1.25rem;
-	}
-	.djContent {
-		padding: 2rem 0 0;
 	}
 }

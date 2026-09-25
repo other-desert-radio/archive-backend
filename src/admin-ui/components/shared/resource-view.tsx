@@ -10,7 +10,7 @@ type ResourceViewProps = {
 	emptyMessage: string;
 	noResultsMessage?: string;
 	hasNoResults?: boolean;
-	toolbar: ReactNode;
+	toolbar?: ReactNode;
 	children: ReactNode;
 };
 
@@ -28,6 +28,9 @@ export const ResourceView = ({
 	children,
 }: ResourceViewProps) => (
 	<section className={styles.view}>
+		<header className={styles.header}>
+			<h1>{title}</h1>
+		</header>
 		{isLoading && <p className={styles.status}>Loading {title}…</p>}
 		{error !== undefined && (
 			<div className={`${styles.message} ${styles.error}`} role="alert">

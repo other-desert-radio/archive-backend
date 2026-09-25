@@ -109,9 +109,9 @@ and the Tags UI remain read-only.
 - The DJ toolbar is extracted into a reusable component, and its `+ DJ` action
   now opens the reusable onboarding modal with all plain-text fields, Submit,
   and required title/bio validation.
-- The DJ page now renders its state, toolbar, and table directly. Its table
-  scroll area keeps leading padding but extends to the right edge of the view;
-  Shows and Tags still use `DatabaseTableView`.
+- DJs, Shows, and Tags use the shared resource view and sortable table
+  components. The DJ table scroll area keeps leading padding but extends to the
+  right edge of the view.
 - The modal shell, plain-text field/validation slice, and API submission are
   complete. The next UI slice is the reusable tags component.
 

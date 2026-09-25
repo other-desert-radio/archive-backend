@@ -146,6 +146,24 @@ For admin UI work, use `scripts/build-container-watch` after the initial
 database setup. Open the authenticated `/admin` page and leave the watcher
 running while editing `src/admin-ui/`.
 
+### Visual admin UI verification
+
+Use `agent-browser` to inspect visual UI changes before handing them off. With
+the local stack running, open an authenticated resource view using the
+documented local development credentials, then inspect its accessibility
+snapshot or save a screenshot for visual review:
+
+```sh
+agent-browser --session admin-ui-verify open http://admin:admin@localhost:3000/admin/#djs
+agent-browser --session admin-ui-verify snapshot -i
+agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
+```
+
+The browser CLI stores its session socket outside the workspace sandbox, so an
+agent may need to request the approved elevated permission for these local,
+read-only inspection commands. Use `#shows` and `#tags` to check the other
+resource views. Do not use the local credentials outside local development.
+
 ## Conventions
 
 - Keep the backend small until a concrete feature requires more structure.
