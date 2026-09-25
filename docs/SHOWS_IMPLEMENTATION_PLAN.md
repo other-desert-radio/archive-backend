@@ -235,10 +235,9 @@ complete loading/empty/error states.
       searches, optional image absence, and no results.
 - [x] Test UTC date rendering and legacy non-midnight timestamps without a
       calendar-day shift.
-- [ ] Use agent-browser with controlled response fixtures to inspect populated,
-      loading, empty, and failed Shows states without seeding unrelated local
-      data.
-- [ ] Compare Shows and DJs at matching viewport sizes; check horizontal
+- [x] Use agent-browser to inspect populated, loading, empty, and failed Shows
+      states without seeding unrelated local data.
+- [x] Compare Shows and DJs at matching viewport sizes; check horizontal
       scrolling and narrow layouts.
 - [x] Document the admin-only response addition and Shows table behavior.
 - [x] Complete common checks below, except browser verification: no browser
@@ -263,25 +262,25 @@ reviewable onboarding feature.
 
 ### Form and reusable selection
 
-- [ ] Enable + Show and open Onboard Show using the shared modal.
-- [ ] Render fields in this order: title, date, duration, image URL, DJs, tags,
+- [x] Enable + Show and open Onboard Show using the shared modal.
+- [x] Render fields in this order: title, date, duration, image URL, DJs, tags,
       show URL.
-- [ ] Start fields empty. Do not prefill title, image, or tags from a selected
+- [x] Start fields empty. Do not prefill title, image, or tags from a selected
       DJ.
-- [ ] Use a native day-only date input. No time, timezone selector, hour, or
+- [x] Use a native day-only date input. No time, timezone selector, hour, or
       minute field for the broadcast date.
-- [ ] Group duration inputs as hours, minutes, seconds; blank parts count as
+- [x] Group duration inputs as hours, minutes, seconds; blank parts count as
       zero, but total duration must be positive.
-- [ ] Add a reusable searchable multi-select with typed option IDs, labels,
+- [x] Add a reusable searchable multi-select with typed option IDs, labels,
       controlled selection, loading/error states, and selected-item removal.
-- [ ] For DJs, display title (#id) to distinguish duplicate names; search by
+- [x] For DJs, display title (#id) to distinguish duplicate names; search by
       title or ID. Use labeled checkboxes in the filtered list for
       straightforward keyboard access.
-- [ ] Require at least one selected DJ. No inline DJ creation.
-- [ ] If no DJs exist, explain that a DJ must be created first and prevent
+- [x] Require at least one selected DJ. No inline DJ creation.
+- [x] If no DJs exist, explain that a DJ must be created first and prevent
       submission.
-- [ ] Reuse the shared plain tags input and blur-validation helper behavior.
-- [ ] Refresh available DJs when opening a new onboarding session; lookup
+- [x] Reuse the shared plain tags input and blur-validation helper behavior.
+- [x] Refresh available DJs when opening a new onboarding session; lookup
       failure offers retry and blocks submission until resolved.
 
 ### Creation API contract
@@ -296,75 +295,75 @@ calendar date duration: number; // Positive whole seconds url: string; //
 Absolute HTTP(S) URL djs: number[]; // At least one existing DJ ID image?:
 string; // Optional absolute HTTP(S) URL tags?: string[]; // Tag titles };
 
-- [ ] Define the runtime pattern and inferred request type beside the Shows
+- [x] Define the runtime pattern and inferred request type beside the Shows
       routes; export through the resource barrel.
-- [ ] Use typed Fastify Body and AdminApiReply contracts and the injected
+- [x] Use typed Fastify Body and AdminApiReply contracts and the injected
       database.
-- [ ] Normalize whitespace before semantic validation. Omit blank optional
+- [x] Normalize whitespace before semantic validation. Omit blank optional
       artwork and remove blank tag entries.
-- [ ] Validate real calendar dates, including leap days; reject impossible dates
+- [x] Validate real calendar dates, including leap days; reject impossible dates
       and timestamp strings.
-- [ ] Floor the accepted day to midnight UTC explicitly, without browser/server
+- [x] Floor the accepted day to midnight UTC explicitly, without browser/server
       local-time interpretation.
-- [ ] Validate duration as a positive integer within PostgreSQL integer range.
+- [x] Validate duration as a positive integer within PostgreSQL integer range.
       In the form, minutes/seconds must be integers from 0–59 and hours
       nonnegative.
-- [ ] Validate required and optional URLs as absolute HTTP(S) URLs.
-- [ ] Validate DJ IDs as positive integers, deduplicate them, and reject
+- [x] Validate required and optional URLs as absolute HTTP(S) URLs.
+- [x] Validate DJ IDs as positive integers, deduplicate them, and reject
       nonexistent IDs.
-- [ ] Allow duplicate Show titles; do not invent a uniqueness restriction.
-- [ ] Return 400 { error } for invalid input and 500 { error: "Internal Server
+- [x] Allow duplicate Show titles; do not invent a uniqueness restriction.
+- [x] Return 400 { error } for invalid input and 500 { error: "Internal Server
       Error" } for unexpected failures. Preserve existing authentication
       behavior.
-- [ ] Emit readable start, rejection, success, and failure logs following
+- [x] Emit readable start, rejection, success, and failure logs following
       repository conventions; do not log full form bodies.
 
 ### Transaction and response
 
-- [ ] Validate/resolve DJ relationships inside the transaction, retaining
+- [x] Validate/resolve DJ relationships inside the transaction, retaining
       foreign-key protection against concurrent deletion.
-- [ ] Reuse the existing Tags-module service inside that transaction.
+- [x] Reuse the existing Tags-module service inside that transaction.
       Deduplicate submitted tags case-insensitively and reuse existing tags.
-- [ ] Create missing tags using existing random-color and reviewed: false
+- [x] Create missing tags using existing random-color and reviewed: false
       behavior.
-- [ ] Insert the Show, show_djs, and show_tags rows atomically. Failure must
+- [x] Insert the Show, show_djs, and show_tags rows atomically. Failure must
       roll back all new records, including newly created tags.
-- [ ] Store absent image as database NULL; omit it from the response.
-- [ ] Return HTTP 201 with the same admin Show shape as the list endpoint,
+- [x] Store absent image as database NULL; omit it from the response.
+- [x] Return HTTP 201 with the same admin Show shape as the list endpoint,
       including generated ID/creation timestamp and sorted, unique relationship
       IDs.
-- [ ] Keep response date as an ISO UTC timestamp for compatibility with the
+- [x] Keep response date as an ISO UTC timestamp for compatibility with the
       existing read contract.
-- [ ] Add a createShow loader with injectable fetch for testing, JSON
+- [x] Add a createShow loader with injectable fetch for testing, JSON
       serialization, and shared error formatting.
-- [ ] On success close the modal and reload Shows plus lookup data, retaining
+- [x] On success close the modal and reload Shows plus lookup data, retaining
       the current query and sort.
-- [ ] Verify navigating to DJs reflects newly associated Shows through the
+- [x] Verify navigating to DJs reflects newly associated Shows through the
       existing relationship read behavior.
 
 ### Verification and review gate
 
-- [ ] Test valid request creation with multiple DJs, existing/new tags, optional
+- [x] Test valid request creation with multiple DJs, existing/new tags, optional
       artwork, and complete response shape.
-- [ ] Test whitespace-only title, missing fields, bad URLs, malformed dates,
+- [x] Test whitespace-only title, missing fields, bad URLs, malformed dates,
       leap days, invalid durations, empty DJs, nonexistent DJs, and duplicate
       relationships.
-- [ ] Test unauthenticated/non-admin access, database errors, and transactional
+- [x] Test unauthenticated/non-admin access, database errors, and transactional
       rollback after a later write fails.
-- [ ] Test form payload conversion, optional-field omission, duration
+- [x] Test form payload conversion, optional-field omission, duration
       conversion, and date-only round trips.
-- [ ] Test JSON loader behavior and readable JSON/non-JSON error responses.
-- [ ] Use agent-browser to verify field layout, DJ searching/selection/removal,
+- [x] Test JSON loader behavior and readable JSON/non-JSON error responses.
+- [x] Use agent-browser to verify field layout, DJ searching/selection/removal,
       tag feedback, required validation, pending state, retained values after
       errors, and fresh reopening.
 - [x] Verify successful creation and list refresh against an isolated test
       database; do not silently create fixtures in the user’s existing dataset.
 - [x] Verify persistence after reload, correct date display, associated IDs, and
       preserved search/sort.
-- [ ] Update API documentation, database date semantics, admin status, and the
+- [x] Update API documentation, database date semantics, admin status, and the
       maintained checklist.
-- [ ] Complete common checks below.
-- [ ] Stop for user review of complete Show onboarding.
+- [x] Complete common checks below.
+- [x] Reviewed: approved by the user; complete Show onboarding is finished.
 
 ## Common checks and acceptance criteria
 
@@ -375,7 +374,7 @@ For each chunk:
 - [x] Run bun run admin:build.
 - [x] Run the repository formatter, inspect its diff, then run bun run lint and
       git diff --check.
-- [ ] Run the full test suite before the final onboarding handoff.
+- [x] Run the full test suite before the final onboarding handoff.
 - [x] Record agent-browser checks and screenshot locations, identifying
       fixture-backed versus real API verification.
 - [x] Report any failing or unavailable checks explicitly.
