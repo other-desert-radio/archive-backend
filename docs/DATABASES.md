@@ -35,18 +35,18 @@ until the schema has been built and reviewed.
 ## Purpose
 
 The backend stores archive data in PostgreSQL. `bun run db:export:archive`
-writes the currently implemented DJ/tag assets to the configured Astro frontend
-directories:
+writes the following assets to the configured Astro frontend directories:
 
 - `src/res/djs_brief.json`, the compact DJ index;
 - `src/res/djs/{id}.json`, one detail document per DJ;
+- `src/res/shows.json`, the top-level show index;
 - `src/res/tags.json`, the shared tag dictionary; and
 - `public/assets/djs/{id}.{extension}`, copied DJ image assets.
 
-`shows.json` is intentionally deferred. Astro imports JSON from `src/res/` as
-part of the site build and copies `public/assets/` into the deployed site
-unchanged. The database remains the source of truth. Arrays of IDs belong in
-exported documents, not in the primary entity tables.
+Astro imports JSON from `src/res/` as part of the site build and copies
+`public/assets/` into the deployed site unchanged. The database remains the
+source of truth. Arrays of IDs belong in exported documents, not in the primary
+entity tables.
 
 ## Local dummy data
 
@@ -109,8 +109,9 @@ image       text
 url         text          -- audio source URL
 ```
 
-`duration` is measured in whole seconds. `date` should retain timezone
-information so the exported value is unambiguous.
+`duration` is measured in whole seconds. `date` represents a broadcast calendar
+day and is stored explicitly at midnight UTC, so its timestamp remains
+unambiguous without a local-time interpretation.
 
 ### `tags`
 
@@ -229,7 +230,9 @@ For a DJ, `tagIds` is the distinct union of:
 2. tags assigned to that DJ's shows through `show_djs` and `show_tags`.
 
 The DJ detail document embeds the associated shows. Each embedded show includes
-its own `tagIds`. Generating the top-level `shows.json` remains deferred.
+its own `tagIds`. The top-level `shows.json` lists shows by descending date then
+ID, includes each show's `tagIds`, and embeds compact related DJ cards with
+`id`, `title`, and an optional static image path.
 
 The exporter writes raw DJ image bytes to `public/assets/djs/{id}.{extension}`
 and uses the corresponding `assets/djs/{id}.{extension}` path in JSON. It must

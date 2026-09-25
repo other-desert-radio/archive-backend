@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildCreateDJRequest } from "../../src/admin-ui/components/onboard-dj-utils.js";
+import { buildCreateDJRequest } from "../../src/admin-ui/components/dj/onboard-dj-utils.js";
 
 describe("buildCreateDJRequest", () => {
 	test("trims fields and parses comma-separated tags", () => {

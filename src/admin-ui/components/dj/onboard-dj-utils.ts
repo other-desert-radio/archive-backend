@@ -1,4 +1,4 @@
-import { splitCommaSeparated } from "../../utils/index.js";
+import { splitCommaSeparated } from "../../../utils/index.js";
 
 export type CreateDJForm = {
 	title: string;

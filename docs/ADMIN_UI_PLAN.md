@@ -84,10 +84,11 @@ and the Tags UI remain read-only.
 - `src/admin-ui/main.tsx` is only the React entry point.
 - `src/admin-ui/pages/` contains `AdminPage`, `DJsPage`, and `ShowsPage`.
 - `src/admin-ui/loaders/` contains the DJ and Shows API loaders.
-- `src/admin-ui/components/database-table-view.tsx` provides the shared
+- `src/admin-ui/components/shared/database-table-view.tsx` provides the shared
   `DatabaseTableView`, which owns the required header/body structure and
   loading, error, retry, and empty states for each resource view.
-- `src/admin-ui/components/tables/` contains the Shows and DJs tables.
+- `src/admin-ui/components/` is organized by responsibility: `dj/`, `shows/`,
+  `tags/`, `shared/`, and `layout/`.
 - `#shows` is the default route, `#djs` selects the DJ view, and `#tags` selects
   the Tags view. Upload remains a visible sidebar placeholder.
 - `src/admin-ui/assets/background/background.jpeg` provides the textured page
@@ -108,9 +109,9 @@ and the Tags UI remain read-only.
 - The DJ toolbar is extracted into a reusable component, and its `+ DJ` action
   now opens the reusable onboarding modal with all plain-text fields, Submit,
   and required title/bio validation.
-- The DJ page now renders its state, toolbar, and table directly. Its table
-  scroll area keeps leading padding but extends to the right edge of the view;
-  Shows and Tags still use `DatabaseTableView`.
+- DJs, Shows, and Tags use the shared resource view and sortable table
+  components. The DJ table scroll area keeps leading padding but extends to the
+  right edge of the view.
 - The modal shell, plain-text field/validation slice, and API submission are
   complete. The next UI slice is the reusable tags component.
 
@@ -167,11 +168,15 @@ resource tables:
   remains reachable, while Tags and Upload remain deferred until implemented.
 - Use a monospace font stack and the textured page/content background asset in
   `src/admin-ui/assets/background/`.
+- Size admin UI typography in `rem`. The root type scale is `1.0625rem` so the
+  interface is comfortably readable on high-density displays while preserving
+  browser zoom and user font-size preferences.
 - Keep the layout usable on narrow screens by allowing the sidebar to flow above
   the content and the tables to scroll horizontally.
 - Keep UI data loaders in `src/admin-ui/loaders/`, resource pages in
-  `src/admin-ui/pages/`, and table components in
-  `src/admin-ui/components/tables/`.
+  `src/admin-ui/pages/`, and resource components in their corresponding
+  `src/admin-ui/components/<resource>/` directories. Put reusable primitives in
+  `src/admin-ui/components/shared/`.
 - Wrap each database resource page with the shared `DatabaseTableView`, using
   its `title`, loading/error/retry, and empty-state props. The component renders
   the resource heading and body and only renders table children after a
@@ -289,8 +294,7 @@ assigned to the DJ's shows through `show_tags`. Database errors return
 - [ ] Finalize show metadata after Mixcloud returns its URL.
 - [x] Export DJ indexes/details, tags, and DJ images from PostgreSQL to the
       configured local archive directory.
-- [ ] Extend the exporter with the top-level show index after the show export
-      contract is implemented.
+- [x] Export the top-level show index with compact related DJ cards and tag IDs.
 - [ ] Trigger and verify GitHub Actions publication of JSON to `src/res/` and
       images to `public/assets/` in the Astro archive repository.
 

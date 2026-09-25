@@ -20,7 +20,9 @@ review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
-formatted with Prettier and linted with markdownlint-cli2.
+formatted with Prettier and linted with markdownlint-cli2. The checked-in
+`.markdownlint-cli2.yaml` disables MD024, so documents may use multiple headings
+with the same text.
 
 TypeScript-specific conventions, including the preference for `type` aliases and
 `undefined` over `null`, are documented in [`TYPESCRIPT.md`](TYPESCRIPT.md).
@@ -60,6 +62,17 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
+The first Show UI implementation chunk is complete. DJs use reusable resource
+toolbar, table, state-view, and onboarding primitives. The shared onboarding
+shell traps focus, returns focus to its opener, supports Escape dismissal while
+idle, prevents duplicate submission, and keeps its content scrollable within the
+available viewport. The comma-separated tags field is reusable and ignores stale
+validation responses; a validation-service failure does not prevent final
+submission. Chunk 2 migrates the read-only Shows table to the same resource
+view, with search and sorting. Show onboarding uses the shared modal, date-only
+and duration inputs, a searchable existing-DJ selector, optional image URL and
+tags, and a transactional JSON creation endpoint.
+
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing
@@ -71,12 +84,18 @@ transactionally and sanitizes bio/socials HTML. Tag creation is centralized in
 the Tags module and is available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,
-empty, and error states. The read-only Shows API is also implemented and returns
-transformed relationship IDs.
+empty, and error states. The Shows API returns transformed relationship IDs plus
+its admin-only `createdAt` timestamp; `POST /api/admin/create-show` validates
+and atomically persists Shows, existing-DJ links, and reused or newly created
+tags. Public archive response contracts remain unchanged.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the
 [admin plan handoff](ADMIN_UI_PLAN.md#handoff-for-the-next-agent).
+
+For real-database feature verification that must not alter the normal local
+archive dataset, use the
+[isolated database end-to-end testing runbook](DATABASE_E2E_TESTING.md).
 
 ## Commands
 
@@ -90,10 +109,9 @@ test gaps, see the
 - `bun run db:migrate:all` applies all pending migrations.
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
-- `bun run db:export:archive` writes DJ detail/index JSON and tags to the
-  configured Astro `src/res/` directory, and DJ images to `public/assets/`. It
-  logs each build stage and generated file; the top-level show index is
-  deferred.
+- `bun run db:export:archive` writes DJ detail/index JSON, the top-level show
+  index, and tags to the configured Astro `src/res/` directory, and DJ images to
+  `public/assets/`. It logs each build stage and generated file.
 - `bun run db:delete:djs -- --confirm` permanently deletes all DJs and their
   cascading relationship rows.
 - `bun run format` formats source files with Biome and Markdown files with
@@ -133,6 +151,31 @@ to apply all pending migrations after the schema has been reviewed;
 For admin UI work, use `scripts/build-container-watch` after the initial
 database setup. Open the authenticated `/admin` page and leave the watcher
 running while editing `src/admin-ui/`.
+
+### Visual admin UI verification
+
+Use `agent-browser` as the required acceptance check for admin UI changes. With
+the local stack running, open the affected authenticated resource view using the
+documented local development credentials, wait for rendering to settle, then
+inspect its accessibility snapshot or save a screenshot for visual review.
+Interact with the changed control when the behavior is interactive:
+
+```sh
+agent-browser --session admin-ui-verify set credentials admin admin
+agent-browser --session admin-ui-verify open http://localhost:3000/admin/#djs
+agent-browser --session admin-ui-verify wait 500
+agent-browser --session admin-ui-verify snapshot -i
+agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
+```
+
+The browser CLI stores its session socket outside the workspace sandbox, so an
+agent may need to request the approved elevated permission for these local,
+read-only inspection commands. Use `#shows` and `#tags` to check the other
+resource views. Do not embed the local credentials in the URL: this version of
+`agent-browser` preserves them in the document URL, which makes relative admin
+API fetches fail. Set credentials on the session first, then open the
+credential-free local URL. Do not use the local credentials outside local
+development.
 
 ## Conventions
 

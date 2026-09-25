@@ -1,6 +1,10 @@
 import type { ShowsJSON } from "../../json-transformers/index.js";
 
-export type ShowsAdminRow = Omit<ShowsJSON, "date"> & { date: string };
+/** Browser representation of the admin-only Show list response. */
+export type ShowsAdminRow = Omit<ShowsJSON, "date"> & {
+	createdAt: string;
+	date: string;
+};
 
 export const loadShows = async (
 	fetcher: typeof fetch = fetch,

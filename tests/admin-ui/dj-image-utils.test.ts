@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { validateDJImageFile } from "../../src/admin-ui/components/dj-image-utils.js";
+import { validateDJImageFile } from "../../src/admin-ui/components/dj/dj-image-utils.js";
 
 describe("validateDJImageFile", () => {
 	test("accepts supported files with matching extensions", () => {

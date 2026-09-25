@@ -14,17 +14,17 @@ archive-site/
 │   ├── djs_brief.json
 │   ├── djs/
 │   │   └── 1.json
+│   ├── shows.json
 │   └── tags.json
 └── public/assets/
     └── djs/
         └── 1.jpg
 ```
 
-The top-level `shows.json` is deferred. Astro imports JSON from `src/res/`
-during its site build. It copies `public/assets/` into the built site unchanged,
-so the frontend must construct image URLs with Astro's
-`import.meta.env.BASE_URL`, which supports GitHub Pages project sites whose site
-URL includes the repository name.
+Astro imports JSON from `src/res/` during its site build. It copies
+`public/assets/` into the built site unchanged, so the frontend must construct
+image URLs with Astro's `import.meta.env.BASE_URL`, which supports GitHub Pages
+project sites whose site URL includes the repository name.
 
 ## `djs_brief.json`
 
@@ -70,9 +70,9 @@ dictionary.
 
 ## `shows.json`
 
-This document is planned but is not written by the current exporter. It will
-power the scrolling show list and embed the small DJ card data needed for
-display; its `tagIds` will be resolved through `tags.json`.
+This document powers the scrolling show list and embeds the small DJ card data
+needed for display; its `tagIds` are resolved through `tags.json`. Shows are
+ordered by descending date, then ID; related DJ and tag IDs are ascending.
 
 ```json
 [

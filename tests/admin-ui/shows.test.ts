@@ -6,6 +6,7 @@ describe("shows admin data loader", () => {
 		const shows = [
 			{
 				id: 1,
+				createdAt: "2025-12-31T23:00:00.000Z",
 				title: "Show One",
 				date: "2026-01-01T00:00:00.000Z",
 				duration: 3600,
