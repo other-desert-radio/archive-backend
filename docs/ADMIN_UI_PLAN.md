@@ -177,10 +177,65 @@ Reference documentation:
 
 ### Chunk status
 
-| Chunk                          | Implemented | Verified | User reviewed |
-| ------------------------------ | ----------- | -------- | ------------- |
-| 1 — documentation and baseline | Yes         | Yes      | Pending       |
-| 2–15                           | No          | No       | No            |
+| Chunk        | Implemented | Verified       | Reviewed |
+| ------------ | ----------- | -------------- | -------- |
+| 1 — baseline | Yes         | Yes            | Yes      |
+| 2 — accounts | Partial     | Typecheck only | No       |
+| 3–15         | No          | No             | No       |
+
+Chunk 1 was accepted when the user requested continuation to chunk 2.
+
+### Paused handoff — 2026-09-25
+
+The user requested that work pause and the plan be saved. Resume chunk 2, not
+chunk 3. The complete approved sequence and acceptance requirements are above.
+The in-progress implementation remains in the working tree, including untracked
+files; do not discard it or mistake it for a finished authentication feature.
+
+Implemented so far, pending full verification:
+
+- `src/auth/create-auth.ts` provides an injectable Better Auth factory and
+  shared password-length limits. Runtime `auth.ts` now uses the factory.
+- `src/auth/operator-accounts.ts` provides transactional administrator creation
+  and password reset using Better Auth hashing. Creation normalizes email and
+  rejects duplicates; reset updates the credential and deletes existing
+  sessions.
+- `src/auth/operator-command.ts`, `password-prompt.ts`, and `manage-admin.ts`
+  provide argument validation, hidden terminal password confirmation, safe
+  operator messages, and database cleanup. The new barrel is
+  `src/auth/index.ts`.
+- `bunfig.toml` preloads `tests/setup.ts` to initialize harmless test settings
+  before imports. The configured auth test now constructs its own auth instance
+  and pool. New operator-command unit tests cover arguments, confirmation,
+  cancellation, and avoiding password logging.
+- Package commands were added for `auth:create-admin`, `auth:reset-password`,
+  and `test:auth:integration`.
+
+**Known unfinished wiring:** `test:auth:integration` currently points to
+`scripts/test-auth-integration`, which has not been created. The real-database
+integration tests and account-operations runbook have not been written either.
+
+Next actions within chunk 2:
+
+1. Review the partial implementation, including hidden input cleanup, account
+   validation, transaction rollback, and session revocation behavior.
+2. Add the disposable PostgreSQL harness and integration tests. Exercise actual
+   login through Fastify, cookie reuse on protected routes, logout, disabled
+   signup, duplicate provisioning, reset/new-password login, and invalidation of
+   old sessions. Cover persistence failures and rollback as well as success.
+3. Test the CLI's hidden terminal entry and failure behavior. Document account
+   creation/recovery, required configuration/migrations, and safe test cleanup.
+4. Run the full suite without a placeholder environment override to verify the
+   preload fix. Run the integration harness, formatting, typecheck, build, lint,
+   and diff checks. Record results and stop for chunk 2 review.
+
+Only `bun run typecheck` has passed for the partial chunk 2 changes. New tests,
+the full suite, formatting, lint, and terminal interaction have not yet been run
+on this implementation. The earlier 103-test baseline below applies to chunk 1,
+not these changes. Docker access was confirmed with elevated permission
+(`docker info`, server 20.10.23); no test container was started. No account was
+created or reset, and no database migration was applied. Browser login, Basic
+Auth removal, CSRF protection, and all later chunks remain unimplemented.
 
 ### Baseline verification — 2026-09-25
 

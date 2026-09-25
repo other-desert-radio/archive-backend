@@ -1,4 +1,4 @@
-import { betterAuth } from "better-auth";
+import { createAuth } from "./create-auth.js";
 import { pool } from "../db/db.js";
 
 const authSecret = process.env.BETTER_AUTH_SECRET;
@@ -12,27 +12,8 @@ if (!authUrl) {
 	throw new Error("BETTER_AUTH_URL is required");
 }
 
-export const auth = betterAuth({
+export const auth = createAuth({
 	secret: authSecret,
 	baseURL: authUrl,
 	database: pool,
-	user: {
-		additionalFields: {
-			role: {
-				type: ["admin"],
-				required: false,
-				defaultValue: "admin",
-				input: false,
-			},
-		},
-	},
-	emailAndPassword: {
-		enabled: true,
-		disableSignUp: true,
-	},
-	advanced: {
-		database: {
-			validateSchema: process.env.NODE_ENV !== "test",
-		},
-	},
 });
