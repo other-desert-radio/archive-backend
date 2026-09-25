@@ -1,0 +1,20 @@
+.dropzone {
+	min-width: 0;
+	padding: 0.5rem;
+	border: 1px dashed #000;
+	background: #fafafa;
+}
+.dragging {
+	background: #e8e8e8;
+}
+.hasFile {
+	border-style: solid;
+	background: #fff;
+}
+.button {
+	width: 100%;
+	border: 0;
+	border-radius: 0;
+	font: inherit;
+	text-align: left;
+}

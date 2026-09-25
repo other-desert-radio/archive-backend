@@ -1,36 +1,6 @@
-import { isMatching, P } from "ts-pattern";
-import type { CreateDJForm } from "../components/onboard-dj-utils.js";
+import type { CreateDJForm } from "../components/dj/onboard-dj-utils.js";
 import type { DJsAdminRow } from "./djs.js";
-
-type CreateDJErrorResponse = {
-	error?: unknown;
-};
-
-const describeCreateDJFailure = async (response: Response): Promise<string> => {
-	let serverError: string | undefined;
-
-	try {
-		const body = (await response.json()) as CreateDJErrorResponse;
-		if (isMatching({ error: P.string.minLength(1) }, body)) {
-			serverError = body.error;
-		}
-	} catch {
-		// Use the HTTP status when the response has no readable JSON body.
-	}
-
-	const status = `HTTP ${response.status}${
-		response.statusText === "" ? "" : ` (${response.statusText})`
-	}`;
-	if (serverError === undefined) {
-		return `DJ could not be created.\n\nStatus: ${status}\nPlease check the form and image, then try again.`;
-	}
-
-	const detail =
-		serverError === "Internal Server Error"
-			? "The server encountered an unexpected error."
-			: serverError;
-	return `DJ could not be created.\n\n${detail}\n\nStatus: ${status}\nPlease correct this issue and try again.`;
-};
+import { describeMutationFailure } from "./mutation-error.js";
 
 /**
  * Creates a DJ through the authenticated admin API.
@@ -61,7 +31,13 @@ export const createDJ = async (
 	});
 
 	if (!response.ok) {
-		throw new Error(await describeCreateDJFailure(response));
+		throw new Error(
+			await describeMutationFailure(
+				response,
+				"DJ",
+				"Please check the form and image, then try again.",
+			),
+		);
 	}
 
 	return (await response.json()) as DJsAdminRow;

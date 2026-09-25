@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import styles from "./management-shell.module.css";
 
 type ManagementShellProps = {
 	activeResource: "shows" | "djs" | "tags";
@@ -9,17 +10,15 @@ export const ManagementShell = ({
 	activeResource,
 	children,
 }: ManagementShellProps) => (
-	<div className="management-layout">
-		<header className="management-header">
-			OTHER DESERT RADIO / MANAGEMENT
-		</header>
-		<aside className="management-sidebar" aria-label="Admin navigation">
+	<div className={styles.layout}>
+		<header className={styles.header}>OTHER DESERT RADIO / MANAGEMENT</header>
+		<aside className={styles.sidebar} aria-label="Admin navigation">
 			<nav>
 				<p>DATABASE</p>
 				<ul>
 					<li>
 						<a
-							className={activeResource === "shows" ? "active" : undefined}
+							className={activeResource === "shows" ? styles.active : undefined}
 							href="#shows"
 							aria-current={activeResource === "shows" ? "page" : undefined}
 						>
@@ -28,7 +27,7 @@ export const ManagementShell = ({
 					</li>
 					<li>
 						<a
-							className={activeResource === "djs" ? "active" : undefined}
+							className={activeResource === "djs" ? styles.active : undefined}
 							href="#djs"
 							aria-current={activeResource === "djs" ? "page" : undefined}
 						>
@@ -37,7 +36,7 @@ export const ManagementShell = ({
 					</li>
 					<li>
 						<a
-							className={activeResource === "tags" ? "active" : undefined}
+							className={activeResource === "tags" ? styles.active : undefined}
 							href="#tags"
 							aria-current={activeResource === "tags" ? "page" : undefined}
 						>
@@ -45,18 +44,8 @@ export const ManagementShell = ({
 						</a>
 					</li>
 				</ul>
-				<p>UTILS</p>
-				<ul>
-					<li>- upload</li>
-				</ul>
 			</nav>
 		</aside>
-		<section
-			className={`management-content${
-				activeResource === "djs" ? " dj-management-content" : ""
-			}`}
-		>
-			{children}
-		</section>
+		<section className={styles.content}>{children}</section>
 	</div>
 );

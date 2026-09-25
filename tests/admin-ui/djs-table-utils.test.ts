@@ -3,7 +3,7 @@ import {
 	filterDJs,
 	getDJSearchValue,
 	sortDJs,
-} from "../../src/admin-ui/components/tables/djs-table-utils.js";
+} from "../../src/admin-ui/components/dj/djs-table-utils.js";
 
 const djs = [
 	{

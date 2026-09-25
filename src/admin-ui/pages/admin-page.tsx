@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ManagementShell } from "../components/management-shell.js";
+import { ManagementShell } from "../components/layout/management-shell.js";
 import { DJsPage } from "./djs-page.js";
 import { ShowsPage } from "./shows-page.js";
 import { TagsPage } from "./tags-page.js";

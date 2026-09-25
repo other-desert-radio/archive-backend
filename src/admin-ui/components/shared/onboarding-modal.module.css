@@ -1,0 +1,70 @@
+.overlay {
+	position: fixed;
+	top: 3.0625rem;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 1;
+	display: grid;
+	place-items: center;
+	background: rgb(0 0 0 / 60%);
+}
+.panel {
+	width: min(656px, calc(100vw - 32px));
+	max-height: calc(100vh - 5rem);
+	min-width: 0;
+	padding: 2rem;
+	overflow-y: auto;
+	background: #fff;
+}
+.header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+}
+.header h2 {
+	margin: 0;
+	font-size: 2rem;
+}
+.header button {
+	padding: 0;
+	border: 0;
+	font: inherit;
+}
+.form {
+	display: grid;
+	grid-template-columns: 7rem minmax(0, 1fr);
+	gap: 1.5rem 1rem;
+	align-items: center;
+	margin-top: 3rem;
+	padding: 0;
+	border: 0;
+}
+.submit {
+	display: block;
+	margin: 2rem auto 0;
+	padding: 0.75rem 2rem;
+	border: 2px solid #000;
+	border-radius: 0;
+	box-shadow: 4px 4px 0 #000;
+	color: #000;
+	background: #fff;
+	font-weight: 700;
+}
+.error {
+	margin: 1.5rem 0 0;
+	padding: 0.75rem 1rem;
+	border: 1px solid currentColor;
+	color: #ff2c2c;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	white-space: pre-line;
+	text-align: center;
+}
+@media (max-width: 450px) {
+	.panel {
+		width: 100%;
+		max-height: calc(100vh - 3.0625rem);
+		padding: 1.5rem;
+	}
+}
