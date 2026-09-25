@@ -168,6 +168,9 @@ resource tables:
   remains reachable, while Tags and Upload remain deferred until implemented.
 - Use a monospace font stack and the textured page/content background asset in
   `src/admin-ui/assets/background/`.
+- Size admin UI typography in `rem`. The root type scale is `1.0625rem` so the
+  interface is comfortably readable on high-density displays while preserving
+  browser zoom and user font-size preferences.
 - Keep the layout usable on narrow screens by allowing the sidebar to flow above
   the content and the tables to scroll horizontally.
 - Keep UI data loaders in `src/admin-ui/loaders/`, resource pages in
