@@ -14,12 +14,15 @@ chunk.
 
 ## Visual admin UI checks
 
-For admin UI layout or styling work, verify the rendered result with
-`agent-browser` before handoff. Start the local stack, open an authenticated
-view, and inspect its snapshot or screenshot:
+For any admin UI layout, styling, or interaction work, use `agent-browser`
+before handoff. This is a required acceptance check, not an optional diagnostic:
+start the local stack, open the affected authenticated view, wait for it to
+settle, and inspect its snapshot or screenshot. Exercise the affected control
+when the change is interactive.
 
 ```sh
 agent-browser --session admin-ui-verify open http://admin:admin@localhost:3000/admin/#djs
+agent-browser --session admin-ui-verify wait 500
 agent-browser --session admin-ui-verify snapshot -i
 agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
 ```
@@ -27,4 +30,5 @@ agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
 The browser session uses a socket outside the workspace sandbox, so request
 approved elevated permission when necessary. The documented credentials are for
 local development only; never use them outside that environment. Check `#shows`
-and `#tags` as applicable.
+and `#tags` as applicable. Report what was verified, or clearly state the local
+runtime blocker that prevented verification.

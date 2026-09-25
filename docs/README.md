@@ -148,13 +148,15 @@ running while editing `src/admin-ui/`.
 
 ### Visual admin UI verification
 
-Use `agent-browser` to inspect visual UI changes before handing them off. With
-the local stack running, open an authenticated resource view using the
-documented local development credentials, then inspect its accessibility
-snapshot or save a screenshot for visual review:
+Use `agent-browser` as the required acceptance check for admin UI changes. With
+the local stack running, open the affected authenticated resource view using the
+documented local development credentials, wait for rendering to settle, then
+inspect its accessibility snapshot or save a screenshot for visual review.
+Interact with the changed control when the behavior is interactive:
 
 ```sh
 agent-browser --session admin-ui-verify open http://admin:admin@localhost:3000/admin/#djs
+agent-browser --session admin-ui-verify wait 500
 agent-browser --session admin-ui-verify snapshot -i
 agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
 ```
