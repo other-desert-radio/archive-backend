@@ -48,7 +48,7 @@
 .content {
 	min-height: calc(100vh - 3.0625rem);
 	margin-left: 10.75rem;
-	padding: 2rem clamp(1.25rem, 10vw, 16rem);
+	padding: 2rem clamp(1.25rem, 10vw, 16rem) 2rem clamp(3rem, 16vw, 22rem);
 }
 @media (max-width: 42rem) {
 	.sidebar {
