@@ -169,13 +169,13 @@ boundary. `GET /api/admin/djs/:id/image` remains an alias for the large image.
 Each route returns `image/webp`, or `404 { "error": "Not Found" }` when the DJ
 or image is absent.
 
-The upload validator accepts only WebP MIME types up to 1.5 MiB. The DJ admin UI
-validates and decodes a selected WebP before opening its crop modal, then sends
-a 1200-by-1200 WebP crop. Crop controls support drag positioning, zoom, and
-90-degree left/right rotation. Before the creation transaction, Sharp creates
-exact 400-by-400 and 1024-by-1024 WebPs from that crop. The transaction stores
-only the two generated variants; it does not retain the submitted bytes or
-filename. A decoding failure returns
+The upload validator accepts JPEG, PNG, and WebP MIME types up to 1.5 MiB. The
+DJ admin UI validates and decodes a selected source before opening its crop
+modal, then sends a 1200-by-1200 WebP crop. Crop controls support drag
+positioning, zoom, and 90-degree left/right rotation. Before the creation
+transaction, Sharp creates exact 400-by-400 and 1024-by-1024 WebPs from that
+crop. The transaction stores only the two generated variants; it does not retain
+the submitted bytes or filename. A decoding failure returns
 `400 { "error": "Image could not be processed" }` without creating a DJ or tags.
 The MIME type is client-provided metadata, while Sharp is the actual content
 decoder.

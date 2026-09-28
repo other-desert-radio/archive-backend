@@ -53,7 +53,7 @@ export const DJImageDropzone = ({
 					id="onboard-dj-image-input"
 					name="image"
 					type="file"
-					accept="image/webp"
+					accept="image/jpeg,image/png,image/webp"
 					hidden
 					onChange={(event) => {
 						const input = event.currentTarget;

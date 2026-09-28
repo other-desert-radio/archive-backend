@@ -4,14 +4,14 @@ import { validateDJImageUpload } from "../../src/admin/routes/djs/index.js";
 const imageBytes = Buffer.from("image bytes");
 
 describe("validateDJImageUpload", () => {
-	test("accepts WebP MIME types", () => {
-		expect(
-			validateDJImageUpload({
-				bytes: imageBytes,
-				filename: "dj.webp",
-				contentType: "image/webp",
-			}),
-		).toEqual({ valid: true, image: { bytes: imageBytes } });
+	test("accepts JPEG, PNG, and WebP MIME types", () => {
+		for (const contentType of ["image/jpeg", "image/png", "image/webp"])
+			expect(
+				validateDJImageUpload({
+					bytes: imageBytes,
+					contentType,
+				}),
+			).toEqual({ valid: true, image: { bytes: imageBytes } });
 	});
 
 	test("rejects unsupported MIME types", () => {
@@ -23,20 +23,20 @@ describe("validateDJImageUpload", () => {
 			}),
 		).toEqual({
 			valid: false,
-			error: "Image must have a WebP MIME type",
+			error: "Image must have a JPEG, PNG, or WebP MIME type",
 		});
 	});
 
-	test("rejects non-WebP image MIME types", () => {
+	test("rejects unsupported image MIME types", () => {
 		expect(
 			validateDJImageUpload({
 				bytes: imageBytes,
-				filename: "dj.png",
-				contentType: "image/png",
+				filename: "dj.gif",
+				contentType: "image/gif",
 			}),
 		).toEqual({
 			valid: false,
-			error: "Image must have a WebP MIME type",
+			error: "Image must have a JPEG, PNG, or WebP MIME type",
 		});
 	});
 

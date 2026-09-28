@@ -127,7 +127,7 @@ const createSourceImage = () =>
 			background: { r: 40, g: 50, b: 60 },
 		},
 	})
-		.webp()
+		.png()
 		.toBuffer();
 
 describe("DJ creation persistence", () => {
@@ -136,8 +136,8 @@ describe("DJ creation persistence", () => {
 		const response = await createDJ(database, {
 			title: "DJ Image",
 			bio: "A bio",
-			image: new File([await createSourceImage()], "portrait.webp", {
-				type: "image/webp",
+			image: new File([await createSourceImage()], "portrait.png", {
+				type: "image/png",
 			}),
 		});
 

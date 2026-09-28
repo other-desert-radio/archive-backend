@@ -1,4 +1,5 @@
 export const MAX_DJ_IMAGE_BYTES = 1.5 * 1024 * 1024;
+const acceptedContentTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export type DJImageUpload = {
 	bytes: Buffer;
@@ -22,8 +23,11 @@ export const validateDJImageUpload = (
 		return { valid: false, error: "Image must be 1.5 MiB or smaller" };
 	}
 
-	if (upload.contentType !== "image/webp")
-		return { valid: false, error: "Image must have a WebP MIME type" };
+	if (!acceptedContentTypes.has(upload.contentType))
+		return {
+			valid: false,
+			error: "Image must have a JPEG, PNG, or WebP MIME type",
+		};
 
 	return {
 		valid: true,
