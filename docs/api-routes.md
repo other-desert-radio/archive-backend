@@ -163,18 +163,22 @@ bytes or form contents. Application events use readable labels such as
 `[DJ Creation]` and `[DJ Creation [image upload]]` and include a shortened
 browser identifier.
 
-`GET /api/admin/djs/:id/image` returns a DJ's stored large WebP image using the
-authenticated admin boundary. It returns `image/webp`, or
-`404 { "error": "Not Found" }` when the DJ or image is absent.
+`GET /api/admin/djs/:id/image/small` and `GET /api/admin/djs/:id/image/large`
+return the corresponding stored WebP image using the authenticated admin
+boundary. `GET /api/admin/djs/:id/image` remains an alias for the large image.
+Each route returns `image/webp`, or `404 { "error": "Not Found" }` when the DJ
+or image is absent.
 
-The upload validator accepts JPEG, PNG, and WebP MIME types with matching
-filename extensions up to 1.5 MiB. Before the creation transaction, Sharp
-center-crops each accepted upload and creates exact 400 by 400 and 1024 by 1024
-WebPs. The transaction stores only the two generated variants; it does not
-retain the newly uploaded source bytes or filename. A decoding failure returns
+The upload validator accepts only WebP MIME types up to 1.5 MiB. The DJ admin UI
+validates and decodes a selected WebP before opening its crop modal, then sends
+a 1200-by-1200 WebP crop. Crop controls support drag positioning, zoom, and
+90-degree left/right rotation. Before the creation transaction, Sharp creates
+exact 400-by-400 and 1024-by-1024 WebPs from that crop. The transaction stores
+only the two generated variants; it does not retain the submitted bytes or
+filename. A decoding failure returns
 `400 { "error": "Image could not be processed" }` without creating a DJ or tags.
-MIME types and extensions are client-provided hints, while Sharp is the actual
-content decoder.
+The MIME type is client-provided metadata, while Sharp is the actual content
+decoder.
 
 ## Logging new features
 

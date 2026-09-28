@@ -5,30 +5,29 @@ import { validateDJImageFile } from "./dj-image-utils.js";
 
 type DJImageDropzoneProps = {
 	file?: File;
-	onFileChange: (file: File | undefined) => void;
+	onFileSelected: (file: File) => Promise<void>;
 	onError: (error: string | undefined) => void;
 };
 
 /** Renders the DJ image drag-and-drop area and file-picker fallback. */
 export const DJImageDropzone = ({
 	file,
-	onFileChange,
+	onFileSelected,
 	onError,
 }: DJImageDropzoneProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [isDragging, setIsDragging] = useState(false);
 
 	/** Validates a selected file and reports it to the modal. */
-	const selectFile = (candidate: File | undefined) => {
+	const selectFile = async (candidate: File | undefined) => {
 		if (candidate === undefined) return;
 		const result = validateDJImageFile(candidate);
 		if (!result.valid) {
-			onFileChange(undefined);
 			onError(result.error);
 			return;
 		}
 		onError(undefined);
-		onFileChange(result.file);
+		await onFileSelected(result.file);
 	};
 
 	return (
@@ -46,7 +45,7 @@ export const DJImageDropzone = ({
 				onDrop={(event) => {
 					event.preventDefault();
 					setIsDragging(false);
-					selectFile(event.dataTransfer.files[0]);
+					void selectFile(event.dataTransfer.files[0]);
 				}}
 			>
 				<input
@@ -54,9 +53,15 @@ export const DJImageDropzone = ({
 					id="onboard-dj-image-input"
 					name="image"
 					type="file"
-					accept="image/jpeg,image/png,image/webp"
+					accept="image/webp"
 					hidden
-					onChange={(event) => selectFile(event.target.files?.[0])}
+					onChange={(event) => {
+						const input = event.currentTarget;
+						void (async () => {
+							await selectFile(input.files?.[0]);
+							input.value = "";
+						})();
+					}}
 				/>
 				<button
 					type="button"

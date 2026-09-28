@@ -10,11 +10,12 @@ square image.
 ## Decisions
 
 - Use Sharp with WebP quality 82.
-- Generate exact 400 by 400 and 1024 by 1024 images, center-cropping and
-  enlarging when necessary.
+- The browser crops the supplied WebP to 1200 by 1200; Sharp generates exact 400
+  by 400 and 1024 by 1024 derivatives from that crop.
 - Retain no original DJ image or filename after the final cleanup migration.
-- Keep the create-DJ response and image endpoint URL. The endpoint serves the
-  large WebP.
+- Expose `image_small` and `image_large` in the admin DJ response. Variant
+  routes serve their matching WebPs, while the old image route remains a large
+  image alias.
 - Limit uploads to 1.5 MiB in both the UI and API.
 - Do not show compressed image sizes in the onboarding modal.
 - Keep archive asset paths under `assets/djs/`.

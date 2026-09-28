@@ -127,7 +127,7 @@ const createSourceImage = () =>
 			background: { r: 40, g: 50, b: 60 },
 		},
 	})
-		.png()
+		.webp()
 		.toBuffer();
 
 describe("DJ creation persistence", () => {
@@ -136,13 +136,16 @@ describe("DJ creation persistence", () => {
 		const response = await createDJ(database, {
 			title: "DJ Image",
 			bio: "A bio",
-			image: new File([await createSourceImage()], "portrait.PNG", {
-				type: "image/png",
+			image: new File([await createSourceImage()], "portrait.webp", {
+				type: "image/webp",
 			}),
 		});
 
 		expect(response.statusCode).toBe(201);
-		expect(response.json().imagePath).toBe("/api/admin/djs/1/image");
+		expect(response.json()).toMatchObject({
+			image_small: "/api/admin/djs/1/image/small",
+			image_large: "/api/admin/djs/1/image/large",
+		});
 		expect(state.djs[0]).not.toHaveProperty("image");
 		expect(state.djs[0]).not.toHaveProperty("image_filename");
 		const small = state.djs[0]?.image_small;
@@ -172,8 +175,8 @@ describe("DJ creation persistence", () => {
 		const response = await createDJ(database, {
 			title: "DJ Image",
 			bio: "A bio",
-			image: new File(["not an image"], "portrait.png", {
-				type: "image/png",
+			image: new File(["not an image"], "portrait.webp", {
+				type: "image/webp",
 			}),
 		});
 

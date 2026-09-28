@@ -75,15 +75,22 @@ view, with search and sorting. Show onboarding uses the shared modal, date-only
 and duration inputs, a searchable existing-DJ selector, optional image URL and
 tags, and a transactional JSON creation endpoint.
 
+DJ onboarding accepts and decodes WebP uploads before opening a layered square
+crop modal. The modal supports drag positioning, zoom, and left/right 90-degree
+rotation, then sends a 1200-by-1200 WebP crop through the DJ multipart upload
+field. Sharp creates and stores 400-by-400 and 1024-by-1024 WebP variants; the
+submitted crop is not retained.
+
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing
 bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
-`id`, `createdAt`, `title`, `bio`, optional `imagePath`, `socials`, `showTitle`,
-and `showDescription`, `shows`, and `tags`; its relationship IDs are derived
-from the relationship tables. `POST /api/admin/create-dj` creates DJs
-transactionally and sanitizes bio/socials HTML. Tag creation is centralized in
-the Tags module and is available through `POST /api/admin/create-tag` and
+`id`, `createdAt`, `title`, `bio`, optional `image_small` and `image_large`,
+`socials`, `showTitle`, and `showDescription`, `shows`, and `tags`; its
+relationship IDs are derived from the relationship tables.
+`POST /api/admin/create-dj` creates DJs transactionally and sanitizes
+bio/socials HTML. Tag creation is centralized in the Tags module and is
+available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,
 empty, and error states. The Shows API returns transformed relationship IDs plus

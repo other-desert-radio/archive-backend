@@ -253,17 +253,18 @@ These decisions are recorded before application implementation begins.
     "id": 1,
     "title": "name",
     "bio": "safe html",
-    "imagePath": "/api/admin/djs/1/image",
+    "image_small": "/api/admin/djs/1/image/small",
+    "image_large": "/api/admin/djs/1/image/large",
     "shows": [1, 2],
     "tags": [3, 4]
   }
 ]
 ```
 
-`imagePath` is omitted when the database image is `NULL`. Show IDs come from
-`show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries and tags
-assigned to the DJ's shows through `show_tags`. Database errors return
-`500 { "error": "Internal Server Error" }`.
+`image_small` and `image_large` are omitted when the database image pair is
+`NULL`. Show IDs come from `show_djs`. Tag IDs are the distinct union of direct
+`dj_tags` entries and tags assigned to the DJ's shows through `show_tags`.
+Database errors return `500 { "error": "Internal Server Error" }`.
 
 - [x] Serve the empty React/Vite shell at `/admin`.
 - [x] Render the read-only DJ list with loading, empty, and error states.

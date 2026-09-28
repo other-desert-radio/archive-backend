@@ -4,26 +4,7 @@ import { validateDJImageUpload } from "../../src/admin/routes/djs/index.js";
 const imageBytes = Buffer.from("image bytes");
 
 describe("validateDJImageUpload", () => {
-	test("accepts supported MIME types", () => {
-		expect(
-			validateDJImageUpload({
-				bytes: imageBytes,
-				filename: "../DJ portrait.JPEG",
-				contentType: "image/jpeg",
-			}),
-		).toEqual({
-			valid: true,
-			image: {
-				bytes: imageBytes,
-			},
-		});
-		expect(
-			validateDJImageUpload({
-				bytes: imageBytes,
-				filename: "dj.png",
-				contentType: "image/png",
-			}),
-		).toEqual({ valid: true, image: { bytes: imageBytes } });
+	test("accepts WebP MIME types", () => {
 		expect(
 			validateDJImageUpload({
 				bytes: imageBytes,
@@ -42,20 +23,20 @@ describe("validateDJImageUpload", () => {
 			}),
 		).toEqual({
 			valid: false,
-			error: "Image must have a JPEG, PNG, or WebP MIME type",
+			error: "Image must have a WebP MIME type",
 		});
 	});
 
-	test("rejects mismatched filename extensions", () => {
+	test("rejects non-WebP image MIME types", () => {
 		expect(
 			validateDJImageUpload({
 				bytes: imageBytes,
 				filename: "dj.png",
-				contentType: "image/jpeg",
+				contentType: "image/png",
 			}),
 		).toEqual({
 			valid: false,
-			error: "Image filename extension does not match its MIME type",
+			error: "Image must have a WebP MIME type",
 		});
 	});
 
@@ -64,7 +45,7 @@ describe("validateDJImageUpload", () => {
 		expect(
 			validateDJImageUpload({
 				bytes: oversized,
-				contentType: "image/png",
+				contentType: "image/webp",
 			}),
 		).toEqual({
 			valid: false,

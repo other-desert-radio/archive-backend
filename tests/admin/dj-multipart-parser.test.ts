@@ -37,7 +37,7 @@ describe("parseCreateDJMultipart", () => {
 		form.append("showDescription", "A late-night desert broadcast.");
 		form.append(
 			"image",
-			new File(["image bytes"], "dj.png", { type: "image/png" }),
+			new File(["image bytes"], "dj.webp", { type: "image/webp" }),
 		);
 
 		const response = await submitForm(form);
@@ -57,8 +57,8 @@ describe("parseCreateDJMultipart", () => {
 						type: "Buffer",
 						data: [105, 109, 97, 103, 101, 32, 98, 121, 116, 101, 115],
 					},
-					filename: "dj.png",
-					contentType: "image/png",
+					filename: "dj.webp",
+					contentType: "image/webp",
 				},
 			},
 		});

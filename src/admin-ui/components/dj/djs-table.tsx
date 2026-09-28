@@ -57,10 +57,26 @@ export const djColumns: ResourceTableColumn<DJsAdminRow, DJSortColumn>[] = [
 			compareText(left.showDescription, right.showDescription),
 	},
 	{
-		key: "imagePath",
-		label: "image",
-		render: (dj) => formatMissing(dj.imagePath),
-		compare: (left, right) => compareText(left.imagePath, right.imagePath),
+		key: "image_small",
+		label: "image_small",
+		render: (dj) =>
+			dj.image_small === undefined ? (
+				formatMissing(undefined)
+			) : (
+				<a href={dj.image_small}>image_small</a>
+			),
+		compare: (left, right) => compareText(left.image_small, right.image_small),
+	},
+	{
+		key: "image_large",
+		label: "image_large",
+		render: (dj) =>
+			dj.image_large === undefined ? (
+				formatMissing(undefined)
+			) : (
+				<a href={dj.image_large}>image_large</a>
+			),
+		compare: (left, right) => compareText(left.image_large, right.image_large),
 	},
 	{
 		key: "tags",

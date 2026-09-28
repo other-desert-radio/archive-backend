@@ -11,7 +11,8 @@ export type DJJSON = {
 	createdAt: Date;
 	title: string;
 	bio: string;
-	imagePath?: string;
+	image_small?: string;
+	image_large?: string;
 	socials?: string;
 	showTitle?: string;
 	showDescription?: string;
@@ -27,6 +28,7 @@ export type TransformDJsParams = {
 			| "createdAt"
 			| "title"
 			| "bio"
+			| "image_small"
 			| "image_large"
 			| "socials"
 			| "showTitle"

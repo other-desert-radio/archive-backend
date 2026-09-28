@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { isMatching } from "ts-pattern";
 import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
@@ -28,6 +28,7 @@ export const djRoutes =
 								"createdAt",
 								"title",
 								"bio",
+								"image_small",
 								"image_large",
 								"socials",
 								"showTitle",
@@ -64,33 +65,49 @@ export const djRoutes =
 			},
 		);
 
-		app.get<{
-			Params: { id: string };
-			Reply: AdminApiReply<Buffer>;
-		}>("/djs/:id/image", async (request, reply) => {
-			const id = Number(request.params.id);
-			if (!Number.isSafeInteger(id) || id < 1) {
+		const serveImage = async (
+			id: string,
+			variant: string,
+			request: FastifyRequest,
+			reply: FastifyReply,
+		) => {
+			const numericId = Number(id);
+			if (!Number.isSafeInteger(numericId) || numericId < 1)
 				return reply.code(404).send({ error: "Not Found" });
-			}
+			if (variant !== "small" && variant !== "large")
+				return reply.code(404).send({ error: "Not Found" });
 
 			try {
 				const dj = await database
 					.selectFrom("djs")
-					.select(["image_large"])
-					.where("id", "=", id)
+					.select(variant === "small" ? ["image_small"] : ["image_large"])
+					.where("id", "=", numericId)
 					.executeTakeFirst();
-
-				if (dj?.image_large === null || dj === undefined) {
+				const image = variant === "small" ? dj?.image_small : dj?.image_large;
+				if (image === null || image === undefined)
 					return reply.code(404).send({ error: "Not Found" });
-				}
 
 				reply.type("image/webp");
-				return reply.code(200).send(dj.image_large);
+				return reply.code(200).send(image);
 			} catch (error) {
 				request.log.error(error, "Unable to load DJ image");
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
-		});
+		};
+
+		app.get<{
+			Params: { id: string; variant: "small" | "large" };
+			Reply: AdminApiReply<Buffer>;
+		}>("/djs/:id/image/:variant", (request, reply) =>
+			serveImage(request.params.id, request.params.variant, request, reply),
+		);
+
+		app.get<{
+			Params: { id: string };
+			Reply: AdminApiReply<Buffer>;
+		}>("/djs/:id/image", (request, reply) =>
+			serveImage(request.params.id, "large", request, reply),
+		);
 
 		app.post<{ Reply: AdminApiReply<DJJSON> }>(
 			"/create-dj",
@@ -191,17 +208,17 @@ export const djRoutes =
 									.execute();
 							}
 
-							const imagePath =
-								imageVariants === undefined
-									? undefined
-									: `/api/admin/djs/${insertedDJ.id}/image`;
-
 							return {
 								id: insertedDJ.id,
 								createdAt: insertedDJ.createdAt,
 								title: normalized.title,
 								bio: plainTextToSafeHtml(normalized.bio),
-								...(imagePath === undefined ? {} : { imagePath }),
+								...(imageVariants === undefined
+									? {}
+									: {
+											image_small: `/api/admin/djs/${insertedDJ.id}/image/small`,
+											image_large: `/api/admin/djs/${insertedDJ.id}/image/large`,
+										}),
 								...(normalized.socials === null
 									? {}
 									: { socials: plainTextToSafeHtml(normalized.socials) }),
