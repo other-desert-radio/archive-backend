@@ -92,10 +92,10 @@ strong/emphasis text, and basic lists.
 `showTitle` and `showDescription` are optional plain-text metadata fields. Blank
 values are stored as `NULL` and nullable values are omitted from JSON output.
 
-`image` stores the original uploaded file bytes without compression. The
-short-term upload contract accepts JPEG, PNG, and WebP files up to 10 MiB.
-`image_filename` stores sanitized filename metadata, including the normalized
-extension. Future work will convert uploads to WebP before storage.
+`image` stores the submitted file bytes without further server-side processing.
+The DJ admin UI accepts JPEG, PNG, and WebP sources up to 10 MiB, then submits a
+1200-by-1200 WebP crop. `image_filename` stores sanitized filename metadata,
+including the normalized extension. The source image is not retained.
 
 ### `shows`
 

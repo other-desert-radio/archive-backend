@@ -7,7 +7,9 @@ import {
 	type TagsInputOption,
 	type TagsInputValue,
 } from "../shared/tags-input.js";
+import { DJImageCropModal } from "./dj-image-crop-modal.js";
 import { DJImageDropzone } from "./dj-image-dropzone.js";
+import { decodeDJImageFile } from "./dj-image-utils.js";
 import { buildCreateDJRequest, type CreateDJForm } from "./onboard-dj-utils.js";
 
 type OnboardDJModalProps = {
@@ -24,6 +26,7 @@ export const OnboardDJModal = ({
 }: OnboardDJModalProps) => {
 	const [title, setTitle] = useState("");
 	const [image, setImage] = useState<File>();
+	const [imageCandidate, setImageCandidate] = useState<File>();
 	const [imageError, setImageError] = useState<string>();
 	const [tags, setTags] = useState<TagsInputValue>({ tags: [], draft: "" });
 	const [tagOptions, setTagOptions] = useState<TagsInputOption[]>([]);
@@ -35,11 +38,13 @@ export const OnboardDJModal = ({
 	const [socials, setSocials] = useState("");
 	const [bio, setBio] = useState("");
 	const [imageDropzoneKey, setImageDropzoneKey] = useState(0);
+	const imageCandidateVersion = useRef(0);
 
 	useEffect(() => {
 		if (!isOpen) return;
 		setTitle("");
 		setImage(undefined);
+		setImageCandidate(undefined);
 		setImageError(undefined);
 		setTags({ tags: [], draft: "" });
 		setShowTitle("");
@@ -48,6 +53,25 @@ export const OnboardDJModal = ({
 		setBio("");
 		setImageDropzoneKey((current) => current + 1);
 	}, [isOpen]);
+	const selectImageCandidate = async (candidate: File) => {
+		const version = ++imageCandidateVersion.current;
+		setImageError(undefined);
+		const result = await decodeDJImageFile(candidate);
+		if (version !== imageCandidateVersion.current) return;
+		if (!result.valid) {
+			setImageError(result.error);
+			return;
+		}
+		setImageCandidate(result.file);
+	};
+	const cancelImageCandidate = () => {
+		imageCandidateVersion.current += 1;
+		setImageCandidate(undefined);
+	};
+	const confirmImageCandidate = (croppedImage: File) => {
+		setImage(croppedImage);
+		cancelImageCandidate();
+	};
 	const loadTagOptions = useCallback(() => {
 		const version = ++tagRequestVersion.current;
 		setIsTagsLoading(true);
@@ -96,75 +120,85 @@ export const OnboardDJModal = ({
 	};
 
 	return (
-		<OnboardingModal
-			isOpen={isOpen}
-			title="Onboard DJ"
-			onClose={onClose}
-			onSubmit={submit}
-		>
-			<LabeledFormControl
-				id="onboard-dj-title-input"
-				name="title"
-				label="title"
-				value={title}
-				onChange={setTitle}
-				required
-			/>
-			<LabeledFormControl
-				id="onboard-dj-show-title-input"
-				name="showTitle"
-				label="show title"
-				value={showTitle}
-				onChange={setShowTitle}
-			/>
-			<LabeledFormControl
-				id="onboard-dj-show-description-input"
-				name="showDescription"
-				label="show description"
-				value={showDescription}
-				onChange={setShowDescription}
-				textarea
-			/>
-			<DJImageDropzone
-				key={imageDropzoneKey}
-				{...(image === undefined ? {} : { file: image })}
-				onFileChange={setImage}
-				onError={setImageError}
-			/>
-			{imageError !== undefined && (
-				<p
-					className="onboarding-modal-helper onboarding-modal-field-error"
-					role="alert"
-				>
-					{imageError}
-				</p>
+		<>
+			<OnboardingModal
+				isOpen={isOpen}
+				isCovered={imageCandidate !== undefined}
+				title="Onboard DJ"
+				onClose={onClose}
+				onSubmit={submit}
+			>
+				<LabeledFormControl
+					id="onboard-dj-title-input"
+					name="title"
+					label="title"
+					value={title}
+					onChange={setTitle}
+					required
+				/>
+				<LabeledFormControl
+					id="onboard-dj-show-title-input"
+					name="showTitle"
+					label="show title"
+					value={showTitle}
+					onChange={setShowTitle}
+				/>
+				<LabeledFormControl
+					id="onboard-dj-show-description-input"
+					name="showDescription"
+					label="show description"
+					value={showDescription}
+					onChange={setShowDescription}
+					textarea
+				/>
+				<DJImageDropzone
+					key={imageDropzoneKey}
+					{...(image === undefined ? {} : { file: image })}
+					onFileSelected={selectImageCandidate}
+					onError={setImageError}
+				/>
+				{imageError !== undefined && (
+					<p
+						className="onboarding-modal-helper onboarding-modal-field-error"
+						role="alert"
+					>
+						{imageError}
+					</p>
+				)}
+				<TagsInput
+					id="onboard-dj-tags-input"
+					value={tags}
+					onChange={setTags}
+					options={tagOptions}
+					isLoading={isTagsLoading}
+					{...(tagsError === undefined ? {} : { error: tagsError })}
+					onRetry={loadTagOptions}
+				/>
+				<LabeledFormControl
+					id="onboard-dj-socials-input"
+					name="socials"
+					label="socials"
+					value={socials}
+					onChange={setSocials}
+					textarea
+				/>
+				<LabeledFormControl
+					id="onboard-dj-bio-input"
+					name="bio"
+					label="bio"
+					value={bio}
+					onChange={setBio}
+					textarea
+					required
+				/>
+			</OnboardingModal>
+			{imageCandidate !== undefined && (
+				<DJImageCropModal
+					file={imageCandidate}
+					onCancel={cancelImageCandidate}
+					onConfirm={confirmImageCandidate}
+				/>
 			)}
-			<TagsInput
-				id="onboard-dj-tags-input"
-				value={tags}
-				onChange={setTags}
-				options={tagOptions}
-				isLoading={isTagsLoading}
-				{...(tagsError === undefined ? {} : { error: tagsError })}
-				onRetry={loadTagOptions}
-			/>
-			<LabeledFormControl
-				id="onboard-dj-socials-input"
-				name="socials"
-				label="socials"
-				value={socials}
-				onChange={setSocials}
-				textarea
-			/>
-			<LabeledFormControl
-				id="onboard-dj-bio-input"
-				name="bio"
-				label="bio"
-				value={bio}
-				onChange={setBio}
-				textarea
-				required
-			/>
-		</OnboardingModal>
+		</>
 	);
 };

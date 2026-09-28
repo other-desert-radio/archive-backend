@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { validateDJImageFile } from "../../src/admin-ui/components/dj/dj-image-utils.js";
+import {
+	croppedDJImageFilename,
+	DJ_CROPPED_IMAGE_SIZE,
+	validateDJImageFile,
+} from "../../src/admin-ui/components/dj/dj-image-utils.js";
 
 describe("validateDJImageFile", () => {
 	test("accepts supported files with matching extensions", () => {
@@ -33,5 +37,14 @@ describe("validateDJImageFile", () => {
 			valid: false,
 			error: "Image must be 10 MiB or smaller",
 		});
+	});
+
+	test("creates a WebP filename for cropped images", () => {
+		expect(croppedDJImageFilename("portrait.PNG")).toBe("portrait.webp");
+		expect(croppedDJImageFilename("no-extension")).toBe("no-extension.webp");
+	});
+
+	test("uses a 1200 pixel square crop output", () => {
+		expect(DJ_CROPPED_IMAGE_SIZE).toBe(1200);
 	});
 });
