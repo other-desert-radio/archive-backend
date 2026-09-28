@@ -48,7 +48,7 @@ describe("parseCreateDJMultipart", () => {
 			form: {
 				title: "DJ New",
 				bio: "A bio",
-				tags: "dance, house",
+				tags: ["dance", "house"],
 				socials: "@dj-new",
 				showTitle: "Late Night Session",
 				showDescription: "A late-night desert broadcast.",
@@ -80,6 +80,25 @@ describe("parseCreateDJMultipart", () => {
 			error: "Request must use multipart/form-data",
 		});
 		await app.close();
+	});
+
+	test("normalizes blank optional text fields and missing required fields", async () => {
+		const form = new FormData();
+		form.append("tags", " dance, , house ,, techno ");
+		form.append("socials", " \t ");
+		form.append("showTitle", "");
+		form.append("showDescription", "\n");
+
+		const response = await submitForm(form);
+
+		expect(response.json()).toEqual({
+			valid: true,
+			form: {
+				title: "",
+				bio: "",
+				tags: ["dance", "house", "techno"],
+			},
+		});
 	});
 
 	test("rejects unexpected and duplicate fields", async () => {
