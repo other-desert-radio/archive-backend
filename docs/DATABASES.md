@@ -22,8 +22,11 @@ the migration time; new rows receive their insertion time from PostgreSQL.
 Migration `0013_replace_dj_image_url_with_binary` replaces the nullable DJ image
 URL with nullable raw image bytes and filename metadata. Existing DJ image URL
 values are intentionally discarded because they are not used by the current
-dataset. Better Auth tables have their own independently managed `createdAt`
-columns.
+dataset. Migration `0015_add_dj_webp_images` adds nullable `image_small` and
+`image_large` WebP columns, backfills them from every stored original image with
+the shared Sharp processor, and requires them to be a complete pair. The
+original columns remain temporarily for safe rollout and migration rollback.
+Better Auth tables have their own independently managed `createdAt` columns.
 
 All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ, show,
 or tag will therefore remove its dependent relationship rows automatically.
@@ -80,6 +83,8 @@ title       text not null
 bio         text
 image       bytea
 image_filename text
+image_small bytea
+image_large bytea
 socials     text
 showTitle   text
 showDescription text
@@ -95,7 +100,11 @@ values are stored as `NULL` and nullable values are omitted from JSON output.
 `image` stores the original uploaded file bytes without compression. The
 short-term upload contract accepts JPEG, PNG, and WebP files up to 10 MiB.
 `image_filename` stores sanitized filename metadata, including the normalized
-extension. Future work will convert uploads to WebP before storage.
+extension. During the transition, `image_small` and `image_large` store paired
+400 by 400 and 1024 by 1024 WebP derivatives generated from the original.
+Migration `0015` populates both fields for existing images; it fails atomically
+if Sharp cannot decode a stored image. A later reviewed migration removes the
+original fields after all reads and writes use the derivatives.
 
 ### `shows`
 

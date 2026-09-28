@@ -23,7 +23,7 @@ square image.
 
 - [x] Study the exploratory branch and current implementation.
 - [x] Add the plan document and generic Sharp image-variant helper with tests.
-- [ ] Add and backfill `image_small` and `image_large` in migration `0015`,
+- [x] Add and backfill `image_small` and `image_large` in migration `0015`,
       while temporarily retaining existing originals for safe rollout.
 - [ ] Write new DJ uploads as variants, serve the large WebP, and enforce the
       1.5 MiB upload limit in the API and onboarding modal.
