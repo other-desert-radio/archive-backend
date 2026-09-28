@@ -28,7 +28,8 @@
 		"pg": "latest",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
-		"sanitize-html": "^2.17.7"
+		"sanitize-html": "^2.17.7",
+		"sharp": "^0.35.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "latest",
