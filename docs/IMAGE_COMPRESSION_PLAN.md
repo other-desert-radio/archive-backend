@@ -16,7 +16,8 @@ square image.
 - Expose `image_small` and `image_large` in the admin DJ response. Variant
   routes serve their matching WebPs, while the old image route remains a large
   image alias.
-- Limit uploads to 1.5 MiB in both the UI and API.
+- Let the browser crop and convert source uploads before submission; do not
+  impose an image-byte limit.
 - Do not show compressed image sizes in the onboarding modal.
 - Keep archive asset paths under `assets/djs/`.
 
@@ -26,8 +27,8 @@ square image.
 - [x] Add the plan document and generic Sharp image-variant helper with tests.
 - [x] Add and backfill `image_small` and `image_large` in migration `0015`,
       while temporarily retaining existing originals for safe rollout.
-- [x] Write new DJ uploads as variants, serve the large WebP, and enforce the
-      1.5 MiB upload limit in the API and onboarding modal.
+- [x] Write new DJ uploads as variants, serve the large WebP, and crop source
+      images in the onboarding modal before submission.
 - [x] Export stored small and large variants without image processing or
       database writes during archive export.
 - [x] Drop the transitional original-image columns in migration `0016` and

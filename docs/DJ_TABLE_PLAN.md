@@ -303,8 +303,8 @@ non-empty `title` and `bio`; submission uses the authenticated
 Form fields:
 
 - `title`: required.
-- `image`: optional JPEG, PNG, or WebP file up to 1.5 MiB, selected by drag/drop
-  or the file picker, then cropped to a square WebP in the browser.
+- `image`: optional JPEG, PNG, or WebP file, selected by drag/drop or the file
+  picker, then cropped to a square WebP in the browser.
 - `tags`: plain-text input for this first modal slice; the reusable component is
   added later.
 - `showTitle`: optional plain-text input.

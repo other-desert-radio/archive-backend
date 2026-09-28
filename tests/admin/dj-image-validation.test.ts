@@ -40,16 +40,13 @@ describe("validateDJImageUpload", () => {
 		});
 	});
 
-	test("rejects files larger than 1.5 MiB", () => {
+	test("accepts large source files for Sharp processing", () => {
 		const oversized = Buffer.alloc(1.5 * 1024 * 1024 + 1, 0);
 		expect(
 			validateDJImageUpload({
 				bytes: oversized,
 				contentType: "image/webp",
 			}),
-		).toEqual({
-			valid: false,
-			error: "Image must be 1.5 MiB or smaller",
-		});
+		).toEqual({ valid: true, image: { bytes: oversized } });
 	});
 });

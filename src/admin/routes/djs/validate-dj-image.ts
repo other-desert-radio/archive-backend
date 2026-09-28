@@ -1,4 +1,3 @@
-export const MAX_DJ_IMAGE_BYTES = 1.5 * 1024 * 1024;
 const acceptedContentTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export type DJImageUpload = {
@@ -19,10 +18,6 @@ export type DJImageValidationResult =
 export const validateDJImageUpload = (
 	upload: DJImageUpload,
 ): DJImageValidationResult => {
-	if (upload.bytes.length > MAX_DJ_IMAGE_BYTES) {
-		return { valid: false, error: "Image must be 1.5 MiB or smaller" };
-	}
-
 	if (!acceptedContentTypes.has(upload.contentType))
 		return {
 			valid: false,

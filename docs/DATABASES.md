@@ -100,12 +100,12 @@ values are stored as `NULL` and nullable values are omitted from JSON output.
 derivatives. The columns are both `NULL` when no image exists, or both populated
 by a database constraint. Migration `0015` backfills existing original images
 and migration `0016` removes those originals. The current upload contract
-accepts JPEG, PNG, and WebP files up to 1.5 MiB. The DJ admin UI decodes a
-selected source, then lets the admin position, zoom, and rotate a square
-1200-by-1200 WebP crop. Sharp creates the stored 400-by-400 and 1024-by-1024
-WebP variants from that crop before insertion. Rolling back migration `0016`
-restores the large WebP as `image` with the filename `restored-large.webp`; the
-original upload cannot be recovered.
+accepts JPEG, PNG, and WebP files. The DJ admin UI decodes a selected source,
+then lets the admin position, zoom, and rotate a square 1200-by-1200 WebP crop.
+Sharp creates the stored 400-by-400 and 1024-by-1024 WebP variants from that
+crop before insertion. Rolling back migration `0016` restores the large WebP as
+`image` with the filename `restored-large.webp`; the original upload cannot be
+recovered.
 
 ### `shows`
 

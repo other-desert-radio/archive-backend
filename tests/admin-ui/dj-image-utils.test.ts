@@ -28,17 +28,14 @@ describe("validateDJImageFile", () => {
 		});
 	});
 
-	test("rejects files larger than 1.5 MiB", () => {
+	test("accepts large source files for browser-side cropping", () => {
 		const file = new File(
 			[new Uint8Array(1.5 * 1024 * 1024 + 1)],
 			"portrait.webp",
 			{ type: "image/webp" },
 		);
 
-		expect(validateDJImageFile(file)).toEqual({
-			valid: false,
-			error: "Image must be 1.5 MiB or smaller",
-		});
+		expect(validateDJImageFile(file)).toEqual({ valid: true, file });
 	});
 
 	test("creates a WebP filename for cropped images", () => {
