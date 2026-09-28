@@ -4,41 +4,14 @@ import { validateDJImageUpload } from "../../src/admin/routes/djs/index.js";
 const imageBytes = Buffer.from("image bytes");
 
 describe("validateDJImageUpload", () => {
-	test("accepts supported MIME types and normalizes filenames", () => {
-		expect(
-			validateDJImageUpload({
-				bytes: imageBytes,
-				filename: "../DJ portrait.JPEG",
-				contentType: "image/jpeg",
-			}),
-		).toEqual({
-			valid: true,
-			image: {
-				bytes: imageBytes,
-				filename: "DJ-portrait.jpg",
-				contentType: "image/jpeg",
-			},
-		});
-		expect(
-			validateDJImageUpload({
-				bytes: imageBytes,
-				filename: "dj.png",
-				contentType: "image/png",
-			}),
-		).toMatchObject({
-			valid: true,
-			image: { filename: "dj.png", contentType: "image/png" },
-		});
-		expect(
-			validateDJImageUpload({
-				bytes: imageBytes,
-				filename: "dj.webp",
-				contentType: "image/webp",
-			}),
-		).toMatchObject({
-			valid: true,
-			image: { filename: "dj.webp", contentType: "image/webp" },
-		});
+	test("accepts JPEG, PNG, and WebP MIME types", () => {
+		for (const contentType of ["image/jpeg", "image/png", "image/webp"])
+			expect(
+				validateDJImageUpload({
+					bytes: imageBytes,
+					contentType,
+				}),
+			).toEqual({ valid: true, image: { bytes: imageBytes } });
 	});
 
 	test("rejects unsupported MIME types", () => {
@@ -54,41 +27,26 @@ describe("validateDJImageUpload", () => {
 		});
 	});
 
-	test("rejects mismatched filename extensions", () => {
+	test("rejects unsupported image MIME types", () => {
 		expect(
 			validateDJImageUpload({
 				bytes: imageBytes,
-				filename: "dj.png",
-				contentType: "image/jpeg",
+				filename: "dj.gif",
+				contentType: "image/gif",
 			}),
 		).toEqual({
 			valid: false,
-			error: "Image filename extension does not match its MIME type",
+			error: "Image must have a JPEG, PNG, or WebP MIME type",
 		});
 	});
 
-	test("rejects files larger than 10 MiB", () => {
-		const oversized = Buffer.alloc(10 * 1024 * 1024 + 1, 0);
+	test("accepts large source files for Sharp processing", () => {
+		const oversized = Buffer.alloc(1.5 * 1024 * 1024 + 1, 0);
 		expect(
 			validateDJImageUpload({
 				bytes: oversized,
-				contentType: "image/png",
+				contentType: "image/webp",
 			}),
-		).toEqual({
-			valid: false,
-			error: "Image must be 10 MiB or smaller",
-		});
-	});
-
-	test("provides a safe default filename", () => {
-		expect(
-			validateDJImageUpload({
-				bytes: imageBytes,
-				contentType: "image/png",
-			}),
-		).toMatchObject({
-			valid: true,
-			image: { filename: "image.png" },
-		});
+		).toEqual({ valid: true, image: { bytes: oversized } });
 	});
 });

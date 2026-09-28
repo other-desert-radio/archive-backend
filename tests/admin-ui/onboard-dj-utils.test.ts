@@ -3,8 +3,8 @@ import { buildCreateDJRequest } from "../../src/admin-ui/components/dj/onboard-d
 
 describe("buildCreateDJRequest", () => {
 	test("trims fields and parses comma-separated tags", () => {
-		const image = new File(["image bytes"], "image.jpg", {
-			type: "image/jpeg",
+		const image = new File(["image bytes"], "image.webp", {
+			type: "image/webp",
 		});
 		expect(
 			buildCreateDJRequest({

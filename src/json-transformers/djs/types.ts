@@ -11,7 +11,8 @@ export type DJJSON = {
 	createdAt: Date;
 	title: string;
 	bio: string;
-	imagePath?: string;
+	image_small?: string;
+	image_large?: string;
 	socials?: string;
 	showTitle?: string;
 	showDescription?: string;
@@ -20,7 +21,20 @@ export type DJJSON = {
 };
 
 export type TransformDJsParams = {
-	djs: Array<Selectable<DJsTable>>;
+	djs: Array<
+		Pick<
+			Selectable<DJsTable>,
+			| "id"
+			| "createdAt"
+			| "title"
+			| "bio"
+			| "image_small"
+			| "image_large"
+			| "socials"
+			| "showTitle"
+			| "showDescription"
+		>
+	>;
 	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
 	djTags: Array<Pick<Selectable<DjTagsTable>, "dj_id" | "tag_id">>;
 	showTags: Array<

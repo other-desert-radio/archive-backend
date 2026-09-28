@@ -22,8 +22,11 @@ the migration time; new rows receive their insertion time from PostgreSQL.
 Migration `0013_replace_dj_image_url_with_binary` replaces the nullable DJ image
 URL with nullable raw image bytes and filename metadata. Existing DJ image URL
 values are intentionally discarded because they are not used by the current
-dataset. Better Auth tables have their own independently managed `createdAt`
-columns.
+dataset. Migration `0015_add_dj_webp_images` adds nullable `image_small` and
+`image_large` WebP columns, backfills them from every stored original image with
+the shared Sharp processor, and requires them to be a complete pair. Migration
+`0016_drop_dj_original_images` removes the transitional original image columns.
+Better Auth tables have their own independently managed `createdAt` columns.
 
 All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ, show,
 or tag will therefore remove its dependent relationship rows automatically.
@@ -41,7 +44,8 @@ writes the following assets to the configured Astro frontend directories:
 - `src/res/djs/{id}.json`, one detail document per DJ;
 - `src/res/shows.json`, the top-level show index;
 - `src/res/tags.json`, the shared tag dictionary; and
-- `public/assets/djs/{id}.{extension}`, copied DJ image assets.
+- `public/assets/djs/{id}_small.webp` and `{id}_large.webp`, copied DJ image
+  assets.
 
 Astro imports JSON from `src/res/` as part of the site build and copies
 `public/assets/` into the deployed site unchanged. The database remains the
@@ -78,8 +82,8 @@ id          integer primary key
 createdAt   timestamptz not null
 title       text not null
 bio         text
-image       bytea
-image_filename text
+image_small bytea
+image_large bytea
 socials     text
 showTitle   text
 showDescription text
@@ -92,10 +96,16 @@ strong/emphasis text, and basic lists.
 `showTitle` and `showDescription` are optional plain-text metadata fields. Blank
 values are stored as `NULL` and nullable values are omitted from JSON output.
 
-`image` stores the submitted file bytes without further server-side processing.
-The DJ admin UI accepts JPEG, PNG, and WebP sources up to 10 MiB, then submits a
-1200-by-1200 WebP crop. `image_filename` stores sanitized filename metadata,
-including the normalized extension. The source image is not retained.
+`image_small` and `image_large` store paired 400 by 400 and 1024 by 1024 WebP
+derivatives. The columns are both `NULL` when no image exists, or both populated
+by a database constraint. Migration `0015` backfills existing original images
+and migration `0016` removes those originals. The current upload contract
+accepts JPEG, PNG, and WebP files. The DJ admin UI decodes a selected source,
+then lets the admin position, zoom, and rotate a square 1200-by-1200 WebP crop.
+Sharp creates the stored 400-by-400 and 1024-by-1024 WebP variants from that
+crop before insertion. Rolling back migration `0016` restores the large WebP as
+`image` with the filename `restored-large.webp`; the original upload cannot be
+recovered.
 
 ### `shows`
 
@@ -234,11 +244,13 @@ its own `tagIds`. The top-level `shows.json` lists shows by descending date then
 ID, includes each show's `tagIds`, and embeds compact related DJ cards with
 `id`, `title`, and an optional static image path.
 
-The exporter writes raw DJ image bytes to `public/assets/djs/{id}.{extension}`
-and uses the corresponding `assets/djs/{id}.{extension}` path in JSON. It must
-never export the private `/api/admin/djs/{id}/image` URL. Show image values in
-DJ detail documents are the stored image URLs until show-image asset storage is
-added.
+The exporter writes stored DJ WebP variants to
+`public/assets/djs/{id}_small.webp` and `{id}_large.webp`. DJ indexes and Show
+cards use `assets/djs/{id}_small.webp`; DJ details use
+`assets/djs/{id}_large.webp`. Export never processes images or writes to the
+database. It must never export the private `/api/admin/djs/{id}/image` URL. Show
+image values in DJ detail documents are the stored image URLs until show-image
+asset storage is added.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must

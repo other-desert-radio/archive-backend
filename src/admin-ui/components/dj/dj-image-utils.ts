@@ -1,31 +1,14 @@
-const MAX_DJ_IMAGE_BYTES = 10 * 1024 * 1024;
 export const DJ_CROPPED_IMAGE_SIZE = 1200;
-
-const acceptedImageTypes = new Map([
-	["image/jpeg", [".jpg", ".jpeg"]],
-	["image/png", [".png"]],
-	["image/webp", [".webp"]],
-]);
+const acceptedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export type DJImageFileValidation =
 	| { valid: true; file: File }
 	| { valid: false; error: string };
 
-/** Validates the same MIME, extension, and size policy enforced by the API. */
+/** Validates supported source-image MIME types before the browser crops them. */
 export const validateDJImageFile = (file: File): DJImageFileValidation => {
-	if (file.size > MAX_DJ_IMAGE_BYTES) {
-		return { valid: false, error: "Image must be 10 MiB or smaller" };
-	}
-
-	const extensions = acceptedImageTypes.get(file.type);
-	const extension = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
-	if (extensions === undefined || !extensions.includes(extension)) {
-		return {
-			valid: false,
-			error:
-				"Image must be a JPEG, PNG, or WebP file with a matching extension",
-		};
-	}
+	if (!acceptedImageTypes.has(file.type))
+		return { valid: false, error: "Image must be a JPEG, PNG, or WebP file" };
 
 	return { valid: true, file };
 };

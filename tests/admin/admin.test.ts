@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import Fastify from "fastify";
+import sharp from "sharp";
 import { adminRoutes } from "../../src/admin/admin.js";
 import { buildApp } from "../../src/app.js";
 import { multipartPayload } from "./multipart-test-utils.js";
@@ -28,8 +29,8 @@ const testDatabase = {
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
 					title: "DJ One",
 					bio: "<p>Bio</p>",
-					image: null,
-					image_filename: null,
+					image_small: null,
+					image_large: null,
 					socials: "<p>@dj-one</p>",
 				},
 			],
@@ -487,7 +488,22 @@ describe("admin route boundary", () => {
 				socials: " @dj-new ",
 				showTitle: " Late Night Session ",
 				showDescription: " A late-night broadcast ",
-				image: new File(["image bytes"], "dj.png", { type: "image/png" }),
+				image: new File(
+					[
+						await sharp({
+							create: {
+								width: 10,
+								height: 10,
+								channels: 3,
+								background: { r: 40, g: 50, b: 60 },
+							},
+						})
+							.webp()
+							.toBuffer(),
+					],
+					"dj.webp",
+					{ type: "image/webp" },
+				),
 			})),
 		});
 
@@ -496,7 +512,8 @@ describe("admin route boundary", () => {
 			id: 42,
 			title: "DJ New",
 			bio: "<p>First line<br />Second line</p>",
-			imagePath: "/api/admin/djs/42/image",
+			image_small: "/api/admin/djs/42/image/small",
+			image_large: "/api/admin/djs/42/image/large",
 			socials: "<p>@dj-new</p>",
 			showTitle: "Late Night Session",
 			showDescription: "A late-night broadcast",

@@ -13,7 +13,8 @@ export type DJSortColumn =
 	| "title"
 	| "showTitle"
 	| "showDescription"
-	| "imagePath"
+	| "image_small"
+	| "image_large"
 	| "tags"
 	| "socials"
 	| "bio"
@@ -27,7 +28,8 @@ export const getDJSearchValue = (dj: DJsAdminRow, tags: TagsJSON[]): string => {
 	return [
 		dj.id,
 		dj.title,
-		dj.imagePath,
+		dj.image_small,
+		dj.image_large,
 		dj.showTitle,
 		dj.showDescription,
 		dj.socials,

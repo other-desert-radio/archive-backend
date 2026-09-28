@@ -6,7 +6,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { auth } from "../auth/auth.js";
 import { db as defaultDb } from "../db/db.js";
 import { clientDescription } from "./logging.js";
-import { djRoutes, MAX_DJ_IMAGE_BYTES } from "./routes/djs/index.js";
+import { djRoutes } from "./routes/djs/index.js";
 import { showRoutes } from "./routes/shows/index.js";
 import { adminStatusRoutes } from "./routes/status.js";
 import { tagRoutes } from "./routes/tags/index.js";
@@ -129,7 +129,7 @@ const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 		});
 		await app.register(multipart, {
 			limits: {
-				fileSize: MAX_DJ_IMAGE_BYTES,
+				fileSize: Infinity,
 				files: 1,
 				fields: 6,
 				parts: 7,
