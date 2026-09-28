@@ -27,8 +27,6 @@ type DJRow = {
 	createdAt: Date;
 	title: string;
 	bio: string;
-	image: Buffer | null;
-	image_filename: string | null;
 	image_small: Buffer | null;
 	image_large: Buffer | null;
 	socials: string | null;

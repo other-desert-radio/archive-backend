@@ -16,8 +16,9 @@ adds the nullable `djs.socials` field, and migration twelve adds the non-null
 `tags.reviewed` flag. Migration thirteen replaces the nullable DJ image URL with
 raw binary image storage and filename metadata. Migration fourteen adds nullable
 DJ show metadata. Migration fifteen adds and backfills paired 400px and 1024px
-WebP DJ images while temporarily retaining original uploads for a safe rollout.
-Migrations are applied explicitly, one at a time, after review.
+WebP DJ images. Migration sixteen removes the transitional original DJ image
+bytes and filename metadata. Migrations are applied explicitly, one at a time,
+after review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is

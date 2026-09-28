@@ -29,7 +29,7 @@ square image.
       1.5 MiB upload limit in the API and onboarding modal.
 - [x] Export stored small and large variants without image processing or
       database writes during archive export.
-- [ ] Drop the transitional original-image columns in migration `0016` and
+- [x] Drop the transitional original-image columns in migration `0016` and
       remove obsolete code, types, and fixtures.
 
 Every unchecked item is a separate implementation and review checkpoint.

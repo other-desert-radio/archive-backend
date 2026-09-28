@@ -24,8 +24,8 @@ URL with nullable raw image bytes and filename metadata. Existing DJ image URL
 values are intentionally discarded because they are not used by the current
 dataset. Migration `0015_add_dj_webp_images` adds nullable `image_small` and
 `image_large` WebP columns, backfills them from every stored original image with
-the shared Sharp processor, and requires them to be a complete pair. The
-original columns remain temporarily for safe rollout and migration rollback.
+the shared Sharp processor, and requires them to be a complete pair. Migration
+`0016_drop_dj_original_images` removes the transitional original image columns.
 Better Auth tables have their own independently managed `createdAt` columns.
 
 All relationship foreign keys will use `ON DELETE CASCADE`. Deleting a DJ, show,
@@ -82,8 +82,6 @@ id          integer primary key
 createdAt   timestamptz not null
 title       text not null
 bio         text
-image       bytea
-image_filename text
 image_small bytea
 image_large bytea
 socials     text
@@ -98,14 +96,14 @@ strong/emphasis text, and basic lists.
 `showTitle` and `showDescription` are optional plain-text metadata fields. Blank
 values are stored as `NULL` and nullable values are omitted from JSON output.
 
-`image` and `image_filename` temporarily retain original uploads created before
-the variant pipeline. During the transition, `image_small` and `image_large`
-store paired 400 by 400 and 1024 by 1024 WebP derivatives. Migration `0015`
-populates both fields for existing images; it fails atomically if Sharp cannot
-decode a stored image. The current upload contract accepts JPEG, PNG, and WebP
-files up to 1.5 MiB. New uploads are center-cropped and converted before
-insertion, so they store only the derivatives and leave the transitional
-original fields `NULL`. A later reviewed migration removes the original fields.
+`image_small` and `image_large` store paired 400 by 400 and 1024 by 1024 WebP
+derivatives. The columns are both `NULL` when no image exists, or both populated
+by a database constraint. Migration `0015` backfills existing original images
+and migration `0016` removes those originals. The current upload contract
+accepts JPEG, PNG, and WebP files up to 1.5 MiB; uploads are center-cropped and
+converted before insertion. Rolling back migration `0016` restores the large
+WebP as `image` with the filename `restored-large.webp`; the original upload
+cannot be recovered.
 
 ### `shows`
 
