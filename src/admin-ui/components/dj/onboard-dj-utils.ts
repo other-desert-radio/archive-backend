@@ -13,7 +13,8 @@ export type CreateDJForm = {
 export type OnboardDJFieldValues = {
 	title: string;
 	image?: File;
-	tags: string;
+	tags: string[];
+	tagDraft: string;
 	socials: string;
 	showTitle: string;
 	showDescription: string;
@@ -35,7 +36,7 @@ export const buildCreateDJRequest = (
 	const socials = fields.socials.trim();
 	const showTitle = fields.showTitle.trim();
 	const showDescription = fields.showDescription.trim();
-	const tags = splitCommaSeparated(fields.tags);
+	const tags = splitCommaSeparated([...fields.tags, fields.tagDraft].join(","));
 
 	return {
 		title: fields.title.trim(),

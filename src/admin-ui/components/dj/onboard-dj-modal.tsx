@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
-import { CommaSeparatedTagsField } from "../shared/comma-separated-tags-field.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { loadTags } from "../../loaders/tags.js";
 import { LabeledFormControl } from "../shared/labeled-form-control.js";
 import { OnboardingModal } from "../shared/onboarding-modal.js";
+import {
+	TagsInput,
+	type TagsInputOption,
+	type TagsInputValue,
+} from "../shared/tags-input.js";
 import { DJImageDropzone } from "./dj-image-dropzone.js";
 import { buildCreateDJRequest, type CreateDJForm } from "./onboard-dj-utils.js";
 
@@ -20,7 +25,11 @@ export const OnboardDJModal = ({
 	const [title, setTitle] = useState("");
 	const [image, setImage] = useState<File>();
 	const [imageError, setImageError] = useState<string>();
-	const [tags, setTags] = useState("");
+	const [tags, setTags] = useState<TagsInputValue>({ tags: [], draft: "" });
+	const [tagOptions, setTagOptions] = useState<TagsInputOption[]>([]);
+	const [isTagsLoading, setIsTagsLoading] = useState(false);
+	const [tagsError, setTagsError] = useState<string>();
+	const tagRequestVersion = useRef(0);
 	const [showTitle, setShowTitle] = useState("");
 	const [showDescription, setShowDescription] = useState("");
 	const [socials, setSocials] = useState("");
@@ -32,13 +41,40 @@ export const OnboardDJModal = ({
 		setTitle("");
 		setImage(undefined);
 		setImageError(undefined);
-		setTags("");
+		setTags({ tags: [], draft: "" });
 		setShowTitle("");
 		setShowDescription("");
 		setSocials("");
 		setBio("");
 		setImageDropzoneKey((current) => current + 1);
 	}, [isOpen]);
+	const loadTagOptions = useCallback(() => {
+		const version = ++tagRequestVersion.current;
+		setIsTagsLoading(true);
+		setTagsError(undefined);
+		setTagOptions([]);
+		loadTags()
+			.then((loadedTags) => {
+				if (version !== tagRequestVersion.current) return;
+				setTagOptions(
+					loadedTags.map(({ id, title, color }) => ({ id, title, color })),
+				);
+			})
+			.catch(() => {
+				if (version === tagRequestVersion.current)
+					setTagsError("Existing tags could not be loaded.");
+			})
+			.finally(() => {
+				if (version === tagRequestVersion.current) setIsTagsLoading(false);
+			});
+	}, []);
+	useEffect(() => {
+		if (!isOpen) return;
+		loadTagOptions();
+		return () => {
+			tagRequestVersion.current += 1;
+		};
+	}, [isOpen, loadTagOptions]);
 
 	const submit = async () => {
 		if (title.trim() === "" || bio.trim() === "") {
@@ -50,7 +86,8 @@ export const OnboardDJModal = ({
 				title,
 				showTitle,
 				showDescription,
-				tags,
+				tags: tags.tags,
+				tagDraft: tags.draft,
 				socials,
 				bio,
 				...(image === undefined ? {} : { image }),
@@ -102,10 +139,14 @@ export const OnboardDJModal = ({
 					{imageError}
 				</p>
 			)}
-			<CommaSeparatedTagsField
+			<TagsInput
 				id="onboard-dj-tags-input"
 				value={tags}
 				onChange={setTags}
+				options={tagOptions}
+				isLoading={isTagsLoading}
+				{...(tagsError === undefined ? {} : { error: tagsError })}
+				onRetry={loadTagOptions}
 			/>
 			<LabeledFormControl
 				id="onboard-dj-socials-input"

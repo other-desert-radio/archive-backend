@@ -125,18 +125,21 @@ The DJ onboarding slice has progressed beyond the earlier read-only handoff:
   Tags-module service. Automatically colored tags are unreviewed; explicit
   colors are reviewed. `tags.reviewed` is provided by migration `0012`.
 - The onboarding modal submits normalized plain-text fields, including optional
-  show title and show description metadata, calls
-  `POST /api/admin/validate-tags` when the tags field is left, and only shows
-  helper copy for tags missing from the database. Chips, autocomplete, and other
-  richer tag UI remain deferred.
+  show title and show description metadata. Show onboarding retains plain-text
+  tag validation on blur.
+- DJ onboarding now uses the reusable Figma-aligned tag combobox: existing tags
+  load for each modal session, matching tags appear in a compact dropdown, and
+  selected tags become stored-color chips. Prefix matches show gray inline
+  completion accepted with Tab; unknown tags use the white/red chip treatment
+  and explanatory helper text. The component does not create tags itself.
 - Each new onboarding session starts with an empty form, including the selected
   image and validation feedback.
 - `DJsPage` refreshes the table after a successful submission while preserving
   its search and sort state. The authenticated loader and focused frontend,
   route, service, persistence, and transformer tests are in place.
 
-The next work should be reviewed in small chunks. The reusable tags component
-and any later tag-management UI remain separate from this onboarding behavior.
+The next work should be reviewed in small chunks. Any later tag-management UI
+remains separate from this onboarding behavior.
 
 ### Next-agent checklist
 
@@ -144,9 +147,8 @@ Implement one item at a time and stop for review after each item:
 
 1. Review the completed DJ onboarding persistence and tag-creation behavior,
    including the migration verification and current API documentation.
-2. Add the reusable tags component for chips, matching, and richer interaction
-   only after that review. Keep it separate from the already-working plain
-   helper-copy behavior on tags blur.
+2. Review the reusable DJ tags component’s dropdown, chip, and inline-completion
+   behavior separately from any later tag-management UI.
 3. [x] Connect the Tags sidebar item to `#tags` and verify Shows, DJs, and Tags
        navigation without adding CRUD behavior.
 4. [x] Add the background asset and replace only the gray background in a

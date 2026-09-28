@@ -359,21 +359,21 @@ The route now uses the shared `AdminApiReply` response contract, and focused
 admin-boundary tests cover successful validation, invalid request bodies,
 database failures, unauthenticated requests, and non-admin requests.
 
-The onboarding modal now calls this endpoint when the plain-text tags field
-loses focus and displays only the missing-tag helper copy. It does not render
-the Figma tags breakout behavior yet; chip rendering, autocomplete, and other
-richer interactions remain deferred.
+Show onboarding calls this endpoint when its plain-text tags field loses focus
+and displays helper copy for missing tags. DJ onboarding uses the richer tags
+component described below.
 
 This endpoint is validation support, not tag persistence. Unknown tags remain
 creation candidates until the final transactional DJ endpoint is implemented.
 
-Implement the controlled tags input after the modal’s initial plain-text form
-has been reviewed. It should support matching existing tags, comma-separated
-input, trimming, case-insensitive deduplication, removable colored chips, and
-unknown-tag helper text. Use the loaded tag metadata for chip colors and the
-validation endpoint when server confirmation is useful; do not create or modify
-tags from the component. Add pure helper tests and stop for review after the
-admin build.
+The controlled tags input is implemented for DJ onboarding. It loads tag
+metadata for each modal session, supports matching existing tags,
+comma-separated input, trimming, case-insensitive deduplication, removable
+colored chips, gray inline prefix completion, and Tab-to-accept. Existing tags
+retain their stored color; unknown tags use the white/red chip treatment and
+helper text. The component never creates or modifies tags: the final DJ
+submission remains the persistence boundary. Show onboarding retains its
+plain-text tags field.
 
 ### 5. Add the create endpoint last
 

@@ -10,7 +10,8 @@ describe("buildCreateDJRequest", () => {
 			buildCreateDJRequest({
 				title: " DJ New ",
 				image,
-				tags: " dance, , house ",
+				tags: ["dance"],
+				tagDraft: " house ",
 				socials: " @dj-new ",
 				showTitle: " Late Night Session ",
 				showDescription: " Late-night broadcast ",
@@ -31,7 +32,8 @@ describe("buildCreateDJRequest", () => {
 		expect(
 			buildCreateDJRequest({
 				title: "DJ New",
-				tags: "",
+				tags: [],
+				tagDraft: "",
 				socials: "\n",
 				showTitle: "\n",
 				showDescription: " ",
