@@ -170,7 +170,8 @@ DJ or image is absent.
 The upload validator accepts JPEG, PNG, and WebP MIME types with matching
 filename extensions up to 10 MiB. The DJ admin UI validates and decodes a
 selected source before opening its crop modal, then submits a 1200-by-1200 WebP
-crop. The API stores submitted bytes unchanged and normalizes only filename
+crop. Crop controls support drag positioning, zoom, and 90-degree left/right
+rotation. The API stores submitted bytes unchanged and normalizes only filename
 metadata; it does not retain source files or enforce crop dimensions. MIME types
 and extensions are client-provided hints rather than a security boundary in this
 initial admin-only workflow.

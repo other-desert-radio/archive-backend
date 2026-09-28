@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import styles from "./dj-image-crop-modal.module.css";
-import { cropDJImage } from "./dj-image-crop-utils.js";
+import {
+	cropDJImage,
+	type DJImageRotation,
+	rotateDJImage,
+} from "./dj-image-crop-utils.js";
 import { validateDJImageFile } from "./dj-image-utils.js";
 
 type DJImageCropModalProps = {
@@ -28,6 +32,7 @@ export const DJImageCropModal = ({
 	const [objectUrl, setObjectUrl] = useState("");
 	const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
 	const [zoom, setZoom] = useState(1);
+	const [rotation, setRotation] = useState<DJImageRotation>(0);
 	const [area, setArea] = useState<Area>();
 	const [error, setError] = useState<string>();
 	const [isSaving, setIsSaving] = useState(false);
@@ -78,7 +83,7 @@ export const DJImageCropModal = ({
 		setError(undefined);
 		setIsSaving(true);
 		try {
-			const cropped = await cropDJImage(file, area);
+			const cropped = await cropDJImage(file, area, rotation);
 			const validation = validateDJImageFile(cropped);
 			if (!validation.valid) throw new Error(validation.error);
 			onConfirm(validation.file);
@@ -112,6 +117,7 @@ export const DJImageCropModal = ({
 							image={objectUrl}
 							crop={crop}
 							zoom={zoom}
+							rotation={rotation}
 							aspect={1}
 							showGrid={false}
 							onCropChange={setCrop}
@@ -132,6 +138,27 @@ export const DJImageCropModal = ({
 						onChange={(event) => setZoom(Number(event.target.value))}
 						disabled={isSaving}
 					/>
+					<span id="dj-image-crop-rotation">Rotate</span>
+					<div className={styles.rotationControls}>
+						<button
+							type="button"
+							onClick={() =>
+								setRotation((current) => rotateDJImage(current, -90))
+							}
+							disabled={isSaving}
+						>
+							Rotate left
+						</button>
+						<button
+							type="button"
+							onClick={() =>
+								setRotation((current) => rotateDJImage(current, 90))
+							}
+							disabled={isSaving}
+						>
+							Rotate right
+						</button>
+					</div>
 				</div>
 				{error !== undefined && (
 					<p className={styles.error} role="alert">

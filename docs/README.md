@@ -74,9 +74,9 @@ and duration inputs, a searchable existing-DJ selector, optional image URL and
 tags, and a transactional JSON creation endpoint.
 
 DJ onboarding validates and decodes image sources before opening a layered
-square crop modal. The modal supports drag positioning and zoom, then sends a
-1200-by-1200 WebP crop through the existing DJ multipart upload field; the
-source file is not retained.
+square crop modal. The modal supports drag positioning, zoom, and left/right
+90-degree rotation, then sends a 1200-by-1200 WebP crop through the existing DJ
+multipart upload field; the source file is not retained.
 
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite

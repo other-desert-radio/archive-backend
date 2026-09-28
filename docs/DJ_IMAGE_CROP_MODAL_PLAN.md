@@ -54,20 +54,20 @@ verification, then stop for review before beginning the next chunk.
 
 ### Chunk 2: Quarter-turn rotation
 
-- [ ] Add `Rotate left` and `Rotate right` controls.
-- [ ] Change rotation only in 90-degree increments and normalize the stored
+- [x] Add `Rotate left` and `Rotate right` controls.
+- [x] Change rotation only in 90-degree increments and normalize the stored
       rotation to 0, 90, 180, or 270 degrees.
-- [ ] Recalculate the crop constraints after each rotation so horizontal and
+- [x] Recalculate the crop constraints after each rotation so horizontal and
       vertical images continue covering the entire square boundary.
-- [ ] Apply the same quarter-turn rotation during canvas export so the result
+- [x] Apply the same quarter-turn rotation during canvas export so the result
       matches the preview.
-- [ ] Reset crop position, zoom, and rotation when a different source image is
+- [x] Reset crop position, zoom, and rotation when a different source image is
       selected or the DJ modal is reopened.
-- [ ] Add focused export-geometry tests for 0, 90, 180, and 270 degrees.
+- [x] Add focused export-geometry tests for 0, 90, 180, and 270 degrees.
 - [ ] Test portrait, landscape, JPEG, PNG, WebP, and undersized sources.
 - [ ] Confirm the final multipart DJ request contains the generated WebP rather
       than the source file.
-- [ ] Update documentation for quarter-turn rotation behavior.
+- [x] Update documentation for quarter-turn rotation behavior.
 - [ ] Run the complete test suite, type checking, linting, and production admin
       build.
 - [ ] Use authenticated `agent-browser` verification to rotate a horizontal

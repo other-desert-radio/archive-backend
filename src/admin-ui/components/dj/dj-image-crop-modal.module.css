@@ -51,6 +51,11 @@
 	width: 100%;
 }
 
+.rotationControls {
+	display: flex;
+	gap: 0.5rem;
+}
+
 .actions {
 	justify-content: flex-end;
 	margin-top: 1.5rem;
