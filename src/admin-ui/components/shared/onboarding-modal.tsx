@@ -9,6 +9,7 @@ import styles from "./onboarding-modal.module.css";
 
 type OnboardingModalProps = {
 	isOpen: boolean;
+	isCovered?: boolean;
 	title: string;
 	onClose: () => void;
 	onSubmit: () => Promise<void>;
@@ -24,6 +25,7 @@ const getFocusableElements = (panel: HTMLElement) =>
 /** Provides the common accessible shell and submission lifecycle for onboarding forms. */
 export const OnboardingModal = ({
 	isOpen,
+	isCovered = false,
 	title,
 	onClose,
 	onSubmit,
@@ -46,7 +48,7 @@ export const OnboardingModal = ({
 		return () => window.clearTimeout(focusTimer);
 	}, [isOpen]);
 	useEffect(() => {
-		if (!isOpen) return;
+		if (!isOpen || isCovered) return;
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.defaultPrevented) return;
 			if (event.key === "Escape" && !isSubmitting) {
@@ -69,17 +71,19 @@ export const OnboardingModal = ({
 			}
 		};
 		document.addEventListener("keydown", handleKeyDown);
-		return () => {
-			document.removeEventListener("keydown", handleKeyDown);
-			openerRef.current?.focus();
-		};
-	}, [isOpen, isSubmitting, onClose]);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [isCovered, isOpen, isSubmitting, onClose]);
+	useEffect(() => {
+		if (isOpen) return;
+		openerRef.current?.focus();
+	}, [isOpen]);
 	if (!isOpen) return null;
 	const dismiss = () => {
-		if (!isSubmitting) onClose();
+		if (!isSubmitting && !isCovered) onClose();
 	};
 	const submit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+		if (isCovered) return;
 		setError(undefined);
 		setIsSubmitting(true);
 		try {
@@ -102,7 +106,9 @@ export const OnboardingModal = ({
 				className={styles.panel}
 				role="dialog"
 				aria-modal="true"
+				aria-hidden={isCovered || undefined}
 				aria-labelledby="onboarding-modal-title"
+				inert={isCovered || undefined}
 			>
 				<div className={styles.header}>
 					<h2 id="onboarding-modal-title">{title}</h2>
@@ -110,13 +116,16 @@ export const OnboardingModal = ({
 						type="button"
 						aria-label="Close"
 						onClick={dismiss}
-						disabled={isSubmitting}
+						disabled={isSubmitting || isCovered}
 					>
 						x
 					</button>
 				</div>
 				<form onSubmit={submit}>
-					<fieldset disabled={isSubmitting} className={styles.form}>
+					<fieldset
+						disabled={isSubmitting || isCovered}
+						className={styles.form}
+					>
 						{children}
 					</fieldset>
 					{error !== undefined && (
@@ -127,7 +136,7 @@ export const OnboardingModal = ({
 					<button
 						type="submit"
 						className={styles.submit}
-						disabled={isSubmitting}
+						disabled={isSubmitting || isCovered}
 					>
 						{isSubmitting ? "Submitting…" : "Submit"}
 					</button>

@@ -2,7 +2,6 @@ import type { FastifyPluginAsync } from "fastify";
 import { isMatching } from "ts-pattern";
 import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
-import { splitCommaSeparated } from "../../../utils/index.js";
 import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
 import { clientDescription } from "../../logging.js";
 import { createTags } from "../tags/tag-service.js";
@@ -126,31 +125,7 @@ export const djRoutes =
 						return reply.code(400).send({ error: parsed.error });
 					}
 
-					const tags =
-						parsed.form.tags === undefined
-							? undefined
-							: splitCommaSeparated(parsed.form.tags);
-					const socials =
-						parsed.form.socials?.trim() === ""
-							? undefined
-							: parsed.form.socials;
-					const showTitle =
-						parsed.form.showTitle?.trim() === ""
-							? undefined
-							: parsed.form.showTitle;
-					const showDescription =
-						parsed.form.showDescription?.trim() === ""
-							? undefined
-							: parsed.form.showDescription;
-
-					const textRequest = {
-						title: parsed.form.title ?? "",
-						bio: parsed.form.bio ?? "",
-						...(tags === undefined ? {} : { tags }),
-						...(socials === undefined ? {} : { socials }),
-						...(showTitle === undefined ? {} : { showTitle }),
-						...(showDescription === undefined ? {} : { showDescription }),
-					};
+					const { image: uploadedImage, ...textRequest } = parsed.form;
 
 					if (!isMatching(CreateDJRequestPattern, textRequest)) {
 						request.log.warn(
@@ -160,9 +135,9 @@ export const djRoutes =
 					}
 
 					const validatedImage =
-						parsed.form.image === undefined
+						uploadedImage === undefined
 							? undefined
-							: validateDJImageUpload(parsed.form.image);
+							: validateDJImageUpload(uploadedImage);
 					if (validatedImage?.valid === false) {
 						request.log.warn(
 							{ reason: validatedImage.error },

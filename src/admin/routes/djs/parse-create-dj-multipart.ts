@@ -1,14 +1,20 @@
 import type { FastifyRequest } from "fastify";
+import { splitCommaSeparated } from "../../../utils/index.js";
 import { clientDescription } from "../../logging.js";
+import type { CreateDJRequest } from "./types.js";
 import type { DJImageUpload } from "./validate-dj-image.js";
 
-export type CreateDJMultipartForm = {
+type CreateDJMultipartFields = {
 	title?: string;
 	bio?: string;
 	tags?: string;
 	socials?: string;
 	showTitle?: string;
 	showDescription?: string;
+	image?: DJImageUpload;
+};
+
+export type CreateDJMultipartForm = Omit<CreateDJRequest, "image"> & {
 	image?: DJImageUpload;
 };
 
@@ -33,7 +39,7 @@ export const parseCreateDJMultipart = async (
 		return { valid: false, error: "Request must use multipart/form-data" };
 	}
 
-	const form: CreateDJMultipartForm = {};
+	const fields: CreateDJMultipartFields = {};
 	const seenFields = new Set<string>();
 
 	try {
@@ -79,7 +85,7 @@ export const parseCreateDJMultipart = async (
 						error: `Unexpected multipart field: ${part.fieldname}`,
 					};
 				}
-				form.image = {
+				fields.image = {
 					bytes,
 					filename: part.filename,
 					contentType: part.mimetype,
@@ -94,7 +100,7 @@ export const parseCreateDJMultipart = async (
 				};
 			}
 
-			form[part.fieldname as keyof Omit<CreateDJMultipartForm, "image">] =
+			fields[part.fieldname as keyof Omit<CreateDJMultipartFields, "image">] =
 				String(part.value);
 		}
 	} catch (error) {
@@ -104,5 +110,24 @@ export const parseCreateDJMultipart = async (
 		throw error;
 	}
 
-	return { valid: true, form };
+	const tags =
+		fields.tags === undefined ? undefined : splitCommaSeparated(fields.tags);
+	const socials = fields.socials?.trim() === "" ? undefined : fields.socials;
+	const showTitle =
+		fields.showTitle?.trim() === "" ? undefined : fields.showTitle;
+	const showDescription =
+		fields.showDescription?.trim() === "" ? undefined : fields.showDescription;
+
+	return {
+		valid: true,
+		form: {
+			title: fields.title ?? "",
+			bio: fields.bio ?? "",
+			...(tags === undefined ? {} : { tags }),
+			...(socials === undefined ? {} : { socials }),
+			...(showTitle === undefined ? {} : { showTitle }),
+			...(showDescription === undefined ? {} : { showDescription }),
+			...(fields.image === undefined ? {} : { image: fields.image }),
+		},
+	};
 };
