@@ -65,7 +65,7 @@ verification, then stop for review before beginning the next chunk.
       selected or the DJ modal is reopened.
 - [x] Add focused export-geometry tests for 0, 90, 180, and 270 degrees.
 - [ ] Test portrait, landscape, JPEG, PNG, WebP, and undersized sources.
-- [ ] Confirm the final multipart DJ request contains the generated WebP rather
+- [x] Confirm the final multipart DJ request contains the generated WebP rather
       than the source file.
 - [x] Update documentation for quarter-turn rotation behavior.
 - [ ] Run the complete test suite, type checking, linting, and production admin

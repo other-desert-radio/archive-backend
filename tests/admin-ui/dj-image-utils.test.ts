@@ -7,11 +7,14 @@ import {
 
 describe("validateDJImageFile", () => {
 	test("accepts supported files with matching extensions", () => {
-		const file = new File(["image bytes"], "portrait.PNG", {
-			type: "image/png",
-		});
+		const files = [
+			new File(["image bytes"], "portrait.jpg", { type: "image/jpeg" }),
+			new File(["image bytes"], "portrait.PNG", { type: "image/png" }),
+			new File(["image bytes"], "portrait.webp", { type: "image/webp" }),
+		];
 
-		expect(validateDJImageFile(file)).toEqual({ valid: true, file });
+		for (const file of files)
+			expect(validateDJImageFile(file)).toEqual({ valid: true, file });
 	});
 
 	test("rejects MIME and extension mismatches", () => {
