@@ -105,7 +105,7 @@ export const parseCreateDJMultipart = async (
 		}
 	} catch (error) {
 		if ((error as { code?: string }).code === "FST_REQ_FILE_TOO_LARGE") {
-			return { valid: false, error: "Image must be 10 MiB or smaller" };
+			return { valid: false, error: "Image must be 1.5 MiB or smaller" };
 		}
 		throw error;
 	}

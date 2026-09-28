@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import Fastify from "fastify";
+import sharp from "sharp";
 import { adminRoutes } from "../../src/admin/admin.js";
 import {
 	type MultipartTestField,
@@ -28,6 +29,8 @@ type DJRow = {
 	bio: string;
 	image: Buffer | null;
 	image_filename: string | null;
+	image_small: Buffer | null;
+	image_large: Buffer | null;
 	socials: string | null;
 	showTitle: string | null;
 	showDescription: string | null;
@@ -117,21 +120,69 @@ const createDJ = async (database: never, payload: unknown) => {
 	return response;
 };
 
+const createSourceImage = () =>
+	sharp({
+		create: {
+			width: 1600,
+			height: 800,
+			channels: 3,
+			background: { r: 40, g: 50, b: 60 },
+		},
+	})
+		.png()
+		.toBuffer();
+
 describe("DJ creation persistence", () => {
-	test("persists an uploaded image and returns its image path", async () => {
+	test("persists WebP variants without retaining the uploaded source", async () => {
 		const { database, state } = buildDatabase();
 		const response = await createDJ(database, {
 			title: "DJ Image",
 			bio: "A bio",
-			image: new File(["image bytes"], "portrait.PNG", {
+			image: new File([await createSourceImage()], "portrait.PNG", {
 				type: "image/png",
 			}),
 		});
 
 		expect(response.statusCode).toBe(201);
 		expect(response.json().imagePath).toBe("/api/admin/djs/1/image");
-		expect(state.djs[0]?.image).toEqual(Buffer.from("image bytes"));
-		expect(state.djs[0]?.image_filename).toBe("portrait.png");
+		expect(state.djs[0]).not.toHaveProperty("image");
+		expect(state.djs[0]).not.toHaveProperty("image_filename");
+		const small = state.djs[0]?.image_small;
+		const large = state.djs[0]?.image_large;
+		if (
+			small === null ||
+			small === undefined ||
+			large === null ||
+			large === undefined
+		)
+			throw new Error("Expected generated image variants");
+
+		expect(await sharp(small).metadata()).toMatchObject({
+			format: "webp",
+			width: 400,
+			height: 400,
+		});
+		expect(await sharp(large).metadata()).toMatchObject({
+			format: "webp",
+			width: 1024,
+			height: 1024,
+		});
+	});
+
+	test("rejects image bytes Sharp cannot decode without creating a DJ", async () => {
+		const { database, state } = buildDatabase();
+		const response = await createDJ(database, {
+			title: "DJ Image",
+			bio: "A bio",
+			image: new File(["not an image"], "portrait.png", {
+				type: "image/png",
+			}),
+		});
+
+		expect(response.statusCode).toBe(400);
+		expect(response.json()).toEqual({ error: "Image could not be processed" });
+		expect(state.djs).toEqual([]);
+		expect(state.tags).toEqual([]);
 	});
 
 	test("creates a DJ, new tags, and direct relationships", async () => {

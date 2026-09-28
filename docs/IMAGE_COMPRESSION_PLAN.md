@@ -25,9 +25,9 @@ square image.
 - [x] Add the plan document and generic Sharp image-variant helper with tests.
 - [x] Add and backfill `image_small` and `image_large` in migration `0015`,
       while temporarily retaining existing originals for safe rollout.
-- [ ] Write new DJ uploads as variants, serve the large WebP, and enforce the
+- [x] Write new DJ uploads as variants, serve the large WebP, and enforce the
       1.5 MiB upload limit in the API and onboarding modal.
-- [ ] Export stored small and large variants without image processing or
+- [x] Export stored small and large variants without image processing or
       database writes during archive export.
 - [ ] Drop the transitional original-image columns in migration `0016` and
       remove obsolete code, types, and fixtures.

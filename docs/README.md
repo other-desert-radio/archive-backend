@@ -111,8 +111,9 @@ archive dataset, use the
 - `bun run db:rollback` rolls back one migration.
 - `bun run db:seed:djs` inserts five standalone dummy DJs.
 - `bun run db:export:archive` writes DJ detail/index JSON, the top-level show
-  index, and tags to the configured Astro `src/res/` directory, and DJ images to
-  `public/assets/`. It logs each build stage and generated file.
+  index, and tags to the configured Astro `src/res/` directory, and stored DJ
+  WebP variants to `public/assets/djs/`. It logs each build stage and generated
+  file.
 - `bun run db:delete:djs -- --confirm` permanently deletes all DJs and their
   cascading relationship rows.
 - `bun run format` formats source files with Biome and Markdown files with

@@ -1,10 +1,9 @@
 import { extname } from "node:path";
 
-export const MAX_DJ_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_DJ_IMAGE_BYTES = 1.5 * 1024 * 1024;
 
 type DJImageFormat = {
 	extensions: string[];
-	normalizedExtension: ".jpg" | ".png" | ".webp";
 	contentType: "image/jpeg" | "image/png" | "image/webp";
 };
 
@@ -16,8 +15,6 @@ export type DJImageUpload = {
 
 export type ValidatedDJImageUpload = {
 	bytes: Buffer;
-	filename: string;
-	contentType: DJImageFormat["contentType"];
 };
 
 export type DJImageValidationResult =
@@ -27,17 +24,14 @@ export type DJImageValidationResult =
 const formats: DJImageFormat[] = [
 	{
 		extensions: [".jpg", ".jpeg"],
-		normalizedExtension: ".jpg",
 		contentType: "image/jpeg",
 	},
 	{
 		extensions: [".png"],
-		normalizedExtension: ".png",
 		contentType: "image/png",
 	},
 	{
 		extensions: [".webp"],
-		normalizedExtension: ".webp",
 		contentType: "image/webp",
 	},
 ];
@@ -45,34 +39,12 @@ const formats: DJImageFormat[] = [
 const formatForContentType = (contentType: string): DJImageFormat | undefined =>
 	formats.find((format) => format.contentType === contentType);
 
-/** Returns the response MIME type represented by a normalized image filename. */
-export const contentTypeForDJImageFilename = (
-	filename: string,
-): DJImageFormat["contentType"] | undefined => {
-	const extension = extname(filename).toLowerCase();
-	return formats.find((format) => format.extensions.includes(extension))
-		?.contentType;
-};
-
-const normalizeFilename = (
-	filename: string | undefined,
-	format: DJImageFormat,
-): string => {
-	const basename = (filename ?? "image").replaceAll("\\", "/").split("/").pop();
-	const stem = (basename ?? "image")
-		.replace(/\.[^.]*$/, "")
-		.replace(/[^a-zA-Z0-9_-]+/g, "-")
-		.replace(/^-+|-+$/g, "");
-
-	return `${stem || "image"}${format.normalizedExtension}`;
-};
-
-/** Validates uploaded image metadata and normalizes its filename. */
+/** Validates uploaded image metadata before Sharp creates the stored WebPs. */
 export const validateDJImageUpload = (
 	upload: DJImageUpload,
 ): DJImageValidationResult => {
 	if (upload.bytes.length > MAX_DJ_IMAGE_BYTES) {
-		return { valid: false, error: "Image must be 10 MiB or smaller" };
+		return { valid: false, error: "Image must be 1.5 MiB or smaller" };
 	}
 
 	const format = formatForContentType(upload.contentType);
@@ -95,8 +67,6 @@ export const validateDJImageUpload = (
 		valid: true,
 		image: {
 			bytes: upload.bytes,
-			filename: normalizeFilename(upload.filename, format),
-			contentType: format.contentType,
 		},
 	};
 };

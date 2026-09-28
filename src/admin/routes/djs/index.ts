@@ -11,7 +11,6 @@ export type {
 	ValidatedDJImageUpload,
 } from "./validate-dj-image.js";
 export {
-	contentTypeForDJImageFilename,
 	MAX_DJ_IMAGE_BYTES,
 	validateDJImageUpload,
 } from "./validate-dj-image.js";

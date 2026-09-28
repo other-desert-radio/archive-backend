@@ -4,7 +4,7 @@ import { validateDJImageUpload } from "../../src/admin/routes/djs/index.js";
 const imageBytes = Buffer.from("image bytes");
 
 describe("validateDJImageUpload", () => {
-	test("accepts supported MIME types and normalizes filenames", () => {
+	test("accepts supported MIME types", () => {
 		expect(
 			validateDJImageUpload({
 				bytes: imageBytes,
@@ -15,8 +15,6 @@ describe("validateDJImageUpload", () => {
 			valid: true,
 			image: {
 				bytes: imageBytes,
-				filename: "DJ-portrait.jpg",
-				contentType: "image/jpeg",
 			},
 		});
 		expect(
@@ -25,20 +23,14 @@ describe("validateDJImageUpload", () => {
 				filename: "dj.png",
 				contentType: "image/png",
 			}),
-		).toMatchObject({
-			valid: true,
-			image: { filename: "dj.png", contentType: "image/png" },
-		});
+		).toEqual({ valid: true, image: { bytes: imageBytes } });
 		expect(
 			validateDJImageUpload({
 				bytes: imageBytes,
 				filename: "dj.webp",
 				contentType: "image/webp",
 			}),
-		).toMatchObject({
-			valid: true,
-			image: { filename: "dj.webp", contentType: "image/webp" },
-		});
+		).toEqual({ valid: true, image: { bytes: imageBytes } });
 	});
 
 	test("rejects unsupported MIME types", () => {
@@ -67,8 +59,8 @@ describe("validateDJImageUpload", () => {
 		});
 	});
 
-	test("rejects files larger than 10 MiB", () => {
-		const oversized = Buffer.alloc(10 * 1024 * 1024 + 1, 0);
+	test("rejects files larger than 1.5 MiB", () => {
+		const oversized = Buffer.alloc(1.5 * 1024 * 1024 + 1, 0);
 		expect(
 			validateDJImageUpload({
 				bytes: oversized,
@@ -76,19 +68,7 @@ describe("validateDJImageUpload", () => {
 			}),
 		).toEqual({
 			valid: false,
-			error: "Image must be 10 MiB or smaller",
-		});
-	});
-
-	test("provides a safe default filename", () => {
-		expect(
-			validateDJImageUpload({
-				bytes: imageBytes,
-				contentType: "image/png",
-			}),
-		).toMatchObject({
-			valid: true,
-			image: { filename: "image.png" },
+			error: "Image must be 1.5 MiB or smaller",
 		});
 	});
 });

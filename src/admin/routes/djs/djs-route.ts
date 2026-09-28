@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { isMatching } from "ts-pattern";
 import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
+import { generateSquareWebPImages } from "../../../utils/images/index.js";
 import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
 import { clientDescription } from "../../logging.js";
 import { createTags } from "../tags/tag-service.js";
@@ -9,10 +10,7 @@ import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
 import { parseCreateDJMultipart } from "./parse-create-dj-multipart.js";
 import { CreateDJRequestPattern } from "./types.js";
-import {
-	contentTypeForDJImageFilename,
-	validateDJImageUpload,
-} from "./validate-dj-image.js";
+import { validateDJImageUpload } from "./validate-dj-image.js";
 
 /** Registers authenticated DJ API routes. */
 export const djRoutes =
@@ -30,8 +28,7 @@ export const djRoutes =
 								"createdAt",
 								"title",
 								"bio",
-								"image",
-								"image_filename",
+								"image_large",
 								"socials",
 								"showTitle",
 								"showDescription",
@@ -79,29 +76,16 @@ export const djRoutes =
 			try {
 				const dj = await database
 					.selectFrom("djs")
-					.select(["image", "image_filename"])
+					.select(["image_large"])
 					.where("id", "=", id)
 					.executeTakeFirst();
 
-				if (
-					dj?.image === null ||
-					dj?.image_filename === null ||
-					dj === undefined
-				) {
+				if (dj?.image_large === null || dj === undefined) {
 					return reply.code(404).send({ error: "Not Found" });
 				}
 
-				const contentType = contentTypeForDJImageFilename(dj.image_filename);
-				if (contentType === undefined) {
-					request.log.error(
-						{ djId: id, filename: dj.image_filename },
-						"DJ image has an unsupported filename extension",
-					);
-					return reply.code(500).send({ error: "Internal Server Error" });
-				}
-
-				reply.type(contentType);
-				return reply.code(200).send(dj.image);
+				reply.type("image/webp");
+				return reply.code(200).send(dj.image_large);
 			} catch (error) {
 				request.log.error(error, "Unable to load DJ image");
 				return reply.code(500).send({ error: "Internal Server Error" });
@@ -148,6 +132,22 @@ export const djRoutes =
 
 					const image =
 						validatedImage?.valid === true ? validatedImage.image : undefined;
+					let imageVariants:
+						| Awaited<ReturnType<typeof generateSquareWebPImages>>
+						| undefined;
+					if (image !== undefined) {
+						try {
+							imageVariants = await generateSquareWebPImages(image.bytes);
+						} catch (error) {
+							request.log.warn(
+								{ err: error },
+								"DJ creation request rejected during image processing",
+							);
+							return reply
+								.code(400)
+								.send({ error: "Image could not be processed" });
+						}
+					}
 					const normalized = normalizeCreateDJRequest(textRequest);
 					const created = await database
 						.transaction()
@@ -163,8 +163,8 @@ export const djRoutes =
 								.values({
 									title: normalized.title,
 									bio: plainTextToSafeHtml(normalized.bio),
-									image: image?.bytes ?? null,
-									image_filename: image?.filename ?? null,
+									image_small: imageVariants?.small ?? null,
+									image_large: imageVariants?.large ?? null,
 									socials:
 										normalized.socials === null
 											? undefined
@@ -192,7 +192,7 @@ export const djRoutes =
 							}
 
 							const imagePath =
-								image === undefined
+								imageVariants === undefined
 									? undefined
 									: `/api/admin/djs/${insertedDJ.id}/image`;
 
@@ -220,7 +220,13 @@ export const djRoutes =
 						{
 							djId: created.id,
 							djName: created.title,
-							hasImage: image !== undefined,
+							hasImage: imageVariants !== undefined,
+							...(imageVariants === undefined
+								? {}
+								: {
+										imageSmallBytes: imageVariants.small.length,
+										imageLargeBytes: imageVariants.large.length,
+									}),
 							client: clientDescription(request),
 						},
 						`[DJ Creation] DJ created -- id: ${created.id}, name: ${created.title}`,

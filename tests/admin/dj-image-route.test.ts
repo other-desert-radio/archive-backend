@@ -10,24 +10,21 @@ const adminSession = {
 	},
 } as never;
 
-const buildDatabase = (image: Buffer | null, filename: string | null) => {
+const buildDatabase = (imageLarge: Buffer | null) => {
 	const query = {
 		select: () => query,
 		where: () => query,
-		executeTakeFirst: async () => ({ image, image_filename: filename }),
+		executeTakeFirst: async () => ({ image_large: imageLarge }),
 	};
 
 	return { selectFrom: () => query } as never;
 };
 
 describe("DJ image route", () => {
-	test("serves stored image bytes with the matching content type", async () => {
+	test("serves the stored large WebP image", async () => {
 		const app = Fastify({ logger: false });
 		await app.register(
-			adminRoutes(
-				adminSession,
-				buildDatabase(Buffer.from("image bytes"), "dj.png"),
-			),
+			adminRoutes(adminSession, buildDatabase(Buffer.from("image bytes"))),
 		);
 
 		const response = await app.inject({
@@ -36,14 +33,14 @@ describe("DJ image route", () => {
 		});
 
 		expect(response.statusCode).toBe(200);
-		expect(response.headers["content-type"]).toBe("image/png");
+		expect(response.headers["content-type"]).toBe("image/webp");
 		expect(response.body).toBe("image bytes");
 		await app.close();
 	});
 
 	test("returns not found when the DJ has no image", async () => {
 		const app = Fastify({ logger: false });
-		await app.register(adminRoutes(adminSession, buildDatabase(null, null)));
+		await app.register(adminRoutes(adminSession, buildDatabase(null)));
 
 		const response = await app.inject({
 			method: "GET",
@@ -62,7 +59,7 @@ describe("DJ image route", () => {
 				{
 					api: { getSession: async () => null },
 				} as never,
-				buildDatabase(Buffer.from("image bytes"), "dj.png"),
+				buildDatabase(Buffer.from("image bytes")),
 			),
 		);
 

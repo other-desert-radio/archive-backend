@@ -44,7 +44,8 @@ writes the following assets to the configured Astro frontend directories:
 - `src/res/djs/{id}.json`, one detail document per DJ;
 - `src/res/shows.json`, the top-level show index;
 - `src/res/tags.json`, the shared tag dictionary; and
-- `public/assets/djs/{id}.{extension}`, copied DJ image assets.
+- `public/assets/djs/{id}_small.webp` and `{id}_large.webp`, copied DJ image
+  assets.
 
 Astro imports JSON from `src/res/` as part of the site build and copies
 `public/assets/` into the deployed site unchanged. The database remains the
@@ -97,14 +98,14 @@ strong/emphasis text, and basic lists.
 `showTitle` and `showDescription` are optional plain-text metadata fields. Blank
 values are stored as `NULL` and nullable values are omitted from JSON output.
 
-`image` stores the original uploaded file bytes without compression. The
-short-term upload contract accepts JPEG, PNG, and WebP files up to 10 MiB.
-`image_filename` stores sanitized filename metadata, including the normalized
-extension. During the transition, `image_small` and `image_large` store paired
-400 by 400 and 1024 by 1024 WebP derivatives generated from the original.
-Migration `0015` populates both fields for existing images; it fails atomically
-if Sharp cannot decode a stored image. A later reviewed migration removes the
-original fields after all reads and writes use the derivatives.
+`image` and `image_filename` temporarily retain original uploads created before
+the variant pipeline. During the transition, `image_small` and `image_large`
+store paired 400 by 400 and 1024 by 1024 WebP derivatives. Migration `0015`
+populates both fields for existing images; it fails atomically if Sharp cannot
+decode a stored image. The current upload contract accepts JPEG, PNG, and WebP
+files up to 1.5 MiB. New uploads are center-cropped and converted before
+insertion, so they store only the derivatives and leave the transitional
+original fields `NULL`. A later reviewed migration removes the original fields.
 
 ### `shows`
 
@@ -243,11 +244,13 @@ its own `tagIds`. The top-level `shows.json` lists shows by descending date then
 ID, includes each show's `tagIds`, and embeds compact related DJ cards with
 `id`, `title`, and an optional static image path.
 
-The exporter writes raw DJ image bytes to `public/assets/djs/{id}.{extension}`
-and uses the corresponding `assets/djs/{id}.{extension}` path in JSON. It must
-never export the private `/api/admin/djs/{id}/image` URL. Show image values in
-DJ detail documents are the stored image URLs until show-image asset storage is
-added.
+The exporter writes stored DJ WebP variants to
+`public/assets/djs/{id}_small.webp` and `{id}_large.webp`. DJ indexes and Show
+cards use `assets/djs/{id}_small.webp`; DJ details use
+`assets/djs/{id}_large.webp`. Export never processes images or writes to the
+database. It must never export the private `/api/admin/djs/{id}/image` URL. Show
+image values in DJ detail documents are the stored image URLs until show-image
+asset storage is added.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must

@@ -71,7 +71,7 @@ export const transformDJs = ({
 		createdAt: dj.createdAt,
 		title: dj.title,
 		bio: sanitizeArchiveHtml(dj.bio),
-		...(dj.image_filename == null
+		...(dj.image_large == null
 			? {}
 			: { imagePath: `/api/admin/djs/${dj.id}/image` }),
 		...(dj.socials === null
