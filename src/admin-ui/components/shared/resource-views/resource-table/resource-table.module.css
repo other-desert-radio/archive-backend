@@ -58,8 +58,8 @@
 	background: #fff;
 	box-shadow: 1px 0 #000;
 }
-.table .actionHeader,
-.table .actionCell {
+.actionHeader,
+.actionCell {
 	width: 7rem;
 	min-width: 7rem;
 	padding: 1rem 0.75rem;
