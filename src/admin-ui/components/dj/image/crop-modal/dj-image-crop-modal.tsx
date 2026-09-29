@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
+import { validateDJImageFile } from "../utils/dj-image-utils.js";
 import styles from "./dj-image-crop-modal.module.css";
 import {
 	cropDJImage,
 	type DJImageRotation,
 	rotateDJImage,
 } from "./dj-image-crop-utils.js";
-import { validateDJImageFile } from "./dj-image-utils.js";
 
 type DJImageCropModalProps = {
 	file: File;

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { CommaSeparatedTagsField } from "../shared/comma-separated-tags-field.js";
-import { LabeledFormControl } from "../shared/labeled-form-control.js";
-import { OnboardingModal } from "../shared/onboarding-modal.js";
+import { CommaSeparatedTagsField } from "../../shared/modal/comma-separated-tags-field/comma-separated-tags-field.js";
+import { LabeledFormControl } from "../../shared/modal/labeled-form-control/labeled-form-control.js";
+import { OnboardingModal } from "../../shared/modal/onboarding-modal/onboarding-modal.js";
 import {
 	SearchableMultiSelect,
 	type SearchableMultiSelectOption,
-} from "../shared/searchable-multi-select.js";
+} from "../../shared/modal/searchable-multi-select/searchable-multi-select.js";
 import {
 	buildCreateShowRequest,
 	type CreateShowForm,

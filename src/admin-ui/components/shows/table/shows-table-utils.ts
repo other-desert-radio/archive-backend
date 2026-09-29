@@ -1,10 +1,13 @@
-import type { ShowsAdminRow } from "../../loaders/shows.js";
+import type { ShowsAdminRow } from "../../../loaders/shows.js";
 import {
 	filterResourceRows,
 	type SortDirection,
 	sortResourceRows,
-} from "../shared/resource-table.js";
-import { formatDuration, formatUTCDate } from "../shared/table-formatters.js";
+} from "../../shared/resource-views/resource-table/resource-table.js";
+import {
+	formatDuration,
+	formatUTCDate,
+} from "../../shared/resource-views/table-formatters/table-formatters.js";
 import { showColumns } from "./shows-table.js";
 
 export type ShowSortColumn =
@@ -17,7 +20,7 @@ export type ShowSortColumn =
 	| "djs"
 	| "tags"
 	| "url";
-export type { SortDirection } from "../shared/resource-table.js";
+export type { SortDirection } from "../../shared/resource-views/resource-table/resource-table.js";
 
 export const getShowSearchValue = (
 	show: ShowsAdminRow,

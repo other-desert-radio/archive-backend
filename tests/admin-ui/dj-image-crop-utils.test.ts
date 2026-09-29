@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	rotateDJImage,
 	rotatedDJImageDimensions,
-} from "../../src/admin-ui/components/dj/dj-image-crop-utils.js";
+} from "../../src/admin-ui/components/dj/image/crop-modal/dj-image-crop-utils.js";
 
 describe("DJ image rotation", () => {
 	test("cycles right through the supported quarter turns", () => {

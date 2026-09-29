@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadTags } from "../../loaders/tags.js";
-import { LabeledFormControl } from "../shared/labeled-form-control.js";
-import { OnboardingModal } from "../shared/onboarding-modal.js";
+import { loadTags } from "../../../loaders/tags.js";
+import { LabeledFormControl } from "../../shared/modal/labeled-form-control/labeled-form-control.js";
+import { OnboardingModal } from "../../shared/modal/onboarding-modal/onboarding-modal.js";
 import {
 	TagsInput,
 	type TagsInputOption,
 	type TagsInputValue,
-} from "../shared/tags-input.js";
-import { DJImageCropModal } from "./dj-image-crop-modal.js";
-import { DJImageDropzone } from "./dj-image-dropzone.js";
-import { decodeDJImageFile } from "./dj-image-utils.js";
+} from "../../shared/modal/tags-input/tags-input.js";
+import { DJImageCropModal } from "../image/crop-modal/dj-image-crop-modal.js";
+import { DJImageDropzone } from "../image/dropzone/dj-image-dropzone.js";
+import { decodeDJImageFile } from "../image/utils/dj-image-utils.js";
 import { buildCreateDJRequest, type CreateDJForm } from "./onboard-dj-utils.js";
 
 type OnboardDJModalProps = {

@@ -4,7 +4,7 @@ import {
 	findTagMatches,
 	getTagCompletion,
 	uniqueTagTitles,
-} from "../../src/admin-ui/components/shared/tags-input-utils.js";
+} from "../../src/admin-ui/components/shared/modal/tags-input/tags-input-utils.js";
 
 const options = [
 	{ id: 1, title: "Dance", color: "#ff03d1" },

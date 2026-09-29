@@ -1,4 +1,4 @@
-import type { CreateShowForm } from "../components/shows/onboard-show-utils.js";
+import type { CreateShowForm } from "../components/shows/onboarding-modal/onboard-show-utils.js";
 import { describeMutationFailure } from "./mutation-error.js";
 import type { ShowsAdminRow } from "./shows.js";
 

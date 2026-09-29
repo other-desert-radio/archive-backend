@@ -1,10 +1,10 @@
-import type { TagsJSON } from "../../../json-transformers/index.js";
-import type { DJsAdminRow } from "../../loaders/djs.js";
+import type { TagsJSON } from "../../../../json-transformers/index.js";
+import type { DJsAdminRow } from "../../../loaders/djs.js";
 import {
 	filterResourceRows,
 	type SortDirection,
 	sortResourceRows,
-} from "../shared/resource-table.js";
+} from "../../shared/resource-views/resource-table/resource-table.js";
 import { djColumns } from "./djs-table.js";
 
 export type DJSortColumn =
@@ -19,7 +19,7 @@ export type DJSortColumn =
 	| "socials"
 	| "bio"
 	| "shows";
-export type { SortDirection } from "../shared/resource-table.js";
+export type { SortDirection } from "../../shared/resource-views/resource-table/resource-table.js";
 
 export const getDJSearchValue = (dj: DJsAdminRow, tags: TagsJSON[]): string => {
 	const titles = dj.tags

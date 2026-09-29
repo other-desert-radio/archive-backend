@@ -3,7 +3,7 @@ import {
 	ResourceTable,
 	type ResourceTableColumn,
 	type SortDirection,
-} from "../shared/resource-table.js";
+} from "../shared/resource-views/resource-table/resource-table.js";
 
 export type TagSortColumn = "id" | "title" | "color";
 

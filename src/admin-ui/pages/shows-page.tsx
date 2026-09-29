@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ResourceView } from "../components/shared/resource-view.js";
-import { OnboardShowModal } from "../components/shows/onboard-show-modal.js";
-import { ShowsTable } from "../components/shows/shows-table.js";
+import { ResourceGrid } from "../components/shared/resource-views/resource-grid/resource-grid.js";
+import type { ResourceViewMode } from "../components/shared/resource-views/resource-toolbar/resource-toolbar.js";
+import { ResourceView } from "../components/shared/resource-views/resource-view/resource-view.js";
+import { renderShowGridCard } from "../components/shows/card/show-card.js";
+import { OnboardShowModal } from "../components/shows/onboarding-modal/onboard-show-modal.js";
+import { ShowsTable } from "../components/shows/table/shows-table.js";
 import {
 	filterShows,
 	type ShowSortColumn,
 	type SortDirection,
 	sortShows,
-} from "../components/shows/shows-table-utils.js";
-import { ShowsToolbar } from "../components/shows/shows-toolbar.js";
+} from "../components/shows/table/shows-table-utils.js";
+import { ShowsToolbar } from "../components/shows/toolbar/shows-toolbar.js";
 import { createShow } from "../loaders/create-show.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
@@ -19,6 +22,7 @@ export const ShowsPage = () => {
 	const [djs, setDJs] = useState<DJsAdminRow[]>([]);
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
+	const [viewMode, setViewMode] = useState<ResourceViewMode>("table");
 	const [sortColumn, setSortColumn] = useState<ShowSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isLoading, setIsLoading] = useState(true);
@@ -112,16 +116,26 @@ export const ShowsPage = () => {
 					<ShowsToolbar
 						query={query}
 						onQueryChange={setQuery}
+						viewMode={viewMode}
+						onViewModeChange={setViewMode}
 						onAddShow={() => setIsModalOpen(true)}
 					/>
 				}
 			>
-				<ShowsTable
-					shows={visibleShows}
-					sortColumn={sortColumn}
-					sortDirection={sortDirection}
-					onSort={handleSort}
-				/>
+				{viewMode === "grid" ? (
+					<ResourceGrid
+						rows={visibleShows}
+						rowKey={(show) => show.id}
+						renderCard={renderShowGridCard}
+					/>
+				) : (
+					<ShowsTable
+						shows={visibleShows}
+						sortColumn={sortColumn}
+						sortDirection={sortDirection}
+						onSort={handleSort}
+					/>
+				)}
 			</ResourceView>
 			<OnboardShowModal
 				isOpen={isModalOpen}

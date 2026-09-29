@@ -1,15 +1,15 @@
-import type { ShowsAdminRow } from "../../loaders/shows.js";
+import type { ShowsAdminRow } from "../../../loaders/shows.js";
 import {
 	ResourceTable,
 	type ResourceTableColumn,
-} from "../shared/resource-table.js";
+} from "../../shared/resource-views/resource-table/resource-table.js";
 import {
 	formatDuration,
 	formatMissing,
 	formatRelationshipIDs,
 	formatUTCDate,
 	formatUTCDateTime,
-} from "../shared/table-formatters.js";
+} from "../../shared/resource-views/table-formatters/table-formatters.js";
 import type { ShowSortColumn, SortDirection } from "./shows-table-utils.js";
 
 type ShowsTableProps = {

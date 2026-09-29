@@ -81,6 +81,10 @@ left/right 90-degree rotation, then sends a 1200-by-1200 WebP crop through the
 DJ multipart upload field. Sharp creates and stores 400-by-400 and 1024-by-1024
 WebP variants; the submitted crop is not retained.
 
+The DJs and Shows toolbars support table and grid views. The grid uses a shared
+layout with intentionally blank resource-specific card renderers as a scaffold
+for future card UI.
+
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing
@@ -190,6 +194,11 @@ development.
 ## Conventions
 
 - Keep the backend small until a concrete feature requires more structure.
+- Organize admin UI components by responsibility. Shared primitives use
+  `components/shared/resource-views/` or `components/shared/modal/`, with each
+  primitive in its own subdirectory; resource-specific components follow the
+  same pattern under `components/dj/` and `components/shows/`. DJ image
+  components live under `components/dj/image/`.
 - Use Kysely for database access and migrations.
 - Seed data should be added with an explicit script and should not run during
   application startup.

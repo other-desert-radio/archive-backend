@@ -1,6 +1,10 @@
+export type ResourceViewMode = "grid" | "table";
+
 type ResourceToolbarProps = {
 	query: string;
 	onQueryChange: (query: string) => void;
+	viewMode: ResourceViewMode;
+	onViewModeChange: (viewMode: ResourceViewMode) => void;
 	searchLabel: string;
 	createLabel: string;
 	onCreate: () => void;
@@ -13,6 +17,8 @@ import styles from "./resource-toolbar.module.css";
 export const ResourceToolbar = ({
 	query,
 	onQueryChange,
+	viewMode,
+	onViewModeChange,
 	searchLabel,
 	createLabel,
 	onCreate,
@@ -27,10 +33,20 @@ export const ResourceToolbar = ({
 		/>
 		<div className={styles.actions}>
 			<fieldset className={styles.switcher}>
-				<button type="button" disabled>
+				<button
+					type="button"
+					className={viewMode === "grid" ? styles.selected : undefined}
+					aria-pressed={viewMode === "grid"}
+					onClick={() => onViewModeChange("grid")}
+				>
 					grid
 				</button>
-				<button type="button" className={styles.selected} aria-pressed="true">
+				<button
+					type="button"
+					className={viewMode === "table" ? styles.selected : undefined}
+					aria-pressed={viewMode === "table"}
+					onClick={() => onViewModeChange("table")}
+				>
 					table
 				</button>
 			</fieldset>

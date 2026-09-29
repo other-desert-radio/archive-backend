@@ -34,6 +34,13 @@
 	font-weight: 700;
 	background: #fff;
 }
+.switcher button:focus {
+	outline: none;
+}
+.switcher button:focus-visible {
+	outline: 2px solid #000;
+	outline-offset: 2px;
+}
 .add {
 	font-weight: 700;
 	background: #fff;

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
-import fieldStyles from "../shared/labeled-form-control.module.css";
+import fieldStyles from "../../../shared/modal/labeled-form-control/labeled-form-control.module.css";
+import { validateDJImageFile } from "../utils/dj-image-utils.js";
 import styles from "./dj-image-dropzone.module.css";
-import { validateDJImageFile } from "./dj-image-utils.js";
 
 type DJImageDropzoneProps = {
 	file?: File;
