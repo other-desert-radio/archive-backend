@@ -4,7 +4,8 @@ Use this runbook when an API or admin UI change must be verified against a real
 database without adding, changing, or deleting records in the regular local
 archive database.
 
-This starts a disposable PostgreSQL container on port `55432` and a temporary
+The manual workflow below starts a disposable PostgreSQL container on port
+`55432` and a temporary
 API on port `3001`. It does not use the Compose `archive_postgres_data` volume.
 The database container is removed at cleanup, so all test records disappear.
 
@@ -126,10 +127,29 @@ the persistent local archive volume.
 
 ## Automated DJ editing coverage
 
-Run `bun run test:integration` to build and run Playwright against a disposable
-Compose API and PostgreSQL database. Each test creates a uniquely named DJ
-through the authenticated API; no shared seed or execution order is required.
-The runner removes its containers and database volume after completion.
+From the repository root, run the integration runner script:
+
+```sh
+./scripts/run-integration-tests
+```
+
+`bun run test:integration` is an equivalent shortcut. The
+[runner script](../scripts/run-integration-tests) requires Docker with Compose
+and a running Docker daemon. It builds the API/admin bundle and Playwright test
+image, starts PostgreSQL, applies migrations, waits for the API service, and
+runs the browser tests. No manual database setup, host dependency installation,
+or separate API process is needed.
+
+The script uses `compose.integration.yml` with the project name
+`archive-backend-integration`. Services communicate inside the Docker network;
+the automated workflow does not publish host ports or use the regular local
+archive database. Each test creates a uniquely named DJ through the
+authenticated API; no shared seed or execution order is required.
+
+The runner returns the test command's exit status and uses an exit trap to remove
+its containers, network, and test database volumes, including after test failure.
+Its volume cleanup is scoped to the integration project; the manual workflow's
+warning about the regular Compose volume still applies.
 
 Coverage includes individual metadata edits, optional-field clearing, all table
 columns, saved values after reload and editor reopening, direct and inherited
