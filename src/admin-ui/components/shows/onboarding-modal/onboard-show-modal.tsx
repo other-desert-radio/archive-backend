@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	CommaSeparatedTagsField,
+	hasFormChanges,
 	LabeledFormControl,
 	OnboardingModal,
 	SearchableMultiSelect,
@@ -30,6 +31,17 @@ export const OnboardShowModal = ({
 	onClose,
 	onSubmit,
 }: Props) => {
+	const initialValues = useRef({
+		title: "",
+		date: "",
+		hours: "",
+		minutes: "",
+		seconds: "",
+		image: "",
+		tags: "",
+		url: "",
+		selected: [] as number[],
+	});
 	const [title, setTitle] = useState("");
 	const [date, setDate] = useState("");
 	const [hours, setHours] = useState("");
@@ -41,6 +53,17 @@ export const OnboardShowModal = ({
 	const [selected, setSelected] = useState<number[]>([]);
 	useEffect(() => {
 		if (isOpen) {
+			initialValues.current = {
+				title: "",
+				date: "",
+				hours: "",
+				minutes: "",
+				seconds: "",
+				image: "",
+				tags: "",
+				url: "",
+				selected: [] as number[],
+			};
 			setTitle("");
 			setDate("");
 			setHours("");
@@ -79,6 +102,10 @@ export const OnboardShowModal = ({
 	return (
 		<OnboardingModal
 			isOpen={isOpen}
+			hasUnsavedChanges={hasFormChanges(
+				{ title, date, hours, minutes, seconds, image, tags, url, selected },
+				initialValues.current,
+			)}
 			title="Onboard Show"
 			onClose={onClose}
 			onSubmit={submit}

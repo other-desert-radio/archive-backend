@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadTags } from "../../../loaders/tags.js";
 import {
+	hasFormChanges,
 	LabeledFormControl,
 	OnboardingModal,
 	TagsInput,
@@ -26,6 +27,16 @@ export const OnboardDJModal = ({
 	onClose,
 	onSubmit,
 }: OnboardDJModalProps) => {
+	const initialValues = useRef({
+		title: "",
+		bio: "",
+		socials: "",
+		showTitle: "",
+		showDescription: "",
+		tags: [] as string[],
+		tagDraft: "",
+		image: undefined as File | undefined,
+	});
 	const [title, setTitle] = useState("");
 	const [image, setImage] = useState<File>();
 	const [imageCandidate, setImageCandidate] = useState<File>();
@@ -44,6 +55,16 @@ export const OnboardDJModal = ({
 
 	useEffect(() => {
 		if (!isOpen) return;
+		initialValues.current = {
+			title: "",
+			bio: "",
+			socials: "",
+			showTitle: "",
+			showDescription: "",
+			tags: [] as string[],
+			tagDraft: "",
+			image: undefined as File | undefined,
+		};
 		setTitle("");
 		setImage(undefined);
 		setImageCandidate(undefined);
@@ -54,6 +75,9 @@ export const OnboardDJModal = ({
 		setSocials("");
 		setBio("");
 		setImageDropzoneKey((current) => current + 1);
+		return () => {
+			imageCandidateVersion.current += 1;
+		};
 	}, [isOpen]);
 	const selectImageCandidate = async (candidate: File) => {
 		const version = ++imageCandidateVersion.current;
@@ -125,6 +149,19 @@ export const OnboardDJModal = ({
 		<>
 			<OnboardingModal
 				isOpen={isOpen}
+				hasUnsavedChanges={hasFormChanges(
+					{
+						title,
+						bio,
+						socials,
+						showTitle,
+						showDescription,
+						tags: tags.tags,
+						tagDraft: tags.draft,
+						image,
+					},
+					initialValues.current,
+				)}
 				isCovered={imageCandidate !== undefined}
 				title="Onboard DJ"
 				onClose={onClose}

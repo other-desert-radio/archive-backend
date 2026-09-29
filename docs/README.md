@@ -179,6 +179,17 @@ For admin UI work, use `scripts/build-container-watch` after the initial
 database setup. Open the authenticated `/admin` page and leave the watcher
 running while editing `src/admin-ui/`.
 
+### Modal cancellation
+
+Cancel, Close, Escape, and clicks directly on the shared modal backdrop close
+unchanged forms immediately. Forms with unsaved values show a discard
+confirmation; Keep editing, Escape, or its backdrop preserves the form. Discard
+changes closes it. Reverting values clears the warning, including image removal
+undo and relationship selections. Tag drafts count as changes. Confirmation
+traps focus and makes the underlying form inert; dismissal remains blocked
+during submission and while the DJ crop dialog is open. Successful saves close
+directly.
+
 ### Visual admin UI verification
 
 The shared DJ create/edit and Show create modal uses a larger cross close

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadTags } from "../../../loaders/tags.js";
 import {
+	hasFormChanges,
 	LabeledFormControl,
 	OnboardingModal,
 	TagsInput,
@@ -49,6 +50,17 @@ export const EditDJModal = ({
 	onSubmit,
 	isSubmitDisabled = false,
 }: EditDJModalProps) => {
+	const initialValues = useRef({
+		title: "",
+		bio: "",
+		socials: "",
+		showTitle: "",
+		showDescription: "",
+		tags: [] as string[],
+		tagDraft: "",
+		image: undefined as File | undefined,
+		removeImage: false,
+	});
 	const [title, setTitle] = useState("");
 	const [image, setImage] = useState<File>();
 	const [imageCandidate, setImageCandidate] = useState<File>();
@@ -68,6 +80,17 @@ export const EditDJModal = ({
 
 	useEffect(() => {
 		if (!isOpen || dj === undefined) return;
+		initialValues.current = {
+			title: dj.title,
+			bio: safeHtmlToPlainText(dj.bio),
+			socials: dj.socials === undefined ? "" : safeHtmlToPlainText(dj.socials),
+			showTitle: dj.showTitle ?? "",
+			showDescription: dj.showDescription ?? "",
+			tags: dj.directTagTitles,
+			tagDraft: "",
+			image: undefined,
+			removeImage: false,
+		};
 		setTitle(dj.title);
 		setImage(undefined);
 		setImageCandidate(undefined);
@@ -79,6 +102,9 @@ export const EditDJModal = ({
 		setSocials(dj.socials === undefined ? "" : safeHtmlToPlainText(dj.socials));
 		setBio(safeHtmlToPlainText(dj.bio));
 		setImageDropzoneKey((current) => current + 1);
+		return () => {
+			imageCandidateVersion.current += 1;
+		};
 	}, [dj, isOpen]);
 
 	const loadTagOptions = useCallback(() => {
@@ -159,6 +185,20 @@ export const EditDJModal = ({
 		<>
 			<OnboardingModal
 				isOpen={isOpen && dj !== undefined}
+				hasUnsavedChanges={hasFormChanges(
+					{
+						title,
+						bio,
+						socials,
+						showTitle,
+						showDescription,
+						tags: tags.tags,
+						tagDraft: tags.draft,
+						image,
+						removeImage: isExistingImageRemoved,
+					},
+					initialValues.current,
+				)}
 				isCovered={imageCandidate !== undefined}
 				title="Edit DJ"
 				onClose={onClose}
