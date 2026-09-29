@@ -79,7 +79,9 @@ export const DJImageDropzone = ({
 				{isDragging
 					? "Drop an image here"
 					: (buttonLabel ??
-						(file === undefined ? "Drop an image or choose a file" : file.name))}
+						(file === undefined
+							? "Drop an image or choose a file"
+							: file.name))}
 			</button>
 		</section>
 	);

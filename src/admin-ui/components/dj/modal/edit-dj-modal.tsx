@@ -194,31 +194,35 @@ export const EditDJModal = ({
 				<div className={fieldStyles.field}>
 					<label htmlFor="edit-dj-image-input">image</label>
 					<div className={styles.imageField}>
-						{existingImage !== undefined && image === undefined && !isExistingImageRemoved && (
-							<div className={styles.imageActions}>
-								<img
-									className={styles.currentImage}
-									src={existingImage}
-									alt={`${dj?.title ?? "DJ"} current`}
-								/>
-								<DJImageDropzone
-									key={imageDropzoneKey}
-									id="edit-dj-image-input"
-									compact
-									buttonLabel="Replace"
-									onFileSelected={selectImageCandidate}
-									onError={setImageError}
-								/>
-								<button
-									type="button"
-									className={styles.imageAction}
-									onClick={() => setIsExistingImageRemoved(true)}
-								>
-									Remove
-								</button>
-							</div>
-						)}
-						{(existingImage === undefined || image !== undefined || isExistingImageRemoved) && (
+						{existingImage !== undefined &&
+							image === undefined &&
+							!isExistingImageRemoved && (
+								<div className={styles.imageActions}>
+									<img
+										className={styles.currentImage}
+										src={existingImage}
+										alt={`${dj?.title ?? "DJ"} current`}
+									/>
+									<DJImageDropzone
+										key={imageDropzoneKey}
+										id="edit-dj-image-input"
+										compact
+										buttonLabel="Replace"
+										onFileSelected={selectImageCandidate}
+										onError={setImageError}
+									/>
+									<button
+										type="button"
+										className={styles.imageAction}
+										onClick={() => setIsExistingImageRemoved(true)}
+									>
+										Remove
+									</button>
+								</div>
+							)}
+						{(existingImage === undefined ||
+							image !== undefined ||
+							isExistingImageRemoved) && (
 							<div className={styles.imageUploadActions}>
 								<DJImageDropzone
 									key={imageDropzoneKey}

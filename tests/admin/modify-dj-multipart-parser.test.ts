@@ -11,7 +11,9 @@ const submitForm = async (form: FormData) => {
 	const contentType = request.headers.get("content-type") ?? "";
 	const body = Buffer.from(await request.arrayBuffer());
 	const app = Fastify({ logger: false });
-	await app.register(multipart);
+	await app.register(multipart, {
+		limits: { fileSize: Infinity, files: 1, fields: 8, parts: 9 },
+	});
 	app.post("/", async (routeRequest) => parseModifyDJMultipart(routeRequest));
 	const response = await app.inject({
 		method: "POST",
@@ -113,6 +115,7 @@ describe("parseModifyDJMultipart", () => {
 
 	test("rejects unexpected and duplicate fields", async () => {
 		const unexpected = completeForm();
+		unexpected.delete("showDescription");
 		unexpected.append("unknown", "value");
 		expect((await submitForm(unexpected)).json()).toEqual({
 			valid: false,
@@ -120,6 +123,7 @@ describe("parseModifyDJMultipart", () => {
 		});
 
 		const duplicate = completeForm();
+		duplicate.delete("showDescription");
 		duplicate.append("title", "DJ Again");
 		expect((await submitForm(duplicate)).json()).toEqual({
 			valid: false,

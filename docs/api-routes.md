@@ -177,8 +177,10 @@ fields clear their stored values, and `tags` replaces the direct-tag set without
 changing tags inherited from linked shows. An optional `image` is validated and
 processed like DJ creation; omitting it preserves the current image unless
 `removeImage` is true, which clears both stored WebP variants. A request cannot
-both upload an image and request its removal. Successful edits return `200` with
-the admin DJ shape; an unknown DJ returns `404 { "error": "Not Found" }`.
+both upload an image and request its removal. The multipart limit permits all
+eight documented text fields and one optional image file. Successful edits
+return `200` with the admin DJ shape; an unknown DJ returns
+`404 { "error": "Not Found" }`.
 
 `GET /api/admin/djs/:id/image/small` and `GET /api/admin/djs/:id/image/large`
 return the corresponding stored WebP image using the authenticated admin
