@@ -97,7 +97,9 @@ relationship IDs are derived from the relationship tables. The admin-only
 `directTags` array identifies the directly assigned subset of the combined
 `tags` list, whose other entries may be inherited through linked shows.
 `POST /api/admin/create-dj` creates DJs transactionally and sanitizes
-bio/socials HTML. Tag creation is centralized in the Tags module and is
+bio/socials HTML. `POST /api/admin/modify-dj` transactionally replaces a DJ's
+editable metadata and direct tags, and can preserve, replace, or remove the
+paired image variants. Tag creation is centralized in the Tags module and is
 available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,

@@ -18,6 +18,7 @@ import {
 } from "../components/shared/resource-views/index.js";
 import { createDJ } from "../loaders/create-dj.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
+import { modifyDJ } from "../loaders/modify-dj.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 import { userPreferences } from "../user-preferences.js";
 
@@ -77,6 +78,10 @@ export const DJsPage = () => {
 		setViewMode(mode);
 	};
 	const handleEditDJ = (dj: DJsAdminRow) => setEditingDJ(dj);
+	const handleModifyDJ = async (request: Parameters<typeof modifyDJ>[0]) => {
+		await modifyDJ(request);
+		refreshDJs();
+	};
 	const editModalDJ = useMemo<EditDJModalValues | undefined>(() => {
 		if (editingDJ === undefined) return undefined;
 		const directTags = editingDJ.directTags ?? [];
@@ -161,8 +166,7 @@ export const DJsPage = () => {
 				isOpen={editingDJ !== undefined}
 				dj={editModalDJ}
 				onClose={() => setEditingDJ(undefined)}
-				onSubmit={async () => undefined}
-				isSubmitDisabled
+				onSubmit={handleModifyDJ}
 			/>
 		</div>
 	);

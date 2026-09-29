@@ -170,6 +170,16 @@ bytes or form contents. Application events use readable labels such as
 `[DJ Creation]` and `[DJ Creation [image upload]]` and include a shortened
 browser identifier.
 
+`POST /api/admin/modify-dj` accepts multipart form data with required numeric
+`id`, `title`, `bio`, `tags`, and boolean `removeImage` fields. It replaces all
+editable DJ metadata and direct DJ tags in one transaction: blank optional text
+fields clear their stored values, and `tags` replaces the direct-tag set without
+changing tags inherited from linked shows. An optional `image` is validated and
+processed like DJ creation; omitting it preserves the current image unless
+`removeImage` is true, which clears both stored WebP variants. A request cannot
+both upload an image and request its removal. Successful edits return `200` with
+the admin DJ shape; an unknown DJ returns `404 { "error": "Not Found" }`.
+
 `GET /api/admin/djs/:id/image/small` and `GET /api/admin/djs/:id/image/large`
 return the corresponding stored WebP image using the authenticated admin
 boundary. `GET /api/admin/djs/:id/image` remains an alias for the large image.

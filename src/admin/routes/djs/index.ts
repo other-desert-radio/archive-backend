@@ -4,7 +4,12 @@ export type {
 	CreateDJMultipartResult,
 } from "./parse-create-dj-multipart.js";
 export { parseCreateDJMultipart } from "./parse-create-dj-multipart.js";
-export type { CreateDJRequest } from "./types.js";
+export type {
+	ModifyDJMultipartForm,
+	ModifyDJMultipartResult,
+} from "./parse-modify-dj-multipart.js";
+export { parseModifyDJMultipart } from "./parse-modify-dj-multipart.js";
+export type { CreateDJRequest, ModifyDJRequest } from "./types.js";
 export type {
 	DJImageUpload,
 	DJImageValidationResult,
