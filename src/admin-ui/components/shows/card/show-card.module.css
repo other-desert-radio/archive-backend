@@ -39,6 +39,16 @@
 	font-size: 0.875rem;
 }
 
+.djs,
+.noDJs {
+	margin: 0;
+	font-size: 0.875rem;
+}
+
+.noDJs {
+	color: #555;
+}
+
 .edit {
 	margin-top: auto;
 	justify-self: start;

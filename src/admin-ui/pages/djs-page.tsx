@@ -17,12 +17,15 @@ import {
 import { createDJ } from "../loaders/create-dj.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
+import { userPreferences } from "../user-preferences.js";
 
 export const DJsPage = () => {
 	const [djs, setDJs] = useState<DJsAdminRow[]>([]);
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
-	const [viewMode, setViewMode] = useState<ResourceViewMode>("table");
+	const [viewMode, setViewMode] = useState<ResourceViewMode>(() =>
+		userPreferences.getResourceViewMode("djs"),
+	);
 	const [sortColumn, setSortColumn] = useState<DJSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,6 +69,10 @@ export const DJsPage = () => {
 		await createDJ(request);
 		refreshDJs();
 	};
+	const handleViewModeChange = (mode: ResourceViewMode) => {
+		userPreferences.setResourceViewMode("djs", mode);
+		setViewMode(mode);
+	};
 
 	return (
 		<div className="dj-page">
@@ -83,7 +90,7 @@ export const DJsPage = () => {
 						query={query}
 						onQueryChange={setQuery}
 						viewMode={viewMode}
-						onViewModeChange={setViewMode}
+						onViewModeChange={handleViewModeChange}
 						onAddDJ={() => setIsModalOpen(true)}
 					/>
 				}

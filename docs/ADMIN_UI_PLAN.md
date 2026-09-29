@@ -112,6 +112,8 @@ and the Tags UI remain read-only.
 - DJs, Shows, and Tags use the shared resource view and sortable table
   components. The DJ table scroll area keeps leading padding but extends to the
   right edge of the view.
+- The DJ and Shows grid/table choices are retained independently in browser
+  local storage through the global `userPreferences` singleton.
 - The modal shell, plain-text field/validation slice, and API submission are
   complete. The next UI slice is the reusable tags component.
 
