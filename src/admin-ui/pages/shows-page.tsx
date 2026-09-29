@@ -20,6 +20,8 @@ import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 import { userPreferences } from "../user-preferences.js";
 
+const handleEditShow = (_show: ShowsAdminRow) => undefined;
+
 export const ShowsPage = () => {
 	const [shows, setShows] = useState<ShowsAdminRow[]>([]);
 	const [djs, setDJs] = useState<DJsAdminRow[]>([]);
@@ -155,6 +157,7 @@ export const ShowsPage = () => {
 									sortColumn={sortColumn}
 									sortDirection={sortDirection}
 									onSort={handleSort}
+									onEdit={handleEditShow}
 								/>
 							);
 					}

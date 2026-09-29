@@ -19,6 +19,8 @@ import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 import { userPreferences } from "../user-preferences.js";
 
+const handleEditDJ = (_dj: DJsAdminRow) => undefined;
+
 export const DJsPage = () => {
 	const [djs, setDJs] = useState<DJsAdminRow[]>([]);
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
@@ -112,6 +114,7 @@ export const DJsPage = () => {
 									sortColumn={sortColumn}
 									sortDirection={sortDirection}
 									onSort={handleSort}
+									onEdit={handleEditDJ}
 								/>
 							);
 					}

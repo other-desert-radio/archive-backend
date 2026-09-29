@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { isValidElement, type ReactNode } from "react";
 import {
 	filterResourceRows,
 	getNextSort,
+	ResourceTable,
 	type ResourceTableColumn,
 	sortResourceRows,
 } from "../../src/admin-ui/components/shared/resource-views/index.js";
@@ -11,6 +13,23 @@ const rows: Row[] = [
 	{ id: 2, title: "Zulu" },
 	{ id: 1, title: "Alpha" },
 ];
+
+type ElementProps = { children?: ReactNode; onClick?: () => void };
+
+const findEditButton = (node: ReactNode): ElementProps | undefined => {
+	if (Array.isArray(node)) {
+		for (const child of node) {
+			const result = findEditButton(child);
+			if (result !== undefined) return result;
+		}
+		return undefined;
+	}
+	if (!isValidElement<ElementProps>(node)) return undefined;
+	if (node.type === "button" && node.props.children === "Edit") {
+		return node.props;
+	}
+	return findEditButton(node.props.children);
+};
 const columns: ResourceTableColumn<Row, "id" | "title">[] = [
 	{
 		key: "id",
@@ -50,5 +69,24 @@ describe("resource table helpers", () => {
 			column: "title",
 			direction: "asc",
 		});
+	});
+
+	test("renders Edit actions that call the supplied row callback", () => {
+		const editedRows: Row[] = [];
+		const table = ResourceTable({
+			rows,
+			rowKey: (row) => row.id,
+			caption: "Rows",
+			columns,
+			sortColumn: "id",
+			sortDirection: "asc",
+			onSort: () => undefined,
+			onEdit: (row) => editedRows.push(row),
+		});
+		const editButton = findEditButton(table);
+
+		expect(editButton).toBeDefined();
+		editButton?.onClick?.();
+		expect(editedRows).toEqual([rows[0]]);
 	});
 });

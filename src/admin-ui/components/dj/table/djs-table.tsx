@@ -13,6 +13,7 @@ type DJsTableProps = {
 	sortColumn: DJSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: DJSortColumn) => void;
+	onEdit: (dj: DJsAdminRow) => void;
 };
 
 const SanitizedHTML = ({ html }: { html: string }) => (
@@ -112,6 +113,7 @@ export const DJsTable = ({
 	sortColumn,
 	sortDirection,
 	onSort,
+	onEdit,
 }: DJsTableProps) => (
 	<ResourceTable
 		rows={djs}
@@ -121,5 +123,6 @@ export const DJsTable = ({
 		sortColumn={sortColumn}
 		sortDirection={sortDirection}
 		onSort={onSort}
+		onEdit={onEdit}
 	/>
 );
