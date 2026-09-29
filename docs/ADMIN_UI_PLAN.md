@@ -117,9 +117,10 @@ and the Tags UI remain read-only.
 - The DJ, Shows, and Tags tables include a sticky, opaque left-side Actions
   column. Their Edit buttons call page-provided callbacks, which are
   intentionally inert until the edit workflow is implemented.
-- The table-only Tags view uses the shared search and create toolbar. Its search
-  filters title and color, while its `+ tag` action is intentionally inert until
-  tag creation is implemented.
+- The table-only Tags view uses the shared search and create toolbar. It renders
+  read-only ID, title, color, reviewed, Mixcloud key, and Mixcloud URL columns.
+  Its search filters title and color, while its `+ tag` action is intentionally
+  inert until tag creation is implemented.
 - The modal shell, plain-text field/validation slice, and API submission are
   complete. The next UI slice is the reusable tags component.
 

@@ -23,9 +23,45 @@ describe("tags table", () => {
 		});
 	});
 
+	test("renders the reviewed and Mixcloud metadata columns", () => {
+		const tag = {
+			id: 1,
+			title: "Ambient",
+			color: "#abcdef",
+			reviewed: true,
+			mixcloud_key: "/genres/ambient/",
+			mixcloud_url: "https://www.mixcloud.com/genres/ambient/",
+		};
+
+		expect(tagColumns.map(({ key }) => key)).toEqual([
+			"id",
+			"title",
+			"color",
+			"reviewed",
+			"mixcloud_key",
+			"mixcloud_url",
+		]);
+		expect(tagColumns.find(({ key }) => key === "reviewed")?.render(tag)).toBe(
+			"true",
+		);
+		expect(
+			tagColumns.find(({ key }) => key === "mixcloud_key")?.render(tag),
+		).toBe("/genres/ambient/");
+		expect(
+			tagColumns.find(({ key }) => key === "mixcloud_url")?.render(tag),
+		).toBe("https://www.mixcloud.com/genres/ambient/");
+	});
+
 	test("filters by title or color", () => {
 		const tags = [
-			{ id: 1, title: "Ambient", color: "#abcdef", reviewed: true },
+			{
+				id: 1,
+				title: "Ambient",
+				color: "#abcdef",
+				reviewed: true,
+				mixcloud_key: "/genres/ambient/",
+				mixcloud_url: "https://www.mixcloud.com/genres/ambient/",
+			},
 			{ id: 2, title: "Dance", color: "#123456", reviewed: false },
 		];
 

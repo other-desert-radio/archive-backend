@@ -6,7 +6,13 @@ import {
 	Tag,
 } from "../shared/resource-views/index.js";
 
-export type TagSortColumn = "id" | "title" | "color";
+export type TagSortColumn =
+	| "id"
+	| "title"
+	| "color"
+	| "reviewed"
+	| "mixcloud_key"
+	| "mixcloud_url";
 
 type TagsTableProps = {
 	tags: TagsAdminRow[];
@@ -38,6 +44,26 @@ export const tagColumns: ResourceTableColumn<TagsAdminRow, TagSortColumn>[] = [
 		label: "color",
 		render: (tag) => tag.color,
 		compare: (left, right) => left.color.localeCompare(right.color),
+	},
+	{
+		key: "reviewed",
+		label: "reviewed",
+		render: (tag) => String(tag.reviewed),
+		compare: (left, right) => Number(left.reviewed) - Number(right.reviewed),
+	},
+	{
+		key: "mixcloud_key",
+		label: "mixcloud key",
+		render: (tag) => tag.mixcloud_key,
+		compare: (left, right) =>
+			(left.mixcloud_key ?? "").localeCompare(right.mixcloud_key ?? ""),
+	},
+	{
+		key: "mixcloud_url",
+		label: "mixcloud url",
+		render: (tag) => tag.mixcloud_url,
+		compare: (left, right) =>
+			(left.mixcloud_url ?? "").localeCompare(right.mixcloud_url ?? ""),
 	},
 ];
 
