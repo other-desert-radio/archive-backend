@@ -41,6 +41,8 @@ export type TagsTable = {
 	title: string;
 	color: string;
 	reviewed: boolean;
+	mixcloud_key: string | null;
+	mixcloud_url: string | null;
 };
 
 export type ShowDJsTable = {

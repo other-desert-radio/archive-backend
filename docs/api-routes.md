@@ -144,13 +144,18 @@ at midnight UTC. It creates the Show, relationships, and any missing unreviewed
 tags in one transaction, returning `201` with the same admin Show shape as the
 list response.
 
-Tag creation accepts `{ title: string }` or `{ title: string, color: string }`
-for `create-tag`, and an array of those objects for `create-tags`. Tag titles
-are trimmed and reused case-insensitively. A color must match
+Tag creation accepts `{ title: string }`, optionally with `color`,
+`mixcloud_key`, and `mixcloud_url`, for `create-tag`, and an array of those
+objects for `create-tags`. Tag titles and optional Mixcloud metadata are trimmed
+before persistence; tag titles are reused case-insensitively. A color must match
 `/^#[0-9a-fA-F]{6}$/`; omitted colors receive a random six-digit hexadecimal
 color and `reviewed: false`, while explicit colors receive `reviewed: true`. The
 DJ route uses the shared tag service from the Tags module inside its own
 transaction rather than calling a Fastify route handler directly.
+
+`GET /api/admin/tags` includes optional `mixcloud_key` and `mixcloud_url` fields
+when a tag is associated with a Mixcloud genre; absent database values are
+omitted from the JSON response.
 
 `POST /api/admin/create-dj` accepts `multipart/form-data` with required `title`
 and `bio` text fields, optional `tags`, `socials`, `showTitle`, and

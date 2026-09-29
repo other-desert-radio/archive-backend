@@ -3,6 +3,8 @@ import { P } from "ts-pattern";
 export const CreateTagRequestPattern = {
 	title: P.string.minLength(1),
 	color: P.optional(P.string.regex(/^#[0-9a-fA-F]{6}$/)), // hex color pattern
+	mixcloud_key: P.optional(P.string.minLength(1)),
+	mixcloud_url: P.optional(P.string.minLength(1)),
 } as const;
 
 export type CreateTagRequest = P.infer<typeof CreateTagRequestPattern>;
