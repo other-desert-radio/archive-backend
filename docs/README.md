@@ -206,6 +206,9 @@ development.
 
 ## Conventions
 
+- The admin UI uses the archive site's Space Mono font throughout, including
+  form controls. Regular, italic, bold, and bold italic WOFF2 files and their
+  license live in `src/admin-ui/assets/fonts/`, alongside the background assets.
 - Keep the backend small until a concrete feature requires more structure.
 - Organize admin UI components by responsibility. Shared primitives use
   `components/shared/resource-views/` or `components/shared/modal/`, with each
