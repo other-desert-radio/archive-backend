@@ -7,5 +7,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-"${compose[@]}" up --build --abort-on-container-exit --exit-code-from test
+"${compose[@]}" up --build --wait api
+"${compose[@]}" run --rm test
 exit $?

@@ -1,8 +1,16 @@
+import sharp from "sharp";
+
 const baseURL = process.env.E2E_BASE_URL ?? "http://api:3000";
-const image = Buffer.from(
-	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL4YQAAAABJRU5ErkJggg==",
-	"base64",
-);
+const image = await sharp({
+	create: {
+		width: 64,
+		height: 64,
+		channels: 4,
+		background: { r: 20, g: 20, b: 20, alpha: 1 },
+	},
+})
+	.png()
+	.toBuffer();
 
 for (let attempt = 0; attempt < 30; attempt += 1) {
 	try {
