@@ -1,6 +1,9 @@
 # Agent instructions
 
 Before changing this repository, read the relevant guidance in [`docs/`](docs/).
+Before building or editing UI, also read
+[`docs/ADMIN_UI_DESIGN.md`](docs/ADMIN_UI_DESIGN.md) for reusable components,
+reviewed aesthetics, sizing, spacing, interactions, and verification defaults.
 Before adding or changing an API route, also read
 [`docs/api-routes.md`](docs/api-routes.md) and follow its authentication,
 route-layout, shared-type, and validation conventions. Keep the implementation
@@ -22,11 +25,12 @@ formatters in `resource-views/`; put onboarding modal and form primitives in
 Keep DJ and Shows components grouped by responsibility, also with one component
 per subdirectory. Use `card/`, `table/`, `toolbar/`, and `onboarding-modal/` in
 both resource directories. DJ image components belong under `dj/image/`, split
-into `crop-modal/`, `dropzone/`, and `utils/`. Co-locate a component's CSS and
-its private utility files with that component. Every component directory must
-expose an `index.ts` barrel; import public component APIs from the highest
-relevant group barrel (`shared/modal`, `shared/resource-views`, `dj`, or
-`shows`). The `dj/image/index.ts` barrel re-exports its child folders.
+into `crop-modal/`, `dropzone/`, `image-selection/`, and `utils/`. Co-locate a
+component's CSS and its private utility files with that component. Every
+component directory must expose an `index.ts` barrel; import public component
+APIs from the highest relevant group barrel (`shared/modal`,
+`shared/resource-views`, `dj`, or `shows`). The `dj/image/index.ts` barrel
+re-exports its child folders.
 
 ## Visual admin UI checks
 

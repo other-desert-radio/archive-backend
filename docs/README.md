@@ -65,6 +65,11 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
+For UI implementation and review, read the
+[admin UI design and reuse guide](ADMIN_UI_DESIGN.md). It documents the reviewed
+modal aesthetic, spacing, reusable components, interaction defaults, and future
+design ideas.
+
 The first Show UI implementation chunk is complete. DJs use reusable resource
 toolbar, table, state-view, and onboarding primitives. The shared onboarding
 shell traps focus, returns focus to its opener, supports Escape dismissal while
