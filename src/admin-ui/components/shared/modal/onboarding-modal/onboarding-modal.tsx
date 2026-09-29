@@ -13,6 +13,10 @@ type OnboardingModalProps = {
 	title: string;
 	onClose: () => void;
 	onSubmit: () => Promise<void>;
+	submitLabel?: string;
+	submittingLabel?: string;
+	cancelLabel: string;
+	isSubmitDisabled?: boolean;
 	children: ReactNode;
 };
 const getFocusableElements = (panel: HTMLElement) =>
@@ -29,6 +33,10 @@ export const OnboardingModal = ({
 	title,
 	onClose,
 	onSubmit,
+	submitLabel = "Submit",
+	submittingLabel = "Submitting…",
+	cancelLabel,
+	isSubmitDisabled = false,
 	children,
 }: OnboardingModalProps) => {
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -136,9 +144,17 @@ export const OnboardingModal = ({
 					<button
 						type="submit"
 						className={styles.submit}
+						disabled={isSubmitting || isCovered || isSubmitDisabled}
+					>
+						{isSubmitting ? submittingLabel : submitLabel}
+					</button>
+					<button
+						type="button"
+						className={styles.cancel}
+						onClick={dismiss}
 						disabled={isSubmitting || isCovered}
 					>
-						{isSubmitting ? "Submitting…" : "Submit"}
+						{cancelLabel}
 					</button>
 				</form>
 			</div>

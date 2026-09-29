@@ -6,6 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import fieldStyles from "../labeled-form-control/labeled-form-control.module.css";
 import styles from "./tags-input.module.css";
 import type { TagsInputOption } from "./tags-input-utils.js";
 import {
@@ -254,7 +255,7 @@ export const TagsInput = ({
 			</div>
 			<p
 				id={`${id}-help`}
-				className={`${styles.helper} ${error === undefined ? "" : styles.error}`}
+				className={`${fieldStyles.helper} ${error === undefined ? "" : styles.error}`}
 			>
 				{error !== undefined
 					? `${error} You can still add tags manually.`

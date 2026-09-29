@@ -129,6 +129,7 @@ export const OnboardDJModal = ({
 				title="Onboard DJ"
 				onClose={onClose}
 				onSubmit={submit}
+				cancelLabel="Cancel"
 			>
 				<LabeledFormControl
 					id="onboard-dj-title-input"

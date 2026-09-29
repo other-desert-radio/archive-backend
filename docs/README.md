@@ -93,9 +93,13 @@ shell. The production container builds the shell into `dist/admin`; a missing
 bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
 `id`, `createdAt`, `title`, `bio`, optional `image_small` and `image_large`,
 `socials`, `showTitle`, and `showDescription`, `shows`, and `tags`; its
-relationship IDs are derived from the relationship tables.
+relationship IDs are derived from the relationship tables. The admin-only
+`directTags` array identifies the directly assigned subset of the combined
+`tags` list, whose other entries may be inherited through linked shows.
 `POST /api/admin/create-dj` creates DJs transactionally and sanitizes
-bio/socials HTML. Tag creation is centralized in the Tags module and is
+bio/socials HTML. `POST /api/admin/modify-dj` transactionally replaces a DJ's
+editable metadata and direct tags, and can preserve, replace, or remove the
+paired image variants. Tag creation is centralized in the Tags module and is
 available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,
@@ -119,6 +123,10 @@ archive dataset, use the
 - `bun run start` starts the server once.
 
 - `bun run test` runs the focused Bun test suite.
+- `./scripts/run-integration-tests` builds and runs the browser editing test in
+  a disposable Docker Compose stack. It uses its own Postgres volume and API;
+  the test data and containers are removed when the command finishes.
+  `bun run test:integration` is an equivalent package-script shortcut.
 - `bun run auth:generate` regenerates the review-only Better Auth schema.
 - `bun run db:migrate` applies one pending migration.
 - `bun run db:migrate:all` applies all pending migrations.

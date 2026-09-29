@@ -10,7 +10,7 @@
 	background: rgb(0 0 0 / 60%);
 }
 .panel {
-	width: min(656px, calc(100vw - 32px));
+	width: min(864px, calc(100vw - 32px));
 	max-height: calc(100vh - 5rem);
 	min-width: 0;
 	padding: 2rem;
@@ -50,6 +50,15 @@
 	color: #000;
 	background: #fff;
 	font-weight: 700;
+}
+.cancel {
+	display: block;
+	margin: 1.5rem auto 0;
+	padding: 0;
+	border: 0;
+	color: inherit;
+	background: transparent;
+	font: inherit;
 }
 .error {
 	margin: 1.5rem 0 0;
