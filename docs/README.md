@@ -123,8 +123,8 @@ archive dataset, use the
 - `bun run start` starts the server once.
 
 - `bun run test` runs the focused Bun test suite.
-- `./scripts/run-integration-tests` builds and runs the browser editing test in
-  a disposable Docker Compose stack. It uses its own Postgres volume and API;
+- `./scripts/run-integration-tests` builds and runs the DJ browser editing suite
+  in a disposable Docker Compose stack. It uses its own Postgres volume and API;
   the test data and containers are removed when the command finishes.
   `bun run test:integration` is an equivalent package-script shortcut.
 - `bun run auth:generate` regenerates the review-only Better Auth schema.

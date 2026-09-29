@@ -123,3 +123,23 @@ curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:300
 The expected output is no container name and `000` for the stopped temporary
 API. Never run `docker compose down -v` as part of this workflow: it can remove
 the persistent local archive volume.
+
+## Automated DJ editing coverage
+
+Run `bun run test:integration` to build and run Playwright against a disposable
+Compose API and PostgreSQL database. Each test creates a uniquely named DJ
+through the authenticated API; no shared seed or execution order is required.
+The runner removes its containers and database volume after completion.
+
+Coverage includes individual metadata edits, optional-field clearing, all table
+columns, saved values after reload and editor reopening, direct and inherited
+tags, image addition/replacement/removal and crop cancellation, required-field
+validation, invalid images, and Cancel/Escape dismissal. Image assertions fetch
+both authenticated WebP variants and check their dimensions. Creation is fixture
+setup; onboarding UI coverage is outside this suite.
+
+The expanded suite currently exposes a DJ tag-removal regression: removing two
+remaining direct-tag chips in succession and saving can retain one assignment.
+The clearing test intentionally remains active and failing until the production
+bug is fixed. The deferred tag-input blur commit appears to restore stale chip
+state after removal; investigate it in a separate UI fix.
