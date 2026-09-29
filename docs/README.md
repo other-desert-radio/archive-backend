@@ -93,7 +93,9 @@ shell. The production container builds the shell into `dist/admin`; a missing
 bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
 `id`, `createdAt`, `title`, `bio`, optional `image_small` and `image_large`,
 `socials`, `showTitle`, and `showDescription`, `shows`, and `tags`; its
-relationship IDs are derived from the relationship tables.
+relationship IDs are derived from the relationship tables. The admin-only
+`directTags` array identifies the directly assigned subset of the combined
+`tags` list, whose other entries may be inherited through linked shows.
 `POST /api/admin/create-dj` creates DJs transactionally and sanitizes
 bio/socials HTML. Tag creation is centralized in the Tags module and is
 available through `POST /api/admin/create-tag` and

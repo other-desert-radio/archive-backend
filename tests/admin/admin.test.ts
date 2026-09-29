@@ -283,6 +283,7 @@ describe("admin route boundary", () => {
 				socials: "<p>@dj-one</p>",
 				shows: [10],
 				tags: [20, 21],
+				directTags: [20],
 			},
 		]);
 

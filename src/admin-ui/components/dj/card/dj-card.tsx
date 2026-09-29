@@ -43,6 +43,7 @@ export const renderDJCard = (
 	dj: DJsAdminRow,
 	tagsById: ReadonlyMap<number, DJCardTag> = new Map(),
 	key: string | number = dj.id,
+	onEdit: (dj: DJsAdminRow) => void = editDJ,
 ) => {
 	return (
 		<article className={styles.card} key={key}>
@@ -52,7 +53,7 @@ export const renderDJCard = (
 			<button
 				type="button"
 				className={styles.edit}
-				onClick={editDJ}
+				onClick={() => onEdit(dj)}
 				aria-label={`Edit ${dj.title}`}
 			>
 				Edit

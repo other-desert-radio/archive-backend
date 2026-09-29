@@ -128,7 +128,9 @@ POST /api/admin/create-tags
 ```
 
 `GET /api/admin/djs` includes each DJ's `createdAt` timestamp in ISO JSON date
-format, alongside its identity, metadata, and relationship IDs.
+format, alongside its identity, metadata, and relationship IDs. Its admin-only
+`directTags` array distinguishes directly assigned DJ tags from the combined
+`tags` array, which also includes tags inherited through linked shows.
 
 `GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
 ISO JSON date format. The public Show transformer remains unchanged; `date` is a

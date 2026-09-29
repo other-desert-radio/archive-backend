@@ -12,11 +12,17 @@ import { parseCreateDJMultipart } from "./parse-create-dj-multipart.js";
 import { CreateDJRequestPattern } from "./types.js";
 import { validateDJImageUpload } from "./validate-dj-image.js";
 
+/**
+ * Extends the combined public-style relationship list with tags assigned
+ * directly to the DJ. `tags` can also include tags inherited from linked shows.
+ */
+type AdminDJJSON = DJJSON & { directTags: number[] };
+
 /** Registers authenticated DJ API routes. */
 export const djRoutes =
 	(database: TypedDatabase): FastifyPluginAsync =>
 	async (app) => {
-		app.get<{ Reply: AdminApiReply<DJJSON[]> }>(
+		app.get<{ Reply: AdminApiReply<AdminDJJSON[]> }>(
 			"/djs",
 			async (request, reply) => {
 				try {
@@ -57,7 +63,19 @@ export const djRoutes =
 							.execute(),
 					]);
 
-					return transformDJs({ djs, showDJs, djTags, showTags });
+					const directTagsByDJ = new Map<number, number[]>();
+					for (const { dj_id: djId, tag_id: tagId } of djTags) {
+						const tagIds = directTagsByDJ.get(djId) ?? [];
+						tagIds.push(tagId);
+						directTagsByDJ.set(djId, tagIds);
+					}
+
+					return transformDJs({ djs, showDJs, djTags, showTags }).map((dj) => ({
+						...dj,
+						// Keep direct assignments separate so the edit form never promotes
+						// show-inherited tags into DJ-owned tags when it saves.
+						directTags: directTagsByDJ.get(dj.id) ?? [],
+					}));
 				} catch (error) {
 					request.log.error(error, "Unable to load DJs");
 					return reply.code(500).send({ error: "Internal Server Error" });
