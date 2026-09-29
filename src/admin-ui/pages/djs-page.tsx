@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { renderDJGridCard } from "../components/dj/card/dj-card.js";
-import { OnboardDJModal } from "../components/dj/onboarding-modal/onboard-dj-modal.js";
-import { DJsTable } from "../components/dj/table/djs-table.js";
+import { renderDJGridCard } from "../components/dj/card/index.js";
+import { OnboardDJModal } from "../components/dj/onboarding-modal/index.js";
 import {
 	type DJSortColumn,
+	DJsTable,
 	filterDJs,
 	type SortDirection,
 	sortDJs,
-} from "../components/dj/table/djs-table-utils.js";
-import { DJToolbar } from "../components/dj/toolbar/dj-toolbar.js";
-import { ResourceGrid } from "../components/shared/resource-views/resource-grid/resource-grid.js";
-import type { ResourceViewMode } from "../components/shared/resource-views/resource-toolbar/resource-toolbar.js";
-import { ResourceView } from "../components/shared/resource-views/resource-view/resource-view.js";
+} from "../components/dj/table/index.js";
+import { DJToolbar } from "../components/dj/toolbar/index.js";
+import { ResourceGrid } from "../components/shared/resource-views/resource-grid/index.js";
+import type { ResourceViewMode } from "../components/shared/resource-views/resource-toolbar/index.js";
+import { ResourceView } from "../components/shared/resource-views/resource-view/index.js";
 import { createDJ } from "../loaders/create-dj.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";

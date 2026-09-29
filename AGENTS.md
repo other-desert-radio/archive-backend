@@ -23,7 +23,9 @@ Keep DJ and Shows components grouped by responsibility, also with one component
 per subdirectory. Use `card/`, `table/`, `toolbar/`, and `onboarding-modal/` in
 both resource directories. DJ image components belong under `dj/image/`, split
 into `crop-modal/`, `dropzone/`, and `utils/`. Co-locate a component's CSS and
-its private utility files with that component.
+its private utility files with that component. Every component directory must
+expose an `index.ts` barrel; import public component APIs from that barrel. The
+`dj/image/index.ts` barrel re-exports its child folders.
 
 ## Visual admin UI checks
 

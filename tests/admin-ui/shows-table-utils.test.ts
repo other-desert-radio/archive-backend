@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { showColumns } from "../../src/admin-ui/components/shows/table/shows-table.js";
 import {
 	filterShows,
 	getShowSearchValue,
+	showColumns,
 	sortShows,
-} from "../../src/admin-ui/components/shows/table/shows-table-utils.js";
+} from "../../src/admin-ui/components/shows/table/index.js";
 
 const shows = [
 	{

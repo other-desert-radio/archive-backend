@@ -7,9 +7,11 @@ import {
 	type TagsInputOption,
 	type TagsInputValue,
 } from "../../shared/modal/tags-input/tags-input.js";
-import { DJImageCropModal } from "../image/crop-modal/dj-image-crop-modal.js";
-import { DJImageDropzone } from "../image/dropzone/dj-image-dropzone.js";
-import { decodeDJImageFile } from "../image/utils/dj-image-utils.js";
+import {
+	DJImageCropModal,
+	DJImageDropzone,
+	decodeDJImageFile,
+} from "../image/index.js";
 import { buildCreateDJRequest, type CreateDJForm } from "./onboard-dj-utils.js";
 
 type OnboardDJModalProps = {

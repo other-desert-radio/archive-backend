@@ -2,7 +2,7 @@ import type { Area } from "react-easy-crop";
 import {
 	croppedDJImageFilename,
 	DJ_CROPPED_IMAGE_SIZE,
-} from "../utils/dj-image-utils.js";
+} from "../utils/index.js";
 
 export type DJImageRotation = 0 | 90 | 180 | 270;
 

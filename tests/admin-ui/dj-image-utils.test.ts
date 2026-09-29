@@ -3,7 +3,7 @@ import {
 	croppedDJImageFilename,
 	DJ_CROPPED_IMAGE_SIZE,
 	validateDJImageFile,
-} from "../../src/admin-ui/components/dj/image/utils/dj-image-utils.js";
+} from "../../src/admin-ui/components/dj/image/utils/index.js";
 
 describe("validateDJImageFile", () => {
 	test("accepts JPEG, PNG, and WebP source files", () => {
