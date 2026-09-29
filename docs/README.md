@@ -69,12 +69,13 @@ The first Show UI implementation chunk is complete. DJs use reusable resource
 toolbar, table, state-view, and onboarding primitives. The shared onboarding
 shell traps focus, returns focus to its opener, supports Escape dismissal while
 idle, prevents duplicate submission, and keeps its content scrollable within the
-available viewport. The comma-separated tags field is reusable and ignores stale
-validation responses; a validation-service failure does not prevent final
-submission. Chunk 2 migrates the read-only Shows table to the same resource
-view, with search and sorting. Show onboarding uses the shared modal, date-only
-and duration inputs, a searchable existing-DJ selector, optional image URL and
-tags, and a transactional JSON creation endpoint.
+available viewport. Tag drafts commit on blur before chip-removal clicks, so
+removed selections stay removed. The comma-separated tags field is reusable and
+ignores stale validation responses; a validation-service failure does not
+prevent final submission. Chunk 2 migrates the read-only Shows table to the same
+resource view, with search and sorting. Show onboarding uses the shared modal,
+date-only and duration inputs, a searchable existing-DJ selector, optional image
+URL and tags, and a transactional JSON creation endpoint.
 
 DJ onboarding accepts and decodes JPEG, PNG, and WebP uploads before opening a
 layered square crop modal. The modal supports drag positioning, zoom, and

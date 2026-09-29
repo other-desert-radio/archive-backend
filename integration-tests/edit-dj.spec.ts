@@ -348,3 +348,36 @@ test("rejects an undecodable image and preserves the DJ", async ({
 	expect(await loadDJ(request, dj.id)).toEqual(before);
 	expect(await imageBytes(request, dj.id)).toEqual(bytes);
 });
+
+test("commits a focused draft before removing a tag chip", async ({
+	page,
+	request,
+	dj,
+}) => {
+	const dialog = await openEditor(page, dj.id);
+	const draft = `Draft ${dj.title}`;
+	await dialog.getByLabel("tags", { exact: true }).fill(draft);
+	await dialog
+		.getByRole("button", { name: `Remove ${dj.title}`, exact: true })
+		.click();
+	await expect(
+		dialog.getByRole("button", { name: `Remove ${dj.title}`, exact: true }),
+	).toHaveCount(0);
+	await expect(
+		dialog.getByRole("button", { name: `Remove ${draft}`, exact: true }),
+	).toBeVisible();
+	await save(page);
+	await page.reload();
+	const persisted = await loadDJ(request, dj.id);
+	expect(persisted.directTags).toHaveLength(1);
+	expect(persisted.directTags).not.toContain(dj.tags[0]);
+	await expect(await cellFor(page, dj.id, "tags")).toHaveText(
+		persisted.tags.join(", "),
+	);
+	await expect(
+		(await openEditor(page, dj.id)).getByRole("button", {
+			name: `Remove ${draft}`,
+			exact: true,
+		}),
+	).toBeVisible();
+});

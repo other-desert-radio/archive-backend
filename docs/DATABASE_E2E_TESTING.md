@@ -138,8 +138,6 @@ validation, invalid images, and Cancel/Escape dismissal. Image assertions fetch
 both authenticated WebP variants and check their dimensions. Creation is fixture
 setup; onboarding UI coverage is outside this suite.
 
-The expanded suite currently exposes a DJ tag-removal regression: removing two
-remaining direct-tag chips in succession and saving can retain one assignment.
-The clearing test intentionally remains active and failing until the production
-bug is fixed. The deferred tag-input blur commit appears to restore stale chip
-state after removal; investigate it in a separate UI fix.
+Tag drafts commit synchronously on blur, so subsequent chip removal cannot be
+overwritten by a delayed commit using an older selection. The integration suite
+checks that removing all remaining direct tags persists an empty assignment.
