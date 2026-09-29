@@ -188,3 +188,71 @@ test("shared tag loading supports retry and reloads when either DJ form opens", 
 		page.getByRole("option", { name: /Regression tag/ }),
 	).toBeVisible();
 });
+
+test("Show and DJ forms share tag suggestions and compact helper spacing", async ({
+	page,
+}) => {
+	for (const resource of ["djs", "shows"]) {
+		await page.goto(`/admin/#${resource}`);
+		const add = page.getByRole("button", {
+			name: resource === "djs" ? "+ DJ" : "+ show",
+			exact: true,
+		});
+		await expect(add).toBeVisible();
+		await page.route("**/api/admin/tags", (route) =>
+			route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify([
+					{ id: 987, title: "Regression tag", color: "#abcdef" },
+				]),
+			}),
+		);
+		await add.click();
+		const form = page.getByRole("dialog", {
+			name: resource === "djs" ? "Onboard DJ" : "Onboard Show",
+		});
+		await expect(form).toBeFocused();
+		await expect(
+			page.getByText(
+				"Type to search. Press Tab to accept the gray completion.",
+			),
+		).toBeVisible();
+		const input = form.getByRole("combobox", { name: "tags", exact: true });
+		await input.fill("Regression");
+		const alignment = await input.evaluate((element) => {
+			const preview = element.parentElement?.querySelector(
+				'[class*="preview"] > span',
+			);
+			const suffix = preview?.querySelector("span");
+			if (!preview?.firstChild || !suffix?.firstChild) return undefined;
+			const typedRange = document.createRange();
+			typedRange.selectNodeContents(preview.firstChild);
+			const suffixRange = document.createRange();
+			suffixRange.selectNodeContents(suffix.firstChild);
+			const typed = typedRange.getBoundingClientRect();
+			const completion = suffixRange.getBoundingClientRect();
+			return {
+				vertical: Math.abs(typed.top - completion.top),
+				horizontal: Math.abs(typed.right - completion.left),
+			};
+		});
+		expect(alignment).toEqual({ vertical: 0, horizontal: 0 });
+		await page.getByRole("option", { name: "Regression tag" }).click();
+		await expect(
+			form.getByRole("button", { name: "Remove Regression tag" }),
+		).toBeVisible();
+		const gap = await input.evaluate((element) => {
+			const box = element.closest('[class*="box"]');
+			const helper = element.closest('[class*="control"]')?.querySelector("p");
+			return box && helper
+				? helper.getBoundingClientRect().top -
+						box.getBoundingClientRect().bottom
+				: -1;
+		});
+		expect(gap).toBe(8);
+		await form.getByRole("button", { name: "Cancel", exact: true }).click();
+		await page.getByRole("button", { name: "Discard changes" }).click();
+		await page.unroute("**/api/admin/tags");
+	}
+});

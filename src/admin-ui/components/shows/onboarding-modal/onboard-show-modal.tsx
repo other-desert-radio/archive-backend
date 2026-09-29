@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
-	CommaSeparatedTagsField,
 	hasFormChanges,
 	LabeledFormControl,
 	OnboardingModal,
 	SearchableMultiSelect,
 	type SearchableMultiSelectOption,
+	TagsInput,
+	type TagsInputValue,
+	useTagOptions,
 } from "../../shared/modal/index.js";
 import {
 	buildCreateShowRequest,
@@ -38,7 +40,8 @@ export const OnboardShowModal = ({
 		minutes: "",
 		seconds: "",
 		image: "",
-		tags: "",
+		tags: [] as string[],
+		tagDraft: "",
 		url: "",
 		selected: [] as number[],
 	});
@@ -48,7 +51,9 @@ export const OnboardShowModal = ({
 	const [minutes, setMinutes] = useState("");
 	const [seconds, setSeconds] = useState("");
 	const [image, setImage] = useState("");
-	const [tags, setTags] = useState("");
+	const [tags, setTags] = useState<TagsInputValue>({ tags: [], draft: "" });
+	const { tagOptions, isTagsLoading, tagsError, loadTagOptions } =
+		useTagOptions(isOpen);
 	const [url, setUrl] = useState("");
 	const [selected, setSelected] = useState<number[]>([]);
 	useEffect(() => {
@@ -60,7 +65,8 @@ export const OnboardShowModal = ({
 				minutes: "",
 				seconds: "",
 				image: "",
-				tags: "",
+				tags: [] as string[],
+				tagDraft: "",
 				url: "",
 				selected: [] as number[],
 			};
@@ -70,7 +76,7 @@ export const OnboardShowModal = ({
 			setMinutes("");
 			setSeconds("");
 			setImage("");
-			setTags("");
+			setTags({ tags: [], draft: "" });
 			setUrl("");
 			setSelected([]);
 			onRetryDJs();
@@ -93,7 +99,7 @@ export const OnboardShowModal = ({
 				minutes,
 				seconds,
 				image,
-				tags,
+				tags: [...tags.tags, tags.draft].join(","),
 				url,
 				djs: selected,
 			}),
@@ -103,7 +109,18 @@ export const OnboardShowModal = ({
 		<OnboardingModal
 			isOpen={isOpen}
 			hasUnsavedChanges={hasFormChanges(
-				{ title, date, hours, minutes, seconds, image, tags, url, selected },
+				{
+					title,
+					date,
+					hours,
+					minutes,
+					seconds,
+					image,
+					tags: tags.tags,
+					tagDraft: tags.draft,
+					url,
+					selected,
+				},
 				initialValues.current,
 			)}
 			title="Onboard Show"
@@ -167,7 +184,15 @@ export const OnboardShowModal = ({
 				{...(djsError === undefined ? {} : { error: djsError })}
 				onRetry={onRetryDJs}
 			/>
-			<CommaSeparatedTagsField id="show-tags" value={tags} onChange={setTags} />
+			<TagsInput
+				id="show-tags"
+				value={tags}
+				onChange={setTags}
+				options={tagOptions}
+				isLoading={isTagsLoading}
+				{...(tagsError === undefined ? {} : { error: tagsError })}
+				onRetry={loadTagOptions}
+			/>
 			<LabeledFormControl
 				id="show-url"
 				name="url"

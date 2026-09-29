@@ -40,6 +40,7 @@ export const TagsInput = ({
 	onRetry,
 }: TagsInputProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
+	const [scrollLeft, setScrollLeft] = useState(0);
 	const [isFocused, setIsFocused] = useState(false);
 	const [activeIndex, setActiveIndex] = useState<number>();
 	const [isComposing, setIsComposing] = useState(false);
@@ -143,133 +144,134 @@ export const TagsInput = ({
 		<div className={styles.field}>
 			<label htmlFor={id}>tags</label>
 			<div className={styles.control}>
-				<div className={styles.box}>
-					{value.tags.map((tag) => {
-						const option = selectedByTitle.get(tag.toLocaleLowerCase());
-						return (
-							<span
-								key={tag.toLocaleLowerCase()}
-								className={`${styles.chip} ${
-									option === undefined && canIdentifyUnknownTags
-										? styles.unknown
-										: ""
-								} ${backspaceArmedTag === tag ? styles.armed : ""}`}
-								{...(option === undefined
-									? {}
-									: { style: { background: option.color } })}
-							>
-								{tag}
-								<button
-									type="button"
-									className={styles.remove}
-									aria-label={`Remove ${tag}`}
-									onClick={() => {
-										onChange({
-											tags: value.tags.filter((selected) => selected !== tag),
-											draft: value.draft,
-										});
-										setBackspaceArmedTag(undefined);
-										inputRef.current?.focus();
-									}}
-								>
-									x
-								</button>
-							</span>
-						);
-					})}
-					<div className={styles.draftWrap}>
-						<span className={styles.typed} aria-hidden="true">
-							{value.draft}
-						</span>
-						{completion !== undefined && (
-							<span
-								className={styles.completion}
-								aria-hidden="true"
-								style={{ left: `calc(0.25rem + ${value.draft.length}ch)` }}
-							>
-								{completion}
-							</span>
-						)}
-						<input
-							ref={inputRef}
-							id={id}
-							className={styles.input}
-							value={value.draft}
-							onChange={(event) => {
-								const nextDraft = event.target.value;
-								if (nextDraft.includes(","))
-									onChange({
-										tags: commitTagDraft(value.tags, nextDraft),
-										draft: "",
-									});
-								else onChange({ tags: value.tags, draft: nextDraft });
-								setActiveIndex(undefined);
-								setBackspaceArmedTag(undefined);
-							}}
-							onFocus={() => setIsFocused(true)}
-							onBlur={commitOnBlur}
-							onKeyDown={handleKeyDown}
-							onCompositionStart={() => setIsComposing(true)}
-							onCompositionEnd={() => setIsComposing(false)}
-							role="combobox"
-							aria-autocomplete="both"
-							aria-expanded={isOpen}
-							aria-controls={isOpen ? listId : undefined}
-							aria-activedescendant={
-								activeIndex === undefined
-									? undefined
-									: `${listId}-${activeIndex}`
-							}
-							aria-describedby={`${id}-help`}
-						/>
-					</div>
-				</div>
-				{isOpen && (
-					<div
-						id={listId}
-						className={styles.menu}
-						role="listbox"
-						aria-label="Matching tags"
-					>
-						{matches.map((option, index) => (
-							<button
-								key={option.id}
-								id={`${listId}-${index}`}
-								type="button"
-								role="option"
-								aria-selected={index === activeIndex}
-								className={`${styles.option} ${index === activeIndex ? styles.optionActive : ""}`}
-								onMouseDown={(event) => event.preventDefault()}
-								onClick={() => select(option)}
-							>
+				<div className={styles.inputGroup}>
+					<div className={styles.box}>
+						{value.tags.map((tag) => {
+							const option = selectedByTitle.get(tag.toLocaleLowerCase());
+							return (
 								<span
-									className={styles.optionTag}
-									style={{ background: option.color }}
+									key={tag.toLocaleLowerCase()}
+									className={`${styles.chip} ${
+										option === undefined && canIdentifyUnknownTags
+											? styles.unknown
+											: ""
+									} ${backspaceArmedTag === tag ? styles.armed : ""}`}
+									{...(option === undefined
+										? {}
+										: { style: { background: option.color } })}
 								>
-									{option.title}
+									{tag}
+									<button
+										type="button"
+										className={styles.remove}
+										aria-label={`Remove ${tag}`}
+										onClick={() => {
+											onChange({
+												tags: value.tags.filter((selected) => selected !== tag),
+												draft: value.draft,
+											});
+											setBackspaceArmedTag(undefined);
+											inputRef.current?.focus();
+										}}
+									>
+										x
+									</button>
 								</span>
-							</button>
-						))}
+							);
+						})}
+						<div className={styles.draftWrap}>
+							<div className={styles.preview} aria-hidden="true">
+								<span style={{ transform: `translateX(-${scrollLeft}px)` }}>
+									{value.draft}
+									{completion !== undefined && (
+										<span className={styles.completion}>{completion}</span>
+									)}
+								</span>
+							</div>
+							<input
+								ref={inputRef}
+								id={id}
+								className={styles.input}
+								value={value.draft}
+								onScroll={(event) =>
+									setScrollLeft(event.currentTarget.scrollLeft)
+								}
+								onChange={(event) => {
+									const nextDraft = event.target.value;
+									if (nextDraft.includes(","))
+										onChange({
+											tags: commitTagDraft(value.tags, nextDraft),
+											draft: "",
+										});
+									else onChange({ tags: value.tags, draft: nextDraft });
+									setActiveIndex(undefined);
+									setBackspaceArmedTag(undefined);
+								}}
+								onFocus={() => setIsFocused(true)}
+								onBlur={commitOnBlur}
+								onKeyDown={handleKeyDown}
+								onCompositionStart={() => setIsComposing(true)}
+								onCompositionEnd={() => setIsComposing(false)}
+								role="combobox"
+								aria-autocomplete="both"
+								aria-expanded={isOpen}
+								aria-controls={isOpen ? listId : undefined}
+								aria-activedescendant={
+									activeIndex === undefined
+										? undefined
+										: `${listId}-${activeIndex}`
+								}
+								aria-describedby={`${id}-help`}
+							/>
+						</div>
 					</div>
-				)}
+					{isOpen && (
+						<div
+							id={listId}
+							className={styles.menu}
+							role="listbox"
+							aria-label="Matching tags"
+						>
+							{matches.map((option, index) => (
+								<button
+									key={option.id}
+									id={`${listId}-${index}`}
+									type="button"
+									role="option"
+									aria-selected={index === activeIndex}
+									className={`${styles.option} ${index === activeIndex ? styles.optionActive : ""}`}
+									onMouseDown={(event) => event.preventDefault()}
+									onClick={() => select(option)}
+								>
+									<span
+										className={styles.optionTag}
+										style={{ background: option.color }}
+									>
+										{option.title}
+									</span>
+								</button>
+							))}
+						</div>
+					)}
+				</div>
+				<p
+					id={`${id}-help`}
+					className={`${fieldStyles.helper} ${error === undefined ? "" : styles.error}`}
+				>
+					{error !== undefined
+						? `${error} You can still add tags manually.`
+						: isLoading
+							? "Loading existing tags…"
+							: canIdentifyUnknownTags && unknownTags.length > 0
+								? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
+								: "Type to search. Press Tab to accept the gray completion."}
+					{error !== undefined && onRetry !== undefined && (
+						<button type="button" onClick={onRetry}>
+							Retry
+						</button>
+					)}
+				</p>
 			</div>
-			<p
-				id={`${id}-help`}
-				className={`${fieldStyles.helper} ${error === undefined ? "" : styles.error}`}
-			>
-				{error !== undefined
-					? `${error} You can still add tags manually.`
-					: isLoading
-						? "Loading existing tags…"
-						: canIdentifyUnknownTags && unknownTags.length > 0
-							? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
-							: "Type to search. Press Tab to accept the gray completion."}
-				{error !== undefined && onRetry !== undefined && (
-					<button type="button" onClick={onRetry}>
-						Retry
-					</button>
-				)}
-			</p>
 		</div>
 	);
 };

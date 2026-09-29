@@ -31,6 +31,11 @@
 }
 
 :root {
+	--modal-padding: 32px;
+	--modal-field-gap: 20px;
+	--modal-control-padding: 10px 12px;
+	--modal-control-height: 42px;
+	--modal-helper-size: 12px;
 	font-size: clamp(12px, 8.5px + 0.31vw, 17px);
 	font-family: "Space Mono", monospace;
 	color: #111;
@@ -78,4 +83,10 @@ a:focus {
 h1 {
 	margin: 0.5rem 0;
 	font-size: 3rem;
+}
+
+@media (max-width: 450px) {
+	:root {
+		--modal-padding: 20px;
+	}
 }

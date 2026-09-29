@@ -38,8 +38,9 @@ Confirmed Show onboarding requirements:
 - Require title, broadcast date, positive duration, show URL, and at least one
   existing DJ.
 - Artwork is an optional image URL, not a file upload.
-- Tags are optional and follow the current DJ behavior: comma-separated input,
-  validation on blur, and creation of missing tags on successful submission.
+- Tags are optional and use the shared DJ tag chips and autocomplete UI, with
+  existing-tag loading/retry and creation of missing tags on successful
+  submission.
 - Broadcast date has day-level granularity only. Accept YYYY-MM-DD, floor it to
   midnight UTC in the existing timestamp column, and display YYYY-MM-DD.
 - Duration is entered as hours/minutes/seconds and stored as whole seconds.

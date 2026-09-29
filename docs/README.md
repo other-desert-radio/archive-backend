@@ -190,6 +190,15 @@ modal share `useDialogFocus` for initial focus, Tab containment, and Escape
 handling. Resource validation and request building remain in their existing
 private utilities, and public DJ imports continue through the `dj` barrel.
 
+### Modal sizing and typography
+
+Shared form and message panels use the inherited Space Mono font, body text of
+at least 14px, and 12px helper text. Modal sizing tokens standardize 32px
+desktop and 20px phone padding, 20px field gaps, 28px title-to-form spacing, and
+control heights of at least 42px. Text inputs, tag boxes, and DJ search share
+consistent padding and square black borders. Submit and Cancel retain their
+compact 10px gap and reviewed hover treatment.
+
 ### Modal cancellation
 
 Cancel, Close, Escape, and clicks directly on the shared modal backdrop close

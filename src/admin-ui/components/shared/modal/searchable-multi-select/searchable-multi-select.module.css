@@ -43,3 +43,13 @@
 .error {
 	color: #ff2c2c;
 }
+
+.control > input {
+	width: 100%;
+	min-width: 0;
+	min-height: var(--modal-control-height);
+	padding: var(--modal-control-padding);
+	border: 1px solid #000;
+	border-radius: 0;
+	font: inherit;
+}

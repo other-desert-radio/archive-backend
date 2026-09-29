@@ -1,6 +1,6 @@
 .dropzone {
 	min-width: 0;
-	padding: 0.5rem;
+	padding: 0;
 	border: 1px dashed #000;
 	background: #fafafa;
 }
@@ -19,6 +19,8 @@
 	object-fit: cover;
 }
 .button {
+	min-height: var(--modal-control-height);
+	padding: var(--modal-control-padding);
 	width: 100%;
 	border: 0;
 	border-radius: 0;
