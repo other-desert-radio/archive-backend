@@ -11,6 +11,8 @@ import {
 } from "../components/tags/tags-table.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 
+const handleEditTag = (_tag: TagsAdminRow) => undefined;
+
 export const TagsPage = () => {
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [sortColumn, setSortColumn] = useState<TagSortColumn>("id");
@@ -59,6 +61,7 @@ export const TagsPage = () => {
 				sortColumn={sortColumn}
 				sortDirection={sortDirection}
 				onSort={handleSort}
+				onEdit={handleEditTag}
 			/>
 		</ResourceView>
 	);

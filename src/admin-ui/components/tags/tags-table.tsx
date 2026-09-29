@@ -12,6 +12,7 @@ type TagsTableProps = {
 	sortColumn: TagSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: TagSortColumn) => void;
+	onEdit: (tag: TagsAdminRow) => void;
 };
 
 export const tagColumns: ResourceTableColumn<TagsAdminRow, TagSortColumn>[] = [
@@ -40,6 +41,7 @@ export const TagsTable = ({
 	sortColumn,
 	sortDirection,
 	onSort,
+	onEdit,
 }: TagsTableProps) => (
 	<ResourceTable
 		rows={tags}
@@ -49,5 +51,6 @@ export const TagsTable = ({
 		sortColumn={sortColumn}
 		sortDirection={sortDirection}
 		onSort={onSort}
+		onEdit={onEdit}
 	/>
 );

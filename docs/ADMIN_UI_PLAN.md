@@ -114,9 +114,9 @@ and the Tags UI remain read-only.
   view.
 - The DJ and Shows grid/table choices are retained independently in browser
   local storage through the global `userPreferences` singleton.
-- The DJ and Shows tables include a sticky, opaque left-side Actions column.
-  Their Edit buttons call page-provided callbacks, which are intentionally inert
-  until the edit workflow is implemented.
+- The DJ, Shows, and Tags tables include a sticky, opaque left-side Actions
+  column. Their Edit buttons call page-provided callbacks, which are
+  intentionally inert until the edit workflow is implemented.
 - The modal shell, plain-text field/validation slice, and API submission are
   complete. The next UI slice is the reusable tags component.
 

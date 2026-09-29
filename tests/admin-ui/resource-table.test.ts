@@ -71,7 +71,7 @@ describe("resource table helpers", () => {
 		});
 	});
 
-	test("renders Edit actions that call the supplied row callback", () => {
+	test("always renders Edit actions that call the supplied row callback", () => {
 		const editedRows: Row[] = [];
 		const table = ResourceTable({
 			rows,
