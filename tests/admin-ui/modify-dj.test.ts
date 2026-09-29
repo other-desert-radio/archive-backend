@@ -39,7 +39,9 @@ describe("modifyDJ loader", () => {
 
 		expect(input).toBe("/api/admin/modify-dj");
 		expect(init?.method).toBe("POST");
+		expect(init?.headers).toBeUndefined();
 		const body = init?.body as FormData;
+		expect(body).toBeInstanceOf(FormData);
 		expect(body.get("id")).toBe("42");
 		expect(body.get("title")).toBe("DJ Updated");
 		expect(body.get("bio")).toBe("Updated bio");
@@ -107,6 +109,69 @@ describe("modifyDJ loader", () => {
 			),
 		).rejects.toThrow(
 			"DJ could not be updated.\n\nNot Found\n\nStatus: HTTP 404 (Not Found)\nPlease correct this issue and try again.",
+		);
+	});
+
+	test("describes failures without a JSON error body", async () => {
+		await expect(
+			modifyDJ(
+				{
+					id: 42,
+					title: "DJ Updated",
+					bio: "Updated bio",
+					tags: [],
+					removeImage: false,
+				},
+				async () =>
+					new Response(null, {
+						status: 500,
+						statusText: "Internal Server Error",
+					}),
+			),
+		).rejects.toThrow(
+			"DJ could not be updated.\n\nStatus: HTTP 500 (Internal Server Error)\nPlease check the form and image, then try again.",
+		);
+	});
+
+	test("includes a server-provided error detail", async () => {
+		await expect(
+			modifyDJ(
+				{
+					id: 42,
+					title: "DJ Updated",
+					bio: "Updated bio",
+					tags: [],
+					removeImage: false,
+				},
+				async () =>
+					new Response(JSON.stringify({ error: "Image is too large" }), {
+						status: 413,
+						statusText: "Payload Too Large",
+					}),
+			),
+		).rejects.toThrow(
+			"DJ could not be updated.\n\nImage is too large\n\nStatus: HTTP 413 (Payload Too Large)\nPlease correct this issue and try again.",
+		);
+	});
+
+	test("replaces a generic internal-server detail with a user-safe message", async () => {
+		await expect(
+			modifyDJ(
+				{
+					id: 42,
+					title: "DJ Updated",
+					bio: "Updated bio",
+					tags: [],
+					removeImage: false,
+				},
+				async () =>
+					new Response(JSON.stringify({ error: "Internal Server Error" }), {
+						status: 500,
+						statusText: "Internal Server Error",
+					}),
+			),
+		).rejects.toThrow(
+			"DJ could not be updated.\n\nThe server encountered an unexpected error.\n\nStatus: HTTP 500 (Internal Server Error)\nPlease correct this issue and try again.",
 		);
 	});
 });
