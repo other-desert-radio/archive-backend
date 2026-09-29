@@ -122,20 +122,27 @@ export const ShowsPage = () => {
 					/>
 				}
 			>
-				{viewMode === "grid" ? (
-					<ResourceGrid
-						rows={visibleShows}
-						rowKey={(show) => show.id}
-						renderCard={renderShowGridCard}
-					/>
-				) : (
-					<ShowsTable
-						shows={visibleShows}
-						sortColumn={sortColumn}
-						sortDirection={sortDirection}
-						onSort={handleSort}
-					/>
-				)}
+				{(() => {
+					switch (viewMode) {
+						case "grid":
+							return (
+								<ResourceGrid
+									rows={visibleShows}
+									rowKey={(show) => show.id}
+									renderCard={renderShowGridCard}
+								/>
+							);
+						case "table":
+							return (
+								<ShowsTable
+									shows={visibleShows}
+									sortColumn={sortColumn}
+									sortDirection={sortDirection}
+									onSort={handleSort}
+								/>
+							);
+					}
+				})()}
 			</ResourceView>
 			<OnboardShowModal
 				isOpen={isModalOpen}

@@ -82,20 +82,27 @@ export const DJsPage = () => {
 					/>
 				}
 			>
-				{viewMode === "grid" ? (
-					<ResourceGrid
-						rows={visibleDJs}
-						rowKey={(dj) => dj.id}
-						renderCard={renderDJGridCard}
-					/>
-				) : (
-					<DJsTable
-						djs={visibleDJs}
-						sortColumn={sortColumn}
-						sortDirection={sortDirection}
-						onSort={handleSort}
-					/>
-				)}
+				{(() => {
+					switch (viewMode) {
+						case "grid":
+							return (
+								<ResourceGrid
+									rows={visibleDJs}
+									rowKey={(dj) => dj.id}
+									renderCard={renderDJGridCard}
+								/>
+							);
+						case "table":
+							return (
+								<DJsTable
+									djs={visibleDJs}
+									sortColumn={sortColumn}
+									sortDirection={sortDirection}
+									onSort={handleSort}
+								/>
+							);
+					}
+				})()}
 			</ResourceView>
 			<OnboardDJModal
 				isOpen={isModalOpen}
