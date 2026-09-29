@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ResourceGrid } from "../../src/admin-ui/components/shared/resource-views/resource-grid/index.js";
+import { ResourceGrid } from "../../src/admin-ui/components/shared/resource-views/index.js";
 
 describe("resource grid", () => {
 	test("renders one resource-specific card scaffold for each row", () => {

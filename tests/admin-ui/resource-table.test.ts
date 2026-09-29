@@ -4,7 +4,7 @@ import {
 	getNextSort,
 	type ResourceTableColumn,
 	sortResourceRows,
-} from "../../src/admin-ui/components/shared/resource-views/resource-table/index.js";
+} from "../../src/admin-ui/components/shared/resource-views/index.js";
 
 type Row = { id: number; title: string };
 const rows: Row[] = [

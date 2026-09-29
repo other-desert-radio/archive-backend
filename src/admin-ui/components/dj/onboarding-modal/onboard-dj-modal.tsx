@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadTags } from "../../../loaders/tags.js";
-import { LabeledFormControl } from "../../shared/modal/labeled-form-control/labeled-form-control.js";
-import { OnboardingModal } from "../../shared/modal/onboarding-modal/onboarding-modal.js";
 import {
+	LabeledFormControl,
+	OnboardingModal,
 	TagsInput,
 	type TagsInputOption,
 	type TagsInputValue,
-} from "../../shared/modal/tags-input/tags-input.js";
+} from "../../shared/modal/index.js";
 import {
 	DJImageCropModal,
 	DJImageDropzone,

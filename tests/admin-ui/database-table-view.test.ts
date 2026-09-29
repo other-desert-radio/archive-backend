@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { getDatabaseTableViewError } from "../../src/admin-ui/components/shared/resource-views/database-table-view/index.js";
+import { getDatabaseTableViewError } from "../../src/admin-ui/components/shared/resource-views/index.js";
 
 describe("database table view messages", () => {
 	test("uses the resource title for a generic load error", () => {

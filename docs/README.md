@@ -199,8 +199,8 @@ development.
   primitive in its own subdirectory; resource-specific components follow the
   same pattern under `components/dj/` and `components/shows/`. DJ image
   components live under `components/dj/image/`. Every component directory
-  exposes an `index.ts` barrel; `components/dj/image/index.ts` re-exports all
-  image child folders.
+  exposes an `index.ts` barrel; public imports use the highest relevant group
+  barrel. `components/dj/image/index.ts` re-exports all image child folders.
 - Use Kysely for database access and migrations.
 - Seed data should be added with an explicit script and should not run during
   application startup.

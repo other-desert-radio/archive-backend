@@ -1,7 +1,7 @@
 import {
 	ResourceToolbar,
 	type ResourceViewMode,
-} from "../../shared/resource-views/resource-toolbar/resource-toolbar.js";
+} from "../../shared/resource-views/index.js";
 
 type ShowsToolbarProps = {
 	query: string;

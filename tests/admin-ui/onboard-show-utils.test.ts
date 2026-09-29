@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildCreateShowRequest } from "../../src/admin-ui/components/shows/onboarding-modal/index.js";
+import { buildCreateShowRequest } from "../../src/admin-ui/components/shows/index.js";
 
 describe("Show onboarding payload", () => {
 	test("converts duration, omits blank optional fields, and trims tags", () => {

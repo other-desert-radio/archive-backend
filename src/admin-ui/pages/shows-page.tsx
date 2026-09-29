@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ResourceGrid } from "../components/shared/resource-views/resource-grid/index.js";
-import type { ResourceViewMode } from "../components/shared/resource-views/resource-toolbar/index.js";
-import { ResourceView } from "../components/shared/resource-views/resource-view/index.js";
-import { renderShowGridCard } from "../components/shows/card/index.js";
-import { OnboardShowModal } from "../components/shows/onboarding-modal/index.js";
+import type { ResourceViewMode } from "../components/shared/resource-views/index.js";
+import {
+	ResourceGrid,
+	ResourceView,
+} from "../components/shared/resource-views/index.js";
 import {
 	filterShows,
+	OnboardShowModal,
+	renderShowGridCard,
 	type ShowSortColumn,
 	ShowsTable,
+	ShowsToolbar,
 	type SortDirection,
 	sortShows,
-} from "../components/shows/table/index.js";
-import { ShowsToolbar } from "../components/shows/toolbar/index.js";
+} from "../components/shows/index.js";
 import { createShow } from "../loaders/create-show.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";

@@ -1,4 +1,4 @@
-import type { CreateDJForm } from "../components/dj/onboarding-modal/index.js";
+import type { CreateDJForm } from "../components/dj/index.js";
 import type { DJsAdminRow } from "./djs.js";
 import { describeMutationFailure } from "./mutation-error.js";
 

@@ -4,7 +4,7 @@ import {
 	getShowSearchValue,
 	showColumns,
 	sortShows,
-} from "../../src/admin-ui/components/shows/table/index.js";
+} from "../../src/admin-ui/components/shows/index.js";
 
 const shows = [
 	{

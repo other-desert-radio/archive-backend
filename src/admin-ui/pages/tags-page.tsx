@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+	ResourceView,
 	type SortDirection,
 	sortResourceRows,
-} from "../components/shared/resource-views/resource-table/index.js";
-import { ResourceView } from "../components/shared/resource-views/resource-view/index.js";
+} from "../components/shared/resource-views/index.js";
 import {
 	type TagSortColumn,
 	TagsTable,
