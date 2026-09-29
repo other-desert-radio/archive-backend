@@ -9,13 +9,29 @@
 	place-items: center;
 	background: rgb(0 0 0 / 60%);
 }
+.backdrop {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	cursor: default;
+}
 .panel {
+	position: relative;
 	width: min(864px, calc(100vw - 32px));
 	max-height: calc(100vh - 5rem);
 	min-width: 0;
-	padding: 2rem;
+	padding: var(--modal-padding);
+	font-size: max(14px, 1rem);
+	line-height: 1.5;
 	overflow-y: auto;
 	background: #fff;
+}
+.panel:focus {
+	outline: none;
 }
 .header {
 	display: flex;
@@ -26,54 +42,89 @@
 	margin: 0;
 	font-size: 2rem;
 }
-.header button {
+.close {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 40px;
+	height: 40px;
 	padding: 0;
 	border: 0;
-	font: inherit;
+	border-radius: 0;
+}
+.close svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.5;
 }
 .form {
 	display: grid;
 	grid-template-columns: 7rem minmax(0, 1fr);
-	gap: 1.5rem 1rem;
+	gap: var(--modal-field-gap) 16px;
 	align-items: center;
-	margin-top: 3rem;
+	margin-top: 28px;
 	padding: 0;
 	border: 0;
 }
 .submit {
 	display: block;
-	margin: 2rem auto 0;
-	padding: 0.75rem 2rem;
+	margin: 28px auto 0;
+	padding: 10px 28px;
+	min-height: var(--modal-control-height);
+	font: inherit;
 	border: 2px solid #000;
 	border-radius: 0;
-	box-shadow: 4px 4px 0 #000;
 	color: #000;
 	background: #fff;
 	font-weight: 700;
+	transition:
+		transform 120ms ease,
+		box-shadow 120ms ease;
 }
 .cancel {
 	display: block;
-	margin: 1.5rem auto 0;
+	margin: 10px auto 0;
 	padding: 0;
 	border: 0;
 	color: inherit;
 	background: transparent;
 	font: inherit;
 }
+.close:enabled:hover {
+	background: #efefef;
+}
+.close:enabled:hover svg {
+	stroke-width: 2.5;
+}
+.cancel:enabled:hover {
+	font-weight: 700;
+}
+.submit:enabled:hover {
+	transform: translate(-4px, -4px);
+	box-shadow: 4px 4px 0 #000;
+}
+@media (prefers-reduced-motion: reduce) {
+	.submit {
+		transition: none;
+	}
+}
 .error {
 	margin: 1.5rem 0 0;
 	padding: 0.75rem 1rem;
 	border: 1px solid currentColor;
 	color: #ff2c2c;
-	font-size: 0.875rem;
+	font-size: var(--modal-helper-size);
 	line-height: 1.5;
 	white-space: pre-line;
 	text-align: center;
 }
 @media (max-width: 450px) {
+	.form {
+		grid-template-columns: minmax(0, 1fr);
+	}
 	.panel {
 		width: 100%;
 		max-height: calc(100vh - 3.0625rem);
-		padding: 1.5rem;
+		padding: var(--modal-padding);
 	}
 }

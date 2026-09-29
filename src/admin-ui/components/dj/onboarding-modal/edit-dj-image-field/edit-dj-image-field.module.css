@@ -26,19 +26,8 @@
 }
 .imageError {
 	margin: 0.5rem 0 0;
-	font-size: 0.875rem;
+	font-size: var(--modal-helper-size);
 }
 .imageError {
 	color: #ff2c2c;
-}
-.inheritedTags {
-	display: contents;
-}
-.inheritedTags > p {
-	margin: -1rem 0 0;
-}
-.inheritedTagsList {
-	grid-column: 2;
-	min-width: 0;
-	margin-top: -1rem;
 }

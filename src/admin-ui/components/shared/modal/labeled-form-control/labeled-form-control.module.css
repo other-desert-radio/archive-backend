@@ -5,20 +5,40 @@
 .field textarea {
 	width: 100%;
 	min-width: 0;
-	padding: 0.75rem;
+	padding: var(--modal-control-padding);
+	min-height: var(--modal-control-height);
 	border: 1px solid #000;
 	font: inherit;
 }
 .field textarea {
-	min-height: 6rem;
+	min-height: 96px;
 	resize: vertical;
 }
 .helper {
 	grid-column: 2;
 	margin: 0.5rem 0 0;
 	color: #555;
-	font-size: 0.875rem;
+	font-size: var(--modal-helper-size);
 }
 .fieldError {
 	color: #ff2c2c;
+}
+
+.multiline > label {
+	align-self: start;
+	padding-top: 10px;
+}
+@media (max-width: 450px) {
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-width: 0;
+	}
+	.multiline > label {
+		padding-top: 0;
+	}
+	.helper {
+		grid-column: auto;
+	}
 }

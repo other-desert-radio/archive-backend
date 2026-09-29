@@ -65,17 +65,25 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
+For UI implementation and review, read the
+[admin UI design and reuse guide](ADMIN_UI_DESIGN.md). It documents the reviewed
+modal aesthetic, spacing, reusable components, interaction defaults, and future
+design ideas.
+
 The first Show UI implementation chunk is complete. DJs use reusable resource
 toolbar, table, state-view, and onboarding primitives. The shared onboarding
 shell traps focus, returns focus to its opener, supports Escape dismissal while
 idle, prevents duplicate submission, and keeps its content scrollable within the
 available viewport. Tag drafts commit on blur before chip-removal clicks, so
-removed selections stay removed. The comma-separated tags field is reusable and
-ignores stale validation responses; a validation-service failure does not
-prevent final submission. Chunk 2 migrates the read-only Shows table to the same
-resource view, with search and sorting. Show onboarding uses the shared modal,
-date-only and duration inputs, a searchable existing-DJ selector, optional image
-URL and tags, and a transactional JSON creation endpoint.
+removed selections stay removed. Moving focus to Submit/Save preserves the draft
+until submission, avoiding layout shifts that could swallow the click; request
+builders include the draft. DJ and Show forms use the shared tag chip and
+autocomplete field. The legacy comma-separated tags field ignores stale
+validation responses; a validation-service failure does not prevent final
+submission. Chunk 2 migrates the read-only Shows table to the same resource
+view, with search and sorting. Show onboarding uses the shared modal, date-only
+and integer-seconds duration inputs, a searchable existing-DJ selector, optional
+image URL and tags, and a transactional JSON creation endpoint.
 
 DJ onboarding accepts and decodes JPEG, PNG, and WebP uploads before opening a
 layered square crop modal. The modal supports drag positioning, zoom, and
@@ -180,7 +188,63 @@ For admin UI work, use `scripts/build-container-watch` after the initial
 database setup. Open the authenticated `/admin` page and leave the watcher
 running while editing `src/admin-ui/`.
 
+### Modal component organization
+
+DJ create/edit orchestration lives under `dj/onboarding-modal/`, with separate
+components for shared metadata fields and edit image controls. Tag option
+loading uses the shared `useTagOptions` hook; decoding, crop candidates, and
+image removal use `useDJImageSelection` under `dj/image/`. Both hooks ignore
+obsolete asynchronous results after closure. The form shell and generic message
+modal share `useDialogFocus` for initial focus, Tab containment, and Escape
+handling. Resource validation and request building remain in their existing
+private utilities, and public DJ imports continue through the `dj` barrel.
+
+### Modal sizing and typography
+
+Shared form and message panels use the inherited Space Mono font, body text of
+at least 14px, and 12px helper text. Modal sizing tokens standardize 32px
+desktop and 20px phone padding, 20px field gaps, 28px title-to-form spacing, and
+control heights of at least 42px. Text inputs, tag boxes, and DJ search share
+consistent padding and square black borders. Submit and Cancel retain their
+compact 10px gap and reviewed hover treatment.
+
+### Modal field layout
+
+Desktop forms keep their label/control columns, with textarea, tag, and DJ
+selection labels aligned to the top of their controls. At widths of 450px or
+less, each field stacks its label above its control with an 8px gap. Fields
+retain the shared 20px spacing, and helper text stays attached to its own
+control. Inherited DJ tags follow the same single-column phone layout.
+
+### Show duration input
+
+Show creation uses one required duration field in seconds, with a minimum of 1
+and step of 1. Blank, zero, negative, fractional, non-finite, and values above
+2,147,483,647 (the existing API limit) are rejected. The existing API duration
+remains a number of seconds; no backend or database changes are needed. Duration
+changes participate in the shared unsaved-changes confirmation.
+
+### Modal cancellation
+
+Cancel, Close, Escape, and clicks directly on the shared modal backdrop close
+unchanged forms immediately. Forms with unsaved values show a discard
+confirmation; Keep editing, Escape, or its backdrop preserves the form. Discard
+changes closes it. Reverting values clears the warning, including image removal
+undo and relationship selections. Tag drafts count as changes. Confirmation
+traps focus and makes the underlying form inert; dismissal remains blocked
+during submission and while the DJ crop dialog is open. Successful saves close
+directly.
+
 ### Visual admin UI verification
+
+The shared DJ create/edit and Show create modal uses a larger cross close
+control, bold Cancel and thicker close strokes on hover, and a bordered submit
+button that moves 4px up and left with a black shadow on hover. Disabled
+controls do not apply these hover states; reduced-motion preferences disable the
+submit transition. The close control has a gray hover background, and Submit and
+Cancel use a compact vertical gap. Opening the modal focuses its panel. Buttons
+across the admin UI show focus outlines for keyboard navigation rather than
+mouse clicks.
 
 Use `agent-browser` as the required acceptance check for admin UI changes. With
 the local stack running, open the affected authenticated resource view using the

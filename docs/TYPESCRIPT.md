@@ -3,6 +3,16 @@
 This document is the implementation reference for TypeScript style in the
 backend.
 
+## UI implementation guidance
+
+Before building or editing UI, read [`ADMIN_UI_DESIGN.md`](ADMIN_UI_DESIGN.md).
+It records the reusable component and hook boundaries, reviewed aesthetic,
+responsive sizing and spacing, and modal interaction requirements. Apply this
+document's TypeScript conventions to UI code as well: typed props and requests,
+narrow component responsibilities, and public group-barrel imports. Extend
+existing primitives before duplicating them, and preserve the guide's behavior
+and visual verification workflow.
+
 ## Use type aliases
 
 Use `type` aliases for object shapes and other type definitions. Do not add new

@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-	CommaSeparatedTagsField,
+	hasFormChanges,
 	LabeledFormControl,
 	OnboardingModal,
 	SearchableMultiSelect,
 	type SearchableMultiSelectOption,
+	TagsInput,
+	type TagsInputValue,
+	useTagOptions,
 } from "../../shared/modal/index.js";
 import {
 	buildCreateShowRequest,
@@ -30,24 +33,42 @@ export const OnboardShowModal = ({
 	onClose,
 	onSubmit,
 }: Props) => {
+	const initialValues = useRef({
+		title: "",
+		date: "",
+		duration: "",
+		image: "",
+		tags: [] as string[],
+		tagDraft: "",
+		url: "",
+		selected: [] as number[],
+	});
 	const [title, setTitle] = useState("");
 	const [date, setDate] = useState("");
-	const [hours, setHours] = useState("");
-	const [minutes, setMinutes] = useState("");
-	const [seconds, setSeconds] = useState("");
+	const [duration, setDuration] = useState("");
 	const [image, setImage] = useState("");
-	const [tags, setTags] = useState("");
+	const [tags, setTags] = useState<TagsInputValue>({ tags: [], draft: "" });
+	const { tagOptions, isTagsLoading, tagsError, loadTagOptions } =
+		useTagOptions(isOpen);
 	const [url, setUrl] = useState("");
 	const [selected, setSelected] = useState<number[]>([]);
 	useEffect(() => {
 		if (isOpen) {
+			initialValues.current = {
+				title: "",
+				date: "",
+				duration: "",
+				image: "",
+				tags: [] as string[],
+				tagDraft: "",
+				url: "",
+				selected: [] as number[],
+			};
 			setTitle("");
 			setDate("");
-			setHours("");
-			setMinutes("");
-			setSeconds("");
+			setDuration("");
 			setImage("");
-			setTags("");
+			setTags({ tags: [], draft: "" });
 			setUrl("");
 			setSelected([]);
 			onRetryDJs();
@@ -66,11 +87,9 @@ export const OnboardShowModal = ({
 			buildCreateShowRequest({
 				title,
 				date,
-				hours,
-				minutes,
-				seconds,
+				duration,
 				image,
-				tags,
+				tags: [...tags.tags, tags.draft].join(","),
 				url,
 				djs: selected,
 			}),
@@ -79,6 +98,19 @@ export const OnboardShowModal = ({
 	return (
 		<OnboardingModal
 			isOpen={isOpen}
+			hasUnsavedChanges={hasFormChanges(
+				{
+					title,
+					date,
+					duration,
+					image,
+					tags: tags.tags,
+					tagDraft: tags.draft,
+					url,
+					selected,
+				},
+				initialValues.current,
+			)}
 			title="Onboard Show"
 			onClose={onClose}
 			onSubmit={submit}
@@ -102,25 +134,16 @@ export const OnboardShowModal = ({
 				required
 			/>
 			<LabeledFormControl
-				id="show-hours"
-				name="hours"
-				label="duration (hours)"
-				value={hours}
-				onChange={setHours}
-			/>
-			<LabeledFormControl
-				id="show-minutes"
-				name="minutes"
-				label="duration (minutes)"
-				value={minutes}
-				onChange={setMinutes}
-			/>
-			<LabeledFormControl
-				id="show-seconds"
-				name="seconds"
+				id="show-duration"
+				name="duration"
 				label="duration (seconds)"
-				value={seconds}
-				onChange={setSeconds}
+				type="number"
+				min={1}
+				max={2_147_483_647}
+				step={1}
+				value={duration}
+				onChange={setDuration}
+				required
 			/>
 			<LabeledFormControl
 				id="show-image"
@@ -140,7 +163,15 @@ export const OnboardShowModal = ({
 				{...(djsError === undefined ? {} : { error: djsError })}
 				onRetry={onRetryDJs}
 			/>
-			<CommaSeparatedTagsField id="show-tags" value={tags} onChange={setTags} />
+			<TagsInput
+				id="show-tags"
+				value={tags}
+				onChange={setTags}
+				options={tagOptions}
+				isLoading={isTagsLoading}
+				{...(tagsError === undefined ? {} : { error: tagsError })}
+				onRetry={loadTagOptions}
+			/>
 			<LabeledFormControl
 				id="show-url"
 				name="url"
