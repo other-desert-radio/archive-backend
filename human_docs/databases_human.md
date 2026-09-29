@@ -18,7 +18,8 @@ archive-site/
 │   └── tags.json
 └── public/assets/
     └── djs/
-        └── 1.jpg
+        ├── 1_small.webp
+        └── 1_large.webp
 ```
 
 Astro imports JSON from `src/res/` during its site build. It copies
@@ -35,7 +36,7 @@ The scrolling DJ list loads this compact index.
   {
     "id": 1,
     "title": "DJ Example",
-    "image": "assets/djs/1.jpg",
+    "image": "assets/djs/1_small.webp",
     "tagIds": [2, 4]
   }
 ]
@@ -52,7 +53,7 @@ dictionary.
   "id": 1,
   "title": "DJ Example",
   "bio": "<p>Safe HTML</p>",
-  "image": "assets/djs/1.jpg",
+  "image": "assets/djs/1_large.webp",
   "shows": [
     {
       "id": 10,
@@ -81,7 +82,13 @@ ordered by descending date, then ID; related DJ and tag IDs are ascending.
     "title": "Example Show",
     "date": "2026-01-01T00:00:00.000Z",
     "duration": 1234,
-    "djs": [{ "id": 1, "title": "DJ Example", "image": "assets/djs/1.jpg" }],
+    "djs": [
+      {
+        "id": 1,
+        "title": "DJ Example",
+        "image": "assets/djs/1_small.webp"
+      }
+    ],
     "image": "https://example.com/show-image.jpg",
     "tagIds": [2, 4],
     "url": "https://example.com/audio"
@@ -104,10 +111,27 @@ indexes it by `id`, and resolves every `tagIds` array against it.
 ]
 ```
 
-The database tables on the backend will be:
+## DJ images
 
-DJs: ID | Title | Bio | Image Shows: ID | Title | Date | Duration | Image | URL
-Tags: ID | Title | Color
+The database stores only two derived WebP image columns for each DJ:
+
+- `image_small`: an exact 400 by 400 WebP, used in the DJ index and show cards.
+- `image_large`: an exact 1024 by 1024 WebP, used on the DJ detail page.
+
+The two values are stored as a pair; a DJ either has both variants or neither.
+The source upload and its filename are not retained. Admins can select JPEG,
+PNG, or WebP source files. The browser lets them crop, zoom, and rotate the
+image, then submits a square WebP. The backend produces and stores the two final
+WebPs. There is no image-byte upload limit in this workflow.
+
+## Database tables
+
+```text
+DJs: ID | Title | Bio | image_small | image_large | Socials | Show Title |
+     Show Description
+Shows: ID | Title | Date | Duration | Image | URL
+Tags: ID | Title | Color | Reviewed
+```
 
 Show_DJs: ID | show_id | dj_id show_id FOREIGN KEY -> Shows.ID dj_id FOREIGN KEY
 -> DJs.ID UNIQUE(show_id, dj_id)

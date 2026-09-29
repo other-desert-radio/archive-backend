@@ -29,8 +29,8 @@ describe("archive export documents", () => {
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
 					title: "DJ One",
 					bio: "<p>Bio</p><script>bad()</script>",
-					image: Buffer.from("portrait"),
-					image_filename: "portrait.png",
+					image_small: Buffer.from("portrait-small"),
+					image_large: Buffer.from("portrait-large"),
 					socials: "<strong>@dj-one</strong><iframe>bad</iframe>",
 					showTitle: "Late Night",
 					showDescription: "A weekly program.",
@@ -40,8 +40,8 @@ describe("archive export documents", () => {
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
 					title: "DJ Two",
 					bio: "Bio",
-					image: null,
-					image_filename: null,
+					image_small: null,
+					image_large: null,
 					socials: null,
 					showTitle: null,
 					showDescription: null,
@@ -86,7 +86,7 @@ describe("archive export documents", () => {
 			{
 				id: 1,
 				title: "DJ One",
-				image: "assets/djs/1.png",
+				image: "assets/djs/1_small.webp",
 				tagIds: [2, 4],
 			},
 			{ id: 2, title: "DJ Two", tagIds: [] },
@@ -94,7 +94,7 @@ describe("archive export documents", () => {
 		expect(documents.djs[0]).toEqual({
 			id: 1,
 			title: "DJ One",
-			image: "assets/djs/1.png",
+			image: "assets/djs/1_large.webp",
 			bio: "<p>Bio</p>",
 			socials: "<strong>@dj-one</strong>bad",
 			showTitle: "Late Night",
@@ -123,7 +123,7 @@ describe("archive export documents", () => {
 					{
 						id: 1,
 						title: "DJ One",
-						image: "assets/djs/1.png",
+						image: "assets/djs/1_small.webp",
 					},
 				],
 				tagIds: [2, 4],
@@ -141,18 +141,19 @@ describe("archive export documents", () => {
 			{ id: 4, title: "Ambient", color: "#2255cc" },
 		]);
 		expect(documents.images).toEqual([
-			{ id: 1, bytes: Buffer.from("portrait"), extension: ".png" },
+			{ id: 1, bytes: Buffer.from("portrait-small"), variant: "small" },
+			{ id: 1, bytes: Buffer.from("portrait-large"), variant: "large" },
 		]);
 	});
 
-	test("rejects unsupported stored image filenames", () => {
+	test("rejects incomplete WebP image pairs", () => {
 		expect(() =>
 			buildArchiveDocuments({
 				djs: [
 					{
 						id: 1,
-						image: Buffer.from("image"),
-						image_filename: "portrait.gif",
+						image_small: Buffer.from("image"),
+						image_large: null,
 					},
 				] as never,
 				shows: [],
@@ -161,7 +162,7 @@ describe("archive export documents", () => {
 				djTags: [],
 				showTags: [],
 			}),
-		).toThrow("DJ 1 has an unsupported image filename: portrait.gif");
+		).toThrow("DJ 1 has an incomplete WebP image pair");
 	});
 });
 
@@ -178,7 +179,7 @@ describe("archive export writer", () => {
 		await mkdir(path.join(resourceDirectory, "shows"), { recursive: true });
 		await writeFile(path.join(resourceDirectory, "djs", "stale.json"), "stale");
 		await writeFile(path.join(resourceDirectory, "shows.json"), "stale");
-		await writeFile(path.join(assetDirectory, "djs", "stale.jpg"), "stale");
+		await writeFile(path.join(assetDirectory, "djs", "stale.webp"), "stale");
 		await writeFile(
 			path.join(resourceDirectory, "shows", "10.json"),
 			"future show",
@@ -209,7 +210,10 @@ describe("archive export writer", () => {
 					},
 				],
 				tags: [{ id: 2, title: "House", color: "#ff1100" }],
-				images: [{ id: 1, bytes: Buffer.from("image"), extension: ".jpg" }],
+				images: [
+					{ id: 1, bytes: Buffer.from("small"), variant: "small" },
+					{ id: 1, bytes: Buffer.from("large"), variant: "large" },
+				],
 			},
 			resourceDirectory,
 			assetDirectory,
@@ -239,16 +243,19 @@ describe("archive export writer", () => {
 				url: "https://example.com/audio",
 			},
 		]);
-		expect(await readFile(path.join(assetDirectory, "djs", "1.jpg"))).toEqual(
-			Buffer.from("image"),
-		);
+		expect(
+			await readFile(path.join(assetDirectory, "djs", "1_small.webp")),
+		).toEqual(Buffer.from("small"));
+		expect(
+			await readFile(path.join(assetDirectory, "djs", "1_large.webp")),
+		).toEqual(Buffer.from("large"));
 		expect(
 			await readFile(path.join(resourceDirectory, "shows", "10.json"), "utf8"),
 		).toBe("future show");
 		expect(logs).toContain("├─ Refreshing managed JSON output");
 		expect(logs).toContain("│  ├─ djs/1.json");
-		expect(logs).toContain("│  └─ assets/djs/1.jpg");
+		expect(logs).toContain("│  └─ assets/djs/1_large.webp");
 		expect(logs).toContain("│  ├─ shows.json: 1 shows");
-		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 shows, 1 tags, 1 images");
+		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 shows, 1 tags, 2 images");
 	});
 });

@@ -16,8 +16,10 @@ adds the nullable `djs.socials` field, and migration twelve adds the non-null
 `tags.reviewed` flag. Migration thirteen replaces the nullable DJ image URL with
 raw binary image storage and filename metadata. Migration fourteen adds nullable
 DJ show metadata. Migration fifteen adds optional `tags.mixcloud_key` and
-`tags.mixcloud_url` source metadata. Migrations are applied explicitly, one at a
-time, after review.
+`tags.mixcloud_url` source metadata. Migration sixteen adds and backfills paired
+400px and 1024px WebP DJ images. Migration seventeen removes the transitional
+original DJ image bytes and filename metadata. Migrations are applied
+explicitly, one at a time, after review.
 
 Biome is the formatter and linter for source files. The checked-in `biome.json`
 is the source of truth for those lint and formatting rules. Markdown is
@@ -74,15 +76,27 @@ view, with search and sorting. Show onboarding uses the shared modal, date-only
 and duration inputs, a searchable existing-DJ selector, optional image URL and
 tags, and a transactional JSON creation endpoint.
 
+DJ onboarding accepts and decodes JPEG, PNG, and WebP uploads before opening a
+layered square crop modal. The modal supports drag positioning, zoom, and
+left/right 90-degree rotation, then sends a 1200-by-1200 WebP crop through the
+DJ multipart upload field. Sharp creates and stores 400-by-400 and 1024-by-1024
+WebP variants; the submitted crop is not retained.
+
+The DJs and Shows toolbars support table and grid views. DJ cards render their
+available image, title, and colored tags; Show cards also render linked DJ
+names. Both include clear image/relationship fallbacks and a square, bordered
+placeholder Edit control for the future edit workflow.
+
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
 shell. The production container builds the shell into `dist/admin`; a missing
 bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
-`id`, `createdAt`, `title`, `bio`, optional `imagePath`, `socials`, `showTitle`,
-and `showDescription`, `shows`, and `tags`; its relationship IDs are derived
-from the relationship tables. `POST /api/admin/create-dj` creates DJs
-transactionally and sanitizes bio/socials HTML. Tag creation is centralized in
-the Tags module and is available through `POST /api/admin/create-tag` and
+`id`, `createdAt`, `title`, `bio`, optional `image_small` and `image_large`,
+`socials`, `showTitle`, and `showDescription`, `shows`, and `tags`; its
+relationship IDs are derived from the relationship tables.
+`POST /api/admin/create-dj` creates DJs transactionally and sanitizes
+bio/socials HTML. Tag creation is centralized in the Tags module and is
+available through `POST /api/admin/create-tag` and
 `POST /api/admin/create-tags`; automatically colored tags are unreviewed, while
 explicitly colored tags are reviewed. The UI renders the DJ list with loading,
 empty, and error states. The Shows API returns transformed relationship IDs plus
@@ -130,8 +144,9 @@ archive dataset, use the
   cloudcast page and writes one combined JSON document to
   `src/res/mixcloud.json`.
 - `bun run db:export:archive` writes DJ detail/index JSON, the top-level show
-  index, and tags to the configured Astro `src/res/` directory, and DJ images to
-  `public/assets/`. It logs each build stage and generated file.
+  index, and tags to the configured Astro `src/res/` directory, and stored DJ
+  WebP variants to `public/assets/djs/`. It logs each build stage and generated
+  file.
 - `bun run db:delete:djs -- --confirm` permanently deletes all DJs and their
   cascading relationship rows.
 - `bun run format` formats source files with Biome and Markdown files with
@@ -200,6 +215,13 @@ development.
 ## Conventions
 
 - Keep the backend small until a concrete feature requires more structure.
+- Organize admin UI components by responsibility. Shared primitives use
+  `components/shared/resource-views/` or `components/shared/modal/`, with each
+  primitive in its own subdirectory; resource-specific components follow the
+  same pattern under `components/dj/` and `components/shows/`. DJ image
+  components live under `components/dj/image/`. Every component directory
+  exposes an `index.ts` barrel; public imports use the highest relevant group
+  barrel. `components/dj/image/index.ts` re-exports all image child folders.
 - Use Kysely for database access and migrations.
 - Seed data should be added with an explicit script and should not run during
   application startup.

@@ -110,8 +110,16 @@ and the Tags UI remain read-only.
   now opens the reusable onboarding modal with all plain-text fields, Submit,
   and required title/bio validation.
 - DJs, Shows, and Tags use the shared resource view and sortable table
-  components. The DJ table scroll area keeps leading padding but extends to the
-  right edge of the view.
+  components. Tables with sticky Actions columns extend to both edges of the
+  view.
+- The DJ and Shows grid/table choices are retained independently in browser
+  local storage through the global `userPreferences` singleton.
+- The DJ, Shows, and Tags tables include a sticky, opaque left-side Actions
+  column. Their Edit buttons call page-provided callbacks, which are
+  intentionally inert until the edit workflow is implemented.
+- The table-only Tags view uses the shared search and create toolbar. Its search
+  filters title and color, while its `+ tag` action is intentionally inert until
+  tag creation is implemented.
 - The modal shell, plain-text field/validation slice, and API submission are
   complete. The next UI slice is the reusable tags component.
 
@@ -125,18 +133,21 @@ The DJ onboarding slice has progressed beyond the earlier read-only handoff:
   Tags-module service. Automatically colored tags are unreviewed; explicit
   colors are reviewed. `tags.reviewed` is provided by migration `0012`.
 - The onboarding modal submits normalized plain-text fields, including optional
-  show title and show description metadata, calls
-  `POST /api/admin/validate-tags` when the tags field is left, and only shows
-  helper copy for tags missing from the database. Chips, autocomplete, and other
-  richer tag UI remain deferred.
+  show title and show description metadata. Show onboarding retains plain-text
+  tag validation on blur.
+- DJ onboarding now uses the reusable Figma-aligned tag combobox: existing tags
+  load for each modal session, matching tags appear in a compact dropdown, and
+  selected tags become stored-color chips. Prefix matches show gray inline
+  completion accepted with Tab; unknown tags use the white/red chip treatment
+  and explanatory helper text. The component does not create tags itself.
 - Each new onboarding session starts with an empty form, including the selected
   image and validation feedback.
 - `DJsPage` refreshes the table after a successful submission while preserving
   its search and sort state. The authenticated loader and focused frontend,
   route, service, persistence, and transformer tests are in place.
 
-The next work should be reviewed in small chunks. The reusable tags component
-and any later tag-management UI remain separate from this onboarding behavior.
+The next work should be reviewed in small chunks. Any later tag-management UI
+remains separate from this onboarding behavior.
 
 ### Next-agent checklist
 
@@ -144,9 +155,8 @@ Implement one item at a time and stop for review after each item:
 
 1. Review the completed DJ onboarding persistence and tag-creation behavior,
    including the migration verification and current API documentation.
-2. Add the reusable tags component for chips, matching, and richer interaction
-   only after that review. Keep it separate from the already-working plain
-   helper-copy behavior on tags blur.
+2. Review the reusable DJ tags component’s dropdown, chip, and inline-completion
+   behavior separately from any later tag-management UI.
 3. [x] Connect the Tags sidebar item to `#tags` and verify Shows, DJs, and Tags
        navigation without adding CRUD behavior.
 4. [x] Add the background asset and replace only the gray background in a
@@ -251,17 +261,18 @@ These decisions are recorded before application implementation begins.
     "id": 1,
     "title": "name",
     "bio": "safe html",
-    "imagePath": "/api/admin/djs/1/image",
+    "image_small": "/api/admin/djs/1/image/small",
+    "image_large": "/api/admin/djs/1/image/large",
     "shows": [1, 2],
     "tags": [3, 4]
   }
 ]
 ```
 
-`imagePath` is omitted when the database image is `NULL`. Show IDs come from
-`show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries and tags
-assigned to the DJ's shows through `show_tags`. Database errors return
-`500 { "error": "Internal Server Error" }`.
+`image_small` and `image_large` are omitted when the database image pair is
+`NULL`. Show IDs come from `show_djs`. Tag IDs are the distinct union of direct
+`dj_tags` entries and tags assigned to the DJ's shows through `show_tags`.
+Database errors return `500 { "error": "Internal Server Error" }`.
 
 - [x] Serve the empty React/Vite shell at `/admin`.
 - [x] Render the read-only DJ list with loading, empty, and error states.

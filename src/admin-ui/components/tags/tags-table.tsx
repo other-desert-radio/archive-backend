@@ -3,7 +3,8 @@ import {
 	ResourceTable,
 	type ResourceTableColumn,
 	type SortDirection,
-} from "../shared/resource-table.js";
+	Tag,
+} from "../shared/resource-views/index.js";
 
 export type TagSortColumn = "id" | "title" | "color";
 
@@ -12,6 +13,7 @@ type TagsTableProps = {
 	sortColumn: TagSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: TagSortColumn) => void;
+	onEdit: (tag: TagsAdminRow) => void;
 };
 
 export const tagColumns: ResourceTableColumn<TagsAdminRow, TagSortColumn>[] = [
@@ -24,7 +26,11 @@ export const tagColumns: ResourceTableColumn<TagsAdminRow, TagSortColumn>[] = [
 	{
 		key: "title",
 		label: "title",
-		render: (tag) => tag.title,
+		render: (tag) => (
+			<Tag as="span" color={tag.color}>
+				{tag.title}
+			</Tag>
+		),
 		compare: (left, right) => left.title.localeCompare(right.title),
 	},
 	{
@@ -40,6 +46,7 @@ export const TagsTable = ({
 	sortColumn,
 	sortDirection,
 	onSort,
+	onEdit,
 }: TagsTableProps) => (
 	<ResourceTable
 		rows={tags}
@@ -49,5 +56,6 @@ export const TagsTable = ({
 		sortColumn={sortColumn}
 		sortDirection={sortDirection}
 		onSort={onSort}
+		onEdit={onEdit}
 	/>
 );

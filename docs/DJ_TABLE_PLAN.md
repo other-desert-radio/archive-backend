@@ -22,10 +22,12 @@ Current repository state:
   normalizes, and persists the DJ and direct tag relationships transactionally.
 - The onboarding modal calls tag validation on blur and shows plain helper copy
   for tags missing from the database; richer tag UI remains deferred.
-- Existing DJ JSON fields: `id`, `title`, `bio`, optional `imagePath`, optional
-  `socials`, `showTitle`, and `showDescription`, `shows`, and `tags`.
-- Existing `djs` columns: `id`, `title`, `bio`, nullable `image`, nullable
-  `socials`, nullable `showTitle`, and nullable `showDescription`.
+- Existing DJ JSON fields: `id`, `title`, `bio`, optional `image_small` and
+  `image_large`, optional `socials`, `showTitle`, and `showDescription`,
+  `shows`, and `tags`.
+- Existing `djs` columns: `id`, `title`, `bio`, nullable `image_small`, nullable
+  `image_large`, nullable `socials`, nullable `showTitle`, and nullable
+  `showDescription`.
 - Existing tag JSON fields: `id`, `title`, `color`, and `reviewed`.
 - The DJ table renders `id`, `title`, `image`, `tags`, `socials`, `bio`, and
   `shows` with client-side filtering and sorting.
@@ -209,15 +211,15 @@ type DJsJSON = {
   id: number;
   title: string;
   bio: string;
-  imagePath?: string;
+  image_small?: string;
+  image_large?: string;
   socials?: string;
   shows: number[];
   tags: number[];
 };
 ```
 
-Nullable database values should be omitted from JSON, matching the existing
-`imagePath` behavior.
+Nullable image pairs should be omitted from JSON.
 
 The first editor stores plain text converted to safe HTML. The server must
 sanitize stored/output HTML using an established sanitizer. Limit formatting to
@@ -301,8 +303,8 @@ non-empty `title` and `bio`; submission uses the authenticated
 Form fields:
 
 - `title`: required.
-- `image`: optional JPEG, PNG, or WebP file up to 10 MiB, selected by drag/drop
-  or the file picker.
+- `image`: optional JPEG, PNG, or WebP file, selected by drag/drop or the file
+  picker, then cropped to a square WebP in the browser.
 - `tags`: plain-text input for this first modal slice; the reusable component is
   added later.
 - `showTitle`: optional plain-text input.
@@ -359,21 +361,21 @@ The route now uses the shared `AdminApiReply` response contract, and focused
 admin-boundary tests cover successful validation, invalid request bodies,
 database failures, unauthenticated requests, and non-admin requests.
 
-The onboarding modal now calls this endpoint when the plain-text tags field
-loses focus and displays only the missing-tag helper copy. It does not render
-the Figma tags breakout behavior yet; chip rendering, autocomplete, and other
-richer interactions remain deferred.
+Show onboarding calls this endpoint when its plain-text tags field loses focus
+and displays helper copy for missing tags. DJ onboarding uses the richer tags
+component described below.
 
 This endpoint is validation support, not tag persistence. Unknown tags remain
 creation candidates until the final transactional DJ endpoint is implemented.
 
-Implement the controlled tags input after the modal’s initial plain-text form
-has been reviewed. It should support matching existing tags, comma-separated
-input, trimming, case-insensitive deduplication, removable colored chips, and
-unknown-tag helper text. Use the loaded tag metadata for chip colors and the
-validation endpoint when server confirmation is useful; do not create or modify
-tags from the component. Add pure helper tests and stop for review after the
-admin build.
+The controlled tags input is implemented for DJ onboarding. It loads tag
+metadata for each modal session, supports matching existing tags,
+comma-separated input, trimming, case-insensitive deduplication, removable
+colored chips, gray inline prefix completion, and Tab-to-accept. Existing tags
+retain their stored color; unknown tags use the white/red chip treatment and
+helper text. The component never creates or modifies tags: the final DJ
+submission remains the persistence boundary. Show onboarding retains its
+plain-text tags field.
 
 ### 5. Add the create endpoint last
 

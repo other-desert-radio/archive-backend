@@ -1,8 +1,8 @@
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { isMatching } from "ts-pattern";
 import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
-import { splitCommaSeparated } from "../../../utils/index.js";
+import { generateSquareWebPImages } from "../../../utils/images/index.js";
 import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
 import { clientDescription } from "../../logging.js";
 import { createTags } from "../tags/tag-service.js";
@@ -10,10 +10,7 @@ import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
 import { parseCreateDJMultipart } from "./parse-create-dj-multipart.js";
 import { CreateDJRequestPattern } from "./types.js";
-import {
-	contentTypeForDJImageFilename,
-	validateDJImageUpload,
-} from "./validate-dj-image.js";
+import { validateDJImageUpload } from "./validate-dj-image.js";
 
 /** Registers authenticated DJ API routes. */
 export const djRoutes =
@@ -31,8 +28,8 @@ export const djRoutes =
 								"createdAt",
 								"title",
 								"bio",
-								"image",
-								"image_filename",
+								"image_small",
+								"image_large",
 								"socials",
 								"showTitle",
 								"showDescription",
@@ -68,46 +65,49 @@ export const djRoutes =
 			},
 		);
 
-		app.get<{
-			Params: { id: string };
-			Reply: AdminApiReply<Buffer>;
-		}>("/djs/:id/image", async (request, reply) => {
-			const id = Number(request.params.id);
-			if (!Number.isSafeInteger(id) || id < 1) {
+		const serveImage = async (
+			id: string,
+			variant: string,
+			request: FastifyRequest,
+			reply: FastifyReply,
+		) => {
+			const numericId = Number(id);
+			if (!Number.isSafeInteger(numericId) || numericId < 1)
 				return reply.code(404).send({ error: "Not Found" });
-			}
+			if (variant !== "small" && variant !== "large")
+				return reply.code(404).send({ error: "Not Found" });
 
 			try {
 				const dj = await database
 					.selectFrom("djs")
-					.select(["image", "image_filename"])
-					.where("id", "=", id)
+					.select(variant === "small" ? ["image_small"] : ["image_large"])
+					.where("id", "=", numericId)
 					.executeTakeFirst();
-
-				if (
-					dj?.image === null ||
-					dj?.image_filename === null ||
-					dj === undefined
-				) {
+				const image = variant === "small" ? dj?.image_small : dj?.image_large;
+				if (image === null || image === undefined)
 					return reply.code(404).send({ error: "Not Found" });
-				}
 
-				const contentType = contentTypeForDJImageFilename(dj.image_filename);
-				if (contentType === undefined) {
-					request.log.error(
-						{ djId: id, filename: dj.image_filename },
-						"DJ image has an unsupported filename extension",
-					);
-					return reply.code(500).send({ error: "Internal Server Error" });
-				}
-
-				reply.type(contentType);
-				return reply.code(200).send(dj.image);
+				reply.type("image/webp");
+				return reply.code(200).send(image);
 			} catch (error) {
 				request.log.error(error, "Unable to load DJ image");
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
-		});
+		};
+
+		app.get<{
+			Params: { id: string; variant: "small" | "large" };
+			Reply: AdminApiReply<Buffer>;
+		}>("/djs/:id/image/:variant", (request, reply) =>
+			serveImage(request.params.id, request.params.variant, request, reply),
+		);
+
+		app.get<{
+			Params: { id: string };
+			Reply: AdminApiReply<Buffer>;
+		}>("/djs/:id/image", (request, reply) =>
+			serveImage(request.params.id, "large", request, reply),
+		);
 
 		app.post<{ Reply: AdminApiReply<DJJSON> }>(
 			"/create-dj",
@@ -126,31 +126,7 @@ export const djRoutes =
 						return reply.code(400).send({ error: parsed.error });
 					}
 
-					const tags =
-						parsed.form.tags === undefined
-							? undefined
-							: splitCommaSeparated(parsed.form.tags);
-					const socials =
-						parsed.form.socials?.trim() === ""
-							? undefined
-							: parsed.form.socials;
-					const showTitle =
-						parsed.form.showTitle?.trim() === ""
-							? undefined
-							: parsed.form.showTitle;
-					const showDescription =
-						parsed.form.showDescription?.trim() === ""
-							? undefined
-							: parsed.form.showDescription;
-
-					const textRequest = {
-						title: parsed.form.title ?? "",
-						bio: parsed.form.bio ?? "",
-						...(tags === undefined ? {} : { tags }),
-						...(socials === undefined ? {} : { socials }),
-						...(showTitle === undefined ? {} : { showTitle }),
-						...(showDescription === undefined ? {} : { showDescription }),
-					};
+					const { image: uploadedImage, ...textRequest } = parsed.form;
 
 					if (!isMatching(CreateDJRequestPattern, textRequest)) {
 						request.log.warn(
@@ -160,9 +136,9 @@ export const djRoutes =
 					}
 
 					const validatedImage =
-						parsed.form.image === undefined
+						uploadedImage === undefined
 							? undefined
-							: validateDJImageUpload(parsed.form.image);
+							: validateDJImageUpload(uploadedImage);
 					if (validatedImage?.valid === false) {
 						request.log.warn(
 							{ reason: validatedImage.error },
@@ -173,6 +149,22 @@ export const djRoutes =
 
 					const image =
 						validatedImage?.valid === true ? validatedImage.image : undefined;
+					let imageVariants:
+						| Awaited<ReturnType<typeof generateSquareWebPImages>>
+						| undefined;
+					if (image !== undefined) {
+						try {
+							imageVariants = await generateSquareWebPImages(image.bytes);
+						} catch (error) {
+							request.log.warn(
+								{ err: error },
+								"DJ creation request rejected during image processing",
+							);
+							return reply
+								.code(400)
+								.send({ error: "Image could not be processed" });
+						}
+					}
 					const normalized = normalizeCreateDJRequest(textRequest);
 					const created = await database
 						.transaction()
@@ -188,8 +180,8 @@ export const djRoutes =
 								.values({
 									title: normalized.title,
 									bio: plainTextToSafeHtml(normalized.bio),
-									image: image?.bytes ?? null,
-									image_filename: image?.filename ?? null,
+									image_small: imageVariants?.small ?? null,
+									image_large: imageVariants?.large ?? null,
 									socials:
 										normalized.socials === null
 											? undefined
@@ -216,17 +208,17 @@ export const djRoutes =
 									.execute();
 							}
 
-							const imagePath =
-								image === undefined
-									? undefined
-									: `/api/admin/djs/${insertedDJ.id}/image`;
-
 							return {
 								id: insertedDJ.id,
 								createdAt: insertedDJ.createdAt,
 								title: normalized.title,
 								bio: plainTextToSafeHtml(normalized.bio),
-								...(imagePath === undefined ? {} : { imagePath }),
+								...(imageVariants === undefined
+									? {}
+									: {
+											image_small: `/api/admin/djs/${insertedDJ.id}/image/small`,
+											image_large: `/api/admin/djs/${insertedDJ.id}/image/large`,
+										}),
 								...(normalized.socials === null
 									? {}
 									: { socials: plainTextToSafeHtml(normalized.socials) }),
@@ -245,7 +237,13 @@ export const djRoutes =
 						{
 							djId: created.id,
 							djName: created.title,
-							hasImage: image !== undefined,
+							hasImage: imageVariants !== undefined,
+							...(imageVariants === undefined
+								? {}
+								: {
+										imageSmallBytes: imageVariants.small.length,
+										imageLargeBytes: imageVariants.large.length,
+									}),
 							client: clientDescription(request),
 						},
 						`[DJ Creation] DJ created -- id: ${created.id}, name: ${created.title}`,

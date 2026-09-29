@@ -1,24 +1,35 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ResourceView } from "../components/shared/resource-view.js";
-import { OnboardShowModal } from "../components/shows/onboard-show-modal.js";
-import { ShowsTable } from "../components/shows/shows-table.js";
+import type { ResourceViewMode } from "../components/shared/resource-views/index.js";
+import {
+	ResourceGrid,
+	ResourceView,
+} from "../components/shared/resource-views/index.js";
 import {
 	filterShows,
+	OnboardShowModal,
+	renderShowCard,
 	type ShowSortColumn,
+	ShowsTable,
+	ShowsToolbar,
 	type SortDirection,
 	sortShows,
-} from "../components/shows/shows-table-utils.js";
-import { ShowsToolbar } from "../components/shows/shows-toolbar.js";
+} from "../components/shows/index.js";
 import { createShow } from "../loaders/create-show.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
+import { userPreferences } from "../user-preferences.js";
+
+const handleEditShow = (_show: ShowsAdminRow) => undefined;
 
 export const ShowsPage = () => {
 	const [shows, setShows] = useState<ShowsAdminRow[]>([]);
 	const [djs, setDJs] = useState<DJsAdminRow[]>([]);
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
+	const [viewMode, setViewMode] = useState<ResourceViewMode>(() =>
+		userPreferences.getResourceViewMode("shows"),
+	);
 	const [sortColumn, setSortColumn] = useState<ShowSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isLoading, setIsLoading] = useState(true);
@@ -69,8 +80,13 @@ export const ShowsPage = () => {
 		() => new Map(djs.map((dj) => [dj.id, dj.title])),
 		[djs],
 	);
+	const djsById = useMemo(() => new Map(djs.map((dj) => [dj.id, dj])), [djs]);
 	const tagTitlesById = useMemo(
 		() => new Map(tags.map((tag) => [tag.id, tag.title])),
+		[tags],
+	);
+	const tagsById = useMemo(
+		() => new Map(tags.map((tag) => [tag.id, tag])),
 		[tags],
 	);
 	const visibleShows = useMemo(
@@ -96,6 +112,10 @@ export const ShowsPage = () => {
 		await createShow(request);
 		refreshShows();
 	};
+	const handleViewModeChange = (mode: ResourceViewMode) => {
+		userPreferences.setResourceViewMode("shows", mode);
+		setViewMode(mode);
+	};
 
 	return (
 		<>
@@ -112,16 +132,36 @@ export const ShowsPage = () => {
 					<ShowsToolbar
 						query={query}
 						onQueryChange={setQuery}
+						viewMode={viewMode}
+						onViewModeChange={handleViewModeChange}
 						onAddShow={() => setIsModalOpen(true)}
 					/>
 				}
 			>
-				<ShowsTable
-					shows={visibleShows}
-					sortColumn={sortColumn}
-					sortDirection={sortDirection}
-					onSort={handleSort}
-				/>
+				{(() => {
+					switch (viewMode) {
+						case "grid":
+							return (
+								<ResourceGrid
+									rows={visibleShows}
+									rowKey={(show) => show.id}
+									renderCard={(show, key) =>
+										renderShowCard(show, tagsById, djsById, key)
+									}
+								/>
+							);
+						case "table":
+							return (
+								<ShowsTable
+									shows={visibleShows}
+									sortColumn={sortColumn}
+									sortDirection={sortDirection}
+									onSort={handleSort}
+									onEdit={handleEditShow}
+								/>
+							);
+					}
+				})()}
 			</ResourceView>
 			<OnboardShowModal
 				isOpen={isModalOpen}

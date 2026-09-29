@@ -1,16 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { buildCreateDJRequest } from "../../src/admin-ui/components/dj/onboard-dj-utils.js";
+import { buildCreateDJRequest } from "../../src/admin-ui/components/dj/index.js";
 
 describe("buildCreateDJRequest", () => {
 	test("trims fields and parses comma-separated tags", () => {
-		const image = new File(["image bytes"], "image.jpg", {
-			type: "image/jpeg",
+		const image = new File(["image bytes"], "image.webp", {
+			type: "image/webp",
 		});
 		expect(
 			buildCreateDJRequest({
 				title: " DJ New ",
 				image,
-				tags: " dance, , house ",
+				tags: ["dance"],
+				tagDraft: " house ",
 				socials: " @dj-new ",
 				showTitle: " Late Night Session ",
 				showDescription: " Late-night broadcast ",
@@ -31,7 +32,8 @@ describe("buildCreateDJRequest", () => {
 		expect(
 			buildCreateDJRequest({
 				title: "DJ New",
-				tags: "",
+				tags: [],
+				tagDraft: "",
 				socials: "\n",
 				showTitle: "\n",
 				showDescription: " ",
