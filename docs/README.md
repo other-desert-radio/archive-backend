@@ -179,6 +179,17 @@ For admin UI work, use `scripts/build-container-watch` after the initial
 database setup. Open the authenticated `/admin` page and leave the watcher
 running while editing `src/admin-ui/`.
 
+### Modal component organization
+
+DJ create/edit orchestration lives under `dj/onboarding-modal/`, with separate
+components for shared metadata fields and edit image controls. Tag option
+loading uses the shared `useTagOptions` hook; decoding, crop candidates, and
+image removal use `useDJImageSelection` under `dj/image/`. Both hooks ignore
+obsolete asynchronous results after closure. The form shell and generic message
+modal share `useDialogFocus` for initial focus, Tab containment, and Escape
+handling. Resource validation and request building remain in their existing
+private utilities, and public DJ imports continue through the `dj` barrel.
+
 ### Modal cancellation
 
 Cancel, Close, Escape, and clicks directly on the shared modal backdrop close

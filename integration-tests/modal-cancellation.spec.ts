@@ -143,3 +143,48 @@ test("submission blocks dismissal and successful save bypasses confirmation", as
 	await expect(form).toBeHidden();
 	await expect(page.getByRole("alertdialog")).toBeHidden();
 });
+
+test("shared tag loading supports retry and reloads when either DJ form opens", async ({
+	page,
+}) => {
+	await page.goto("/admin/#djs");
+	await expect(
+		page.getByRole("button", { name: "+ DJ", exact: true }),
+	).toBeVisible();
+	let requests = 0;
+	await page.route("**/api/admin/tags", async (route) => {
+		requests += 1;
+		await route.fulfill({
+			status: requests === 1 ? 500 : 200,
+			contentType: "application/json",
+			body:
+				requests === 1
+					? "{}"
+					: JSON.stringify([
+							{ id: 987, title: "Regression tag", color: "#abcdef" },
+						]),
+		});
+	});
+	await page.getByRole("button", { name: "+ DJ", exact: true }).click();
+	await expect(
+		page.getByText("Existing tags could not be loaded."),
+	).toBeVisible();
+	await page.getByRole("button", { name: /retry/i }).click();
+	await page
+		.getByRole("combobox", { name: "tags", exact: true })
+		.fill("Regression");
+	await expect(
+		page.getByRole("option", { name: /Regression tag/ }),
+	).toBeVisible();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await page.getByRole("button", { name: "Discard changes" }).click();
+	await page.getByRole("button", { name: "Edit", exact: true }).first().click();
+	await expect(page.getByRole("dialog", { name: "Edit DJ" })).toBeFocused();
+	await expect.poll(() => requests).toBe(3);
+	await page
+		.getByRole("combobox", { name: "tags", exact: true })
+		.fill("Regression");
+	await expect(
+		page.getByRole("option", { name: /Regression tag/ }),
+	).toBeVisible();
+});

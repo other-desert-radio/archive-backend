@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef } from "react";
+import { useId, useRef } from "react";
+import { useDialogFocus } from "../dialog-focus/index.js";
 import styles from "./message-modal.module.css";
 
 export type MessageModalAction = {
@@ -32,17 +33,13 @@ export const MessageModal = ({
 	const panelRef = useRef<HTMLDialogElement>(null);
 	const titleId = useId();
 	const descriptionId = useId();
-	useEffect(() => {
-		const panel = panelRef.current;
-		const preferred = panel?.querySelector<HTMLButtonElement>(
-			`button[data-action="${initialFocus}"]:not([disabled])`,
-		);
-		(
-			preferred ??
-			panel?.querySelector<HTMLButtonElement>("button:not([disabled])") ??
-			panel
-		)?.focus();
-	}, [initialFocus]);
+	useDialogFocus({
+		panelRef,
+		isOpen: true,
+		onEscape: onDismiss,
+		initialFocusSelector: `button[data-action="${initialFocus}"]:not([disabled])`,
+		restoreFocus: false,
+	});
 	const actions = [
 		...(secondaryAction ? [{ ...secondaryAction, kind: "secondary" }] : []),
 		{ ...primaryAction, kind: "primary" },
@@ -66,29 +63,6 @@ export const MessageModal = ({
 				aria-modal="true"
 				aria-labelledby={titleId}
 				aria-describedby={descriptionId}
-				onKeyDown={(event) => {
-					if (event.key === "Escape") {
-						event.preventDefault();
-						event.stopPropagation();
-						onDismiss();
-					} else if (event.key === "Tab") {
-						const buttons = Array.from(
-							panelRef.current?.querySelectorAll<HTMLButtonElement>(
-								"button:not([disabled])",
-							) ?? [],
-						);
-						const index = buttons.indexOf(
-							document.activeElement as HTMLButtonElement,
-						);
-						event.preventDefault();
-						if (buttons.length === 0) panelRef.current?.focus();
-						else
-							buttons[
-								(index + (event.shiftKey ? -1 : 1) + buttons.length) %
-									buttons.length
-							]?.focus();
-					}
-				}}
 			>
 				<h2 id={titleId}>{title}</h2>
 				<p id={descriptionId}>{message}</p>

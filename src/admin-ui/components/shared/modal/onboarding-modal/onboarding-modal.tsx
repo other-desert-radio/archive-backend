@@ -6,6 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useDialogFocus } from "../dialog-focus/index.js";
 import { MessageModal } from "../message-modal/index.js";
 import styles from "./onboarding-modal.module.css";
 
@@ -22,13 +23,6 @@ type OnboardingModalProps = {
 	isSubmitDisabled?: boolean;
 	children: ReactNode;
 };
-const getFocusableElements = (panel: HTMLElement) =>
-	Array.from(
-		panel.querySelectorAll<HTMLElement>(
-			'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-		),
-	).filter((element) => !element.hasAttribute("hidden"));
-
 /** Provides the common accessible shell and submission lifecycle for onboarding forms. */
 export const OnboardingModal = ({
 	isOpen,
@@ -44,7 +38,6 @@ export const OnboardingModal = ({
 	children,
 }: OnboardingModalProps) => {
 	const panelRef = useRef<HTMLDivElement>(null);
-	const openerRef = useRef<HTMLElement | undefined>(undefined);
 	const [isConfirming, setIsConfirming] = useState(false);
 	const dismissalOpenerRef = useRef<HTMLElement | undefined>(undefined);
 	const [error, setError] = useState<string>();
@@ -73,48 +66,15 @@ export const OnboardingModal = ({
 	useEffect(() => {
 		setIsConfirming(false);
 		if (!isOpen) return;
-		if (document.activeElement instanceof HTMLElement)
-			openerRef.current = document.activeElement;
-		else openerRef.current = undefined;
 		setError(undefined);
 		setIsSubmitting(false);
-		const focusTimer = window.setTimeout(() => panelRef.current?.focus());
-		return () => window.clearTimeout(focusTimer);
 	}, [isOpen]);
-	useEffect(() => {
-		if (!isOpen || isCovered || isConfirming) return;
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.defaultPrevented) return;
-			if (event.key === "Escape" && !isSubmitting) {
-				event.preventDefault();
-				dismiss();
-				return;
-			}
-			if (event.key !== "Tab") return;
-			const focusable = getFocusableElements(panelRef.current ?? document.body);
-			if (focusable.length === 0) return;
-			const first = focusable[0];
-			if (first === undefined) return;
-			const last = focusable.at(-1);
-			if (
-				event.shiftKey &&
-				(document.activeElement === first ||
-					document.activeElement === panelRef.current)
-			) {
-				event.preventDefault();
-				last?.focus();
-			} else if (!event.shiftKey && document.activeElement === last) {
-				event.preventDefault();
-				first.focus();
-			}
-		};
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [isCovered, isOpen, isSubmitting, isConfirming, dismiss]);
-	useEffect(() => {
-		if (isOpen) return;
-		openerRef.current?.focus();
-	}, [isOpen]);
+	useDialogFocus({
+		panelRef,
+		isOpen,
+		isCovered: isCovered || isConfirming,
+		onEscape: isSubmitting ? undefined : dismiss,
+	});
 	if (!isOpen) return null;
 	const submit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
