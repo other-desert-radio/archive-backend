@@ -53,3 +53,19 @@
 	border-radius: 0;
 	font: inherit;
 }
+
+.field > label {
+	align-self: start;
+	padding-top: 10px;
+}
+@media (max-width: 450px) {
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-width: 0;
+	}
+	.field > label {
+		padding-top: 0;
+	}
+}

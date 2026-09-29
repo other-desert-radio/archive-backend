@@ -8,6 +8,9 @@ type LabeledFormControlProps = {
 	onChange: (value: string) => void;
 	onBlur?: () => void;
 	type?: "text" | "url" | "date" | "number";
+	min?: number;
+	max?: number;
+	step?: number;
 	required?: boolean;
 	textarea?: boolean;
 	helper?: string;
@@ -23,12 +26,15 @@ export const LabeledFormControl = ({
 	onChange,
 	onBlur,
 	type = "text",
+	min,
+	max,
+	step,
 	required = false,
 	textarea = false,
 	helper,
 	error,
 }: LabeledFormControlProps) => (
-	<div className={styles.field}>
+	<div className={`${styles.field} ${textarea ? styles.multiline : ""}`}>
 		<label htmlFor={id}>{label}</label>
 		<div>
 			{textarea ? (
@@ -50,6 +56,9 @@ export const LabeledFormControl = ({
 					id={id}
 					name={name}
 					type={type}
+					min={min}
+					max={max}
+					step={step}
 					value={value}
 					onChange={(event) => onChange(event.target.value)}
 					onBlur={onBlur}

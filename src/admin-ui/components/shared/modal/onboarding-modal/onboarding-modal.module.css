@@ -119,6 +119,9 @@
 	text-align: center;
 }
 @media (max-width: 450px) {
+	.form {
+		grid-template-columns: minmax(0, 1fr);
+	}
 	.panel {
 		width: 100%;
 		max-height: calc(100vh - 3.0625rem);

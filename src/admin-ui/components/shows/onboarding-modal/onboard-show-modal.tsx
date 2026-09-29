@@ -36,9 +36,7 @@ export const OnboardShowModal = ({
 	const initialValues = useRef({
 		title: "",
 		date: "",
-		hours: "",
-		minutes: "",
-		seconds: "",
+		duration: "",
 		image: "",
 		tags: [] as string[],
 		tagDraft: "",
@@ -47,9 +45,7 @@ export const OnboardShowModal = ({
 	});
 	const [title, setTitle] = useState("");
 	const [date, setDate] = useState("");
-	const [hours, setHours] = useState("");
-	const [minutes, setMinutes] = useState("");
-	const [seconds, setSeconds] = useState("");
+	const [duration, setDuration] = useState("");
 	const [image, setImage] = useState("");
 	const [tags, setTags] = useState<TagsInputValue>({ tags: [], draft: "" });
 	const { tagOptions, isTagsLoading, tagsError, loadTagOptions } =
@@ -61,9 +57,7 @@ export const OnboardShowModal = ({
 			initialValues.current = {
 				title: "",
 				date: "",
-				hours: "",
-				minutes: "",
-				seconds: "",
+				duration: "",
 				image: "",
 				tags: [] as string[],
 				tagDraft: "",
@@ -72,9 +66,7 @@ export const OnboardShowModal = ({
 			};
 			setTitle("");
 			setDate("");
-			setHours("");
-			setMinutes("");
-			setSeconds("");
+			setDuration("");
 			setImage("");
 			setTags({ tags: [], draft: "" });
 			setUrl("");
@@ -95,9 +87,7 @@ export const OnboardShowModal = ({
 			buildCreateShowRequest({
 				title,
 				date,
-				hours,
-				minutes,
-				seconds,
+				duration,
 				image,
 				tags: [...tags.tags, tags.draft].join(","),
 				url,
@@ -112,9 +102,7 @@ export const OnboardShowModal = ({
 				{
 					title,
 					date,
-					hours,
-					minutes,
-					seconds,
+					duration,
 					image,
 					tags: tags.tags,
 					tagDraft: tags.draft,
@@ -146,25 +134,16 @@ export const OnboardShowModal = ({
 				required
 			/>
 			<LabeledFormControl
-				id="show-hours"
-				name="hours"
-				label="duration (hours)"
-				value={hours}
-				onChange={setHours}
-			/>
-			<LabeledFormControl
-				id="show-minutes"
-				name="minutes"
-				label="duration (minutes)"
-				value={minutes}
-				onChange={setMinutes}
-			/>
-			<LabeledFormControl
-				id="show-seconds"
-				name="seconds"
+				id="show-duration"
+				name="duration"
 				label="duration (seconds)"
-				value={seconds}
-				onChange={setSeconds}
+				type="number"
+				min={1}
+				max={2_147_483_647}
+				step={1}
+				value={duration}
+				onChange={setDuration}
+				required
 			/>
 			<LabeledFormControl
 				id="show-image"

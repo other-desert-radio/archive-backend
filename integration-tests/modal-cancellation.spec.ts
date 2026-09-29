@@ -68,6 +68,7 @@ test("Show selections and failed submissions retain unsaved changes", async ({
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
 	await page.locator("#show-title").fill("Draft");
 	await page.locator("#show-date").fill("2026-09-29");
+	await page.locator("#show-duration").fill("3600");
 	await page.locator("#show-url").fill("https://example.com/show");
 	await form.getByRole("button", { name: "Submit", exact: true }).click();
 	await expect(form.getByRole("alert")).toContainText("Select at least one DJ");
@@ -255,4 +256,48 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 		await page.getByRole("button", { name: "Discard changes" }).click();
 		await page.unroute("**/api/admin/tags");
 	}
+});
+
+test("Show duration accepts whole seconds and sends them without conversion", async ({
+	page,
+}) => {
+	let payload: { duration: number; tags: string[] } | undefined;
+	await page.route("**/api/admin/create-show", async (route) => {
+		payload = route.request().postDataJSON();
+		await route.fulfill({
+			status: 400,
+			contentType: "application/json",
+			body: JSON.stringify({ error: "Mock submission rejected" }),
+		});
+	});
+	await page.goto("/admin/#shows");
+	await page.getByRole("button", { name: "+ show", exact: true }).click();
+	const form = page.getByRole("dialog", { name: "Onboard Show" });
+	await expect(form).toBeFocused();
+	const duration = form.getByRole("spinbutton", { name: "duration (seconds)" });
+	await expect(duration).toHaveAttribute("min", "1");
+	await expect(duration).toHaveAttribute("step", "1");
+	await page.locator("#show-title").fill("Duration test");
+	await page.locator("#show-date").fill("2026-09-29");
+	await page.locator("#show-url").fill("https://example.com/show");
+	await form.getByRole("checkbox").first().check();
+	for (const value of ["", "0", "-1", "1.5", "2147483648"]) {
+		await duration.fill(value);
+		await form.getByRole("button", { name: "Submit", exact: true }).click();
+		expect(
+			await duration.evaluate(
+				(input: HTMLInputElement) => input.validity.valid,
+			),
+		).toBe(false);
+		expect(payload).toBeUndefined();
+	}
+	await duration.fill("3723");
+	await page.locator("#show-tags").fill("new-duration-tag");
+	await form.getByRole("button", { name: "Submit", exact: true }).click();
+	await expect.poll(() => payload?.duration).toBe(3723);
+	expect(payload?.tags).toContain("new-duration-tag");
+	await expect(form.getByRole("alert")).toBeVisible();
+	await expect(duration).toHaveValue("3723");
+	await form.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.getByRole("alertdialog")).toBeVisible();
 });

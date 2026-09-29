@@ -73,8 +73,8 @@ available viewport. The comma-separated tags field is reusable and ignores stale
 validation responses; a validation-service failure does not prevent final
 submission. Chunk 2 migrates the read-only Shows table to the same resource
 view, with search and sorting. Show onboarding uses the shared modal, date-only
-and duration inputs, a searchable existing-DJ selector, optional image URL and
-tags, and a transactional JSON creation endpoint.
+and integer-seconds duration inputs, a searchable existing-DJ selector, optional
+image URL and tags, and a transactional JSON creation endpoint.
 
 DJ onboarding accepts and decodes JPEG, PNG, and WebP uploads before opening a
 layered square crop modal. The modal supports drag positioning, zoom, and
@@ -198,6 +198,22 @@ desktop and 20px phone padding, 20px field gaps, 28px title-to-form spacing, and
 control heights of at least 42px. Text inputs, tag boxes, and DJ search share
 consistent padding and square black borders. Submit and Cancel retain their
 compact 10px gap and reviewed hover treatment.
+
+### Modal field layout
+
+Desktop forms keep their label/control columns, with textarea, tag, and DJ
+selection labels aligned to the top of their controls. At widths of 450px or
+less, each field stacks its label above its control with an 8px gap. Fields
+retain the shared 20px spacing, and helper text stays attached to its own
+control. Inherited DJ tags follow the same single-column phone layout.
+
+### Show duration input
+
+Show creation uses one required duration field in seconds, with a minimum of 1
+and step of 1. Blank, zero, negative, fractional, non-finite, and values above
+2,147,483,647 (the existing API limit) are rejected. The existing API duration
+remains a number of seconds; no backend or database changes are needed. Duration
+changes participate in the shared unsaved-changes confirmation.
 
 ### Modal cancellation
 

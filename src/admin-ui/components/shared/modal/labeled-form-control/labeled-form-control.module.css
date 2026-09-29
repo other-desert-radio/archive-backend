@@ -23,3 +23,22 @@
 .fieldError {
 	color: #ff2c2c;
 }
+
+.multiline > label {
+	align-self: start;
+	padding-top: 10px;
+}
+@media (max-width: 450px) {
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-width: 0;
+	}
+	.multiline > label {
+		padding-top: 0;
+	}
+	.helper {
+		grid-column: auto;
+	}
+}

@@ -1,3 +1,4 @@
+import { isMatching, P } from "ts-pattern";
 import { splitCommaSeparated } from "../../../../utils/index.js";
 
 export type CreateShowForm = {
@@ -13,32 +14,15 @@ export type CreateShowForm = {
 export const buildCreateShowRequest = (fields: {
 	title: string;
 	date: string;
-	hours: string;
-	minutes: string;
-	seconds: string;
+	duration: string;
 	image: string;
 	tags: string;
 	url: string;
 	djs: number[];
 }): CreateShowForm => {
-	const hours = Number(fields.hours || "0");
-	const minutes = Number(fields.minutes || "0");
-	const seconds = Number(fields.seconds || "0");
-	if (
-		!Number.isInteger(hours) ||
-		hours < 0 ||
-		!Number.isInteger(minutes) ||
-		minutes < 0 ||
-		minutes > 59 ||
-		!Number.isInteger(seconds) ||
-		seconds < 0 ||
-		seconds > 59
-	)
-		throw new Error(
-			"Duration must use nonnegative hours and minutes/seconds from 0 to 59.",
-		);
-	const duration = hours * 3600 + minutes * 60 + seconds;
-	if (duration < 1) throw new Error("Duration must be positive.");
+	const duration = Number(fields.duration);
+	if (!isMatching(P.number.int().between(1, 2_147_483_647), duration))
+		throw new Error("Duration must be a positive whole number of seconds.");
 	const image = fields.image.trim();
 	const tags = splitCommaSeparated(fields.tags);
 	return {
