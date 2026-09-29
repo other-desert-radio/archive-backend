@@ -50,9 +50,7 @@ export const OnboardingModal = ({
 		else openerRef.current = undefined;
 		setError(undefined);
 		setIsSubmitting(false);
-		const focusTimer = window.setTimeout(() =>
-			getFocusableElements(panelRef.current ?? document.body)[0]?.focus(),
-		);
+		const focusTimer = window.setTimeout(() => panelRef.current?.focus());
 		return () => window.clearTimeout(focusTimer);
 	}, [isOpen]);
 	useEffect(() => {
@@ -111,6 +109,7 @@ export const OnboardingModal = ({
 		<div className={styles.overlay}>
 			<div
 				ref={panelRef}
+				tabIndex={-1}
 				className={styles.panel}
 				role="dialog"
 				aria-modal="true"
@@ -122,11 +121,14 @@ export const OnboardingModal = ({
 					<h2 id="onboarding-modal-title">{title}</h2>
 					<button
 						type="button"
+						className={styles.close}
 						aria-label="Close"
 						onClick={dismiss}
 						disabled={isSubmitting || isCovered}
 					>
-						x
+						<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M5 5 19 19M19 5 5 19" />
+						</svg>
 					</button>
 				</div>
 				<form onSubmit={submit}>

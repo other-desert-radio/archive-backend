@@ -17,6 +17,9 @@
 	overflow-y: auto;
 	background: #fff;
 }
+.panel:focus {
+	outline: none;
+}
 .header {
 	display: flex;
 	align-items: flex-start;
@@ -26,10 +29,20 @@
 	margin: 0;
 	font-size: 2rem;
 }
-.header button {
+.close {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 40px;
+	height: 40px;
 	padding: 0;
 	border: 0;
-	font: inherit;
+	border-radius: 0;
+}
+.close svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.5;
 }
 .form {
 	display: grid;
@@ -46,19 +59,39 @@
 	padding: 0.75rem 2rem;
 	border: 2px solid #000;
 	border-radius: 0;
-	box-shadow: 4px 4px 0 #000;
 	color: #000;
 	background: #fff;
 	font-weight: 700;
+	transition:
+		transform 120ms ease,
+		box-shadow 120ms ease;
 }
 .cancel {
 	display: block;
-	margin: 1.5rem auto 0;
+	margin: 0.75rem auto 0;
 	padding: 0;
 	border: 0;
 	color: inherit;
 	background: transparent;
 	font: inherit;
+}
+.close:enabled:hover {
+	background: #efefef;
+}
+.close:enabled:hover svg {
+	stroke-width: 2.5;
+}
+.cancel:enabled:hover {
+	font-weight: 700;
+}
+.submit:enabled:hover {
+	transform: translate(-4px, -4px);
+	box-shadow: 4px 4px 0 #000;
+}
+@media (prefers-reduced-motion: reduce) {
+	.submit {
+		transition: none;
+	}
 }
 .error {
 	margin: 1.5rem 0 0;

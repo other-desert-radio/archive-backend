@@ -181,6 +181,15 @@ running while editing `src/admin-ui/`.
 
 ### Visual admin UI verification
 
+The shared DJ create/edit and Show create modal uses a larger cross close
+control, bold Cancel and thicker close strokes on hover, and a bordered submit
+button that moves 4px up and left with a black shadow on hover. Disabled
+controls do not apply these hover states; reduced-motion preferences disable the
+submit transition. The close control has a gray hover background, and Submit and
+Cancel use a compact vertical gap. Opening the modal focuses its panel. Buttons
+across the admin UI show focus outlines for keyboard navigation rather than
+mouse clicks.
+
 Use `agent-browser` as the required acceptance check for admin UI changes. With
 the local stack running, open the affected authenticated resource view using the
 documented local development credentials, wait for rendering to settle, then
