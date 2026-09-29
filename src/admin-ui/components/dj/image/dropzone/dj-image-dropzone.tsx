@@ -4,6 +4,8 @@ import { validateDJImageFile } from "../utils/index.js";
 import styles from "./dj-image-dropzone.module.css";
 
 type DJImageDropzoneProps = {
+	id?: string;
+	label?: string;
 	file?: File;
 	onFileSelected: (file: File) => Promise<void>;
 	onError: (error: string | undefined) => void;
@@ -11,6 +13,8 @@ type DJImageDropzoneProps = {
 
 /** Renders the DJ image drag-and-drop area and file-picker fallback. */
 export const DJImageDropzone = ({
+	id = "onboard-dj-image-input",
+	label = "image",
 	file,
 	onFileSelected,
 	onError,
@@ -32,7 +36,7 @@ export const DJImageDropzone = ({
 
 	return (
 		<div className={fieldStyles.field}>
-			<label htmlFor="onboard-dj-image-input">image</label>
+			<label htmlFor={id}>{label}</label>
 			<section
 				aria-label="DJ image upload"
 				className={`${styles.dropzone}${isDragging ? ` ${styles.dragging}` : ""}${file === undefined || isDragging ? "" : ` ${styles.hasFile}`}`}
@@ -50,7 +54,7 @@ export const DJImageDropzone = ({
 			>
 				<input
 					ref={inputRef}
-					id="onboard-dj-image-input"
+					id={id}
 					name="image"
 					type="file"
 					accept="image/jpeg,image/png,image/webp"

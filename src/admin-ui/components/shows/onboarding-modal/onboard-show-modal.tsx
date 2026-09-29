@@ -82,6 +82,7 @@ export const OnboardShowModal = ({
 			title="Onboard Show"
 			onClose={onClose}
 			onSubmit={submit}
+			cancelLabel="Cancel"
 		>
 			<LabeledFormControl
 				id="show-title"
