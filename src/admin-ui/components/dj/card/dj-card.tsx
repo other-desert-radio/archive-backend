@@ -1,5 +1,6 @@
 import type { DJsAdminRow } from "../../../loaders/djs.js";
 import type { TagsAdminRow } from "../../../loaders/tags.js";
+import { Tag, TagsContainer } from "../../shared/resource-views/index.js";
 import styles from "./dj-card.module.css";
 
 type DJCardTag = Pick<TagsAdminRow, "color" | "title">;
@@ -25,22 +26,16 @@ const djTags = (
 	dj.tags.length === 0 ? (
 		<p className={styles.noTags}>No tags</p>
 	) : (
-		<ul className={styles.tags} aria-label={`${dj.title} tags`}>
+		<TagsContainer label={`${dj.title} tags`}>
 			{dj.tags.map((tagId) => {
 				const tag = tagsById.get(tagId);
 				return (
-					<li
-						key={tagId}
-						className={styles.tag}
-						{...(tag === undefined
-							? {}
-							: { style: { backgroundColor: tag.color } })}
-					>
+					<Tag key={tagId} {...(tag === undefined ? {} : { color: tag.color })}>
 						{tag?.title ?? `Tag #${tagId}`}
-					</li>
+					</Tag>
 				);
 			})}
-		</ul>
+		</TagsContainer>
 	);
 
 /** Renders a DJ-specific grid card with its portrait, title, and tags. */

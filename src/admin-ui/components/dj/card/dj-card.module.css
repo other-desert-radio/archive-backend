@@ -17,38 +17,19 @@
 }
 
 .image {
-	display: block;
 	object-fit: cover;
 }
 
 .imagePlaceholder {
-	display: grid;
-	place-items: center;
 	padding: 1rem;
-	background: rgb(255 255 255 / 45%);
+	background: #eee;
 	color: #555;
+	text-align: center;
 }
 
 .title {
 	margin: 0;
 	font-size: 1.25rem;
-	overflow-wrap: anywhere;
-}
-
-.tags {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.375rem;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.tag {
-	padding: 0.25rem 0.375rem;
-	background: #fff;
-	font-size: 0.875rem;
-  border: 1px solid black;
 	overflow-wrap: anywhere;
 }
 
