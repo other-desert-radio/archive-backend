@@ -8,5 +8,5 @@ cleanup() {
 trap cleanup EXIT
 
 "${compose[@]}" up --build --wait api
-"${compose[@]}" run --rm test
+"${compose[@]}" run --rm --build test
 exit $?

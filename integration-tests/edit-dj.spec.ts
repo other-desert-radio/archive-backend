@@ -12,8 +12,12 @@ test.use({
 test("replaces a DJ image and shows the cropped image preview before saving", async ({
 	page,
 }) => {
+	test.setTimeout(15_000);
 	await page.goto("/admin/#djs");
-	await page.getByRole("button", { name: `Edit ${djTitle}` }).click();
+	await page
+		.getByRole("row", { name: new RegExp(djTitle) })
+		.getByRole("button", { name: "Edit" })
+		.click();
 	await page.getByRole("button", { name: "Replace" }).click();
 	const image = await sharp({
 		create: {
