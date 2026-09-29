@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DJToolbar } from "../components/dj/dj-toolbar.js";
-import { DJsTable } from "../components/dj/djs-table.js";
 import {
 	type DJSortColumn,
+	DJsTable,
+	DJToolbar,
 	filterDJs,
+	OnboardDJModal,
+	renderDJGridCard,
 	type SortDirection,
 	sortDJs,
-} from "../components/dj/djs-table-utils.js";
-import { OnboardDJModal } from "../components/dj/onboard-dj-modal.js";
-import { ResourceView } from "../components/shared/resource-view.js";
+} from "../components/dj/index.js";
+import type { ResourceViewMode } from "../components/shared/resource-views/index.js";
+import {
+	ResourceGrid,
+	ResourceView,
+} from "../components/shared/resource-views/index.js";
 import { createDJ } from "../loaders/create-dj.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
@@ -17,6 +22,7 @@ export const DJsPage = () => {
 	const [djs, setDJs] = useState<DJsAdminRow[]>([]);
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
+	const [viewMode, setViewMode] = useState<ResourceViewMode>("table");
 	const [sortColumn, setSortColumn] = useState<DJSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -72,16 +78,33 @@ export const DJsPage = () => {
 					<DJToolbar
 						query={query}
 						onQueryChange={setQuery}
+						viewMode={viewMode}
+						onViewModeChange={setViewMode}
 						onAddDJ={() => setIsModalOpen(true)}
 					/>
 				}
 			>
-				<DJsTable
-					djs={visibleDJs}
-					sortColumn={sortColumn}
-					sortDirection={sortDirection}
-					onSort={handleSort}
-				/>
+				{(() => {
+					switch (viewMode) {
+						case "grid":
+							return (
+								<ResourceGrid
+									rows={visibleDJs}
+									rowKey={(dj) => dj.id}
+									renderCard={renderDJGridCard}
+								/>
+							);
+						case "table":
+							return (
+								<DJsTable
+									djs={visibleDJs}
+									sortColumn={sortColumn}
+									sortDirection={sortDirection}
+									onSort={handleSort}
+								/>
+							);
+					}
+				})()}
 			</ResourceView>
 			<OnboardDJModal
 				isOpen={isModalOpen}

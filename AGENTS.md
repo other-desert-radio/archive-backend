@@ -12,6 +12,22 @@ for review or input before beginning the next feature. Do not bundle unrelated
 backend, frontend, authentication, database, or deployment work into a single
 chunk.
 
+## Admin UI component organization
+
+Keep reusable admin UI primitives in `src/admin-ui/components/shared/` with one
+component per subdirectory. Put resource views, tables, grids, toolbars, and
+formatters in `resource-views/`; put onboarding modal and form primitives in
+`modal/`.
+
+Keep DJ and Shows components grouped by responsibility, also with one component
+per subdirectory. Use `card/`, `table/`, `toolbar/`, and `onboarding-modal/` in
+both resource directories. DJ image components belong under `dj/image/`, split
+into `crop-modal/`, `dropzone/`, and `utils/`. Co-locate a component's CSS and
+its private utility files with that component. Every component directory must
+expose an `index.ts` barrel; import public component APIs from the highest
+relevant group barrel (`shared/modal`, `shared/resource-views`, `dj`, or
+`shows`). The `dj/image/index.ts` barrel re-exports its child folders.
+
 ## Visual admin UI checks
 
 For any admin UI layout, styling, or interaction work, use `agent-browser`
