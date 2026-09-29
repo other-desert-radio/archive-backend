@@ -8,6 +8,7 @@
 		"start": "bun src/server.ts",
 		"admin:build": "vite build",
 		"test": "bun run admin:build && bun test",
+		"test:integration": "bash ./scripts/run-integration-tests",
 		"auth:generate": "auth generate --config src/auth/auth.ts --output docs/BETTER_AUTH_SCHEMA.sql",
 		"db:migrate": "./scripts/migrate up",
 		"db:migrate:all": "./scripts/run-migrations",
@@ -36,6 +37,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "latest",
+		"@playwright/test": "^1.63.0",
 		"@types/node": "latest",
 		"@types/pg": "latest",
 		"@types/react": "^19.3.0",
@@ -44,6 +46,7 @@
 		"@vitejs/plugin-react": "^6.1.1",
 		"auth": "^1.7.4",
 		"markdownlint-cli2": "^0.23.2",
+		"playwright": "^1.63.0",
 		"prettier": "^3.9.6",
 		"ts-pattern": "^5.9.0",
 		"typescript": "latest",

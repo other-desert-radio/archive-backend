@@ -265,15 +265,17 @@ export const EditDJModal = ({
 					onRetry={loadTagOptions}
 				/>
 				{dj !== undefined && dj.inheritedTags.length > 0 && (
-					<div>
+					<div className={styles.inheritedTags}>
 						<p>Tags from linked shows</p>
-						<TagsContainer label="Tags from linked shows">
-							{dj.inheritedTags.map((tag) => (
-								<Tag key={tag.id} color={tag.color}>
-									{tag.title}
-								</Tag>
-							))}
-						</TagsContainer>
+						<div className={styles.inheritedTagsList}>
+							<TagsContainer label="Tags from linked shows">
+								{dj.inheritedTags.map((tag) => (
+									<Tag key={tag.id} color={tag.color}>
+										{tag.title}
+									</Tag>
+								))}
+							</TagsContainer>
+						</div>
 					</div>
 				)}
 				<LabeledFormControl

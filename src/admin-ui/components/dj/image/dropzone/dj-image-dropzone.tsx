@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import fieldStyles from "../../../shared/modal/labeled-form-control/labeled-form-control.module.css";
 import { validateDJImageFile } from "../utils/index.js";
 import styles from "./dj-image-dropzone.module.css";
@@ -27,6 +27,17 @@ export const DJImageDropzone = ({
 }: DJImageDropzoneProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [isDragging, setIsDragging] = useState(false);
+	const [previewUrl, setPreviewUrl] = useState<string>();
+
+	useEffect(() => {
+		if (file === undefined) {
+			setPreviewUrl(undefined);
+			return;
+		}
+		const url = URL.createObjectURL(file);
+		setPreviewUrl(url);
+		return () => URL.revokeObjectURL(url);
+	}, [file]);
 
 	/** Validates a selected file and reports it to the modal. */
 	const selectFile = async (candidate: File | undefined) => {
@@ -56,6 +67,13 @@ export const DJImageDropzone = ({
 				void selectFile(event.dataTransfer.files[0]);
 			}}
 		>
+			{previewUrl !== undefined && !compact && (
+				<img
+					className={styles.preview}
+					src={previewUrl}
+					alt="Selected preview"
+				/>
+			)}
 			<input
 				ref={inputRef}
 				id={id}
