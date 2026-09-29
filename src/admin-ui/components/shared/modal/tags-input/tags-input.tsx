@@ -134,11 +134,12 @@ export const TagsInput = ({
 			select(activeMatch as TagsInputOption);
 		}
 	};
-	const commitOnBlur = () =>
-		window.setTimeout(() => {
-			setIsFocused(false);
-			commit();
-		});
+	// Commit before the next click can change chips; a deferred commit can
+	// restore the pre-click selection. Options prevent blur on mouse down.
+	const commitOnBlur = () => {
+		setIsFocused(false);
+		commit();
+	};
 	return (
 		<div className={styles.field}>
 			<label htmlFor={id}>tags</label>

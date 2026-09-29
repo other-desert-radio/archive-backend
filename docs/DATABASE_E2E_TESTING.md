@@ -4,9 +4,10 @@ Use this runbook when an API or admin UI change must be verified against a real
 database without adding, changing, or deleting records in the regular local
 archive database.
 
-This starts a disposable PostgreSQL container on port `55432` and a temporary
-API on port `3001`. It does not use the Compose `archive_postgres_data` volume.
-The database container is removed at cleanup, so all test records disappear.
+The manual workflow below starts a disposable PostgreSQL container on port
+`55432` and a temporary API on port `3001`. It does not use the Compose
+`archive_postgres_data` volume. The database container is removed at cleanup, so
+all test records disappear.
 
 ## Prerequisites
 
@@ -123,3 +124,40 @@ curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:300
 The expected output is no container name and `000` for the stopped temporary
 API. Never run `docker compose down -v` as part of this workflow: it can remove
 the persistent local archive volume.
+
+## Automated DJ editing coverage
+
+From the repository root, run the integration runner script:
+
+```sh
+./scripts/run-integration-tests
+```
+
+`bun run test:integration` is an equivalent shortcut. The
+[runner script](../scripts/run-integration-tests) requires Docker with Compose
+and a running Docker daemon. It builds the API/admin bundle and Playwright test
+image, starts PostgreSQL, applies migrations, waits for the API service, and
+runs the browser tests. No manual database setup, host dependency installation,
+or separate API process is needed.
+
+The script uses `compose.integration.yml` with the project name
+`archive-backend-integration`. Services communicate inside the Docker network;
+the automated workflow does not publish host ports or use the regular local
+archive database. Each test creates a uniquely named DJ through the
+authenticated API; no shared seed or execution order is required.
+
+The runner returns the test command's exit status and uses an exit trap to
+remove its containers, network, and test database volumes, including after test
+failure. Its volume cleanup is scoped to the integration project; the manual
+workflow's warning about the regular Compose volume still applies.
+
+Coverage includes individual metadata edits, optional-field clearing, all table
+columns, saved values after reload and editor reopening, direct and inherited
+tags, image addition/replacement/removal and crop cancellation, required-field
+validation, invalid images, and Cancel/Escape dismissal. Image assertions fetch
+both authenticated WebP variants and check their dimensions. Creation is fixture
+setup; onboarding UI coverage is outside this suite.
+
+Tag drafts commit synchronously on blur, so subsequent chip removal cannot be
+overwritten by a delayed commit using an older selection. The integration suite
+checks that removing all remaining direct tags persists an empty assignment.

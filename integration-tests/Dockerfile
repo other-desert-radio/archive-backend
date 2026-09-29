@@ -9,4 +9,4 @@ RUN bun install --frozen-lockfile
 
 COPY integration-tests ./integration-tests
 
-CMD ["sh", "-c", "bun integration-tests/seed-dj.ts && bunx playwright test integration-tests"]
+CMD ["sh", "-c", "bunx playwright test integration-tests"]
