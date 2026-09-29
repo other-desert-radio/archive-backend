@@ -4,7 +4,7 @@ import styles from "./resource-grid.module.css";
 type ResourceGridProps<Row> = {
 	rows: Row[];
 	rowKey: (row: Row) => string | number;
-	renderCard: (row: Row) => ReactNode;
+	renderCard: (row: Row, key: string | number) => ReactNode;
 };
 
 /** Provides the shared layout for resource-specific grid card scaffolds. */
@@ -14,10 +14,6 @@ export const ResourceGrid = <Row,>({
 	renderCard,
 }: ResourceGridProps<Row>) => (
 	<div className={styles.grid}>
-		{rows.map((row) => (
-			<div className={styles.card} key={rowKey(row)}>
-				{renderCard(row)}
-			</div>
-		))}
+		{rows.map((row) => renderCard(row, rowKey(row)))}
 	</div>
 );

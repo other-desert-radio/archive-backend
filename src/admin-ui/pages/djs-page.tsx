@@ -5,7 +5,7 @@ import {
 	DJToolbar,
 	filterDJs,
 	OnboardDJModal,
-	renderDJGridCard,
+	renderDJCard,
 	type SortDirection,
 	sortDJs,
 } from "../components/dj/index.js";
@@ -50,6 +50,10 @@ export const DJsPage = () => {
 		() => sortDJs(filterDJs(djs, query, tags), sortColumn, sortDirection),
 		[djs, query, sortColumn, sortDirection, tags],
 	);
+	const tagsById = useMemo(
+		() => new Map(tags.map((tag) => [tag.id, tag])),
+		[tags],
+	);
 	const handleSort = (column: DJSortColumn) => {
 		if (column === sortColumn) {
 			setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
@@ -91,7 +95,7 @@ export const DJsPage = () => {
 								<ResourceGrid
 									rows={visibleDJs}
 									rowKey={(dj) => dj.id}
-									renderCard={renderDJGridCard}
+									renderCard={(dj, key) => renderDJCard(dj, tagsById, key)}
 								/>
 							);
 						case "table":

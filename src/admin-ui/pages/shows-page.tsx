@@ -7,7 +7,7 @@ import {
 import {
 	filterShows,
 	OnboardShowModal,
-	renderShowGridCard,
+	renderShowCard,
 	type ShowSortColumn,
 	ShowsTable,
 	ShowsToolbar,
@@ -131,7 +131,7 @@ export const ShowsPage = () => {
 								<ResourceGrid
 									rows={visibleShows}
 									rowKey={(show) => show.id}
-									renderCard={renderShowGridCard}
+									renderCard={renderShowCard}
 								/>
 							);
 						case "table":

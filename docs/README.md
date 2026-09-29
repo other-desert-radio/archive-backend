@@ -81,9 +81,10 @@ left/right 90-degree rotation, then sends a 1200-by-1200 WebP crop through the
 DJ multipart upload field. Sharp creates and stores 400-by-400 and 1024-by-1024
 WebP variants; the submitted crop is not retained.
 
-The DJs and Shows toolbars support table and grid views. The grid uses a shared
-layout with intentionally blank resource-specific card renderers as a scaffold
-for future card UI.
+The DJs and Shows toolbars support table and grid views. DJ cards render their
+available portrait, title, and colored tags (with clear image/tag fallbacks),
+plus a placeholder Edit control for the future edit workflow. The Shows grid
+continues to use its blank resource-specific card scaffold.
 
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
 boundary status object and `/admin` serves the authenticated empty React/Vite
