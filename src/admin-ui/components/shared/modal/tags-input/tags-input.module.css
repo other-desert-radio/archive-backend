@@ -140,12 +140,6 @@
 	padding: 0.25rem 0.3125rem;
 	line-height: 1;
 }
-.helper {
-	grid-column: 1 / -1;
-	margin: 0.25rem 0 0;
-	color: #7c7c7c;
-	font-size: 0.75rem;
-}
 .error {
 	color: #f00;
 }

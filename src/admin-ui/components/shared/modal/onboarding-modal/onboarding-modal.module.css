@@ -53,13 +53,12 @@
 }
 .cancel {
 	display: block;
-	margin: 0.75rem auto 0;
+	margin: 1.5rem auto 0;
 	padding: 0;
 	border: 0;
 	color: inherit;
 	background: transparent;
 	font: inherit;
-	text-decoration: underline;
 }
 .error {
 	margin: 1.5rem 0 0;

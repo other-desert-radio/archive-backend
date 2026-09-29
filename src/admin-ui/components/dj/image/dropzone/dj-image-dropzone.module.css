@@ -18,3 +18,16 @@
 	font: inherit;
 	text-align: left;
 }
+.compact {
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+.compactButton {
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #000;
+	border-radius: 0;
+	color: inherit;
+	background: #fff;
+	font: inherit;
+}

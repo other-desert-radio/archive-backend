@@ -1,11 +1,19 @@
+.imageField {
+	min-width: 0;
+}
 .imageActions {
-	display: grid;
-	justify-items: start;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+.imageUploadActions {
+	display: flex;
+	align-items: center;
 	gap: 0.75rem;
 }
 .currentImage {
-	width: min(100%, 16rem);
-	aspect-ratio: 1;
+	width: 7.5rem;
+	height: 7.5rem;
 	object-fit: cover;
 }
 .imageAction {
@@ -15,4 +23,11 @@
 	background: transparent;
 	font: inherit;
 	text-decoration: underline;
+}
+.imageError {
+	margin: 0.5rem 0 0;
+	font-size: 0.875rem;
+}
+.imageError {
+	color: #ff2c2c;
 }

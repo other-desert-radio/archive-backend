@@ -7,6 +7,7 @@ import {
 	type TagsInputOption,
 	type TagsInputValue,
 } from "../../shared/modal/index.js";
+import fieldStyles from "../../shared/modal/labeled-form-control/labeled-form-control.module.css";
 import { Tag, TagsContainer } from "../../shared/resource-views/index.js";
 import {
 	DJImageCropModal,
@@ -190,59 +191,66 @@ export const EditDJModal = ({
 					onChange={setShowDescription}
 					textarea
 				/>
-				{existingImage !== undefined && image === undefined && (
-					<div className={styles.imageActions}>
-						{isExistingImageRemoved ? (
-							<>
-								<p>Existing image will be removed when you save.</p>
-								<button
-									type="button"
-									className={styles.imageAction}
-									onClick={() => setIsExistingImageRemoved(false)}
-								>
-									Keep existing image
-								</button>
-							</>
-						) : (
-							<>
+				<div className={fieldStyles.field}>
+					<label htmlFor="edit-dj-image-input">image</label>
+					<div className={styles.imageField}>
+						{existingImage !== undefined && image === undefined && !isExistingImageRemoved && (
+							<div className={styles.imageActions}>
 								<img
 									className={styles.currentImage}
 									src={existingImage}
 									alt={`${dj?.title ?? "DJ"} current`}
+								/>
+								<DJImageDropzone
+									key={imageDropzoneKey}
+									id="edit-dj-image-input"
+									compact
+									buttonLabel="Replace"
+									onFileSelected={selectImageCandidate}
+									onError={setImageError}
 								/>
 								<button
 									type="button"
 									className={styles.imageAction}
 									onClick={() => setIsExistingImageRemoved(true)}
 								>
-									Remove existing image
+									Remove
 								</button>
-							</>
+							</div>
+						)}
+						{(existingImage === undefined || image !== undefined || isExistingImageRemoved) && (
+							<div className={styles.imageUploadActions}>
+								<DJImageDropzone
+									key={imageDropzoneKey}
+									id="edit-dj-image-input"
+									showLabel={false}
+									{...(image === undefined ? {} : { file: image })}
+									onFileSelected={selectImageCandidate}
+									onError={setImageError}
+								/>
+								{isExistingImageRemoved && (
+									<button
+										type="button"
+										className={styles.imageAction}
+										onClick={() => setIsExistingImageRemoved(false)}
+									>
+										Undo
+									</button>
+								)}
+							</div>
+						)}
+						{isExistingImageRemoved && (
+							<p className={fieldStyles.helper}>
+								Existing image will be removed when you save.
+							</p>
+						)}
+						{imageError !== undefined && (
+							<p className={styles.imageError} role="alert">
+								{imageError}
+							</p>
 						)}
 					</div>
-				)}
-				<DJImageDropzone
-					key={imageDropzoneKey}
-					id="edit-dj-image-input"
-					label={
-						isExistingImageRemoved
-							? "add replacement image"
-							: existingImage === undefined
-								? "image"
-								: "replace image"
-					}
-					{...(image === undefined ? {} : { file: image })}
-					onFileSelected={selectImageCandidate}
-					onError={setImageError}
-				/>
-				{imageError !== undefined && (
-					<p
-						className="onboarding-modal-helper onboarding-modal-field-error"
-						role="alert"
-					>
-						{imageError}
-					</p>
-				)}
+				</div>
 				<TagsInput
 					id="edit-dj-tags-input"
 					value={tags}
