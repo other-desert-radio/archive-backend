@@ -10,15 +10,12 @@
 	background: rgb(0 0 0 / 60%);
 }
 .panel {
-	width: min(656px, calc(100vw - 32px));
+	width: min(864px, calc(100vw - 32px));
 	max-height: calc(100vh - 5rem);
 	min-width: 0;
 	padding: 2rem;
 	overflow-y: auto;
 	background: #fff;
-}
-.widePanel {
-	width: min(864px, calc(100vw - 32px));
 }
 .header {
 	display: flex;

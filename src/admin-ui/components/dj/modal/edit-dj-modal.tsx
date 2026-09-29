@@ -7,6 +7,7 @@ import {
 	type TagsInputOption,
 	type TagsInputValue,
 } from "../../shared/modal/index.js";
+import { Tag, TagsContainer } from "../../shared/resource-views/index.js";
 import {
 	DJImageCropModal,
 	DJImageDropzone,
@@ -28,7 +29,7 @@ export type EditDJModalValues = {
 	showDescription?: string;
 	image?: string;
 	directTagTitles: string[];
-	inheritedTagTitles: string[];
+	inheritedTags: TagsInputOption[];
 };
 
 type EditDJModalProps = {
@@ -165,7 +166,6 @@ export const EditDJModal = ({
 				submittingLabel="Saving…"
 				cancelLabel="Cancel"
 				isSubmitDisabled={isSubmitDisabled}
-				isWide
 			>
 				<LabeledFormControl
 					id="edit-dj-title-input"
@@ -252,8 +252,17 @@ export const EditDJModal = ({
 					{...(tagsError === undefined ? {} : { error: tagsError })}
 					onRetry={loadTagOptions}
 				/>
-				{dj !== undefined && dj.inheritedTagTitles.length > 0 && (
-					<p>Tags from linked shows: {dj.inheritedTagTitles.join(", ")}</p>
+				{dj !== undefined && dj.inheritedTags.length > 0 && (
+					<div>
+						<p>Tags from linked shows</p>
+						<TagsContainer label="Tags from linked shows">
+							{dj.inheritedTags.map((tag) => (
+								<Tag key={tag.id} color={tag.color}>
+									{tag.title}
+								</Tag>
+							))}
+						</TagsContainer>
+					</div>
 				)}
 				<LabeledFormControl
 					id="edit-dj-socials-input"

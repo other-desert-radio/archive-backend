@@ -88,6 +88,14 @@ export const DJsPage = () => {
 		const directTagIds = new Set(directTags);
 		const tagTitle = (tagId: number) =>
 			tagsById.get(tagId)?.title ?? `Tag #${tagId}`;
+		const tagOption = (tagId: number) => {
+			const tag = tagsById.get(tagId);
+			return {
+				id: tagId,
+				title: tag?.title ?? `Tag #${tagId}`,
+				color: tag?.color ?? "#fff",
+			};
+		};
 		const image = editingDJ.image_large ?? editingDJ.image_small;
 
 		return {
@@ -105,9 +113,9 @@ export const DJsPage = () => {
 				: { showDescription: editingDJ.showDescription }),
 			...(image === undefined ? {} : { image }),
 			directTagTitles: directTags.map(tagTitle),
-			inheritedTagTitles: editingDJ.tags
+			inheritedTags: editingDJ.tags
 				.filter((tagId) => !directTagIds.has(tagId))
-				.map(tagTitle),
+				.map(tagOption),
 		};
 	}, [editingDJ, tagsById]);
 
