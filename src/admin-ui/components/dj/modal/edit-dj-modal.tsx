@@ -12,6 +12,7 @@ import {
 	DJImageDropzone,
 	decodeDJImageFile,
 } from "../image/index.js";
+import styles from "./edit-dj-modal.module.css";
 import {
 	buildEditDJRequest,
 	type EditDJForm,
@@ -164,6 +165,7 @@ export const EditDJModal = ({
 				submittingLabel="Saving…"
 				cancelLabel="Cancel"
 				isSubmitDisabled={isSubmitDisabled}
+				isWide
 			>
 				<LabeledFormControl
 					id="edit-dj-title-input"
@@ -189,12 +191,13 @@ export const EditDJModal = ({
 					textarea
 				/>
 				{existingImage !== undefined && image === undefined && (
-					<div>
+					<div className={styles.imageActions}>
 						{isExistingImageRemoved ? (
 							<>
 								<p>Existing image will be removed when you save.</p>
 								<button
 									type="button"
+									className={styles.imageAction}
 									onClick={() => setIsExistingImageRemoved(false)}
 								>
 									Keep existing image
@@ -202,9 +205,14 @@ export const EditDJModal = ({
 							</>
 						) : (
 							<>
-								<img src={existingImage} alt={`${dj?.title ?? "DJ"} current`} />
+								<img
+									className={styles.currentImage}
+									src={existingImage}
+									alt={`${dj?.title ?? "DJ"} current`}
+								/>
 								<button
 									type="button"
+									className={styles.imageAction}
 									onClick={() => setIsExistingImageRemoved(true)}
 								>
 									Remove existing image

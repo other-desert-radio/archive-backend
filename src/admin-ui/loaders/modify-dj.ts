@@ -28,6 +28,7 @@ export const modifyDJ = async (
 				response,
 				"DJ",
 				"Please check the form and image, then try again.",
+				"updated",
 			),
 		);
 	}

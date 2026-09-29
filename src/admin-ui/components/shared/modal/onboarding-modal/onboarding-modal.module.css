@@ -17,6 +17,9 @@
 	overflow-y: auto;
 	background: #fff;
 }
+.widePanel {
+	width: min(864px, calc(100vw - 32px));
+}
 .header {
 	display: flex;
 	align-items: flex-start;

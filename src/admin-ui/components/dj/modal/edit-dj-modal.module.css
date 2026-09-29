@@ -1,0 +1,18 @@
+.imageActions {
+	display: grid;
+	justify-items: start;
+	gap: 0.75rem;
+}
+.currentImage {
+	width: min(100%, 16rem);
+	aspect-ratio: 1;
+	object-fit: cover;
+}
+.imageAction {
+	padding: 0;
+	border: 0;
+	color: inherit;
+	background: transparent;
+	font: inherit;
+	text-decoration: underline;
+}

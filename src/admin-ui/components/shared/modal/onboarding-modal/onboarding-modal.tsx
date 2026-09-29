@@ -17,6 +17,7 @@ type OnboardingModalProps = {
 	submittingLabel?: string;
 	cancelLabel: string;
 	isSubmitDisabled?: boolean;
+	isWide?: boolean;
 	children: ReactNode;
 };
 const getFocusableElements = (panel: HTMLElement) =>
@@ -37,6 +38,7 @@ export const OnboardingModal = ({
 	submittingLabel = "Submitting…",
 	cancelLabel,
 	isSubmitDisabled = false,
+	isWide = false,
 	children,
 }: OnboardingModalProps) => {
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -111,7 +113,7 @@ export const OnboardingModal = ({
 		<div className={styles.overlay}>
 			<div
 				ref={panelRef}
-				className={styles.panel}
+				className={`${styles.panel}${isWide ? ` ${styles.widePanel}` : ""}`}
 				role="dialog"
 				aria-modal="true"
 				aria-hidden={isCovered || undefined}
