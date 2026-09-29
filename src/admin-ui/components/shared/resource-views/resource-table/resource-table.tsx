@@ -18,6 +18,7 @@ type ResourceTableProps<Row, ColumnKey extends string> = {
 	sortColumn: ColumnKey;
 	sortDirection: SortDirection;
 	onSort: (column: ColumnKey) => void;
+	onEdit: (row: Row) => void;
 };
 
 /** Renders a typed, sortable table from resource-specific column definitions. */
@@ -29,12 +30,16 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 	sortColumn,
 	sortDirection,
 	onSort,
+	onEdit,
 }: ResourceTableProps<Row, ColumnKey>) => (
-	<div className={styles.wrapper}>
+	<div className={`${styles.wrapper} ${styles.withActions}`}>
 		<table className={styles.table}>
 			<caption className={styles.hidden}>{caption}</caption>
 			<thead>
 				<tr>
+					<th scope="col" className={styles.actionHeader}>
+						Actions
+					</th>
 					{columns.map((column) => {
 						const isActive = sortColumn === column.key;
 						return (
@@ -65,6 +70,15 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 			<tbody>
 				{rows.map((row) => (
 					<tr key={rowKey(row)}>
+						<td className={styles.actionCell}>
+							<button
+								type="button"
+								className={styles.editButton}
+								onClick={() => onEdit(row)}
+							>
+								Edit
+							</button>
+						</td>
 						{columns.map((column) => (
 							<td key={column.key}>{column.render(row)}</td>
 						))}

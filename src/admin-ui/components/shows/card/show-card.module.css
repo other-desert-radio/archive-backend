@@ -1,0 +1,57 @@
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+
+	height: 100%;
+	min-height: 12rem;
+	background-color: white;
+	border: 1px solid black;
+	padding: 0.5rem;
+}
+
+.image,
+.imagePlaceholder {
+	width: 100%;
+	aspect-ratio: 1;
+}
+
+.image {
+	object-fit: cover;
+}
+
+.imagePlaceholder {
+	padding: 1rem;
+	background: #eee;
+	color: #555;
+	text-align: center;
+}
+
+.title {
+	margin: 0;
+	font-size: 1.25rem;
+	overflow-wrap: anywhere;
+}
+
+.noTags {
+	margin: 0;
+	color: #555;
+	font-size: 0.875rem;
+}
+
+.djs,
+.noDJs {
+	margin: 0;
+	font-size: 0.875rem;
+}
+
+.noDJs {
+	color: #555;
+}
+
+.edit {
+	margin-top: auto;
+	justify-self: start;
+	border: 1px solid black;
+	border-radius: 0;
+}

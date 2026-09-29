@@ -110,8 +110,16 @@ and the Tags UI remain read-only.
   now opens the reusable onboarding modal with all plain-text fields, Submit,
   and required title/bio validation.
 - DJs, Shows, and Tags use the shared resource view and sortable table
-  components. The DJ table scroll area keeps leading padding but extends to the
-  right edge of the view.
+  components. Tables with sticky Actions columns extend to both edges of the
+  view.
+- The DJ and Shows grid/table choices are retained independently in browser
+  local storage through the global `userPreferences` singleton.
+- The DJ, Shows, and Tags tables include a sticky, opaque left-side Actions
+  column. Their Edit buttons call page-provided callbacks, which are
+  intentionally inert until the edit workflow is implemented.
+- The table-only Tags view uses the shared search and create toolbar. Its search
+  filters title and color, while its `+ tag` action is intentionally inert until
+  tag creation is implemented.
 - The modal shell, plain-text field/validation slice, and API submission are
   complete. The next UI slice is the reusable tags component.
 

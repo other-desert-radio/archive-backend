@@ -1,6 +1,7 @@
 .toolbar {
 	display: flex;
 	gap: 1rem;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	padding-inline: 32px;
 	margin-bottom: 1.5rem;

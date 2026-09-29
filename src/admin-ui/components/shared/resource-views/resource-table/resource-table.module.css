@@ -3,6 +3,9 @@
 	padding: 0 24px;
 	overflow-x: auto;
 }
+.withActions {
+	padding-left: 0;
+}
 .table {
 	width: max-content;
 	min-width: 100%;
@@ -47,6 +50,32 @@
 }
 .table thead tr {
 	background: #fff;
+}
+.actionHeader,
+.actionCell {
+	position: sticky;
+	left: 0;
+	background: #fff;
+	box-shadow: 1px 0 #000;
+}
+.actionHeader,
+.actionCell {
+	width: 7rem;
+	min-width: 7rem;
+	padding: 1rem 0.75rem;
+}
+.actionHeader {
+	z-index: 2;
+}
+.actionCell {
+	z-index: 1;
+}
+.editButton {
+	border: 1px solid #000;
+	border-radius: 0;
+	background: #fff;
+	padding: 0.25rem 0.5rem;
+	font: inherit;
 }
 .activeSort {
 	font-weight: 700;

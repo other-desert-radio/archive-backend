@@ -15,6 +15,7 @@ type ShowsTableProps = {
 	sortColumn: ShowSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: ShowSortColumn) => void;
+	onEdit: (show: ShowsAdminRow) => void;
 };
 
 const compareText = (left: string | undefined, right: string | undefined) =>
@@ -97,6 +98,7 @@ export const ShowsTable = ({
 	sortColumn,
 	sortDirection,
 	onSort,
+	onEdit,
 }: ShowsTableProps) => (
 	<ResourceTable
 		rows={shows}
@@ -106,5 +108,6 @@ export const ShowsTable = ({
 		sortColumn={sortColumn}
 		sortDirection={sortDirection}
 		onSort={onSort}
+		onEdit={onEdit}
 	/>
 );
