@@ -5,9 +5,9 @@ database without adding, changing, or deleting records in the regular local
 archive database.
 
 The manual workflow below starts a disposable PostgreSQL container on port
-`55432` and a temporary
-API on port `3001`. It does not use the Compose `archive_postgres_data` volume.
-The database container is removed at cleanup, so all test records disappear.
+`55432` and a temporary API on port `3001`. It does not use the Compose
+`archive_postgres_data` volume. The database container is removed at cleanup, so
+all test records disappear.
 
 ## Prerequisites
 
@@ -146,10 +146,10 @@ the automated workflow does not publish host ports or use the regular local
 archive database. Each test creates a uniquely named DJ through the
 authenticated API; no shared seed or execution order is required.
 
-The runner returns the test command's exit status and uses an exit trap to remove
-its containers, network, and test database volumes, including after test failure.
-Its volume cleanup is scoped to the integration project; the manual workflow's
-warning about the regular Compose volume still applies.
+The runner returns the test command's exit status and uses an exit trap to
+remove its containers, network, and test database volumes, including after test
+failure. Its volume cleanup is scoped to the integration project; the manual
+workflow's warning about the regular Compose volume still applies.
 
 Coverage includes individual metadata edits, optional-field clearing, all table
 columns, saved values after reload and editor reopening, direct and inherited
