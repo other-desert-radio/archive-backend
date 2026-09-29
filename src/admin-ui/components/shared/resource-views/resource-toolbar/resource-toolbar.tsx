@@ -3,8 +3,9 @@ export type ResourceViewMode = "grid" | "table";
 type ResourceToolbarProps = {
 	query: string;
 	onQueryChange: (query: string) => void;
-	viewMode: ResourceViewMode;
-	onViewModeChange: (viewMode: ResourceViewMode) => void;
+	viewMode?: ResourceViewMode;
+	onViewModeChange?: (viewMode: ResourceViewMode) => void;
+	showViewControls?: boolean;
 	searchLabel: string;
 	createLabel: string;
 	onCreate: () => void;
@@ -19,6 +20,7 @@ export const ResourceToolbar = ({
 	onQueryChange,
 	viewMode,
 	onViewModeChange,
+	showViewControls = true,
 	searchLabel,
 	createLabel,
 	onCreate,
@@ -32,24 +34,28 @@ export const ResourceToolbar = ({
 			onChange={(event) => onQueryChange(event.target.value)}
 		/>
 		<div className={styles.actions}>
-			<fieldset className={styles.switcher}>
-				<button
-					type="button"
-					className={viewMode === "grid" ? styles.selected : undefined}
-					aria-pressed={viewMode === "grid"}
-					onClick={() => onViewModeChange("grid")}
-				>
-					grid
-				</button>
-				<button
-					type="button"
-					className={viewMode === "table" ? styles.selected : undefined}
-					aria-pressed={viewMode === "table"}
-					onClick={() => onViewModeChange("table")}
-				>
-					table
-				</button>
-			</fieldset>
+			{showViewControls &&
+				viewMode !== undefined &&
+				onViewModeChange !== undefined && (
+					<fieldset className={styles.switcher}>
+						<button
+							type="button"
+							className={viewMode === "grid" ? styles.selected : undefined}
+							aria-pressed={viewMode === "grid"}
+							onClick={() => onViewModeChange("grid")}
+						>
+							grid
+						</button>
+						<button
+							type="button"
+							className={viewMode === "table" ? styles.selected : undefined}
+							aria-pressed={viewMode === "table"}
+							onClick={() => onViewModeChange("table")}
+						>
+							table
+						</button>
+					</fieldset>
+				)}
 			<button
 				type="button"
 				className={styles.add}

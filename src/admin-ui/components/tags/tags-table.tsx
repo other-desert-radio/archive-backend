@@ -3,6 +3,7 @@ import {
 	ResourceTable,
 	type ResourceTableColumn,
 	type SortDirection,
+	Tag,
 } from "../shared/resource-views/index.js";
 
 export type TagSortColumn = "id" | "title" | "color";
@@ -25,7 +26,11 @@ export const tagColumns: ResourceTableColumn<TagsAdminRow, TagSortColumn>[] = [
 	{
 		key: "title",
 		label: "title",
-		render: (tag) => tag.title,
+		render: (tag) => (
+			<Tag as="span" color={tag.color}>
+				{tag.title}
+			</Tag>
+		),
 		compare: (left, right) => left.title.localeCompare(right.title),
 	},
 	{
