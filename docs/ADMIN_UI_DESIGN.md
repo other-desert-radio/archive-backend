@@ -140,7 +140,11 @@ DJ create/edit and Show create use the same `TagsInput` and loading hook. Keep
 the box and helper together in a vertical flex stack with an explicit gap. Typed
 text and gray completion flow together on one baseline, synchronized with input
 scrolling. Do not position completion with character-count offsets or different
-text metrics. Preserve keyboard acceptance and chip removal behavior.
+text metrics. Preserve keyboard acceptance and chip removal behavior. Commit
+drafts before chip-removal clicks so stale blur callbacks cannot restore removed
+tags. When focus moves to Submit/Save, leave the draft in place until
+submission; request builders include it, and converting it into chips could move
+the button during the click.
 
 Show duration is one required positive-integer seconds input (`min=1`, `step=1`,
 maximum 2,147,483,647). Send seconds directly through the existing API contract.

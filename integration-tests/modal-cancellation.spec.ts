@@ -6,6 +6,29 @@ test.use({
 	httpCredentials: { username: "admin", password: "admin" },
 });
 
+// Keep interaction-only tests independent of archive data and persistence fixtures.
+test.beforeEach(async ({ page }) => {
+	await page.route("**/api/admin/djs", (route) =>
+		route.fulfill({
+			status: 200,
+			contentType: "application/json",
+			body: JSON.stringify([
+				{
+					id: 1,
+					title: "Modal test DJ",
+					bio: "Original bio",
+					createdAt: "2026-09-29T00:00:00Z",
+					tags: [],
+					directTags: [],
+					shows: [],
+					image_large:
+						"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='blue'/%3E%3C/svg%3E",
+				},
+			]),
+		}),
+	);
+});
+
 test("all dismissal paths protect drafts and confirmation preserves focus", async ({
 	page,
 }) => {

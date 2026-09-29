@@ -1,4 +1,5 @@
 import {
+	type FocusEvent,
 	type KeyboardEvent,
 	useEffect,
 	useId,
@@ -135,11 +136,18 @@ export const TagsInput = ({
 			select(activeMatch as TagsInputOption);
 		}
 	};
-	const commitOnBlur = () =>
-		window.setTimeout(() => {
-			setIsFocused(false);
-			commit();
-		});
+	// Commit before the next click can change chips; a deferred commit can
+	// restore the pre-click selection. Options prevent blur on mouse down.
+	const commitOnBlur = (event: FocusEvent<HTMLInputElement>) => {
+		setIsFocused(false);
+		// Submission includes the draft. Avoid moving Submit between pointer down/up.
+		if (
+			event.relatedTarget instanceof HTMLButtonElement &&
+			event.relatedTarget.type === "submit"
+		)
+			return;
+		commit();
+	};
 	return (
 		<div className={styles.field}>
 			<label htmlFor={id}>tags</label>

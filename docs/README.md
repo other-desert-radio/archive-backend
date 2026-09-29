@@ -74,7 +74,11 @@ The first Show UI implementation chunk is complete. DJs use reusable resource
 toolbar, table, state-view, and onboarding primitives. The shared onboarding
 shell traps focus, returns focus to its opener, supports Escape dismissal while
 idle, prevents duplicate submission, and keeps its content scrollable within the
-available viewport. The comma-separated tags field is reusable and ignores stale
+available viewport. Tag drafts commit on blur before chip-removal clicks, so
+removed selections stay removed. Moving focus to Submit/Save preserves the draft
+until submission, avoiding layout shifts that could swallow the click; request
+builders include the draft. DJ and Show forms use the shared tag chip and
+autocomplete field. The legacy comma-separated tags field ignores stale
 validation responses; a validation-service failure does not prevent final
 submission. Chunk 2 migrates the read-only Shows table to the same resource
 view, with search and sorting. Show onboarding uses the shared modal, date-only
@@ -128,8 +132,8 @@ archive dataset, use the
 - `bun run start` starts the server once.
 
 - `bun run test` runs the focused Bun test suite.
-- `./scripts/run-integration-tests` builds and runs the browser editing test in
-  a disposable Docker Compose stack. It uses its own Postgres volume and API;
+- `./scripts/run-integration-tests` builds and runs the DJ browser editing suite
+  in a disposable Docker Compose stack. It uses its own Postgres volume and API;
   the test data and containers are removed when the command finishes.
   `bun run test:integration` is an equivalent package-script shortcut.
 - `bun run auth:generate` regenerates the review-only Better Auth schema.
