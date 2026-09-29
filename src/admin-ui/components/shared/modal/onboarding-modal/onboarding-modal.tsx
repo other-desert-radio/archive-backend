@@ -6,7 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { DiscardConfirmation } from "../discard-confirmation/index.js";
+import { MessageModal } from "../message-modal/index.js";
 import styles from "./onboarding-modal.module.css";
 
 type OnboardingModalProps = {
@@ -136,13 +136,19 @@ export const OnboardingModal = ({
 	};
 	return (
 		<>
-			{/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: Backdrop supplements Cancel and Escape. */}
 			<div
 				className={styles.overlay}
-				onClick={(event) => {
-					if (event.target === event.currentTarget) dismiss();
-				}}
+				inert={isCovered || isConfirming || undefined}
+				aria-hidden={isCovered || isConfirming || undefined}
 			>
+				<button
+					type="button"
+					className={styles.backdrop}
+					tabIndex={-1}
+					aria-label="Cancel form"
+					disabled={isSubmitting || isCovered || isConfirming}
+					onClick={dismiss}
+				/>
 				<div
 					ref={panelRef}
 					tabIndex={-1}
@@ -203,7 +209,15 @@ export const OnboardingModal = ({
 				</div>
 			</div>
 			{isConfirming && (
-				<DiscardConfirmation onKeepEditing={keepEditing} onDiscard={onClose} />
+				<MessageModal
+					title="Discard unsaved changes?"
+					message="Your changes will be lost if you close this form."
+					primaryAction={{ label: "Discard changes", onClick: onClose }}
+					secondaryAction={{ label: "Keep editing", onClick: keepEditing }}
+					onDismiss={keepEditing}
+					initialFocus="secondary"
+					role="alertdialog"
+				/>
 			)}
 		</>
 	);

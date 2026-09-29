@@ -9,7 +9,18 @@
 	place-items: center;
 	background: rgb(0 0 0 / 60%);
 }
+.backdrop {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	cursor: default;
+}
 .panel {
+	position: relative;
 	width: min(864px, calc(100vw - 32px));
 	max-height: calc(100vh - 5rem);
 	min-width: 0;
