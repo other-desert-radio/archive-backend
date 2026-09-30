@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 export type ResourceViewMode = "grid" | "table";
 
 type ResourceToolbarProps = {
@@ -25,45 +27,74 @@ export const ResourceToolbar = ({
 	createLabel,
 	onCreate,
 	createDisabled = false,
-}: ResourceToolbarProps) => (
-	<div className={styles.toolbar}>
-		<input
-			aria-label={searchLabel}
-			placeholder="search..."
-			value={query}
-			onChange={(event) => onQueryChange(event.target.value)}
-		/>
-		<div className={styles.actions}>
-			{showViewControls &&
-				viewMode !== undefined &&
-				onViewModeChange !== undefined && (
-					<fieldset className={styles.switcher}>
-						<button
-							type="button"
-							className={viewMode === "grid" ? styles.selected : undefined}
-							aria-pressed={viewMode === "grid"}
-							onClick={() => onViewModeChange("grid")}
-						>
-							grid
-						</button>
-						<button
-							type="button"
-							className={viewMode === "table" ? styles.selected : undefined}
-							aria-pressed={viewMode === "table"}
-							onClick={() => onViewModeChange("table")}
-						>
-							table
-						</button>
-					</fieldset>
-				)}
-			<button
-				type="button"
-				className={styles.add}
-				onClick={onCreate}
-				disabled={createDisabled}
+}: ResourceToolbarProps) => {
+	const sentinelRef = useRef<HTMLDivElement>(null);
+	const toolbarRef = useRef<HTMLDivElement>(null);
+	const [isStuck, setIsStuck] = useState(false);
+
+	useEffect(() => {
+		const update = () => {
+			const sentinel = sentinelRef.current;
+			const toolbar = toolbarRef.current;
+			if (!sentinel || !toolbar) return;
+			const offset = Number.parseFloat(getComputedStyle(toolbar).top);
+			setIsStuck(sentinel.getBoundingClientRect().top <= offset);
+		};
+		update();
+		window.addEventListener("scroll", update, { passive: true });
+		window.addEventListener("resize", update);
+		return () => {
+			window.removeEventListener("scroll", update);
+			window.removeEventListener("resize", update);
+		};
+	}, []);
+
+	return (
+		<>
+			<div ref={sentinelRef} aria-hidden="true" />
+			<div
+				ref={toolbarRef}
+				className={`${styles.toolbar} ${isStuck ? styles.stuck : ""}`}
 			>
-				{createLabel}
-			</button>
-		</div>
-	</div>
-);
+				<input
+					aria-label={searchLabel}
+					placeholder="search..."
+					value={query}
+					onChange={(event) => onQueryChange(event.target.value)}
+				/>
+				<div className={styles.actions}>
+					{showViewControls &&
+						viewMode !== undefined &&
+						onViewModeChange !== undefined && (
+							<fieldset className={styles.switcher}>
+								<button
+									type="button"
+									className={viewMode === "grid" ? styles.selected : undefined}
+									aria-pressed={viewMode === "grid"}
+									onClick={() => onViewModeChange("grid")}
+								>
+									grid
+								</button>
+								<button
+									type="button"
+									className={viewMode === "table" ? styles.selected : undefined}
+									aria-pressed={viewMode === "table"}
+									onClick={() => onViewModeChange("table")}
+								>
+									table
+								</button>
+							</fieldset>
+						)}
+					<button
+						type="button"
+						className={styles.add}
+						onClick={onCreate}
+						disabled={createDisabled}
+					>
+						{createLabel}
+					</button>
+				</div>
+			</div>
+		</>
+	);
+};

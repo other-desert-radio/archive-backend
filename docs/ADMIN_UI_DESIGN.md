@@ -141,6 +141,17 @@ excluded from Tab order, alongside Escape handling.
 
 ## Interaction decisions to preserve
 
+The shared resource toolbar stays sticky below the fixed management header while
+DJ and Show tables/grids and the Tags table scroll underneath. Its gray
+background and solid bottom border appear only when it sticks. The header height
+and sticky offset share a whole-pixel CSS variable to avoid a gap. Its stacking
+order keeps controls above scrolling content. Search can shrink to fit narrow
+screens.
+
+Form dialogs sit above the management header and toolbar. Discard confirmations
+and image crop dialogs sit above the form so toolbar controls cannot intercept
+dialog actions.
+
 Cancel, Close, Escape, and the form backdrop share one dismissal path. Clean
 forms close immediately. Dirty forms show “Discard unsaved changes?” with “Keep
 editing” initially focused and “Discard changes” as the primary action. Escape
