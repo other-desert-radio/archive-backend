@@ -32,7 +32,7 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 	onSort,
 	onEdit,
 }: ResourceTableProps<Row, ColumnKey>) => (
-	<div className={`${styles.wrapper} ${styles.withActions}`}>
+	<div className={styles.wrapper}>
 		<table className={styles.table}>
 			<caption className={styles.hidden}>{caption}</caption>
 			<thead>

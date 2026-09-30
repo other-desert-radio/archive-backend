@@ -5,6 +5,11 @@
 		var(--management-sidebar-gap)
 	);
 	--management-sidebar-width: 10.75rem;
+	--resource-body-left: calc(
+		var(--management-sidebar-gap) +
+		var(--management-sidebar-width) +
+		40px
+	);
 	min-height: 100vh;
 	padding-top: var(--management-header-height);
 }
@@ -83,8 +88,9 @@
 }
 .content {
 	min-height: calc(100vh - var(--management-header-height));
-	margin-left: var(--management-sidebar-width);
-	padding: 2rem clamp(1.25rem, 10vw, 16rem) 2rem clamp(3rem, 16vw, 22rem);
+	margin-left: var(--resource-body-left);
+	min-width: 0;
+	padding: 2rem 40px 2rem 0;
 }
 @media (max-width: 42rem) {
 	.sidebar {
@@ -103,7 +109,7 @@
 	}
 	.content {
 		margin-left: 0;
-		padding: 2rem 1.25rem;
+		padding: 2rem 20px;
 	}
 }
 @media (prefers-reduced-motion: reduce) {

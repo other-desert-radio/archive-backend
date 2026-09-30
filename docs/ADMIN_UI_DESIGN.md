@@ -264,3 +264,22 @@ covers dismissal, crop layering, tag loading and alignment, and seconds input
 validation. Use mocked mutations or the
 [`isolated database runbook`](DATABASE_E2E_TESTING.md) to avoid writing test
 records to the normal archive dataset.
+
+### Resource view width and alignment
+
+Resource titles, toolbars, tables, and grids share the same horizontal bounds.
+Search starts at the title and data's left edge; the action group ends at their
+right edge. Desktop views start 40px beyond the floating sidebar's right edge
+and end 40px from the viewport's right edge. Below the existing sidebar
+breakpoint, all resource content uses 20px viewport gutters. Tables scroll
+horizontally within these bounds, keeping Edit sticky; grids retain 16rem
+preferred columns that can shrink on narrow screens. At 450px and below, search
+fills its own row and actions align right below it. Sticky toolbar backgrounds
+cover the resource body width. When stuck, the toolbar adds 16px internal
+horizontal padding, reduced to 12px at 450px and below, around search and
+actions.
+
+Verify alignment, horizontal scrolling, grid columns, and sticky controls with
+`integration-tests/resource-layout.spec.ts` and agent-browser at desktop,
+tablet, and phone widths. The layout suite mocks resource reads and writes no
+archive records.

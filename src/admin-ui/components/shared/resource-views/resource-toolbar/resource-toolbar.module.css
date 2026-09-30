@@ -6,12 +6,12 @@
 	gap: 1rem;
 	flex-wrap: wrap;
 	justify-content: space-between;
-	padding-inline: 32px;
 	padding-block: 0.75rem;
 	margin-bottom: 1.5rem;
 	border-bottom: 1px solid transparent;
 }
 .stuck {
+	padding-inline: 16px;
 	background: #efefef;
 	border-bottom-color: #000;
 }
@@ -25,10 +25,12 @@
 	font: inherit;
 }
 .actions {
+	margin-left: auto;
 	display: flex;
 	gap: 8px;
 }
 .switcher {
+	margin: 0;
 	padding: 0;
 	border: none;
 	display: flex;
@@ -55,4 +57,15 @@
 .add {
 	font-weight: 700;
 	background: #fff;
+}
+
+@media (max-width: 450px) {
+	.stuck {
+		padding-inline: 12px;
+	}
+	.toolbar input {
+		flex: 1 0 100%;
+		width: 100%;
+		max-width: none;
+	}
 }
