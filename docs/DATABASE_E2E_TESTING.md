@@ -156,7 +156,10 @@ columns, saved values after reload and editor reopening, direct and inherited
 tags, image addition/replacement/removal and crop cancellation, required-field
 validation, invalid images, and Cancel/Escape dismissal. Image assertions fetch
 both authenticated WebP variants and check their dimensions. Creation is fixture
-setup; onboarding UI coverage is outside this suite.
+setup; DJ and Show onboarding UI coverage is outside this suite. Tag onboarding
+coverage in `integration-tests/onboard-tag.spec.ts` verifies persisted metadata,
+reviewed state, existing-title reuse, local validation, failed-submit retention,
+dirty dismissal, and phone layout.
 
 Tag drafts commit synchronously on blur, so subsequent chip removal cannot be
 overwritten by a delayed commit using an older selection. The integration suite
@@ -178,3 +181,37 @@ retained values after failure, submission protection, unresolved-tag retry, and
 390px/320px layouts. Tests use a Los Angeles timezone to verify UTC calendar
 date prefilling. The existing modal suite continues to cover Show creation after
 shared-field extraction.
+
+### Tag update API coverage
+
+`integration-tests/modify-tag-api.spec.ts` creates isolated DJ/Show fixtures and
+assigns one tag to both. Direct PostgreSQL assertions against only the
+disposable Compose database verify tag identity/timestamp and relationship row
+IDs remain unchanged. API reloads check normalized metadata and reviewed state;
+rejection, case-only rename, and metadata clearing checks verify persisted
+behavior. Discriminated `edit_type: "review"` updates are tested in both
+directions, including repeated values, metadata and relationship preservation,
+invalid/mixed requests, and unknown targets.
+
+### Tag editor browser coverage
+
+`integration-tests/edit-tag.spec.ts` creates uniquely named tags and linked
+DJ/Show fixtures in the disposable stack. It checks prefilling, every editable
+field through reload/reopening, optional metadata clearing, unchanged-save
+review, inline chip preview, local validation and server duplicate rejection,
+failed-save draft retention, submission protection, all dismissal paths,
+reversion, discard, clean reopening, focus restoration/containment, and
+390px/320px action reachability. Navigation to linked DJ/Show editors verifies
+refreshed titles and colors. Shared DJ/Show/tag-input modal regressions remain
+in the complete suite.
+
+### Inline Tag review coverage
+
+`integration-tests/review-tag.spec.ts` creates isolated tags and checks the
+Review prompt, both boolean answers and repeated saves, exact keyed payloads,
+metadata preservation, persisted values after reload, keyboard dismissal and
+saving, focus restoration, retained errors and retry, pending-request
+protection, and equal-height reachable actions at 390px and 320px. It also
+verifies the full Tag editor still marks saved metadata reviewed. All tests run
+in the disposable Compose stack alongside existing editor and toolbar
+regressions.
