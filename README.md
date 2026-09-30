@@ -11,7 +11,8 @@ the database, backend, and admin UI live here.
 The data captured by this gets exported into json files for the static front end
 to consume:
 
-- `dj_brief.json`
+<details>
+<summary><code>dj_brief.json</code></summary>
 
 ```json
 [
@@ -24,7 +25,10 @@ to consume:
 ]
 ```
 
-- `djs/{id}.json`
+</details>
+
+<details>
+<summary><code>djs/{id}.json</code></summary>
 
 ```json
 {
@@ -47,7 +51,10 @@ to consume:
 }
 ```
 
-- `shows.json`
+</details>
+
+<details>
+<summary><code>shows.json</code></summary>
 
 ```json
 [
@@ -70,7 +77,10 @@ to consume:
 ]
 ```
 
-- `tags.json`
+</details>
+
+<details>
+<summary><code>tags.json</code></summary>
 
 ```json
 [
@@ -81,3 +91,14 @@ to consume:
   }
 ]
 ```
+
+</details>
+
+### Mixcloud admin view
+
+The authenticated admin sidebar includes Mixcloud below Tags (`#mixcloud`). It
+displays import tracking records in a read-only table with search and column
+sorting. Show names, DJ IDs/names, duration, and tag IDs come from linked
+archive records; unimported records remain visible with empty details. The
+authenticated `GET /api/admin/mixcloud-imports` endpoint supplies the view. No
+import execution or editing controls are included.

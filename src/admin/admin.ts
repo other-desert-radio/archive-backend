@@ -7,6 +7,7 @@ import type { auth } from "../auth/auth.js";
 import { db as defaultDb } from "../db/db.js";
 import { clientDescription } from "./logging.js";
 import { djRoutes } from "./routes/djs/index.js";
+import { mixcloudImportRoutes } from "./routes/mixcloud-imports/index.js";
 import { showRoutes } from "./routes/shows/index.js";
 import { adminStatusRoutes } from "./routes/status.js";
 import { tagRoutes } from "./routes/tags/index.js";
@@ -139,6 +140,7 @@ const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 		await app.register(djRoutes(database));
 		await app.register(showRoutes(database));
 		await app.register(tagRoutes(database));
+		await app.register(mixcloudImportRoutes(database));
 	};
 };
 
