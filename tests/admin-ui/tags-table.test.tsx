@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { isValidElement } from "react";
 import { Tag } from "../../src/admin-ui/components/shared/resource-views/index.js";
-import { tagColumns } from "../../src/admin-ui/components/tags/tags-table.js";
-import { filterTags } from "../../src/admin-ui/components/tags/tags-table-utils.js";
+import {
+	filterTags,
+	tagColumns,
+} from "../../src/admin-ui/components/tags/index.js";
 
 describe("tags table", () => {
 	test("renders the title as a colored tag chip", () => {

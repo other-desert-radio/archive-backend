@@ -1,10 +1,10 @@
-import type { TagsAdminRow } from "../../loaders/tags.js";
+import type { TagsAdminRow } from "../../../loaders/tags.js";
 import {
 	ResourceTable,
 	type ResourceTableColumn,
 	type SortDirection,
 	Tag,
-} from "../shared/resource-views/index.js";
+} from "../../shared/resource-views/index.js";
 
 export type TagSortColumn =
 	| "id"

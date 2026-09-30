@@ -128,3 +128,13 @@
 		padding: var(--modal-padding);
 	}
 }
+
+.actionHelper {
+	margin: 28px 0 0;
+	text-align: center;
+	font-size: var(--modal-helper-size);
+	color: #555;
+}
+.actionHelper + .submit {
+	margin-top: 10px;
+}

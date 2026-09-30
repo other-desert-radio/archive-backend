@@ -1,0 +1,19 @@
+.preview {
+	display: contents;
+}
+.chip {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+.hint {
+	color: #555;
+	font-size: var(--modal-helper-size);
+}
+@media (max-width: 450px) {
+	.preview {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-width: 0;
+	}
+}

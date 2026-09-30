@@ -5,18 +5,20 @@ import {
 	sortResourceRows,
 } from "../components/shared/resource-views/index.js";
 import {
+	EditTagModal,
+	filterTags,
 	type TagSortColumn,
 	TagsTable,
+	TagsToolbar,
 	tagColumns,
-} from "../components/tags/tags-table.js";
-import { filterTags } from "../components/tags/tags-table-utils.js";
-import { TagsToolbar } from "../components/tags/toolbar/index.js";
+} from "../components/tags/index.js";
+import { modifyTag } from "../loaders/modify-tag.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 
-const handleEditTag = (_tag: TagsAdminRow) => undefined;
 const handleAddTag = () => undefined;
 
 export const TagsPage = () => {
+	const [editingTag, setEditingTag] = useState<TagsAdminRow>();
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
 	const [sortColumn, setSortColumn] = useState<TagSortColumn>("id");
@@ -58,30 +60,43 @@ export const TagsPage = () => {
 	};
 
 	return (
-		<ResourceView
-			title="Tags"
-			isLoading={isLoading}
-			error={error}
-			onRetry={refreshTags}
-			isEmpty={tags.length === 0}
-			emptyMessage="No tags have been added yet."
-			hasNoResults={tags.length > 0 && visibleTags.length === 0}
-			noResultsMessage="No tags match your search."
-			toolbar={
-				<TagsToolbar
-					query={query}
-					onQueryChange={setQuery}
-					onAddTag={handleAddTag}
+		<>
+			<ResourceView
+				title="Tags"
+				isLoading={isLoading}
+				error={error}
+				onRetry={refreshTags}
+				isEmpty={tags.length === 0}
+				emptyMessage="No tags have been added yet."
+				hasNoResults={tags.length > 0 && visibleTags.length === 0}
+				noResultsMessage="No tags match your search."
+				toolbar={
+					<TagsToolbar
+						query={query}
+						onQueryChange={setQuery}
+						onAddTag={handleAddTag}
+					/>
+				}
+			>
+				<TagsTable
+					tags={visibleTags}
+					sortColumn={sortColumn}
+					sortDirection={sortDirection}
+					onSort={handleSort}
+					onEdit={setEditingTag}
 				/>
-			}
-		>
-			<TagsTable
-				tags={visibleTags}
-				sortColumn={sortColumn}
-				sortDirection={sortDirection}
-				onSort={handleSort}
-				onEdit={handleEditTag}
-			/>
-		</ResourceView>
+			</ResourceView>
+			{editingTag !== undefined && (
+				<EditTagModal
+					key={editingTag.id}
+					tag={editingTag}
+					onClose={() => setEditingTag(undefined)}
+					onSubmit={async (request) => {
+						await modifyTag(request);
+						refreshTags();
+					}}
+				/>
+			)}
+		</>
 	);
 };
