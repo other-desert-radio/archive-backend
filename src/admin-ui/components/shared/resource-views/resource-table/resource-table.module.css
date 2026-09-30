@@ -1,10 +1,6 @@
 .wrapper {
 	width: 100%;
-	padding: 0 24px;
 	overflow-x: auto;
-}
-.withActions {
-	padding-left: 0;
 }
 .table {
 	width: max-content;
