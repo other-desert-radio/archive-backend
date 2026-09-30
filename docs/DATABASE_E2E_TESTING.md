@@ -187,3 +187,15 @@ disposable Compose database verify tag identity/timestamp and relationship row
 IDs remain unchanged. API reloads check normalized metadata and reviewed state;
 rejection, case-only rename, and metadata clearing checks verify persisted
 behavior.
+
+### Tag editor browser coverage
+
+`integration-tests/edit-tag.spec.ts` creates uniquely named tags and linked
+DJ/Show fixtures in the disposable stack. It checks prefilling, every editable
+field through reload/reopening, optional metadata clearing, unchanged-save
+review, inline chip preview, local validation and server duplicate rejection,
+failed-save draft retention, submission protection, all dismissal paths,
+reversion, discard, clean reopening, focus restoration/containment, and
+390px/320px action reachability. Navigation to linked DJ/Show editors verifies
+refreshed titles and colors. Shared DJ/Show/tag-input modal regressions remain
+in the complete suite.

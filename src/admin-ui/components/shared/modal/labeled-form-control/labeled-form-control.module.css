@@ -42,3 +42,17 @@
 		grid-column: auto;
 	}
 }
+
+.control {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+.control input {
+	flex: 1;
+}
+.trailing {
+	min-width: 0;
+	max-width: 50%;
+}

@@ -119,7 +119,7 @@ for (const [field, value] of [
 				original ?? "",
 			);
 		await expect(
-			form.getByText("Saving marks this tag reviewed."),
+			form.getByText("Saving marks this tag reviewed"),
 		).toBeVisible();
 		const next = field === "title" ? `${value} ${randomUUID()}` : value;
 		await page.locator(`#edit-tag-${field}`).fill(next);
@@ -143,16 +143,16 @@ test("previews valid colors, clears metadata, and reviews unchanged saves", asyn
 	const form = await open(page, tag.id);
 	await page.locator("#edit-tag-color").fill("#112233");
 	await page.locator("#edit-tag-title").fill("Preview");
-	await expect(form.getByRole("status", { name: "preview" })).toHaveText(
-		"Preview",
-	);
+	await expect(
+		form.getByRole("status", { name: "Tag color preview" }),
+	).toHaveText("Preview");
 	await expect(form.getByRole("status").locator("span")).toHaveCSS(
 		"background-color",
 		"rgb(17, 34, 51)",
 	);
 	await page.locator("#edit-tag-color").fill("#fff");
 	await expect(form.getByRole("status")).toHaveText(
-		"Enter a valid hex color to preview.",
+		"Enter a valid hex color to preview",
 	);
 	await page.locator("#edit-tag-color").fill(tag.color);
 	await page.locator("#edit-tag-title").fill(tag.title);
@@ -326,7 +326,7 @@ test("returning to linked DJ and Show views reloads the updated chip", async ({
 		["DJs", linked.dj],
 		["Shows", linked.show],
 	] as const) {
-		await page.getByRole("link", { name: resource, exact: true }).click();
+		await page.locator(`a[href="#${resource.toLowerCase()}"]`).click();
 		await page.getByRole("button", { name: "table", exact: true }).click();
 		await row(page, resource, id)
 			.getByRole("button", { name: "Edit", exact: true })
@@ -340,7 +340,10 @@ test("returning to linked DJ and Show views reloads the updated chip", async ({
 			exact: true,
 		});
 		await expect(chip).toBeVisible();
-		await expect(chip).toHaveCSS("background-color", "rgb(17, 34, 51)");
+		await expect(chip.locator("..")).toHaveCSS(
+			"background-color",
+			"rgb(17, 34, 51)",
+		);
 		await form.getByRole("button", { name: "Cancel", exact: true }).click();
 	}
 });

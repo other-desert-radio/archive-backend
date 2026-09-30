@@ -100,7 +100,7 @@ co-locate CSS and private utilities. Every component directory exposes an
 barrel; internal private imports may use a nearer barrel to avoid cycles.
 
 Resource wrappers own field values, opening-value baselines, validation, and
-typed request construction. Shared shells should not know DJ or Show payloads.
+typed request construction. Shared shells should not know resource payloads.
 Keep request builders in private resource utilities and leave wire contracts in
 the existing loaders/shared API types. The public `OnboardingModal` name remains
 in use even for editing.
@@ -179,8 +179,17 @@ message modal's primary action. Propose the concrete styling before implementing
 it; keep it consistent with the bordered form actions and choose initial focus
 according to the safest action for that message.
 
-Tag create/edit remains unimplemented. Reuse these primitives when that workflow
-is authorized.
+Tag editing opens from the Tags table in a prefilled `EditTagModal`. Title,
+required hex color, Mixcloud key, and optional HTTP(S) URL are editable. The
+shared `LabeledFormControl` supports trailing content for the live Tag chip
+beside the color input; no visible preview label is shown. Invalid colors
+replace the chip with guidance. Helper text and the review note have no trailing
+periods. The shared shell's optional action helper explains that saving marks
+the tag reviewed. There is no reviewed checkbox. Dirty comparison uses opening
+values; failed saves retain edits, successful saves close and reload Tags.
+Returning to DJs or Shows reloads their tag dictionary through their normal
+loaders. Tag creation, merging, deletion, and grid views remain outside this
+workflow.
 
 ## Verification and delivery
 

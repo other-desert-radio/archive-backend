@@ -37,7 +37,7 @@ export const EditTagModal = ({ tag, onClose, onSubmit }: Props) => {
 			submitLabel="Save"
 			submittingLabel="Saving…"
 			cancelLabel="Cancel"
-			actionHelper="Saving marks this tag reviewed."
+			actionHelper="Saving marks this tag reviewed"
 		>
 			<LabeledFormControl
 				id="edit-tag-title"
@@ -54,26 +54,25 @@ export const EditTagModal = ({ tag, onClose, onSubmit }: Props) => {
 				value={fields.color}
 				onChange={(color) => setFields({ ...fields, color })}
 				required
-				helper="Six-digit hex color (#RRGGBB)."
+				helper="Six-digit hex color (#RRGGBB)"
+				trailingContent={
+					<div
+						role="status"
+						aria-label="Tag color preview"
+						className={styles.chip}
+					>
+						{isTagColor(fields.color) ? (
+							<Tag as="span" color={fields.color.trim()}>
+								{fields.title.trim()}
+							</Tag>
+						) : (
+							<span className={styles.hint}>
+								Enter a valid hex color to preview
+							</span>
+						)}
+					</div>
+				}
 			/>
-			<div className={styles.preview}>
-				<span id="edit-tag-preview-label">preview</span>
-				<div
-					role="status"
-					aria-labelledby="edit-tag-preview-label"
-					className={styles.chip}
-				>
-					{isTagColor(fields.color) ? (
-						<Tag as="span" color={fields.color.trim()}>
-							{fields.title.trim()}
-						</Tag>
-					) : (
-						<span className={styles.hint}>
-							Enter a valid hex color to preview.
-						</span>
-					)}
-				</div>
-			</div>
 			<LabeledFormControl
 				id="edit-tag-mixcloud-key"
 				name="mixcloud_key"
@@ -87,7 +86,7 @@ export const EditTagModal = ({ tag, onClose, onSubmit }: Props) => {
 				label="Mixcloud URL"
 				value={fields.mixcloud_url}
 				onChange={(mixcloud_url) => setFields({ ...fields, mixcloud_url })}
-				helper="Optional absolute HTTP(S) URL."
+				helper="Optional absolute HTTP(S) URL"
 			/>
 		</OnboardingModal>
 	);
