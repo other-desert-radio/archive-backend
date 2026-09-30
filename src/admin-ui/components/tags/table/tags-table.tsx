@@ -1,3 +1,4 @@
+import type { ModifyTagReviewRequest } from "../../../../admin/routes/tags/index.js";
 import type { TagsAdminRow } from "../../../loaders/tags.js";
 import {
 	ResourceTable,
@@ -5,6 +6,7 @@ import {
 	type SortDirection,
 	Tag,
 } from "../../shared/resource-views/index.js";
+import { ReviewedCell } from "./reviewed-cell/index.js";
 
 export type TagSortColumn =
 	| "id"
@@ -20,6 +22,7 @@ type TagsTableProps = {
 	sortDirection: SortDirection;
 	onSort: (column: TagSortColumn) => void;
 	onEdit: (tag: TagsAdminRow) => void;
+	onReviewSave: (request: ModifyTagReviewRequest) => Promise<void>;
 };
 
 export const tagColumns: ResourceTableColumn<TagsAdminRow, TagSortColumn>[] = [
@@ -73,12 +76,22 @@ export const TagsTable = ({
 	sortDirection,
 	onSort,
 	onEdit,
+	onReviewSave,
 }: TagsTableProps) => (
 	<ResourceTable
 		rows={tags}
 		rowKey={(tag) => tag.id}
 		caption="Tags"
-		columns={tagColumns}
+		columns={tagColumns.map((column) =>
+			column.key === "reviewed"
+				? {
+						...column,
+						render: (tag: TagsAdminRow) => (
+							<ReviewedCell tag={tag} onSave={onReviewSave} />
+						),
+					}
+				: column,
+		)}
 		sortColumn={sortColumn}
 		sortDirection={sortDirection}
 		onSort={onSort}

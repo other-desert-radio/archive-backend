@@ -197,6 +197,23 @@ the search so the tag can be found. Failed submissions retain values; dirty
 dismissal requires confirmation. Merging, deletion, and grid views remain
 outside this workflow.
 
+### Inline Tag review
+
+The Tags table reviewed cell shows its saved boolean and a “Review” button.
+Reviewed tags use a dashed border and transparent background, including on
+hover; unreviewed tags keep the solid border and white background. Review
+replaces the cell contents with “reviewed?” and matching square check and cross
+buttons, both 28px high. The cell reserves the full prompt width in its resting
+state so opening Review does not resize the column. The check immediately saves
+`true`; the cross immediately saves `false`. Both use the keyed
+`edit_type: "review"` request and preserve metadata. Escape from either action
+dismisses the prompt without saving. Opening focuses the check; completion or
+dismissal returns focus to Review. Saving disables both answers and prevents
+duplicate requests. Failures retain the prompt with an actionable inline error;
+either answer can be retried. Successful responses update only the row's
+reviewed state, retaining search and sort. The existing full editor continues to
+mark metadata saves reviewed.
+
 ## Verification and delivery
 
 Deliver one narrowly scoped chunk with documentation and focused verification,

@@ -204,3 +204,14 @@ reversion, discard, clean reopening, focus restoration/containment, and
 390px/320px action reachability. Navigation to linked DJ/Show editors verifies
 refreshed titles and colors. Shared DJ/Show/tag-input modal regressions remain
 in the complete suite.
+
+### Inline Tag review coverage
+
+`integration-tests/review-tag.spec.ts` creates isolated tags and checks the
+Review prompt, both boolean answers and repeated saves, exact keyed payloads,
+metadata preservation, persisted values after reload, keyboard dismissal and
+saving, focus restoration, retained errors and retry, pending-request
+protection, and equal-height reachable actions at 390px and 320px. It also
+verifies the full Tag editor still marks saved metadata reviewed. All tests run
+in the disposable Compose stack alongside existing editor and toolbar
+regressions.

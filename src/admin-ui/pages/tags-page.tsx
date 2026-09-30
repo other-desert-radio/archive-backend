@@ -85,6 +85,16 @@ export const TagsPage = () => {
 					sortDirection={sortDirection}
 					onSort={handleSort}
 					onEdit={setEditingTag}
+					onReviewSave={async (request) => {
+						const saved = await modifyTag(request);
+						setTags((current) =>
+							current.map((tag) =>
+								tag.id === saved.id
+									? { ...tag, reviewed: saved.reviewed }
+									: tag,
+							),
+						);
+					}}
 				/>
 			</ResourceView>
 			{isOnboarding && (

@@ -10,6 +10,21 @@ const payload = {
 	mixcloud_url: "",
 };
 describe("modifyTag loader", () => {
+	test("sends only the keyed review request", async () => {
+		const review = { edit_type: "review" as const, id: 1, reviewed: false };
+		const saved = {
+			id: 1,
+			title: "Ambient",
+			color: "#123456",
+			reviewed: false,
+		};
+		expect(
+			await modifyTag(review, async (_input, init) => {
+				expect(JSON.parse(init?.body as string)).toEqual(review);
+				return new Response(JSON.stringify(saved));
+			}),
+		).toEqual(saved);
+	});
 	test("posts the shared replacement contract and returns the saved Tag", async () => {
 		const saved = {
 			id: 1,
