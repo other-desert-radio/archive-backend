@@ -28,6 +28,12 @@ test("database backup scripts preserve files and handle failures safely", () => 
 					FAIL_DOCKER: fail ? "1" : "0",
 				},
 			});
+		expect(run("pg-dump", ["backups/nested/archive.dump"]).exitCode).toBe(0);
+		expect(
+			readFileSync(join(directory, "backups/nested/archive.dump"), "utf8"),
+		).toBe("archive");
+		writeFileSync(join(directory, "blocked"), "file");
+		expect(run("pg-dump", ["blocked/archive.dump"]).exitCode).not.toBe(0);
 		expect(run("pg-dump", ["backup.dump"]).exitCode).toBe(0);
 		expect(readFileSync(join(directory, "backup.dump"), "utf8")).toBe(
 			"archive",

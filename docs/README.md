@@ -48,7 +48,6 @@ PostgreSQL installation is needed. Commands use that container's `POSTGRES_USER`
 and `POSTGRES_DB`, rather than a local `DATABASE_URL`.
 
 ```sh
-mkdir -p backups
 scripts/pg-dump backups/archive.dump
 # On the destination machine, configure .env and start PostgreSQL:
 docker compose up -d postgres
@@ -57,8 +56,9 @@ scripts/pg-import backups/archive.dump --confirm
 
 Copy the `.dump` file to the destination first. Export runs while PostgreSQL is
 online, includes schema, rows, images, authentication and migration tables, and
-refuses to overwrite an existing backup. The `backups/` directory is ignored by
-Git. Backups have private file permissions and should be stored securely.
+creates missing destination directories, and refuses to overwrite an existing
+backup. The `backups/` directory is ignored by Git. Backups have private file
+permissions and should be stored securely.
 
 Import uses `pg_restore` (PostgreSQL has no `pg_import` command). It replaces
 objects present in the backup and their data, requires `--confirm`, and rolls

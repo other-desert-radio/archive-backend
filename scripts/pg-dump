@@ -7,7 +7,10 @@ if [[ $# -ne 1 || -z "$1" ]]; then
 	exit 1
 fi
 
-output="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+output_directory="$(dirname -- "$1")"
+mkdir -p -- "$output_directory"
+output_directory="$(cd -- "$output_directory" && pwd)"
+output="$output_directory/$(basename -- "$1")"
 if [[ -e "$output" ]]; then
 	echo "Backup already exists: $output" >&2
 	exit 1
