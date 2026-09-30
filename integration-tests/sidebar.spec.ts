@@ -12,7 +12,7 @@ test("floating navigation expands without moving its links", async ({
 	await page.goto("/admin/#djs");
 	await page.evaluate(() => document.fonts.ready);
 	const sidebar = page.getByRole("complementary", { name: "Admin navigation" });
-	const link = sidebar.getByRole("link", { name: "- DJs" });
+	const link = sidebar.getByRole("link", { name: "⤷ DJs" });
 	const original = await link.boundingBox();
 	const restingHeight = await sidebar.evaluate(
 		(element) => element.getBoundingClientRect().height,
@@ -69,4 +69,28 @@ test("floating navigation expands without moving its links", async ({
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
 		390,
 	);
+});
+
+test("sidebar arrows and highlights use consistent link spacing", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await page.goto("/admin/#djs");
+	const sidebar = page.getByRole("complementary", { name: "Admin navigation" });
+	await expect(sidebar.getByRole("link")).toHaveText([
+		"⤷ shows",
+		"⤷ DJs",
+		"⤷ tags",
+	]);
+	const shows = sidebar.getByRole("link", { name: "⤷ shows" });
+	await expect(shows).toHaveCSS("font-weight", "400");
+	const before = await shows.boundingBox();
+	await shows.hover();
+	await expect(shows).toHaveCSS("font-weight", "700");
+	expect(await shows.boundingBox()).toEqual(before);
+	await page.mouse.move(1000, 600);
+	await expect(shows).toHaveCSS("font-weight", "400");
+	await page.keyboard.press("Tab");
+	await expect(shows).toBeFocused();
+	await expect(shows).toHaveCSS("font-weight", "700");
 });
