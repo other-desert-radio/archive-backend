@@ -223,8 +223,8 @@ required; color starts at `#cccccc`. Optional blank metadata is omitted from
 creation requests. New tags are reviewed; existing titles reuse their current
 tag without changing its metadata. Success closes and refreshes Tags, clearing
 the search so the tag can be found. Failed submissions retain values; dirty
-dismissal requires confirmation. Merging, deletion, and grid views remain
-outside this workflow.
+dismissal requires confirmation. Merging and grid views remain outside this
+workflow.
 
 ### Inline Tag review
 
@@ -283,3 +283,20 @@ Verify alignment, horizontal scrolling, grid columns, and sticky controls with
 `integration-tests/resource-layout.spec.ts` and agent-browser at desktop,
 tablet, and phone widths. The layout suite mocks resource reads and writes no
 archive records.
+
+### Tag deletion confirmation
+
+Tags offer a square Delete button with red text and border beside Edit in the
+sticky Actions column. Shows and DJs retain their existing actions. Deleting
+opens a message dialog with the tag title, permanent-deletion explanation, and
+separate affected Shows/DJs lists with counts, titles, and IDs. DJs identify
+direct, inherited, or combined assignments. Long lists scroll independently;
+empty lists are explicit. Loading impact disables Delete; failures offer Retry.
+
+Cancel receives initial focus. Escape, Cancel, and backdrop dismissal restore
+focus to the opener while idle. Pending deletion disables both actions and
+blocks dismissal and duplicate submission. Failures retain the dialog with
+server/HTTP detail. Success removes the row without resetting search or sort and
+focuses search. The underlying resource view is inert while the dialog is open.
+The message shell supports optional content, destructive action styling, and
+opt-in opener focus restoration; existing callers retain their defaults.

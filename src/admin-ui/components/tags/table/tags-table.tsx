@@ -22,6 +22,7 @@ type TagsTableProps = {
 	sortDirection: SortDirection;
 	onSort: (column: TagSortColumn) => void;
 	onEdit: (tag: TagsAdminRow) => void;
+	onDelete: (tag: TagsAdminRow) => void;
 	onReviewSave: (request: ModifyTagReviewRequest) => Promise<void>;
 };
 
@@ -76,6 +77,7 @@ export const TagsTable = ({
 	sortDirection,
 	onSort,
 	onEdit,
+	onDelete,
 	onReviewSave,
 }: TagsTableProps) => (
 	<ResourceTable
@@ -96,5 +98,6 @@ export const TagsTable = ({
 		sortDirection={sortDirection}
 		onSort={onSort}
 		onEdit={onEdit}
+		onDelete={onDelete}
 	/>
 );

@@ -19,6 +19,7 @@ type ResourceTableProps<Row, ColumnKey extends string> = {
 	sortDirection: SortDirection;
 	onSort: (column: ColumnKey) => void;
 	onEdit: (row: Row) => void;
+	onDelete?: (row: Row) => void;
 };
 
 /** Renders a typed, sortable table from resource-specific column definitions. */
@@ -31,6 +32,7 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 	sortDirection,
 	onSort,
 	onEdit,
+	onDelete,
 }: ResourceTableProps<Row, ColumnKey>) => (
 	<div className={styles.wrapper}>
 		<table className={styles.table}>
@@ -78,6 +80,15 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 							>
 								Edit
 							</button>
+							{onDelete && (
+								<button
+									type="button"
+									className={styles.deleteButton}
+									onClick={() => onDelete(row)}
+								>
+									Delete
+								</button>
+							)}
 						</td>
 						{columns.map((column) => (
 							<td key={column.key}>{column.render(row)}</td>

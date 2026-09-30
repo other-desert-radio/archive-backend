@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	ResourceView,
 	type SortDirection,
 	sortResourceRows,
 } from "../components/shared/resource-views/index.js";
 import {
+	DeleteTagModal,
 	EditTagModal,
 	filterTags,
 	OnboardTagModal,
@@ -18,6 +19,8 @@ import { modifyTag } from "../loaders/modify-tag.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 
 export const TagsPage = () => {
+	const [deletingTag, setDeletingTag] = useState<TagsAdminRow>();
+	const viewRef = useRef<HTMLDivElement>(null);
 	const [isOnboarding, setIsOnboarding] = useState(false);
 	const [editingTag, setEditingTag] = useState<TagsAdminRow>();
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
@@ -62,41 +65,62 @@ export const TagsPage = () => {
 
 	return (
 		<>
-			<ResourceView
-				title="Tags"
-				isLoading={isLoading}
-				error={error}
-				onRetry={refreshTags}
-				isEmpty={tags.length === 0}
-				emptyMessage="No tags have been added yet."
-				hasNoResults={tags.length > 0 && visibleTags.length === 0}
-				noResultsMessage="No tags match your search."
-				toolbar={
-					<TagsToolbar
-						query={query}
-						onQueryChange={setQuery}
-						onAddTag={() => setIsOnboarding(true)}
+			<div ref={viewRef} inert={deletingTag !== undefined}>
+				<ResourceView
+					title="Tags"
+					isLoading={isLoading}
+					error={error}
+					onRetry={refreshTags}
+					isEmpty={tags.length === 0}
+					emptyMessage="No tags have been added yet."
+					hasNoResults={tags.length > 0 && visibleTags.length === 0}
+					noResultsMessage="No tags match your search."
+					toolbar={
+						<TagsToolbar
+							query={query}
+							onQueryChange={setQuery}
+							onAddTag={() => setIsOnboarding(true)}
+						/>
+					}
+				>
+					<TagsTable
+						tags={visibleTags}
+						sortColumn={sortColumn}
+						sortDirection={sortDirection}
+						onSort={handleSort}
+						onEdit={setEditingTag}
+						onDelete={setDeletingTag}
+						onReviewSave={async (request) => {
+							const saved = await modifyTag(request);
+							setTags((current) =>
+								current.map((tag) =>
+									tag.id === saved.id
+										? { ...tag, reviewed: saved.reviewed }
+										: tag,
+								),
+							);
+						}}
 					/>
-				}
-			>
-				<TagsTable
-					tags={visibleTags}
-					sortColumn={sortColumn}
-					sortDirection={sortDirection}
-					onSort={handleSort}
-					onEdit={setEditingTag}
-					onReviewSave={async (request) => {
-						const saved = await modifyTag(request);
-						setTags((current) =>
-							current.map((tag) =>
-								tag.id === saved.id
-									? { ...tag, reviewed: saved.reviewed }
-									: tag,
-							),
+				</ResourceView>
+			</div>
+			{deletingTag !== undefined && (
+				<DeleteTagModal
+					key={deletingTag.id}
+					tag={deletingTag}
+					onClose={() => setDeletingTag(undefined)}
+					onDeleted={(id) => {
+						setTags((current) => current.filter((tag) => tag.id !== id));
+						setDeletingTag(undefined);
+						window.requestAnimationFrame(() =>
+							viewRef.current
+								?.querySelector<HTMLElement>(
+									'input[aria-label="Search Tags"], button',
+								)
+								?.focus(),
 						);
 					}}
 				/>
-			</ResourceView>
+			)}
 			{isOnboarding && (
 				<OnboardTagModal
 					onClose={() => setIsOnboarding(false)}

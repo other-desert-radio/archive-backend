@@ -18,6 +18,7 @@ describe("tags table", () => {
 			sortDirection: "asc",
 			onSort: () => undefined,
 			onEdit: () => undefined,
+			onDelete: () => undefined,
 			onReviewSave: onSave,
 		});
 		const cell = table.props.columns

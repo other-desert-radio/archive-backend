@@ -7,6 +7,9 @@ export type {
 	ModifyTagFullEditRequest,
 	ModifyTagRequest,
 	ModifyTagReviewRequest,
+	RemoveTagRequest,
+	RemoveTagResponse,
+	TagDeleteImpact,
 } from "./types.js";
 export {
 	CreateTagRequestPattern,
@@ -14,4 +17,5 @@ export {
 	ModifyTagFullEditRequestPattern,
 	ModifyTagRequestPattern,
 	ModifyTagReviewRequestPattern,
+	RemoveTagRequestPattern,
 } from "./types.js";

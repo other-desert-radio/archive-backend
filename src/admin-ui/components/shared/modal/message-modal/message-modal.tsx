@@ -1,4 +1,4 @@
-import { useId, useRef } from "react";
+import { type ReactNode, useId, useRef } from "react";
 import { useDialogFocus } from "../dialog-focus/index.js";
 import styles from "./message-modal.module.css";
 
@@ -6,6 +6,7 @@ export type MessageModalAction = {
 	label: string;
 	onClick: () => void;
 	disabled?: boolean;
+	destructive?: boolean;
 };
 
 type MessageModalProps = {
@@ -17,6 +18,8 @@ type MessageModalProps = {
 	onDismiss: () => void;
 	initialFocus?: "primary" | "secondary";
 	role?: "dialog" | "alertdialog";
+	children?: ReactNode;
+	restoreFocus?: boolean;
 };
 
 /** Presents a message and caller-supplied actions with keyboard focus containment. */
@@ -29,6 +32,8 @@ export const MessageModal = ({
 	onDismiss,
 	initialFocus = "primary",
 	role = "dialog",
+	children,
+	restoreFocus = false,
 }: MessageModalProps) => {
 	const panelRef = useRef<HTMLDialogElement>(null);
 	const titleId = useId();
@@ -38,7 +43,7 @@ export const MessageModal = ({
 		isOpen: true,
 		onEscape: onDismiss,
 		initialFocusSelector: `button[data-action="${initialFocus}"]:not([disabled])`,
-		restoreFocus: false,
+		restoreFocus,
 	});
 	const actions = [
 		...(secondaryAction ? [{ ...secondaryAction, kind: "secondary" }] : []),
@@ -66,12 +71,14 @@ export const MessageModal = ({
 			>
 				<h2 id={titleId}>{title}</h2>
 				<p id={descriptionId}>{message}</p>
+				{children}
 				<div className={styles.actions}>
 					{actions.map((action) => (
 						<button
 							key={action.label}
 							type="button"
 							data-action={action.kind}
+							className={action.destructive ? styles.destructive : undefined}
 							disabled={action.disabled}
 							onClick={action.onClick}
 						>
