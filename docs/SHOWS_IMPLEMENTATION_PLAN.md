@@ -38,11 +38,12 @@ Confirmed Show onboarding requirements:
 - Require title, broadcast date, positive duration, show URL, and at least one
   existing DJ.
 - Artwork is an optional image URL, not a file upload.
-- Tags are optional and follow the current DJ behavior: comma-separated input,
-  validation on blur, and creation of missing tags on successful submission.
+- Tags are optional and use the shared DJ tag chips and autocomplete UI, with
+  existing-tag loading/retry and creation of missing tags on successful
+  submission.
 - Broadcast date has day-level granularity only. Accept YYYY-MM-DD, floor it to
   midnight UTC in the existing timestamp column, and display YYYY-MM-DD.
-- Duration is entered as hours/minutes/seconds and stored as whole seconds.
+- Duration is entered as one positive integer in seconds and stored unchanged.
 - Show tables display relationship IDs; search also matches related DJ and tag
   names.
 - No database migration is needed.
@@ -269,8 +270,7 @@ reviewable onboarding feature.
       DJ.
 - [x] Use a native day-only date input. No time, timezone selector, hour, or
       minute field for the broadcast date.
-- [x] Group duration inputs as hours, minutes, seconds; blank parts count as
-      zero, but total duration must be positive.
+- [x] Use one required positive-integer duration input in seconds.
 - [x] Add a reusable searchable multi-select with typed option IDs, labels,
       controlled selection, loading/error states, and selected-item removal.
 - [x] For DJs, display title (#id) to distinguish duplicate names; search by
@@ -306,8 +306,7 @@ string; // Optional absolute HTTP(S) URL tags?: string[]; // Tag titles };
 - [x] Floor the accepted day to midnight UTC explicitly, without browser/server
       local-time interpretation.
 - [x] Validate duration as a positive integer within PostgreSQL integer range.
-      In the form, minutes/seconds must be integers from 0–59 and hours
-      nonnegative.
+      The form uses the same positive-integer seconds range.
 - [x] Validate required and optional URLs as absolute HTTP(S) URLs.
 - [x] Validate DJ IDs as positive integers, deduplicate them, and reject
       nonexistent IDs.

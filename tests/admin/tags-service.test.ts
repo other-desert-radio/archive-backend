@@ -10,6 +10,8 @@ const buildDatabase = (initialTags: object[] = []) => {
 		title: string;
 		color: string;
 		reviewed: boolean;
+		mixcloud_key: string | null;
+		mixcloud_url: string | null;
 	}>;
 	let nextId = tags.length + 1;
 
@@ -23,6 +25,8 @@ const buildDatabase = (initialTags: object[] = []) => {
 					title: string;
 					color: string;
 					reviewed: boolean;
+					mixcloud_key: string | null;
+					mixcloud_url: string | null;
 				};
 				const builder = {
 					values: (input: typeof values) => {
@@ -54,6 +58,22 @@ describe("tag service", () => {
 		expect(tag.color).toMatch(/^#[0-9a-f]{6}$/);
 	});
 
+	test("persists optional Mixcloud metadata", async () => {
+		const { database } = buildDatabase();
+
+		const tag = await createTag(database, {
+			title: "Experimental",
+			mixcloud_key: " /genres/experimental/ ",
+			mixcloud_url: " https://www.mixcloud.com/genres/experimental/ ",
+		});
+
+		expect(tag).toMatchObject({
+			title: "Experimental",
+			mixcloud_key: "/genres/experimental/",
+			mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
+		});
+	});
+
 	test("creates an explicitly colored tag as reviewed", async () => {
 		const { database } = buildDatabase();
 
@@ -72,7 +92,14 @@ describe("tag service", () => {
 
 	test("reuses existing tags and deduplicates a batch", async () => {
 		const { database } = buildDatabase([
-			{ id: 7, title: "Dance", color: "#123456", reviewed: true },
+			{
+				id: 7,
+				title: "Dance",
+				color: "#123456",
+				reviewed: true,
+				mixcloud_key: null,
+				mixcloud_url: null,
+			},
 		]);
 
 		const tags = await createTags(database, [

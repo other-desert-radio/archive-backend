@@ -2,13 +2,15 @@ import type { FastifyPluginAsync } from "fastify";
 import { isMatching } from "ts-pattern";
 import { transformShows } from "../../../json-transformers/index.js";
 import { clientDescription } from "../../logging.js";
-import { createTags } from "../tags/tag-service.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { normalizeCreateShowRequest } from "./normalize-create-show-request.js";
+import { saveShow } from "./save-show.js";
 import {
 	type AdminShowsJSON,
 	type CreateShowRequest,
 	CreateShowRequestPattern,
+	type ModifyShowRequest,
+	ModifyShowRequestPattern,
 } from "./types.js";
 
 /** Registers authenticated Shows API routes. */
@@ -80,64 +82,8 @@ export const showRoutes =
 			}
 			try {
 				const normalized = normalizeCreateShowRequest(request.body);
-				const created = await database
-					.transaction()
-					.execute(async (transaction) => {
-						const existingDJs = await transaction
-							.selectFrom("djs")
-							.select("id")
-							.where("id", "in", normalized.djs)
-							.execute();
-						if (existingDJs.length !== normalized.djs.length) {
-							throw new Error("One or more selected DJs do not exist");
-						}
-						const createdTags = await createTags(
-							transaction,
-							normalized.tags.map((title) => ({ title })),
-						);
-						const show = await transaction
-							.insertInto("shows")
-							.values({
-								title: normalized.title,
-								date: normalized.date,
-								duration: normalized.duration,
-								image: normalized.image,
-								url: normalized.url,
-							})
-							.returning(["id", "createdAt"])
-							.executeTakeFirstOrThrow();
-						await transaction
-							.insertInto("show_djs")
-							.values(
-								normalized.djs.map((djId) => ({
-									show_id: show.id,
-									dj_id: djId,
-								})),
-							)
-							.execute();
-						if (createdTags.length > 0) {
-							await transaction
-								.insertInto("show_tags")
-								.values(
-									createdTags.map((tag) => ({
-										show_id: show.id,
-										tag_id: tag.id,
-									})),
-								)
-								.execute();
-						}
-						return {
-							id: show.id,
-							createdAt: show.createdAt,
-							title: normalized.title,
-							date: normalized.date,
-							duration: normalized.duration,
-							...(normalized.image === null ? {} : { image: normalized.image }),
-							url: normalized.url,
-							djs: [...normalized.djs].sort((a, b) => a - b),
-							tags: createdTags.map((tag) => tag.id).sort((a, b) => a - b),
-						};
-					});
+				const created = await saveShow(database, normalized);
+				if (created === undefined) throw new Error("Show creation failed");
 				request.log.info(
 					{ showId: created.id, client: clientDescription(request) },
 					`[Show Creation] Show created -- id: ${created.id}, title: ${created.title}`,
@@ -154,6 +100,55 @@ export const showRoutes =
 					return reply.code(400).send({ error: message });
 				}
 				request.log.error({ err: error }, "[Show Creation] failed");
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
+		});
+
+		app.post<{
+			Body: ModifyShowRequest;
+			Reply: AdminApiReply<AdminShowsJSON>;
+		}>("/modify-show", async (request, reply) => {
+			request.log.info(
+				{ client: clientDescription(request) },
+				"[Show Editing] started",
+			);
+			if (!isMatching(ModifyShowRequestPattern, request.body)) {
+				request.log.warn("[Show Editing] rejected -- invalid request shape");
+				return reply.code(400).send({ error: "Validation error" });
+			}
+			const id = request.body.id;
+			try {
+				const normalized = normalizeCreateShowRequest(request.body);
+				const modified = await saveShow(database, normalized, id);
+				if (modified === undefined) {
+					request.log.warn(
+						{ showId: id },
+						`[Show Editing] rejected -- Show ${id} not found`,
+					);
+					return reply.code(404).send({ error: "Not Found" });
+				}
+				request.log.info(
+					{ showId: id, client: clientDescription(request) },
+					`[Show Editing] Show saved -- id: ${id}, title: ${modified.title}`,
+				);
+				return reply.code(200).send(modified);
+			} catch (error) {
+				const message =
+					error instanceof Error ? error.message : "Internal Server Error";
+				if (
+					message === "Validation error" ||
+					message === "One or more selected DJs do not exist"
+				) {
+					request.log.warn(
+						{ showId: id, reason: message },
+						`[Show Editing] rejected -- id: ${id}, reason: ${message}`,
+					);
+					return reply.code(400).send({ error: message });
+				}
+				request.log.error(
+					{ err: error, showId: id },
+					`[Show Editing] failed -- id: ${id}`,
+				);
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
 		});

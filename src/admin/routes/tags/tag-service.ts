@@ -8,17 +8,33 @@ type TagDatabase = Kysely<Database> | Transaction<Database>;
 export type CreateTagInput = {
 	title: string;
 	color?: string | undefined;
+	mixcloud_key?: string | undefined;
+	mixcloud_url?: string | undefined;
 };
 
-export type CreatedTag = Pick<
+type TagRow = Pick<
 	Selectable<TagsTable>,
-	"id" | "title" | "color" | "reviewed"
+	"id" | "title" | "color" | "reviewed" | "mixcloud_key" | "mixcloud_url"
 >;
+
+export type CreatedTag = Omit<TagRow, "mixcloud_key" | "mixcloud_url"> & {
+	mixcloud_key?: string;
+	mixcloud_url?: string;
+};
 
 const randomTagColor = (): string =>
 	`#${Math.floor(Math.random() * 0xffffff)
 		.toString(16)
 		.padStart(6, "0")}`;
+
+const toCreatedTag = (tag: TagRow): CreatedTag => ({
+	id: tag.id,
+	title: tag.title,
+	color: tag.color,
+	reviewed: tag.reviewed,
+	...(tag.mixcloud_key === null ? {} : { mixcloud_key: tag.mixcloud_key }),
+	...(tag.mixcloud_url === null ? {} : { mixcloud_url: tag.mixcloud_url }),
+});
 
 /**
  * Creates or reuses one tag within the supplied database context.
@@ -27,7 +43,7 @@ const randomTagColor = (): string =>
  * unreviewed and receive a random six-digit hexadecimal color.
  *
  * @param database - A database or transaction context.
- * @param input - The tag title and optional explicit color.
+ * @param input - The tag title and optional display color or Mixcloud metadata.
  * @returns The existing or newly inserted tag.
  */
 export const createTag = async (
@@ -37,6 +53,8 @@ export const createTag = async (
 	const normalized = {
 		title: input.title.trim(),
 		color: input.color?.trim(),
+		mixcloud_key: input.mixcloud_key?.trim(),
+		mixcloud_url: input.mixcloud_url?.trim(),
 	};
 
 	if (!isMatching({ title: P.string.minLength(1) }, normalized)) {
@@ -61,23 +79,45 @@ export const createTag = async (
 
 	const existingTags = await database
 		.selectFrom("tags")
-		.select(["id", "title", "color", "reviewed"])
+		.select([
+			"id",
+			"title",
+			"color",
+			"reviewed",
+			"mixcloud_key",
+			"mixcloud_url",
+		])
 		.execute();
 	const existingTag = existingTags.find(
 		(tag) => tag.title.trim().toLowerCase() === title.toLowerCase(),
 	);
 
-	if (existingTag !== undefined) return existingTag;
+	if (existingTag !== undefined) return toCreatedTag(existingTag);
 
-	return database
+	const createdTag = await database
 		.insertInto("tags")
 		.values({
 			title,
 			color: color ?? randomTagColor(),
 			reviewed,
+			mixcloud_key: undefinedOrEmpty(normalized.mixcloud_key)
+				? null
+				: normalized.mixcloud_key,
+			mixcloud_url: undefinedOrEmpty(normalized.mixcloud_url)
+				? null
+				: normalized.mixcloud_url,
 		})
-		.returning(["id", "title", "color", "reviewed"])
+		.returning([
+			"id",
+			"title",
+			"color",
+			"reviewed",
+			"mixcloud_key",
+			"mixcloud_url",
+		])
 		.executeTakeFirstOrThrow();
+
+	return toCreatedTag(createdTag);
 };
 
 /**

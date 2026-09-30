@@ -7,6 +7,7 @@ export const describeMutationFailure = async (
 	response: Response,
 	resourceName: string,
 	fallback: string,
+	operation = "created",
 ): Promise<string> => {
 	let serverError: string | undefined;
 	try {
@@ -18,10 +19,10 @@ export const describeMutationFailure = async (
 	}
 	const status = `HTTP ${response.status}${response.statusText === "" ? "" : ` (${response.statusText})`}`;
 	if (serverError === undefined)
-		return `${resourceName} could not be created.\n\nStatus: ${status}\n${fallback}`;
+		return `${resourceName} could not be ${operation}.\n\nStatus: ${status}\n${fallback}`;
 	const detail =
 		serverError === "Internal Server Error"
 			? "The server encountered an unexpected error."
 			: serverError;
-	return `${resourceName} could not be created.\n\n${detail}\n\nStatus: ${status}\nPlease correct this issue and try again.`;
+	return `${resourceName} could not be ${operation}.\n\n${detail}\n\nStatus: ${status}\nPlease correct this issue and try again.`;
 };

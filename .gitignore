@@ -9,3 +9,6 @@ coverage/
 .vscode/
 *.log
 src/res/mixcloud.json
+
+test-results/
+backups/

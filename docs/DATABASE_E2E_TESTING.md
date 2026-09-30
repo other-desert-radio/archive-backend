@@ -4,9 +4,10 @@ Use this runbook when an API or admin UI change must be verified against a real
 database without adding, changing, or deleting records in the regular local
 archive database.
 
-This starts a disposable PostgreSQL container on port `55432` and a temporary
-API on port `3001`. It does not use the Compose `archive_postgres_data` volume.
-The database container is removed at cleanup, so all test records disappear.
+The manual workflow below starts a disposable PostgreSQL container on port
+`55432` and a temporary API on port `3001`. It does not use the Compose
+`archive_postgres_data` volume. The database container is removed at cleanup, so
+all test records disappear.
 
 ## Prerequisites
 
@@ -123,3 +124,94 @@ curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:300
 The expected output is no container name and `000` for the stopped temporary
 API. Never run `docker compose down -v` as part of this workflow: it can remove
 the persistent local archive volume.
+
+## Automated editing coverage
+
+From the repository root, run the integration runner script:
+
+```sh
+./scripts/run-integration-tests
+```
+
+`bun run test:integration` is an equivalent shortcut. The
+[runner script](../scripts/run-integration-tests) requires Docker with Compose
+and a running Docker daemon. It builds the API/admin bundle and Playwright test
+image, starts PostgreSQL, applies migrations, waits for the API service, and
+runs the browser tests. No manual database setup, host dependency installation,
+or separate API process is needed.
+
+The script uses `compose.integration.yml` with the project name
+`archive-backend-integration`. Services communicate inside the Docker network;
+the automated workflow does not publish host ports or use the regular local
+archive database. Each test creates a uniquely named DJ through the
+authenticated API; no shared seed or execution order is required.
+
+The runner returns the test command's exit status and uses an exit trap to
+remove its containers, network, and test database volumes, including after test
+failure. Its volume cleanup is scoped to the integration project; the manual
+workflow's warning about the regular Compose volume still applies.
+
+Coverage includes individual metadata edits, optional-field clearing, all table
+columns, saved values after reload and editor reopening, direct and inherited
+tags, image addition/replacement/removal and crop cancellation, required-field
+validation, invalid images, and Cancel/Escape dismissal. Image assertions fetch
+both authenticated WebP variants and check their dimensions. Creation is fixture
+setup; DJ and Show onboarding UI coverage is outside this suite. Tag onboarding
+coverage in `integration-tests/onboard-tag.spec.ts` verifies persisted metadata,
+reviewed state, existing-title reuse, local validation, failed-submit retention,
+dirty dismissal, and phone layout.
+
+Tag drafts commit synchronously on blur, so subsequent chip removal cannot be
+overwritten by a delayed commit using an older selection. The integration suite
+checks that removing all remaining direct tags persists an empty assignment.
+
+### Show update API coverage
+
+`integration-tests/modify-show-api.spec.ts` runs against the same disposable
+PostgreSQL/API stack. Each test creates its own Show and prerequisite DJs
+through API fixtures. Coverage verifies metadata replacement, image/tag
+clearing, case-insensitive tag reuse, new tags, DJ-link replacement and its
+inverse DJ response, preservation of identity and creation timestamp, invalid
+requests, and unknown Shows. Persisted state is reloaded through the API after
+mutations and rejections. `integration-tests/edit-show.spec.ts` additionally
+exercises table/grid entry points, every editable field, reload/reopening,
+DJ-link replacement, existing and focused-draft tags, image URL
+clearing/addition, required-field validation, discard paths and reversion,
+retained values after failure, submission protection, unresolved-tag retry, and
+390px/320px layouts. Tests use a Los Angeles timezone to verify UTC calendar
+date prefilling. The existing modal suite continues to cover Show creation after
+shared-field extraction.
+
+### Tag update API coverage
+
+`integration-tests/modify-tag-api.spec.ts` creates isolated DJ/Show fixtures and
+assigns one tag to both. Direct PostgreSQL assertions against only the
+disposable Compose database verify tag identity/timestamp and relationship row
+IDs remain unchanged. API reloads check normalized metadata and reviewed state;
+rejection, case-only rename, and metadata clearing checks verify persisted
+behavior. Discriminated `edit_type: "review"` updates are tested in both
+directions, including repeated values, metadata and relationship preservation,
+invalid/mixed requests, and unknown targets.
+
+### Tag editor browser coverage
+
+`integration-tests/edit-tag.spec.ts` creates uniquely named tags and linked
+DJ/Show fixtures in the disposable stack. It checks prefilling, every editable
+field through reload/reopening, optional metadata clearing, unchanged-save
+review, inline chip preview, local validation and server duplicate rejection,
+failed-save draft retention, submission protection, all dismissal paths,
+reversion, discard, clean reopening, focus restoration/containment, and
+390px/320px action reachability. Navigation to linked DJ/Show editors verifies
+refreshed titles and colors. Shared DJ/Show/tag-input modal regressions remain
+in the complete suite.
+
+### Inline Tag review coverage
+
+`integration-tests/review-tag.spec.ts` creates isolated tags and checks the
+Review prompt, both boolean answers and repeated saves, exact keyed payloads,
+metadata preservation, persisted values after reload, keyboard dismissal and
+saving, focus restoration, retained errors and retry, pending-request
+protection, and equal-height reachable actions at 390px and 320px. It also
+verifies the full Tag editor still marks saved metadata reviewed. All tests run
+in the disposable Compose stack alongside existing editor and toolbar
+regressions.

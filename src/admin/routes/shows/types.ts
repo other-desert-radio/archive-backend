@@ -16,3 +16,10 @@ export const CreateShowRequestPattern = {
 	tags: P.optional(P.array(P.string)),
 } as const;
 export type CreateShowRequest = P.infer<typeof CreateShowRequestPattern>;
+
+/** Editing replaces the same fields as creation, retaining identity and createdAt. */
+export const ModifyShowRequestPattern = {
+	...CreateShowRequestPattern,
+	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
+} as const;
+export type ModifyShowRequest = P.infer<typeof ModifyShowRequestPattern>;

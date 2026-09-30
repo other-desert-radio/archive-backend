@@ -18,8 +18,8 @@ export type DJsTable = {
 	createdAt: Generated<Date>;
 	title: string;
 	bio: string;
-	image: Buffer | null;
-	image_filename: string | null;
+	image_small: Buffer | null;
+	image_large: Buffer | null;
 	socials: string | null;
 	showTitle: string | null;
 	showDescription: string | null;
@@ -41,6 +41,8 @@ export type TagsTable = {
 	title: string;
 	color: string;
 	reviewed: boolean;
+	mixcloud_key: string | null;
+	mixcloud_url: string | null;
 };
 
 export type ShowDJsTable = {

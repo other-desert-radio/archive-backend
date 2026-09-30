@@ -1,14 +1,20 @@
 import type { FastifyRequest } from "fastify";
+import { splitCommaSeparated } from "../../../utils/index.js";
 import { clientDescription } from "../../logging.js";
+import type { CreateDJRequest } from "./types.js";
 import type { DJImageUpload } from "./validate-dj-image.js";
 
-export type CreateDJMultipartForm = {
+type CreateDJMultipartFields = {
 	title?: string;
 	bio?: string;
 	tags?: string;
 	socials?: string;
 	showTitle?: string;
 	showDescription?: string;
+	image?: DJImageUpload;
+};
+
+export type CreateDJMultipartForm = Omit<CreateDJRequest, "image"> & {
 	image?: DJImageUpload;
 };
 
@@ -33,76 +39,88 @@ export const parseCreateDJMultipart = async (
 		return { valid: false, error: "Request must use multipart/form-data" };
 	}
 
-	const form: CreateDJMultipartForm = {};
+	const fields: CreateDJMultipartFields = {};
 	const seenFields = new Set<string>();
 
-	try {
-		for await (const part of request.parts()) {
+	for await (const part of request.parts()) {
+		request.log.info(
+			{
+				field: part.fieldname,
+				partType: part.type,
+				...(part.type === "file"
+					? {
+							filename: part.filename,
+							contentType: part.mimetype,
+						}
+					: {}),
+				client: clientDescription(request),
+			},
+			`[DJ Creation] multipart field received -- field: ${part.fieldname}, type: ${part.type}`,
+		);
+		if (seenFields.has(part.fieldname)) {
+			if (part.type === "file") await part.toBuffer();
+			return {
+				valid: false,
+				error: `Multipart field was submitted more than once: ${part.fieldname}`,
+			};
+		}
+		seenFields.add(part.fieldname);
+
+		if (part.type === "file") {
+			const bytes = await part.toBuffer();
 			request.log.info(
 				{
 					field: part.fieldname,
-					partType: part.type,
-					...(part.type === "file"
-						? {
-								filename: part.filename,
-								contentType: part.mimetype,
-							}
-						: {}),
-					client: clientDescription(request),
-				},
-				`[DJ Creation] multipart field received -- field: ${part.fieldname}, type: ${part.type}`,
-			);
-			if (seenFields.has(part.fieldname)) {
-				if (part.type === "file") await part.toBuffer();
-				return {
-					valid: false,
-					error: `Multipart field was submitted more than once: ${part.fieldname}`,
-				};
-			}
-			seenFields.add(part.fieldname);
-
-			if (part.type === "file") {
-				const bytes = await part.toBuffer();
-				request.log.info(
-					{
-						field: part.fieldname,
-						filename: part.filename,
-						contentType: part.mimetype,
-						byteLength: bytes.length,
-						client: clientDescription(request),
-					},
-					`[DJ Creation [image upload]] image attached -- field: ${part.fieldname}, filename: ${part.filename}, content type: ${part.mimetype}, bytes: ${bytes.length}`,
-				);
-				if (part.fieldname !== "image") {
-					return {
-						valid: false,
-						error: `Unexpected multipart field: ${part.fieldname}`,
-					};
-				}
-				form.image = {
-					bytes,
 					filename: part.filename,
 					contentType: part.mimetype,
-				};
-				continue;
-			}
-
-			if (!textFields.has(part.fieldname)) {
+					byteLength: bytes.length,
+					client: clientDescription(request),
+				},
+				`[DJ Creation [image upload]] image attached -- field: ${part.fieldname}, filename: ${part.filename}, content type: ${part.mimetype}, bytes: ${bytes.length}`,
+			);
+			if (part.fieldname !== "image") {
 				return {
 					valid: false,
 					error: `Unexpected multipart field: ${part.fieldname}`,
 				};
 			}
+			fields.image = {
+				bytes,
+				filename: part.filename,
+				contentType: part.mimetype,
+			};
+			continue;
+		}
 
-			form[part.fieldname as keyof Omit<CreateDJMultipartForm, "image">] =
-				String(part.value);
+		if (!textFields.has(part.fieldname)) {
+			return {
+				valid: false,
+				error: `Unexpected multipart field: ${part.fieldname}`,
+			};
 		}
-	} catch (error) {
-		if ((error as { code?: string }).code === "FST_REQ_FILE_TOO_LARGE") {
-			return { valid: false, error: "Image must be 10 MiB or smaller" };
-		}
-		throw error;
+
+		fields[part.fieldname as keyof Omit<CreateDJMultipartFields, "image">] =
+			String(part.value);
 	}
 
-	return { valid: true, form };
+	const tags =
+		fields.tags === undefined ? undefined : splitCommaSeparated(fields.tags);
+	const socials = fields.socials?.trim() === "" ? undefined : fields.socials;
+	const showTitle =
+		fields.showTitle?.trim() === "" ? undefined : fields.showTitle;
+	const showDescription =
+		fields.showDescription?.trim() === "" ? undefined : fields.showDescription;
+
+	return {
+		valid: true,
+		form: {
+			title: fields.title ?? "",
+			bio: fields.bio ?? "",
+			...(tags === undefined ? {} : { tags }),
+			...(socials === undefined ? {} : { socials }),
+			...(showTitle === undefined ? {} : { showTitle }),
+			...(showDescription === undefined ? {} : { showDescription }),
+			...(fields.image === undefined ? {} : { image: fields.image }),
+		},
+	};
 };

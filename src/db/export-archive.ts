@@ -24,7 +24,7 @@ export const ARCHIVE_ASSET_DIRECTORY =
 type ArchiveDJImage = {
 	id: number;
 	bytes: Buffer;
-	extension: ".jpg" | ".png" | ".webp";
+	variant: "small" | "large";
 };
 
 type ArchiveShow = {
@@ -66,6 +66,8 @@ export type ArchiveTag = {
 	id: number;
 	title: string;
 	color: string;
+	mixcloud_key?: string;
+	mixcloud_url?: string;
 };
 
 export type ArchiveDocuments = {
@@ -83,23 +85,15 @@ export type ArchiveExportReporter = {
 export type BuildArchiveDocumentsParams = {
 	djs: Array<Selectable<DJsTable>>;
 	shows: Array<Selectable<ShowsTable>>;
-	tags: Array<Pick<Selectable<TagsTable>, "id" | "title" | "color">>;
+	tags: Array<
+		Pick<
+			Selectable<TagsTable>,
+			"id" | "title" | "color" | "mixcloud_key" | "mixcloud_url"
+		>
+	>;
 	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
 	djTags: Array<Pick<Selectable<DjTagsTable>, "dj_id" | "tag_id">>;
 	showTags: Array<Pick<Selectable<ShowTagsTable>, "show_id" | "tag_id">>;
-};
-
-const staticImageExtension = (
-	filename: string,
-): ArchiveDJImage["extension"] | undefined => {
-	const extension = path.extname(filename).toLowerCase();
-	if (extension === ".jpeg" || extension === ".jpg") {
-		return ".jpg";
-	}
-	if (extension === ".png" || extension === ".webp") {
-		return extension;
-	}
-	return undefined;
 };
 
 const groupIds = <T extends Record<Key, number>, Key extends string>(
@@ -116,22 +110,18 @@ const groupIds = <T extends Record<Key, number>, Key extends string>(
 	return groups;
 };
 
-const imageForDJ = (dj: Selectable<DJsTable>): ArchiveDJImage | undefined => {
-	if (dj.image === null && dj.image_filename === null) {
-		return undefined;
+const imagesForDJ = (dj: Selectable<DJsTable>): ArchiveDJImage[] => {
+	if (dj.image_small === null && dj.image_large === null) {
+		return [];
 	}
-	if (dj.image === null || dj.image_filename === null) {
-		throw new Error(`DJ ${dj.id} has incomplete image metadata`);
-	}
-
-	const extension = staticImageExtension(dj.image_filename);
-	if (extension === undefined) {
-		throw new Error(
-			`DJ ${dj.id} has an unsupported image filename: ${dj.image_filename}`,
-		);
+	if (dj.image_small === null || dj.image_large === null) {
+		throw new Error(`DJ ${dj.id} has an incomplete WebP image pair`);
 	}
 
-	return { id: dj.id, bytes: dj.image, extension };
+	return [
+		{ id: dj.id, bytes: dj.image_small, variant: "small" },
+		{ id: dj.id, bytes: dj.image_large, variant: "large" },
+	];
 };
 
 /** Builds the public static-archive documents without writing to disk. */
@@ -143,14 +133,11 @@ export const buildArchiveDocuments = ({
 	djTags,
 	showTags,
 }: BuildArchiveDocumentsParams): ArchiveDocuments => {
-	const images = djs.flatMap((dj) => {
-		const image = imageForDJ(dj);
-		return image === undefined ? [] : [image];
-	});
+	const images = djs.flatMap(imagesForDJ);
 	const imagePaths = new Map(
 		images.map((image) => [
-			image.id,
-			`assets/djs/${image.id}${image.extension}`,
+			`${image.id}-${image.variant}`,
+			`assets/djs/${image.id}_${image.variant}.webp`,
 		]),
 	);
 	const showsById = new Map(shows.map((show) => [show.id, show]));
@@ -191,7 +178,7 @@ export const buildArchiveDocuments = ({
 	});
 
 	const djsBrief = djsWithTags.map(({ dj, tagIds }) => {
-		const image = imagePaths.get(dj.id);
+		const image = imagePaths.get(`${dj.id}-small`);
 		return {
 			id: dj.id,
 			title: dj.title,
@@ -200,7 +187,7 @@ export const buildArchiveDocuments = ({
 		};
 	});
 	const archiveDJs = djsWithTags.map(({ dj, tagIds, shows: djShows }) => {
-		const image = imagePaths.get(dj.id);
+		const image = imagePaths.get(`${dj.id}-large`);
 		return {
 			id: dj.id,
 			title: dj.title,
@@ -228,7 +215,7 @@ export const buildArchiveDocuments = ({
 			if (dj === undefined) {
 				return [];
 			}
-			const image = imagePaths.get(dj.id);
+			const image = imagePaths.get(`${dj.id}-small`);
 			return [
 				{
 					id: dj.id,
@@ -249,6 +236,8 @@ export const buildArchiveDocuments = ({
 			id: tag.id,
 			title: tag.title,
 			color: tag.color,
+			...(tag.mixcloud_key === null ? {} : { mixcloud_key: tag.mixcloud_key }),
+			...(tag.mixcloud_url === null ? {} : { mixcloud_url: tag.mixcloud_url }),
 		})),
 		images,
 	};
@@ -317,9 +306,9 @@ export const writeArchiveDocuments = async (
 			recursive: true,
 		});
 		for (const [index, image] of documents.images.entries()) {
-			const relativePath = `assets/djs/${image.id}${image.extension}`;
+			const relativePath = `assets/djs/${image.id}_${image.variant}.webp`;
 			await fs.writeFile(
-				path.join(assetDirectory, "djs", `${image.id}${image.extension}`),
+				path.join(assetDirectory, "djs", `${image.id}_${image.variant}.webp`),
 				image.bytes,
 			);
 			const branch = index === documents.images.length - 1 ? "└─" : "├─";
@@ -357,7 +346,7 @@ export const exportArchive = async (
 			.execute(),
 		database
 			.selectFrom("tags")
-			.select(["id", "title", "color"])
+			.select(["id", "title", "color", "mixcloud_key", "mixcloud_url"])
 			.orderBy("id")
 			.execute(),
 		database

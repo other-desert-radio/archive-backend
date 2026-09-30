@@ -123,12 +123,16 @@ The current authenticated mutation routes are:
 ```text
 POST /api/admin/create-dj
 POST /api/admin/create-show
+POST /api/admin/modify-show
 POST /api/admin/create-tag
 POST /api/admin/create-tags
+POST /api/admin/modify-tag
 ```
 
 `GET /api/admin/djs` includes each DJ's `createdAt` timestamp in ISO JSON date
-format, alongside its identity, metadata, and relationship IDs.
+format, alongside its identity, metadata, and relationship IDs. Its admin-only
+`directTags` array distinguishes directly assigned DJ tags from the combined
+`tags` array, which also includes tags inherited through linked shows.
 
 `GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
 ISO JSON date format. The public Show transformer remains unchanged; `date` is a
@@ -144,13 +148,29 @@ at midnight UTC. It creates the Show, relationships, and any missing unreviewed
 tags in one transaction, returning `201` with the same admin Show shape as the
 list response.
 
-Tag creation accepts `{ title: string }` or `{ title: string, color: string }`
-for `create-tag`, and an array of those objects for `create-tags`. Tag titles
-are trimmed and reused case-insensitively. A color must match
+`POST /api/admin/modify-show` accepts the same JSON fields as Show creation plus
+required positive safe-integer `id`. Creation and editing share validation and
+transactional persistence. Editing replaces all editable metadata, DJ links, and
+Show tags while retaining `id` and `createdAt`. Omitted or blank `image` clears
+the stored URL; omitted or empty `tags` clears Show tag assignments. At least
+one existing DJ remains required. Unlinked DJs and tags are preserved; missing
+tag titles are created through the shared tag service. Success returns `200`
+with the admin Show shape; an unknown Show returns
+`404 { "error": "Not Found" }`. Invalid fields or missing selected DJs return
+`400`, and unexpected failures roll back all writes and return `500`.
+
+Tag creation accepts `{ title: string }`, optionally with `color`,
+`mixcloud_key`, and `mixcloud_url`, for `create-tag`, and an array of those
+objects for `create-tags`. Tag titles and optional Mixcloud metadata are trimmed
+before persistence; tag titles are reused case-insensitively. A color must match
 `/^#[0-9a-fA-F]{6}$/`; omitted colors receive a random six-digit hexadecimal
 color and `reviewed: false`, while explicit colors receive `reviewed: true`. The
 DJ route uses the shared tag service from the Tags module inside its own
 transaction rather than calling a Fastify route handler directly.
+
+`GET /api/admin/tags` includes optional `mixcloud_key` and `mixcloud_url` fields
+when a tag is associated with a Mixcloud genre; absent database values are
+omitted from the JSON response.
 
 `POST /api/admin/create-dj` accepts `multipart/form-data` with required `title`
 and `bio` text fields, optional `tags`, `socials`, `showTitle`, and
@@ -163,15 +183,34 @@ bytes or form contents. Application events use readable labels such as
 `[DJ Creation]` and `[DJ Creation [image upload]]` and include a shortened
 browser identifier.
 
-`GET /api/admin/djs/:id/image` returns the stored image bytes for a DJ using the
-authenticated admin boundary. It returns `404 { "error": "Not Found" }` when the
-DJ or image is absent.
+`POST /api/admin/modify-dj` accepts multipart form data with required numeric
+`id`, `title`, `bio`, `tags`, and boolean `removeImage` fields. It replaces all
+editable DJ metadata and direct DJ tags in one transaction: blank optional text
+fields clear their stored values, and `tags` replaces the direct-tag set without
+changing tags inherited from linked shows. An optional `image` is validated and
+processed like DJ creation; omitting it preserves the current image unless
+`removeImage` is true, which clears both stored WebP variants. A request cannot
+both upload an image and request its removal. The multipart limit permits all
+eight documented text fields and one optional image file. Successful edits
+return `200` with the admin DJ shape; an unknown DJ returns
+`404 { "error": "Not Found" }`.
 
-The upload validator accepts JPEG, PNG, and WebP MIME types with matching
-filename extensions up to 10 MiB. It stores the original bytes unchanged and
-normalizes only the filename metadata; compression and WebP conversion remain
-future work. MIME types and extensions are client-provided hints rather than a
-security boundary in this initial admin-only workflow.
+`GET /api/admin/djs/:id/image/small` and `GET /api/admin/djs/:id/image/large`
+return the corresponding stored WebP image using the authenticated admin
+boundary. `GET /api/admin/djs/:id/image` remains an alias for the large image.
+Each route returns `image/webp`, or `404 { "error": "Not Found" }` when the DJ
+or image is absent.
+
+The upload validator accepts JPEG, PNG, and WebP MIME types. The DJ admin UI
+validates and decodes a selected source before opening its crop modal, then
+sends a 1200-by-1200 WebP crop. Crop controls support drag positioning, zoom,
+and 90-degree left/right rotation. Before the creation transaction, Sharp
+creates exact 400-by-400 and 1024-by-1024 WebPs from that crop. The transaction
+stores only the two generated variants; it does not retain the submitted bytes
+or filename. A decoding failure returns
+`400 { "error": "Image could not be processed" }` without creating a DJ or tags.
+The MIME type is client-provided metadata, while Sharp is the actual content
+decoder.
 
 ## Logging new features
 
@@ -211,3 +250,36 @@ Add focused tests for each new route or helper. Cover successful responses,
 invalid request bodies, authentication behavior, and database failures where
 applicable. Preserve the authenticated route boundary while testing through
 `adminRoutes`.
+
+## Tag editing
+
+`POST /api/admin/modify-tag` requires an `edit_type` discriminator. For
+`edit_type: "full_edit"`, it accepts required positive safe-integer `id`,
+`title`, and `color`, plus optional string `mixcloud_key` and `mixcloud_url`.
+All text is trimmed. Title must be nonempty, color must be `#RRGGBB`, and a
+nonempty Mixcloud URL must be absolute HTTP(S). Blank or omitted metadata clears
+its respective column independently. Every successful metadata save marks the
+tag reviewed, including unchanged saves.
+
+The transaction checks the target and rejects another tag with the same title
+ignoring case and surrounding whitespace. Case-only renames are allowed. It
+updates the existing row, preserving ID, creation timestamp, and all
+relationships. Success returns `200` with the list endpoint's `TagsJSON` item
+shape; an unknown ID returns `404`, invalid fields or conflicting titles return
+actionable `400` errors, and unexpected failures roll back and return `500`.
+Lifecycle logs omit form values. Matching remains application-level; no global
+uniqueness constraint or migration is added.
+
+For `edit_type: "review"`, the request is
+`{ edit_type: "review", id, reviewed: boolean }`. It updates only `reviewed`,
+allowing both `true` and `false`, and preserves metadata, identity, creation
+timestamp, and relationships. It skips rename collision checks and does not
+clear omitted Mixcloud fields. ID validation is the same positive safe-integer
+rule as full edits. Metadata fields in review requests and a `reviewed` value in
+full edits are rejected with `400`; missing or unknown `edit_type` values are
+also rejected. Runtime patterns define the shared discriminated request union,
+and exhaustive `ts-pattern` matches normalize each operation and choose its
+persistence behavior. Both operations share the transaction, transformed
+response, authentication, and error handling. Success returns the updated
+`TagsJSON` item; missing targets return `404`, and unexpected failures roll back
+and return `500`.
