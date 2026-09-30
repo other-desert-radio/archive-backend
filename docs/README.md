@@ -172,10 +172,11 @@ archive dataset, use the
 - `bun run test` builds the admin bundle and runs the Bun suite in `tests/`.
   Playwright files in `integration-tests/` run through the separate integration
   runner.
-- `./scripts/run-integration-tests` builds and runs the DJ and Show editing
-  suites in a disposable Docker Compose stack. It uses its own Postgres volume
-  and API; the test data and containers are removed when the command finishes.
-  `bun run test:integration` is an equivalent package-script shortcut.
+- `./scripts/run-integration-tests` builds and runs the Bun auth tests followed
+  by Playwright resource API/browser suites in a disposable Docker Compose
+  stack. It uses its own Postgres volume and API; the test data and containers
+  are removed when the command finishes. `bun run test:integration` is an
+  equivalent package-script shortcut.
 - `bun run auth:generate` regenerates the review-only Better Auth schema.
 - `bun run db:migrate` applies one pending migration.
 - `bun run db:migrate:all` applies all pending migrations.

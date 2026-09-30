@@ -206,12 +206,13 @@ separate resource cleanup checkpoint if still present.
 ### Account chunk handoff — 2026-09-30
 
 The injectable auth factory, operator creation/reset commands, password prompts,
-and unit-test preload are retained. The missing `test:auth:integration` script
-now builds a disposable PostgreSQL test stack with Basic Auth disabled, applies
-migrations only there, and tests real Fastify login/cookie/logout/reset behavior
-and transaction rollback. See [account operations](ADMIN_ACCOUNTS.md) for setup,
-recovery, test isolation, and verification results. Browser login is a later
-chunk; this chunk changes no admin UI.
+and unit-test preload are retained. The `test:auth:integration` command now
+delegates to the existing integration runner in `--auth-only` mode. Its Bun auth
+service uses Basic Auth disabled, shares disposable PostgreSQL/migrations, and
+tests real Fastify login/cookie/logout/reset behavior and transaction rollback.
+See [account operations](ADMIN_ACCOUNTS.md) for setup, recovery, test isolation,
+and verification results. Browser login is a later chunk; this chunk changes no
+admin UI.
 
 ### Baseline verification — 2026-09-25
 
@@ -722,3 +723,14 @@ After the feature set is stable, add these as separate reviewable chunks:
 - Do not infer approval to continue from the original request.
 - Do not combine authentication, API resources, UI screens, and deployment
   changes into one large implementation.
+
+## Integration harness consolidation — 2026-09-30
+
+Account tests now live in `integration-tests/auth/` and use the existing Compose
+integration framework. `test:auth:integration` selects the shared runner's
+`--auth-only` mode; the default integration command runs auth tests first and
+then Playwright. The redundant Compose file, Dockerfile, and runner were
+removed. The shared runner now fails immediately on startup or test failures and
+still cleans up its disposable project. This is a separate workflow review
+checkpoint; chunk 3 (cookie mutation protection) remains next. Verification
+results follow in the account runbook.

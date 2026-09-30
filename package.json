@@ -12,7 +12,7 @@
 		"auth:generate": "auth generate --config src/auth/auth.ts --output docs/BETTER_AUTH_SCHEMA.sql",
 		"auth:create-admin": "bun src/auth/manage-admin.ts create",
 		"auth:reset-password": "bun src/auth/manage-admin.ts reset",
-		"test:auth:integration": "bash scripts/test-auth-integration",
+		"test:auth:integration": "bash scripts/run-integration-tests --auth-only",
 		"db:migrate": "./scripts/migrate up",
 		"db:migrate:all": "./scripts/run-migrations",
 		"db:rollback": "./scripts/migrate down",

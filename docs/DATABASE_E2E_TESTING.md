@@ -137,8 +137,8 @@ From the repository root, run the integration runner script:
 [runner script](../scripts/run-integration-tests) requires Docker with Compose
 and a running Docker daemon. It builds the API/admin bundle and Playwright test
 image, starts PostgreSQL, applies migrations, waits for the API service, and
-runs the browser tests. No manual database setup, host dependency installation,
-or separate API process is needed.
+runs the Bun auth tests followed by the browser tests. No manual database setup,
+host dependency installation, or separate API process is needed.
 
 The script uses `compose.integration.yml` with the project name
 `archive-backend-integration`. Services communicate inside the Docker network;
@@ -220,5 +220,6 @@ regressions.
 
 Run `bun run test:auth:integration` for isolated PostgreSQL provisioning,
 login/cookie/logout, password reset, expiry, role rejection, and rollback tests.
-This uses a separate Compose project with Basic Auth disabled; see
-[account operations](ADMIN_ACCOUNTS.md) for isolation and cleanup details.
+This uses the shared integration runner in `--auth-only` mode, with Basic Auth
+disabled in the auth service; see [account operations](ADMIN_ACCOUNTS.md) for
+isolation and cleanup details.
