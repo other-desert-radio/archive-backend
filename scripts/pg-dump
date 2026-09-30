@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+
+if [[ $# -ne 1 || -z "$1" ]]; then
+	echo "Usage: scripts/pg-dump OUTPUT.dump" >&2
+	exit 1
+fi
+
+output_directory="$(dirname -- "$1")"
+mkdir -p -- "$output_directory"
+output_directory="$(cd -- "$output_directory" && pwd)"
+output="$output_directory/$(basename -- "$1")"
+if [[ -e "$output" ]]; then
+	echo "Backup already exists: $output" >&2
+	exit 1
+fi
+
+temporary="$(mktemp "${output}.tmp.XXXXXX")"
+trap 'rm -f -- "$temporary"' EXIT
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+docker compose exec -T postgres sh -c 'exec pg_dump --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --format=custom --no-owner --no-acl' > "$temporary"
+# Publish only a completed backup, without replacing an existing file.
+ln -- "$temporary" "$output"
+echo "Backup saved to $output"

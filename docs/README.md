@@ -41,6 +41,33 @@ PostgreSQL uses the named `archive_postgres_data` volume, so its data persists
 across container rebuilds. Migrations are not applied automatically when the API
 starts.
 
+### Database backups and restores
+
+Use the PostgreSQL tools inside the running Compose `postgres` service; no local
+PostgreSQL installation is needed. Commands use that container's `POSTGRES_USER`
+and `POSTGRES_DB`, rather than a local `DATABASE_URL`.
+
+```sh
+scripts/pg-dump backups/archive.dump
+# On the destination machine, configure .env and start PostgreSQL:
+docker compose up -d postgres
+scripts/pg-import backups/archive.dump --confirm
+```
+
+Copy the `.dump` file to the destination first. Export runs while PostgreSQL is
+online, includes schema, rows, images, authentication and migration tables, and
+creates missing destination directories, and refuses to overwrite an existing
+backup. The `backups/` directory is ignored by Git. Backups have private file
+permissions and should be stored securely.
+
+Import uses `pg_restore` (PostgreSQL has no `pg_import` command). It replaces
+objects present in the backup and their data, requires `--confirm`, and rolls
+back the whole restore on failure. Unrelated destination objects remain; prefer
+a fresh database for migration between machines. Stop the API and other writers
+during restore, then restart the API afterward. Use PostgreSQL 16 on the
+destination, matching the current Compose image. Roles and server settings are
+not copied; restored objects belong to the destination's configured user.
+
 Copy `.env.example` to `.env` before starting the stack. Compose reads the
 PostgreSQL name, user, password, and host port from `.env`, then constructs the
 API container's internal `DATABASE_URL` using the `postgres` service hostname.
