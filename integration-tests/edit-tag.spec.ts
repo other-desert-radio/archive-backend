@@ -141,7 +141,8 @@ test("previews valid colors, clears metadata, and reviews unchanged saves", asyn
 	tag,
 }) => {
 	const form = await open(page, tag.id);
-	await page.locator("#edit-tag-color").fill("#112233");
+	await form.getByLabel("Choose tag color").fill("#112233");
+	await expect(page.locator("#edit-tag-color")).toHaveValue("#112233");
 	await page.locator("#edit-tag-title").fill("Preview");
 	await expect(
 		form.getByRole("status", { name: "Tag color preview" }),
@@ -149,6 +150,12 @@ test("previews valid colors, clears metadata, and reviews unchanged saves", asyn
 	await expect(form.getByRole("status").locator("span")).toHaveCSS(
 		"background-color",
 		"rgb(17, 34, 51)",
+	);
+	await page.locator("#edit-tag-color").fill("#445566");
+	await expect(form.getByLabel("Choose tag color")).toHaveValue("#445566");
+	await expect(form.getByRole("status").locator("span")).toHaveCSS(
+		"background-color",
+		"rgb(68, 85, 102)",
 	);
 	await page.locator("#edit-tag-color").fill("#fff");
 	await expect(form.getByRole("status")).toHaveText(

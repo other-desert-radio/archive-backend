@@ -1,8 +1,35 @@
 .chip {
+	display: flex;
 	min-width: 0;
 	overflow-wrap: anywhere;
 }
 .hint {
 	color: #555;
 	font-size: var(--modal-helper-size);
+}
+
+.colorTools {
+	display: flex;
+	align-items: stretch;
+	gap: 8px;
+	min-width: 0;
+}
+.colorTools .colorPicker {
+	width: 42px;
+	height: auto;
+	flex: 0 0 42px;
+	padding: 2px;
+	cursor: pointer;
+}
+
+.chip > span {
+	display: flex;
+	align-items: center;
+	min-height: var(--modal-control-height);
+	padding: var(--modal-control-padding);
+	font: inherit;
+}
+.chip > .hint {
+	font-size: var(--modal-helper-size);
+	padding: 0;
 }

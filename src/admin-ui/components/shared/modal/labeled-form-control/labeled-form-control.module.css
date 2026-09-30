@@ -49,10 +49,17 @@
 	gap: 12px;
 	min-width: 0;
 }
-.control input {
+.control > input {
 	flex: 1;
 }
 .trailing {
 	min-width: 0;
 	max-width: 50%;
+}
+
+.withTrailing {
+	align-items: stretch;
+}
+.withTrailing .trailing {
+	display: flex;
 }

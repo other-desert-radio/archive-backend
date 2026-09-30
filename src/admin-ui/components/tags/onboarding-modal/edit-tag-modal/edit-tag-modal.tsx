@@ -56,20 +56,31 @@ export const EditTagModal = ({ tag, onClose, onSubmit }: Props) => {
 				required
 				helper="Six-digit hex color (#RRGGBB)"
 				trailingContent={
-					<div
-						role="status"
-						aria-label="Tag color preview"
-						className={styles.chip}
-					>
-						{isTagColor(fields.color) ? (
-							<Tag as="span" color={fields.color.trim()}>
-								{fields.title.trim()}
-							</Tag>
-						) : (
-							<span className={styles.hint}>
-								Enter a valid hex color to preview
-							</span>
-						)}
+					<div className={styles.colorTools}>
+						<input
+							type="color"
+							aria-label="Choose tag color"
+							className={styles.colorPicker}
+							value={isTagColor(fields.color) ? fields.color.trim() : "#000000"}
+							onChange={(event) =>
+								setFields({ ...fields, color: event.target.value })
+							}
+						/>
+						<div
+							role="status"
+							aria-label="Tag color preview"
+							className={styles.chip}
+						>
+							{isTagColor(fields.color) ? (
+								<Tag as="span" color={fields.color.trim()}>
+									{fields.title.trim()}
+								</Tag>
+							) : (
+								<span className={styles.hint}>
+									Enter a valid hex color to preview
+								</span>
+							)}
+						</div>
 					</div>
 				}
 			/>

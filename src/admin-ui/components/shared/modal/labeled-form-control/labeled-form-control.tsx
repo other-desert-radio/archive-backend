@@ -55,7 +55,9 @@ export const LabeledFormControl = ({
 					}
 				/>
 			) : (
-				<div className={styles.control}>
+				<div
+					className={`${styles.control} ${trailingContent === undefined ? "" : styles.withTrailing}`}
+				>
 					<input
 						id={id}
 						name={name}
