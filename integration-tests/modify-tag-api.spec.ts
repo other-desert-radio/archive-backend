@@ -44,6 +44,7 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 		const originalLinks = await links();
 		const title = `Edited Tag ${randomUUID()}`;
 		const payload = {
+			edit_type: "full_edit",
 			id,
 			title: ` ${title} `,
 			color: " #AbC123 ",
@@ -72,7 +73,7 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 
 		for (const reviewed of [false, true, true]) {
 			const reviewResponse = await request.post("/api/admin/modify-tag", {
-				data: { id, reviewed },
+				data: { edit_type: "review", id, reviewed },
 			});
 			expect(reviewResponse.status(), await reviewResponse.text()).toBe(200);
 			expect(await reviewResponse.json()).toEqual({ ...saved, reviewed });
@@ -88,10 +89,10 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 			).toEqual({ ...saved, reviewed });
 		}
 		for (const invalid of [
-			{ id, reviewed: "false" },
-			{ id, reviewed: false, title: "Accidental rename" },
+			{ edit_type: "review", id, reviewed: "false" },
+			{ edit_type: "review", id, reviewed: false, title: "Accidental rename" },
 			{ ...payload, reviewed: false },
-			{ id: 0, reviewed: false },
+			{ edit_type: "review", id: 0, reviewed: false },
 		]) {
 			expect(
 				(
@@ -106,7 +107,7 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 		expect(
 			(
 				await request.post("/api/admin/modify-tag", {
-					data: { id: 2147483647, reviewed: false },
+					data: { edit_type: "review", id: 2147483647, reviewed: false },
 				})
 			).status(),
 		).toBe(404);
@@ -138,6 +139,7 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 		).toBe(404);
 		const cleared = await request.post("/api/admin/modify-tag", {
 			data: {
+				edit_type: "full_edit",
 				id,
 				title: title.toUpperCase(),
 				color: saved.color,

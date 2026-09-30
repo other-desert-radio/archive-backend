@@ -13,21 +13,35 @@ export const CreateTagsRequestPattern = P.array(CreateTagRequestPattern);
 
 export type CreateTagsRequest = P.infer<typeof CreateTagsRequestPattern>;
 
-/** Editing retains identity and replaces all editable Tag metadata. */
-export const ModifyTagRequestPattern = {
+/** Full editing retains identity and replaces editable metadata. */
+export const ModifyTagFullEditRequestPattern = {
+	edit_type: "full_edit",
 	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
 	title: P.string,
 	color: P.string,
 	mixcloud_key: P.optional(P.string),
 	mixcloud_url: P.optional(P.string),
+	reviewed: P.optional(undefined),
 } as const;
-export type ModifyTagRequest = P.infer<typeof ModifyTagRequestPattern>;
+export type ModifyTagFullEditRequest = P.infer<
+	typeof ModifyTagFullEditRequestPattern
+>;
 
-/** Updates only review status without replacing editable metadata. */
+/** Review updates change only review status. */
 export const ModifyTagReviewRequestPattern = {
+	edit_type: "review",
 	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
 	reviewed: P.boolean,
+	title: P.optional(undefined),
+	color: P.optional(undefined),
+	mixcloud_key: P.optional(undefined),
+	mixcloud_url: P.optional(undefined),
 } as const;
 export type ModifyTagReviewRequest = P.infer<
 	typeof ModifyTagReviewRequestPattern
 >;
+export const ModifyTagRequestPattern = P.union(
+	ModifyTagFullEditRequestPattern,
+	ModifyTagReviewRequestPattern,
+);
+export type ModifyTagRequest = P.infer<typeof ModifyTagRequestPattern>;

@@ -66,9 +66,10 @@ session and sign-out coverage is included in the authentication tests.
 ## Handoff
 
 The existing `modify-tag` endpoint additionally supports review-only
-`{ id, reviewed: boolean }` updates. These preserve metadata and relationships;
-full metadata saves continue to mark reviewed. Mixed payloads are rejected. The
-Tags table inline review control is the next separate chunk, pending review.
+`{ edit_type: "review", id, reviewed: boolean }` updates. These preserve
+metadata and relationships; `edit_type: "full_edit"` metadata saves continue to
+mark reviewed. Mixed payloads are rejected. The Tags table inline review control
+is the next separate chunk, pending review.
 
 Tag editing API chunk is complete: `POST /api/admin/modify-tag` validates and
 replaces title, hex color, and optional Mixcloud metadata, marks reviewed, and

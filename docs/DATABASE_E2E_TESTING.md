@@ -189,9 +189,9 @@ assigns one tag to both. Direct PostgreSQL assertions against only the
 disposable Compose database verify tag identity/timestamp and relationship row
 IDs remain unchanged. API reloads check normalized metadata and reviewed state;
 rejection, case-only rename, and metadata clearing checks verify persisted
-behavior. Review-only updates are tested in both directions, including repeated
-values, metadata and relationship preservation, invalid/mixed requests, and
-unknown targets.
+behavior. Discriminated `edit_type: "review"` updates are tested in both
+directions, including repeated values, metadata and relationship preservation,
+invalid/mixed requests, and unknown targets.
 
 ### Tag editor browser coverage
 

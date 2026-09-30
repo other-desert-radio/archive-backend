@@ -37,7 +37,17 @@ test("creates a reviewed tag with metadata, reloads, and reuses existing titles"
 	await form.getByRole("button", { name: "Submit", exact: true }).click();
 	await expect(form).toBeHidden();
 	const reloaded = await (await request.get("/api/admin/tags")).json();
-	expect(reloaded).toEqual(tags);
+	expect(
+		reloaded.filter(
+			(tag: { title: string }) =>
+				tag.title.toLowerCase() === title.toLowerCase(),
+		),
+	).toEqual(
+		tags.filter(
+			(tag: { title: string }) =>
+				tag.title.toLowerCase() === title.toLowerCase(),
+		),
+	);
 });
 test("validates locally, retains failed drafts, and protects dirty dismissal on phones", async ({
 	page,

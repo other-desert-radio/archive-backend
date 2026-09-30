@@ -1,7 +1,7 @@
 import { isMatching } from "ts-pattern";
 import {
+	ModifyTagFullEditRequestPattern,
 	type ModifyTagRequest,
-	ModifyTagRequestPattern,
 } from "../../../../../admin/routes/tags/index.js";
 
 export type TagFormValues = {
@@ -42,8 +42,12 @@ export const buildModifyTagRequest = (
 	id: number,
 	fields: TagFormValues,
 ): ModifyTagRequest => {
-	const request = { id, ...buildTagFields(fields) };
-	if (!isMatching(ModifyTagRequestPattern, request))
+	const request = {
+		edit_type: "full_edit" as const,
+		id,
+		...buildTagFields(fields),
+	};
+	if (!isMatching(ModifyTagFullEditRequestPattern, request))
 		throw new Error("Invalid Tag fields.");
 	return request;
 };

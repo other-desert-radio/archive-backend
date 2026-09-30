@@ -86,7 +86,12 @@ const setup = async (role: string | null = "admin", fail = false) => {
 	);
 	return { app, rows };
 };
-const payload = { id: 1, title: "Dance", color: "#123456" };
+const payload = {
+	edit_type: "full_edit",
+	id: 1,
+	title: "Dance",
+	color: "#123456",
+};
 const edit = (app: Awaited<ReturnType<typeof setup>>["app"], data: object) =>
 	app.inject({ method: "POST", url: "/api/admin/modify-tag", payload: data });
 describe("Tag update API", () => {
@@ -97,7 +102,11 @@ describe("Tag update API", () => {
 		const before = structuredClone(rows);
 		try {
 			for (const reviewed of [true, false, false]) {
-				const response = await edit(app, { id: 1, reviewed });
+				const response = await edit(app, {
+					edit_type: "review",
+					id: 1,
+					reviewed,
+				});
 				expect(response.statusCode).toBe(200);
 				expect(response.json()).toEqual({
 					id: 1,
@@ -118,26 +127,34 @@ describe("Tag update API", () => {
 		const before = structuredClone(rows);
 		try {
 			for (const request of [
-				{ id: 1 },
-				{ id: 1, reviewed: "false" },
-				{ id: 1, reviewed: null },
-				{ id: 1, reviewed: 1 },
-				{ reviewed: true },
-				{ id: 0, reviewed: false },
-				{ id: 1.5, reviewed: true },
-				{ id: Number.MAX_SAFE_INTEGER + 1, reviewed: true },
-				{ id: "1", reviewed: true },
-				{ id: 1, reviewed: false, title: "New" },
+				{ id: 1, title: "Dance", color: "#123456" },
+				{ id: 1, reviewed: true },
+				{ ...payload, edit_type: "unknown" },
+				{ edit_type: "review", id: 1 },
+				{ ...payload, edit_type: "review" },
+				{ edit_type: "review", id: 1, reviewed: "false" },
+				{ edit_type: "review", id: 1, reviewed: null },
+				{ edit_type: "review", id: 1, reviewed: 1 },
+				{ edit_type: "review", reviewed: true },
+				{ edit_type: "review", id: 0, reviewed: false },
+				{ edit_type: "review", id: 1.5, reviewed: true },
+				{
+					edit_type: "review",
+					id: Number.MAX_SAFE_INTEGER + 1,
+					reviewed: true,
+				},
+				{ edit_type: "review", id: "1", reviewed: true },
+				{ edit_type: "review", id: 1, reviewed: false, title: "New" },
 				{ ...payload, reviewed: false },
-				{ id: 1, reviewed: true, mixcloud_key: "new" },
-				{ id: 1, reviewed: true, extra: true },
+				{ edit_type: "review", id: 1, reviewed: true, mixcloud_key: "new" },
 			]) {
 				expect((await edit(app, request)).statusCode).toBe(400);
 				expect(rows).toEqual(before);
 			}
-			expect((await edit(app, { id: 99, reviewed: false })).statusCode).toBe(
-				404,
-			);
+			expect(
+				(await edit(app, { edit_type: "review", id: 99, reviewed: false }))
+					.statusCode,
+			).toBe(404);
 			expect(rows).toEqual(before);
 		} finally {
 			await app.close();
@@ -146,7 +163,11 @@ describe("Tag update API", () => {
 	test("review-only database failures roll back and return a generic error", async () => {
 		const { app, rows } = await setup("admin", true);
 		try {
-			const response = await edit(app, { id: 1, reviewed: true });
+			const response = await edit(app, {
+				edit_type: "review",
+				id: 1,
+				reviewed: true,
+			});
 			expect(response.statusCode).toBe(500);
 			expect(response.json()).toEqual({ error: "Internal Server Error" });
 			expect(rows[0]).toEqual(original);
@@ -179,7 +200,7 @@ describe("Tag update API", () => {
 				(
 					await edit(app, { ...payload, mixcloud_key: " ", mixcloud_url: " " })
 				).json(),
-			).toEqual({ ...payload, reviewed: true });
+			).toEqual({ id: 1, title: "Dance", color: "#123456", reviewed: true });
 			expect(rows[0]).toMatchObject({ mixcloud_key: null, mixcloud_url: null });
 		} finally {
 			await app.close();
@@ -275,9 +296,10 @@ describe("Tag update API", () => {
 			const { app, rows } = await setup(role);
 			try {
 				expect((await edit(app, payload)).statusCode).toBe(status);
-				expect((await edit(app, { id: 1, reviewed: true })).statusCode).toBe(
-					status,
-				);
+				expect(
+					(await edit(app, { edit_type: "review", id: 1, reviewed: true }))
+						.statusCode,
+				).toBe(status);
 				expect(rows[0]).toEqual(original);
 			} finally {
 				await app.close();

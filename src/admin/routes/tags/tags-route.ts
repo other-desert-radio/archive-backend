@@ -1,14 +1,17 @@
 import type { FastifyPluginAsync } from "fastify";
-import { isMatching, P } from "ts-pattern";
+import { isMatching, match, P } from "ts-pattern";
 import type { TagsJSON } from "../../../json-transformers/index.js";
 import { transformTags } from "../../../json-transformers/index.js";
-import { undefinedOrEmpty } from "../../../utils/index.js";
 import {
 	type ValidateTagsResult,
 	validateTags,
 } from "../../../utils/validate-tags.js";
 import { clientDescription } from "../../logging.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
+import {
+	normalizeModifyTagRequest,
+	TagEditValidationError,
+} from "./normalize-modify-tag-request.js";
 import { type CreatedTag, createTag, createTags } from "./tag-service.js";
 import {
 	type CreateTagRequest,
@@ -17,8 +20,6 @@ import {
 	CreateTagsRequestPattern,
 	type ModifyTagRequest,
 	ModifyTagRequestPattern,
-	type ModifyTagReviewRequest,
-	ModifyTagReviewRequestPattern,
 } from "./types.js";
 
 /** Registers authenticated Tags API routes. */
@@ -112,7 +113,7 @@ export const tagRoutes =
 		});
 
 		app.post<{
-			Body: ModifyTagRequest | ModifyTagReviewRequest;
+			Body: ModifyTagRequest;
 			Reply: AdminApiReply<TagsJSON>;
 		}>("/modify-tag", async (request, reply) => {
 			request.log.info(
@@ -120,102 +121,13 @@ export const tagRoutes =
 				"[Tag Editing] started",
 			);
 
-			if (isMatching(ModifyTagReviewRequestPattern, request.body)) {
-				if (
-					Object.keys(request.body).some(
-						(key) => key !== "id" && key !== "reviewed",
-					)
-				) {
-					request.log.warn(
-						"[Tag Editing] rejected -- review-only requests accept id and reviewed only",
-					);
-					return reply.code(400).send({
-						error: "Review-only updates must contain only id and reviewed",
-					});
-				}
-				const { id, reviewed } = request.body;
-				try {
-					const tag = await database
-						.transaction()
-						.execute(async (transaction) => {
-							const target = await transaction
-								.selectFrom("tags")
-								.select("id")
-								.where("id", "=", id)
-								.forUpdate()
-								.executeTakeFirst();
-							if (target === undefined) return undefined;
-							return transaction
-								.updateTable("tags")
-								.set({ reviewed })
-								.where("id", "=", id)
-								.returningAll()
-								.executeTakeFirstOrThrow();
-						});
-					if (tag === undefined) {
-						request.log.warn(
-							{ tagId: id },
-							`[Tag Editing] review update rejected -- Tag ${id} not found`,
-						);
-						return reply.code(404).send({ error: "Not Found" });
-					}
-					const [modified] = transformTags({ tags: [tag] });
-					if (modified === undefined)
-						throw new Error("Tag transformation failed");
-					request.log.info(
-						{ tagId: id, client: clientDescription(request) },
-						`[Tag Editing] review status saved -- id: ${id}, reviewed: ${reviewed}`,
-					);
-					return reply.code(200).send(modified);
-				} catch (error) {
-					request.log.error(
-						{ err: error, tagId: id },
-						`[Tag Editing] review update failed -- id: ${id}`,
-					);
-					return reply.code(500).send({ error: "Internal Server Error" });
-				}
-			}
-			// A supplied review value must use the review-only request shape.
-			if (isMatching({ reviewed: P.any }, request.body)) {
-				request.log.warn(
-					"[Tag Editing] rejected -- invalid review-only request shape",
-				);
-				return reply.code(400).send({
-					error:
-						"Review-only updates require a boolean reviewed value and valid id",
-				});
-			}
-			if (!isMatching(ModifyTagRequestPattern, request.body)) {
+			if (!isMatching(ModifyTagRequestPattern)(request.body)) {
 				request.log.warn("[Tag Editing] rejected -- invalid request shape");
 				return reply.code(400).send({ error: "Validation error" });
 			}
 			const { id } = request.body;
-			const title = request.body.title.trim();
-			const color = request.body.color.trim();
-			const key = request.body.mixcloud_key?.trim();
-			const url = request.body.mixcloud_url?.trim();
-			let reason: string | undefined;
-			if (!isMatching({ title: P.string.minLength(1) }, { title }))
-				reason = "Tag title is required";
-			else if (!isMatching(P.string.regex(/^#[0-9a-fA-F]{6}$/), color))
-				reason = "Color must be a six-digit hex color (#RRGGBB)";
-			else if (!undefinedOrEmpty(url)) {
-				try {
-					const parsed = new URL(url);
-					if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-						reason = "Mixcloud URL must be an absolute HTTP(S) URL";
-				} catch {
-					reason = "Mixcloud URL must be an absolute HTTP(S) URL";
-				}
-			}
-			if (reason !== undefined) {
-				request.log.warn(
-					{ tagId: id },
-					`[Tag Editing] rejected -- id: ${id}, reason: ${reason}`,
-				);
-				return reply.code(400).send({ error: reason });
-			}
 			try {
+				const normalized = normalizeModifyTagRequest(request.body);
 				const result = await database
 					.transaction()
 					.execute(async (transaction) => {
@@ -226,26 +138,25 @@ export const tagRoutes =
 							.forUpdate()
 							.executeTakeFirst();
 						if (target === undefined) return { status: "missing" } as const;
-						const others = await transaction
-							.selectFrom("tags")
-							.select("title")
-							.where("id", "!=", id)
-							.execute();
-						if (
-							others.some(
-								(tag) => tag.title.trim().toLowerCase() === title.toLowerCase(),
-							)
-						)
-							return { status: "duplicate" } as const;
+						const duplicate = await match(normalized)
+							.with({ edit_type: "review" }, () => false)
+							.with({ edit_type: "full_edit" }, async ({ values }) => {
+								const others = await transaction
+									.selectFrom("tags")
+									.select("title")
+									.where("id", "!=", id)
+									.execute();
+								return others.some(
+									(tag) =>
+										tag.title.trim().toLowerCase() ===
+										values.title.toLowerCase(),
+								);
+							})
+							.exhaustive();
+						if (duplicate) return { status: "duplicate" } as const;
 						const tag = await transaction
 							.updateTable("tags")
-							.set({
-								title,
-								color,
-								reviewed: true,
-								mixcloud_key: undefinedOrEmpty(key) ? null : key,
-								mixcloud_url: undefinedOrEmpty(url) ? null : url,
-							})
+							.set(normalized.values)
 							.where("id", "=", id)
 							.returningAll()
 							.executeTakeFirstOrThrow();
@@ -269,10 +180,17 @@ export const tagRoutes =
 					throw new Error("Tag transformation failed");
 				request.log.info(
 					{ tagId: id, client: clientDescription(request) },
-					`[Tag Editing] Tag saved -- id: ${id}`,
+					`[Tag Editing] Tag saved -- id: ${id}, edit_type: ${request.body.edit_type}`,
 				);
 				return reply.code(200).send(modified);
 			} catch (error) {
+				if (error instanceof TagEditValidationError) {
+					request.log.warn(
+						{ tagId: id },
+						`[Tag Editing] rejected -- id: ${id}, reason: ${error.message}`,
+					);
+					return reply.code(400).send({ error: error.message });
+				}
 				request.log.error(
 					{ err: error, tagId: id },
 					`[Tag Editing] failed -- id: ${id}`,

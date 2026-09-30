@@ -253,7 +253,8 @@ applicable. Preserve the authenticated route boundary while testing through
 
 ## Tag editing
 
-`POST /api/admin/modify-tag` accepts required positive safe-integer `id`,
+`POST /api/admin/modify-tag` requires an `edit_type` discriminator. For
+`edit_type: "full_edit"`, it accepts required positive safe-integer `id`,
 `title`, and `color`, plus optional string `mixcloud_key` and `mixcloud_url`.
 All text is trimmed. Title must be nonempty, color must be `#RRGGBB`, and a
 nonempty Mixcloud URL must be absolute HTTP(S). Blank or omitted metadata clears
@@ -269,13 +270,16 @@ actionable `400` errors, and unexpected failures roll back and return `500`.
 Lifecycle logs omit form values. Matching remains application-level; no global
 uniqueness constraint or migration is added.
 
-The same endpoint also accepts a review-only request:
-`{ id, reviewed: boolean }`. It updates only `reviewed`, allowing both `true`
-and `false`, and preserves all metadata, identity, creation timestamp, and
-relationships. It does not run rename collision checks or clear omitted Mixcloud
-fields. The ID uses the same positive safe-integer validation as metadata edits.
-Review-only requests must contain only `id` and `reviewed`; mixed
-metadata/review payloads and nonboolean review values return `400`. Success
-returns the updated `TagsJSON` item, missing targets return `404`, and
-unexpected failures roll back and return `500`. Both request shapes remain under
-the existing authenticated admin boundary.
+For `edit_type: "review"`, the request is
+`{ edit_type: "review", id, reviewed: boolean }`. It updates only `reviewed`,
+allowing both `true` and `false`, and preserves metadata, identity, creation
+timestamp, and relationships. It skips rename collision checks and does not
+clear omitted Mixcloud fields. ID validation is the same positive safe-integer
+rule as full edits. Metadata fields in review requests and a `reviewed` value in
+full edits are rejected with `400`; missing or unknown `edit_type` values are
+also rejected. Runtime patterns define the shared discriminated request union,
+and exhaustive `ts-pattern` matches normalize each operation and choose its
+persistence behavior. Both operations share the transaction, transformed
+response, authentication, and error handling. Success returns the updated
+`TagsJSON` item; missing targets return `404`, and unexpected failures roll back
+and return `500`.

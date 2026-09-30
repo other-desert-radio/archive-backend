@@ -13,6 +13,7 @@ const fields = {
 describe("Tag edit payload", () => {
 	test("trims every field and includes clearing values", () => {
 		expect(buildModifyTagRequest(1, fields)).toEqual({
+			edit_type: "full_edit",
 			id: 1,
 			title: "Ambient",
 			color: "#aBc123",

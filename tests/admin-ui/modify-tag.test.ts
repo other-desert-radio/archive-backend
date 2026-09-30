@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { modifyTag } from "../../src/admin-ui/loaders/modify-tag.js";
 
 const payload = {
+	edit_type: "full_edit" as const,
 	id: 1,
 	title: "Ambient",
 	color: "#123456",
