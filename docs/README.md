@@ -65,6 +65,13 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
+Tag editing API chunk is complete: `POST /api/admin/modify-tag` validates and
+replaces title, hex color, and optional Mixcloud metadata, marks reviewed, and
+preserves identity, creation timestamp, and DJ/Show links. Conflicting
+normalized titles are rejected. The Tags table editor is the next separate
+chunk, pending user review; creation, merging, deletion, and grid views remain
+outside its scope.
+
 For UI implementation and review, read the
 [admin UI design and reuse guide](ADMIN_UI_DESIGN.md). It documents the reviewed
 modal aesthetic, spacing, reusable components, interaction defaults, and future

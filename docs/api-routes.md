@@ -126,6 +126,7 @@ POST /api/admin/create-show
 POST /api/admin/modify-show
 POST /api/admin/create-tag
 POST /api/admin/create-tags
+POST /api/admin/modify-tag
 ```
 
 `GET /api/admin/djs` includes each DJ's `createdAt` timestamp in ISO JSON date
@@ -249,3 +250,21 @@ Add focused tests for each new route or helper. Cover successful responses,
 invalid request bodies, authentication behavior, and database failures where
 applicable. Preserve the authenticated route boundary while testing through
 `adminRoutes`.
+
+## Tag editing
+
+`POST /api/admin/modify-tag` accepts required positive safe-integer `id`,
+`title`, and `color`, plus optional string `mixcloud_key` and `mixcloud_url`.
+All text is trimmed. Title must be nonempty, color must be `#RRGGBB`, and a
+nonempty Mixcloud URL must be absolute HTTP(S). Blank or omitted metadata clears
+its respective column independently. Every successful save marks the tag
+reviewed, including unchanged saves.
+
+The transaction checks the target and rejects another tag with the same title
+ignoring case and surrounding whitespace. Case-only renames are allowed. It
+updates the existing row, preserving ID, creation timestamp, and all
+relationships. Success returns `200` with the list endpoint's `TagsJSON` item
+shape; an unknown ID returns `404`, invalid fields or conflicting titles return
+actionable `400` errors, and unexpected failures roll back and return `500`.
+Lifecycle logs omit form values. Matching remains application-level; no global
+uniqueness constraint or migration is added.

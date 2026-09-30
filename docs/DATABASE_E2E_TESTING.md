@@ -178,3 +178,12 @@ retained values after failure, submission protection, unresolved-tag retry, and
 390px/320px layouts. Tests use a Los Angeles timezone to verify UTC calendar
 date prefilling. The existing modal suite continues to cover Show creation after
 shared-field extraction.
+
+### Tag update API coverage
+
+`integration-tests/modify-tag-api.spec.ts` creates isolated DJ/Show fixtures and
+assigns one tag to both. Direct PostgreSQL assertions against only the
+disposable Compose database verify tag identity/timestamp and relationship row
+IDs remain unchanged. API reloads check normalized metadata and reviewed state;
+rejection, case-only rename, and metadata clearing checks verify persisted
+behavior.
