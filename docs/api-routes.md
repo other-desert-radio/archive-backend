@@ -283,3 +283,15 @@ persistence behavior. Both operations share the transaction, transformed
 response, authentication, and error handling. Success returns the updated
 `TagsJSON` item; missing targets return `404`, and unexpected failures roll back
 and return `500`.
+
+## Mixcloud import list
+
+`GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
+plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.
+It returns every tracking record in ID order, including unimported records. Each
+row includes `id`, `key`, `djs` (numeric IDs), `dj_names` (strings aligned with
+ascending DJ IDs), and `tags` (ascending Show tag IDs). Optional `show_id`,
+`imported_at` (ISO timestamp), `show_name`, and `duration` (seconds) are omitted
+when absent. Details come from linked archive records; missing relationships
+produce empty arrays. Distinct correlated relationship queries avoid duplicate
+imports or IDs. Failures return the generic `500` error.

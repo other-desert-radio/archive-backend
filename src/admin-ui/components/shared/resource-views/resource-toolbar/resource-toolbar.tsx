@@ -9,8 +9,8 @@ type ResourceToolbarProps = {
 	onViewModeChange?: (viewMode: ResourceViewMode) => void;
 	showViewControls?: boolean;
 	searchLabel: string;
-	createLabel: string;
-	onCreate: () => void;
+	createLabel?: string;
+	onCreate?: () => void;
 	createDisabled?: boolean;
 };
 
@@ -85,14 +85,16 @@ export const ResourceToolbar = ({
 								</button>
 							</fieldset>
 						)}
-					<button
-						type="button"
-						className={styles.add}
-						onClick={onCreate}
-						disabled={createDisabled}
-					>
-						{createLabel}
-					</button>
+					{onCreate !== undefined && createLabel !== undefined && (
+						<button
+							type="button"
+							className={styles.add}
+							onClick={onCreate}
+							disabled={createDisabled}
+						>
+							{createLabel}
+						</button>
+					)}
 				</div>
 			</div>
 		</>

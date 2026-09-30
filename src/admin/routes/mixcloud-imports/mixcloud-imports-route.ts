@@ -1,0 +1,76 @@
+import type { FastifyPluginAsync } from "fastify";
+import { jsonArrayFrom } from "kysely/helpers/postgres";
+import type { AdminApiReply, TypedDatabase } from "../types.js";
+import type { MixcloudImportAdminRow } from "./types.js";
+
+/** Registers authenticated, read-only Mixcloud import API routes. */
+export const mixcloudImportRoutes =
+	(database: TypedDatabase): FastifyPluginAsync =>
+	async (app) => {
+		app.get<{ Reply: AdminApiReply<MixcloudImportAdminRow[]> }>(
+			"/mixcloud-imports",
+			async (request, reply) => {
+				request.log.info(
+					"[Mixcloud Imports] loading -- /api/admin/mixcloud-imports",
+				);
+				try {
+					const rows = await database
+						.selectFrom("mixcloud_import")
+						.leftJoin("shows", "shows.id", "mixcloud_import.show_id")
+						.select([
+							"mixcloud_import.id",
+							"mixcloud_import.key",
+							"mixcloud_import.show_id",
+							"mixcloud_import.imported_at",
+							"shows.title as show_name",
+							"shows.duration",
+						])
+						.select((eb) => [
+							jsonArrayFrom(
+								eb
+									.selectFrom("show_djs")
+									.innerJoin("djs", "djs.id", "show_djs.dj_id")
+									.select(["djs.id", "djs.title"])
+									.whereRef("show_djs.show_id", "=", "mixcloud_import.show_id")
+									.distinct()
+									.orderBy("djs.id"),
+							).as("linked_djs"),
+							jsonArrayFrom(
+								eb
+									.selectFrom("show_tags")
+									.select("tag_id")
+									.whereRef("show_tags.show_id", "=", "mixcloud_import.show_id")
+									.distinct()
+									.orderBy("tag_id"),
+							).as("linked_tags"),
+						])
+						.orderBy("mixcloud_import.id")
+						.execute();
+					const result: MixcloudImportAdminRow[] = rows.map((row) => ({
+						id: row.id,
+						key: row.key,
+						...(row.show_id === null ? {} : { show_id: row.show_id }),
+						...(row.imported_at === null
+							? {}
+							: { imported_at: row.imported_at.toISOString() }),
+						...(row.show_name === null ? {} : { show_name: row.show_name }),
+						...(row.duration === null ? {} : { duration: row.duration }),
+						djs: row.linked_djs.map((dj) => dj.id),
+						dj_names: row.linked_djs.map((dj) => dj.title),
+						tags: row.linked_tags.map((tag) => tag.tag_id),
+					}));
+					request.log.info(
+						{ count: result.length },
+						`[Mixcloud Imports] loaded -- ${result.length} records`,
+					);
+					return result;
+				} catch (error) {
+					request.log.error(
+						{ err: error },
+						"[Mixcloud Imports] failed -- /api/admin/mixcloud-imports",
+					);
+					return reply.code(500).send({ error: "Internal Server Error" });
+				}
+			},
+		);
+	};

@@ -162,3 +162,24 @@ CREATE TABLE show_djs (
 
 The foreign keys ensure that every show_id and dj_id in Show_DJs refers to an
 existing show or DJ, preventing orphaned relationships.
+
+## Mixcloud import
+
+The planned `./scripts/import-mixcloud` imports data from Mixcloud and may be
+run multiple times. The WIP script remains on the `mixcloud-import` branch and
+is excluded from this branch.
+
+every mixcloud show has a `key`. we use that to create this table:
+
+id | key (from mixcloud) | show_id (null unless imported into an actual show) |
+imported_at (null unless imported into an actual show)
+
+- key is UNIQUE
+
+deletion stratergy: Action Effect ━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Delete an import row
+Show stays untouched ──────────────────────
+───────────────────────────────────────────────────────── Soft-delete a show
+Import row stays unchanged ──────────────────────
+───────────────────────────────────────────────────────── Hard-delete a show
+Import row remains; show_id and imported_at become null

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import styles from "./management-shell.module.css";
 
 type ManagementShellProps = {
-	activeResource: "shows" | "djs" | "tags";
+	activeResource: "shows" | "djs" | "tags" | "mixcloud";
 	children: ReactNode;
 };
 
@@ -41,6 +41,22 @@ export const ManagementShell = ({
 							aria-current={activeResource === "tags" ? "page" : undefined}
 						>
 							⤷ tags
+						</a>
+					</li>
+					<li>
+						<a
+							className={
+								activeResource === "mixcloud" ? styles.active : undefined
+							}
+							href="#mixcloud"
+							aria-current={activeResource === "mixcloud" ? "page" : undefined}
+						>
+							⤷{" "}
+							<span className={styles.multilineLabel}>
+								mixcloud
+								<br />
+								import
+							</span>
 						</a>
 					</li>
 				</ul>
