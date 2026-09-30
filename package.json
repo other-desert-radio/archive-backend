@@ -7,7 +7,7 @@
 		"dev": "bun --watch src/server.ts",
 		"start": "bun src/server.ts",
 		"admin:build": "vite build",
-		"test": "bun run admin:build && bun test",
+		"test": "bun run admin:build && bun test ./tests",
 		"test:integration": "bash ./scripts/run-integration-tests",
 		"auth:generate": "auth generate --config src/auth/auth.ts --output docs/BETTER_AUTH_SCHEMA.sql",
 		"db:migrate": "./scripts/migrate up",

@@ -115,7 +115,10 @@ explicitly colored tags are reviewed. The UI renders the DJ list with loading,
 empty, and error states. The Shows API returns transformed relationship IDs plus
 its admin-only `createdAt` timestamp; `POST /api/admin/create-show` validates
 and atomically persists Shows, existing-DJ links, and reused or newly created
-tags. Public archive response contracts remain unchanged.
+tags. `POST /api/admin/modify-show` shares creation validation and persistence,
+replacing Show metadata and relationships atomically while preserving identity
+and creation timestamp. Show editing controls remain placeholders until the next
+UI chunk. Public archive response contracts remain unchanged.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the
@@ -131,7 +134,9 @@ archive dataset, use the
 - `bun run dev` starts the server with Bun watch mode.
 - `bun run start` starts the server once.
 
-- `bun run test` runs the focused Bun test suite.
+- `bun run test` builds the admin bundle and runs the Bun suite in `tests/`.
+  Playwright files in `integration-tests/` run through the separate integration
+  runner.
 - `./scripts/run-integration-tests` builds and runs the DJ browser editing suite
   in a disposable Docker Compose stack. It uses its own Postgres volume and API;
   the test data and containers are removed when the command finishes.

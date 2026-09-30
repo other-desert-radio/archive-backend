@@ -35,7 +35,7 @@ const parseCalendarDate = (value: string): Date | undefined => {
 		: undefined;
 };
 
-/** Normalizes and semantically validates a Show creation request. */
+/** Normalizes and semantically validates editable Show fields for creation or replacement. */
 export const normalizeCreateShowRequest = (
 	request: CreateShowRequest,
 ): NormalizedCreateShowRequest => {

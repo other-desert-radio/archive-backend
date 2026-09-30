@@ -44,6 +44,48 @@ const buildDatabase = (failOn?: string) => {
 							};
 							return query;
 						},
+						updateTable: () => {
+							let id: number;
+							let values: Record<string, unknown>;
+							const query = {
+								set: (input: Record<string, unknown>) => {
+									values = input;
+									return query;
+								},
+								where: (_column: string, _operator: string, value: number) => {
+									id = value;
+									return query;
+								},
+								returning: () => query,
+								executeTakeFirst: async () => {
+									if (failOn === "shows") throw new Error("update failed");
+									const show = state.shows.find((show) => show.id === id);
+									if (show !== undefined) Object.assign(show, values);
+									return show;
+								},
+							};
+							return query;
+						},
+						deleteFrom: (table: string) => {
+							let id: number;
+							const query = {
+								where: (_column: string, _operator: string, value: number) => {
+									id = value;
+									return query;
+								},
+								execute: async () => {
+									if (table === "show_djs")
+										state.showDJs = state.showDJs.filter(
+											(row) => row.show_id !== id,
+										);
+									if (table === "show_tags")
+										state.showTags = state.showTags.filter(
+											(row) => row.show_id !== id,
+										);
+								},
+							};
+							return query;
+						},
 						insertInto: (table: string) => {
 							let values: unknown;
 							const query = {
@@ -169,5 +211,183 @@ describe("Show creation persistence", () => {
 			showDJs: [],
 			showTags: [],
 		});
+	});
+});
+
+const editPayload = {
+	id: 1,
+	title: " Changed ",
+	date: "2024-02-29",
+	duration: 3661,
+	url: " https://example.com/changed ",
+	djs: [2, 2],
+};
+const editingDatabase = (failOn?: string) => {
+	const fixture = buildDatabase(failOn);
+	fixture.state.shows.push({
+		id: 1,
+		createdAt: new Date("2026-01-01T00:00:00Z"),
+		title: "Original",
+		date: new Date("2024-01-01T00:00:00Z"),
+		duration: 1,
+		image: "https://example.com/original.jpg",
+		url: "https://example.com/original",
+	});
+	fixture.state.tags.push({
+		id: 20,
+		title: "Ambient",
+		color: "#123456",
+		reviewed: true,
+	});
+	fixture.state.showDJs.push(
+		{ show_id: 1, dj_id: 1 },
+		{ show_id: 99, dj_id: 1 },
+	);
+	fixture.state.showTags.push(
+		{ show_id: 1, tag_id: 20 },
+		{ show_id: 99, tag_id: 20 },
+	);
+	return fixture;
+};
+const modifyShow = async (
+	database: never,
+	payload: unknown,
+	session = adminSession,
+) => {
+	const app = Fastify({ logger: false });
+	await app.register(
+		adminRoutes(session, database, { username: "", password: "" }),
+	);
+	try {
+		return await app.inject({
+			method: "POST",
+			url: "/api/admin/modify-show",
+			payload,
+		});
+	} finally {
+		await app.close();
+	}
+};
+
+describe("Show editing persistence", () => {
+	test("replaces metadata and links, reuses tags, and preserves other records", async () => {
+		const { database, state } = editingDatabase();
+		const response = await modifyShow(database, {
+			...editPayload,
+			image: " https://example.com/new.jpg ",
+			tags: ["ambient", "New", "new"],
+		});
+		expect(response.statusCode, response.body).toBe(200);
+		expect(response.json()).toEqual({
+			id: 1,
+			createdAt: "2026-01-01T00:00:00.000Z",
+			title: "Changed",
+			date: "2024-02-29T00:00:00.000Z",
+			duration: 3661,
+			image: "https://example.com/new.jpg",
+			url: "https://example.com/changed",
+			djs: [2],
+			tags: [1, 20],
+		});
+		expect(state.showDJs).toEqual([
+			{ show_id: 99, dj_id: 1 },
+			{ show_id: 1, dj_id: 2 },
+		]);
+		expect(state.showTags).toEqual([
+			{ show_id: 99, tag_id: 20 },
+			{ show_id: 1, tag_id: 20 },
+			{ show_id: 1, tag_id: 1 },
+		]);
+		expect(state.tags).toHaveLength(2);
+		expect(state.tags[0]).toEqual({
+			id: 20,
+			title: "Ambient",
+			color: "#123456",
+			reviewed: true,
+		});
+		expect(state.tags[1]?.reviewed).toBe(false);
+		expect(state.djs).toEqual([{ id: 1 }, { id: 2 }]);
+	});
+	test("clears omitted or empty images and tags", async () => {
+		for (const optional of [{}, { image: " ", tags: [] }]) {
+			const { database, state } = editingDatabase();
+			const response = await modifyShow(database, {
+				...editPayload,
+				...optional,
+			});
+			expect(response.statusCode).toBe(200);
+			expect(response.json().image).toBeUndefined();
+			expect(response.json().tags).toEqual([]);
+			expect(state.shows[0]?.image).toBeNull();
+			expect(state.showTags).toEqual([{ show_id: 99, tag_id: 20 }]);
+			expect(state.tags).toHaveLength(1);
+		}
+	});
+	test("rejects invalid shapes and values without writing", async () => {
+		for (const changes of [
+			{ id: undefined },
+			{ id: "1" },
+			{ id: 0 },
+			{ id: 1.5 },
+			{ id: Number.MAX_SAFE_INTEGER + 1 },
+			{ title: " " },
+			{ date: "2024-02-30" },
+			{ date: "2023-02-29" },
+			{ url: "ftp://example.com/show" },
+			{ image: "relative.jpg" },
+			{ duration: 0 },
+			{ duration: 1.5 },
+			{ duration: 2147483648 },
+			{ djs: [] },
+			{ djs: [0] },
+			{ djs: [99] },
+			{ tags: [1] },
+		]) {
+			const { database, state } = editingDatabase();
+			const before = structuredClone(state);
+			const response = await modifyShow(database, {
+				...editPayload,
+				...changes,
+			});
+			expect(response.statusCode, response.body).toBe(400);
+			expect(state).toEqual(before);
+		}
+	});
+	test("returns 404 without creating tags for an unknown Show", async () => {
+		const { database, state } = editingDatabase();
+		const before = structuredClone(state);
+		const response = await modifyShow(database, {
+			...editPayload,
+			id: 100,
+			tags: ["New"],
+		});
+		expect(response.statusCode).toBe(404);
+		expect(response.json()).toEqual({ error: "Not Found" });
+		expect(state).toEqual(before);
+	});
+	test("rolls back metadata, tag creation, and removed links after failures", async () => {
+		for (const table of ["shows", "tags", "show_djs", "show_tags"]) {
+			const { database, state } = editingDatabase(table);
+			const before = structuredClone(state);
+			const response = await modifyShow(database, {
+				...editPayload,
+				tags: ["New"],
+			});
+			expect(response.statusCode, response.body).toBe(500);
+			expect(response.json()).toEqual({ error: "Internal Server Error" });
+			expect(state).toEqual(before);
+		}
+	});
+	test("requires an authenticated admin before database access", async () => {
+		for (const [user, status] of [
+			[undefined, 401],
+			[{ id: "reader", role: "user" }, 403],
+		] as const) {
+			const session = {
+				api: { getSession: async () => (user === undefined ? null : { user }) },
+			} as never;
+			const response = await modifyShow({} as never, editPayload, session);
+			expect(response.statusCode).toBe(status);
+		}
 	});
 });
