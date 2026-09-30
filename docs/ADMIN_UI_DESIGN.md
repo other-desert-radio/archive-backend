@@ -64,6 +64,17 @@ reachable.
 
 ## Reusable components and ownership
 
+### Floating navigation
+
+On desktop, the black sidebar rests at `left: 2rem`, `top: 5.1rem`, with a
+`10.75rem` width and `1.25rem` padding on every side. Its height follows the
+navigation content, keeping top and bottom padding equal. Hover or keyboard
+focus expands its background to the left edge and full viewport height behind
+the header over 250ms. Navigation text stays fixed throughout expansion and
+collapse. Mouse exit collapses the pane even after clicking a link.
+Reduced-motion preferences disable the transition. At widths of 42rem or less,
+navigation remains a full-width block above the resource content.
+
 Keep resource orchestration separate from shared presentation and lifecycle
 logic. Extract repeated responsibilities into focused components or hooks; avoid
 a generic form framework or components with many unrelated mode flags.
