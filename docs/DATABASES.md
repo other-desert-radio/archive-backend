@@ -214,14 +214,16 @@ The database does not need a separate row for a derived DJ tag. During export,
 combine the manually assigned `dj_tags` with the distinct tags from every show
 linked through `show_djs` and `show_tags`.
 
-## Mixcloud import tracking (planned)
+## Mixcloud import tracking
 
-The design in `human_docs/databases_human.md` is agreed but not yet implemented.
+Migration `0018_create_mixcloud_import_table` implements the tracking schema
+from `human_docs/databases_human.md`. The importer itself remains future work.
 `./scripts/import-mixcloud` currently runs `src/db/import-mixcloud.ts`, which
 reads `src/res/mixcloud.json`, parses cloudcast names, and prints diagnostics
 without database writes. Keep that parsing workflow read-only until the import
-phase is implemented. The following specifies the future schema and importer;
-adding this documentation does not enable imports or add show soft deletion.
+phase is implemented. The following documents the tracking schema and future
+importer requirements; the migration does not enable imports or add show soft
+deletion.
 
 ### `mixcloud_import`
 
@@ -279,17 +281,17 @@ BEFORE UPDATE OF show_id ON mixcloud_import
 FOR EACH ROW EXECUTE FUNCTION mixcloud_import_clear_imported_at();
 ```
 
-| Action                | Required effect         |
-| --------------------- | ----------------------- |
-| Delete a tracking row | Preserve show and       |
-|                       | relationships.          |
-| Soft-delete a show    | Preserve tracking row,  |
-|                       | `show_id`, and          |
-|                       | `imported_at`.         |
+| Action                | Required effect          |
+| --------------------- | ------------------------ |
+| Delete a tracking row | Preserve show and        |
+|                       | relationships.           |
+| Soft-delete a show    | Preserve tracking row,   |
+|                       | `show_id`, and           |
+|                       | `imported_at`.           |
 | Hard-delete a show    | Retain row, `id`, `key`, |
-|                       | and `createdAt`; clear  |
-|                       | `show_id` and           |
-|                       | `imported_at`.          |
+|                       | and `createdAt`; clear   |
+|                       | `show_id` and            |
+|                       | `imported_at`.           |
 
 The existing `src/db/delete-shows.ts` uses `DELETE FROM shows`, so the foreign
 key and trigger handle the drop-all workflow without script-specific cleanup. Do
@@ -321,15 +323,29 @@ are outside this schema's scope.
 
 ### Implementation and verification
 
-Implement the table, index, check constraint, function, and trigger together in
-one new migration after `shows` exists; do not edit applied migrations. Its
-rollback drops the tracking table (and its trigger) before dropping the trigger
-function, leaving shows untouched. Add `mixcloud_import: MixcloudImportTable` to
-`Database` in `src/db/types.ts`, with `Generated<number>` for `id`,
-`Generated<Date>` for `createdAt`, `string` for `key`, `number | null` for
-`show_id`, and `Date | null` for `imported_at`.
+Migration `0018` creates the table, index, check constraint, function, and
+trigger together after `shows` exists. Do not edit it after it has been applied.
+Its rollback drops the tracking table (and its trigger) before dropping the
+trigger function, leaving shows untouched. Add
+`mixcloud_import: MixcloudImportTable` to `Database` in `src/db/types.ts`, with
+`Generated<number>` for `id`, `Generated<Date>` for `createdAt`, `string` for
+`key`, `number | null` for `show_id`, and `Date | null` for `imported_at`.
 
-Use focused PostgreSQL integration tests for the schema:
+`tests/db/mixcloud-import-migration.test.ts` runs against an explicitly supplied
+disposable PostgreSQL database, creates a unique test schema, and removes that
+schema afterward. It never falls back to the regular `DATABASE_URL`. Run it
+with:
+
+```sh
+MIXCLOUD_MIGRATION_TEST_DATABASE_URL=postgres://admin:mixcloud_test_dev@127.0.0.1:55433/archive_mixcloud_test \
+  bun test tests/db/mixcloud-import-migration.test.ts
+```
+
+Start a disposable PostgreSQL container as described in
+[`DATABASE_E2E_TESTING.md`](DATABASE_E2E_TESTING.md), adjusting the database
+name, password, and port to match the test URL. Apply migration `0018` to the
+regular database only through an explicit migration command; the test does not
+apply it there. Focused coverage includes:
 
 - Pending rows default to null import fields; source keys are unique and
   non-null, and nonexistent show references are rejected.
