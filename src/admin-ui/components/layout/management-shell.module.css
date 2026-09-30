@@ -50,6 +50,8 @@
 }
 .sidebar p {
 	margin: 0 0 1rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 2px solid #fff;
 }
 .sidebar p + p {
 	margin-top: 2.5rem;
@@ -58,13 +60,13 @@
 	display: grid;
 	gap: 0.5rem;
 	margin: 0;
-	padding: 0;
+	padding: 0 0 0 0.5rem;
 	list-style: none;
 }
 .sidebar a {
 	display: block;
 	padding-block: 0.25rem;
-	font-size: 1.125rem;
+	font-size: 1.0625rem;
 	line-height: 1.5;
 	text-decoration: none;
 }

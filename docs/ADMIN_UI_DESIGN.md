@@ -74,10 +74,11 @@ the header over 250ms. Navigation text stays fixed throughout expansion and
 collapse. Mouse exit collapses the pane even after clicking a link.
 Reduced-motion preferences disable the transition. At widths of 42rem or less,
 navigation remains a compact full-width block above the resource content. Links
-use `⤷` markers, `1.125rem` text with a 1.5 line height, `0.25rem` vertical
-padding, and `0.5rem` gaps. The DATABASE label has a `1rem` gap below it.
-Active, hovered, and keyboard-focused links are bold without moving surrounding
-items.
+use `⤷` markers, `1.0625rem` text with a 1.5 line height, `0.25rem` vertical
+padding, `0.5rem` gaps, and a `0.5rem` left indent. The DATABASE label has a 2px
+solid white bottom border, `0.5rem` padding below its text, and a `1rem` gap
+below it. Active, hovered, and keyboard-focused links are bold without moving
+surrounding items.
 
 Keep resource orchestration separate from shared presentation and lifecycle
 logic. Extract repeated responsibilities into focused components or hooks; avoid

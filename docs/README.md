@@ -166,10 +166,11 @@ archive dataset, use the
 - `scripts/build-container` rebuilds and starts the Docker Compose stack in the
   background.
 - `scripts/build-container-watch` rebuilds and starts the Docker Compose stack,
-  then runs the Vite build watcher. The host `dist/admin` directory is mounted
-  into the API container, so `/admin` updates after each frontend rebuild. Stop
-  the watcher with `Ctrl-C`; stop the containers separately with
-  `docker compose down`.
+  then runs the Vite build watcher. It creates `dist/admin` before starting
+  Docker so a missing bind-mount directory is owned by the local user. The host
+  `dist/admin` directory is mounted into the API container, so `/admin` updates
+  after each frontend rebuild. Stop the watcher with `Ctrl-C`; stop the
+  containers separately with `docker compose down`.
 
 The archive exporter writes JSON to the absolute `ARCHIVE_RESOURCE_DIRECTORY`
 constant and images to `ARCHIVE_ASSET_DIRECTORY` in `src/db/export-archive.ts`.
