@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { renderShowCard } from "../../src/admin-ui/components/shows/index.js";
+import type { ShowsAdminRow } from "../../src/admin-ui/loaders/shows.js";
 
 describe("Show card", () => {
 	test("renders the available image and tag titles", () => {
+		let editedShow: ShowsAdminRow | undefined;
 		const card = renderShowCard(
 			{
 				id: 1,
@@ -17,26 +19,38 @@ describe("Show card", () => {
 			},
 			new Map([[2, { title: "Ambient", color: "#abcdef" }]]),
 			new Map([[3, { title: "DJ One" }]]),
+			1,
+			(show) => {
+				editedShow = show;
+			},
 		);
 
-		const [image, _title, djs, tags] = card.props.children;
+		const [image, _title, djs, tags, edit] = card.props.children;
 		expect(image.props.src).toBe("https://example.com/show.webp");
 		expect(image.props.alt).toBe("Show One");
 		expect(djs.props.children).toBe("DJ One");
 		expect(tags.props.children[0].props.children).toBe("Ambient");
+		edit.props.onClick();
+		expect(editedShow?.id).toBe(1);
 	});
 
 	test("renders image and tag fallbacks when metadata is unavailable", () => {
-		const card = renderShowCard({
-			id: 1,
-			createdAt: "2026-09-29T00:00:00.000Z",
-			title: "Show One",
-			date: "2026-09-29T00:00:00.000Z",
-			duration: 3600,
-			djs: [],
-			tags: [4],
-			url: "https://example.com/show",
-		});
+		const card = renderShowCard(
+			{
+				id: 1,
+				createdAt: "2026-09-29T00:00:00.000Z",
+				title: "Show One",
+				date: "2026-09-29T00:00:00.000Z",
+				duration: 3600,
+				djs: [],
+				tags: [4],
+				url: "https://example.com/show",
+			},
+			new Map(),
+			new Map(),
+			1,
+			() => undefined,
+		);
 
 		const [image, _title, djs, tags] = card.props.children;
 		expect(image.props.children).toBe("No image");

@@ -110,10 +110,11 @@ in use even for editing.
 Show onboarding and editing share `ShowFormModal`, including fields, opening
 values, validation, tag loading, DJ selection, and unsaved-change comparison.
 Small resource wrappers supply empty or existing values and the mutation
-callback. Edit controls in both table and grid open the same form. Dates prefill
-from the UTC calendar portion of the stored timestamp; duration stays in integer
-seconds. All creation fields are editable, and clearing the image URL removes
-the image.
+callback. Edit controls in both table and grid open the same form. Show cards
+require an edit callback so their Edit action cannot silently do nothing. Dates
+prefill from the UTC calendar portion of the stored timestamp; duration stays in
+integer seconds. All creation fields are editable, and clearing the image URL
+removes the image.
 
 Assigned tag titles come from the loaded resource data. If an assigned tag is
 unresolved, saving stays disabled until tag loading or Retry resolves it. Late
