@@ -69,6 +69,47 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 		expect(await links()).toEqual(originalLinks);
 		expect((await loadDJ(request, dj.id)).directTags).toContain(id);
 		expect((await loadShow(request, show.id)).tags).toContain(id);
+
+		for (const reviewed of [false, true, true]) {
+			const reviewResponse = await request.post("/api/admin/modify-tag", {
+				data: { id, reviewed },
+			});
+			expect(reviewResponse.status(), await reviewResponse.text()).toBe(200);
+			expect(await reviewResponse.json()).toEqual({ ...saved, reviewed });
+			expect(
+				(await pool.query("SELECT * FROM tags WHERE id = $1", [id])).rows,
+			).toEqual([{ ...after.rows[0], reviewed }]);
+			expect(await links()).toEqual(originalLinks);
+			const reviewReload = await request.get("/api/admin/tags");
+			expect(
+				(await reviewReload.json()).find(
+					(tag: { id: number }) => tag.id === id,
+				),
+			).toEqual({ ...saved, reviewed });
+		}
+		for (const invalid of [
+			{ id, reviewed: "false" },
+			{ id, reviewed: false, title: "Accidental rename" },
+			{ ...payload, reviewed: false },
+			{ id: 0, reviewed: false },
+		]) {
+			expect(
+				(
+					await request.post("/api/admin/modify-tag", { data: invalid })
+				).status(),
+			).toBe(400);
+			expect(
+				(await pool.query("SELECT * FROM tags WHERE id = $1", [id])).rows,
+			).toEqual(after.rows);
+			expect(await links()).toEqual(originalLinks);
+		}
+		expect(
+			(
+				await request.post("/api/admin/modify-tag", {
+					data: { id: 2147483647, reviewed: false },
+				})
+			).status(),
+		).toBe(404);
 		const loaded = await request.get("/api/admin/tags");
 		expect(
 			(await loaded.json()).find((tag: { id: number }) => tag.id === id),

@@ -156,7 +156,10 @@ columns, saved values after reload and editor reopening, direct and inherited
 tags, image addition/replacement/removal and crop cancellation, required-field
 validation, invalid images, and Cancel/Escape dismissal. Image assertions fetch
 both authenticated WebP variants and check their dimensions. Creation is fixture
-setup; onboarding UI coverage is outside this suite.
+setup; DJ and Show onboarding UI coverage is outside this suite. Tag onboarding
+coverage in `integration-tests/onboard-tag.spec.ts` verifies persisted metadata,
+reviewed state, existing-title reuse, local validation, failed-submit retention,
+dirty dismissal, and phone layout.
 
 Tag drafts commit synchronously on blur, so subsequent chip removal cannot be
 overwritten by a delayed commit using an older selection. The integration suite
@@ -186,7 +189,9 @@ assigns one tag to both. Direct PostgreSQL assertions against only the
 disposable Compose database verify tag identity/timestamp and relationship row
 IDs remain unchanged. API reloads check normalized metadata and reviewed state;
 rejection, case-only rename, and metadata clearing checks verify persisted
-behavior.
+behavior. Review-only updates are tested in both directions, including repeated
+values, metadata and relationship preservation, invalid/mixed requests, and
+unknown targets.
 
 ### Tag editor browser coverage
 

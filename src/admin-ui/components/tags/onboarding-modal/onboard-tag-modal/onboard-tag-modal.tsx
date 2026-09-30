@@ -9,7 +9,7 @@ import { buildCreateTagRequest } from "./onboard-tag-utils.js";
 
 const initialValues = {
 	title: "",
-	color: "#000000",
+	color: "#cccccc",
 	mixcloud_key: "",
 	mixcloud_url: "",
 };

@@ -5,9 +5,11 @@ export type {
 	CreateTagRequest,
 	CreateTagsRequest,
 	ModifyTagRequest,
+	ModifyTagReviewRequest,
 } from "./types.js";
 export {
 	CreateTagRequestPattern,
 	CreateTagsRequestPattern,
 	ModifyTagRequestPattern,
+	ModifyTagReviewRequestPattern,
 } from "./types.js";

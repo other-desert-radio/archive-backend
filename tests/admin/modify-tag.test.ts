@@ -90,6 +90,71 @@ const payload = { id: 1, title: "Dance", color: "#123456" };
 const edit = (app: Awaited<ReturnType<typeof setup>>["app"], data: object) =>
 	app.inject({ method: "POST", url: "/api/admin/modify-tag", payload: data });
 describe("Tag update API", () => {
+	test("review-only saves toggle both ways and preserve every other field", async () => {
+		const { app, rows } = await setup();
+		// Reviewing existing data does not rename tags or run title collision checks.
+		rows[0].title = "house";
+		const before = structuredClone(rows);
+		try {
+			for (const reviewed of [true, false, false]) {
+				const response = await edit(app, { id: 1, reviewed });
+				expect(response.statusCode).toBe(200);
+				expect(response.json()).toEqual({
+					id: 1,
+					title: "house",
+					color: original.color,
+					reviewed,
+					mixcloud_key: original.mixcloud_key,
+					mixcloud_url: original.mixcloud_url,
+				});
+				expect(rows).toEqual([{ ...before[0], reviewed }, before[1]]);
+			}
+		} finally {
+			await app.close();
+		}
+	});
+	test("review-only saves reject invalid or mixed payloads and unknown targets without writes", async () => {
+		const { app, rows } = await setup();
+		const before = structuredClone(rows);
+		try {
+			for (const request of [
+				{ id: 1 },
+				{ id: 1, reviewed: "false" },
+				{ id: 1, reviewed: null },
+				{ id: 1, reviewed: 1 },
+				{ reviewed: true },
+				{ id: 0, reviewed: false },
+				{ id: 1.5, reviewed: true },
+				{ id: Number.MAX_SAFE_INTEGER + 1, reviewed: true },
+				{ id: "1", reviewed: true },
+				{ id: 1, reviewed: false, title: "New" },
+				{ ...payload, reviewed: false },
+				{ id: 1, reviewed: true, mixcloud_key: "new" },
+				{ id: 1, reviewed: true, extra: true },
+			]) {
+				expect((await edit(app, request)).statusCode).toBe(400);
+				expect(rows).toEqual(before);
+			}
+			expect((await edit(app, { id: 99, reviewed: false })).statusCode).toBe(
+				404,
+			);
+			expect(rows).toEqual(before);
+		} finally {
+			await app.close();
+		}
+	});
+	test("review-only database failures roll back and return a generic error", async () => {
+		const { app, rows } = await setup("admin", true);
+		try {
+			const response = await edit(app, { id: 1, reviewed: true });
+			expect(response.statusCode).toBe(500);
+			expect(response.json()).toEqual({ error: "Internal Server Error" });
+			expect(rows[0]).toEqual(original);
+		} finally {
+			await app.close();
+		}
+	});
+
 	test("trims all fields, reviews, preserves identity/timestamp, and clears optional metadata", async () => {
 		const { app, rows } = await setup();
 		try {
@@ -210,6 +275,9 @@ describe("Tag update API", () => {
 			const { app, rows } = await setup(role);
 			try {
 				expect((await edit(app, payload)).statusCode).toBe(status);
+				expect((await edit(app, { id: 1, reviewed: true })).statusCode).toBe(
+					status,
+				);
 				expect(rows[0]).toEqual(original);
 			} finally {
 				await app.close();

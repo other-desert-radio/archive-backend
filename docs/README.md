@@ -65,17 +65,22 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
+The existing `modify-tag` endpoint additionally supports review-only
+`{ id, reviewed: boolean }` updates. These preserve metadata and relationships;
+full metadata saves continue to mark reviewed. Mixed payloads are rejected. The
+Tags table inline review control is the next separate chunk, pending review.
+
 Tag editing API chunk is complete: `POST /api/admin/modify-tag` validates and
 replaces title, hex color, and optional Mixcloud metadata, marks reviewed, and
 preserves identity, creation timestamp, and DJ/Show links. Conflicting
 normalized titles are rejected. Tag IDs use the same positive safe-integer
 validation as Show editing. The Tags table Edit action opens a prefilled
 shared-modal editor with hex input, a native color picker, and a live inline
-chip. Saving marks reviewed and reloads Tags; failed saves retain values.
-The “+ tag” action now opens onboarding with the same validated fields and color
-preview. New tags are reviewed; existing titles reuse the current tag. Successful
-creation refreshes Tags and clears search. Merging, deletion, and grid views
-remain outside this workflow.
+chip. Saving marks reviewed and reloads Tags; failed saves retain values. The “+
+tag” action now opens onboarding with the same validated fields and color
+preview. New tags are reviewed; existing titles reuse the current tag.
+Successful creation refreshes Tags and clears search. Merging, deletion, and
+grid views remain outside this workflow.
 
 For UI implementation and review, read the
 [admin UI design and reuse guide](ADMIN_UI_DESIGN.md). It documents the reviewed

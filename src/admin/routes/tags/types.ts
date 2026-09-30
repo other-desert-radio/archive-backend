@@ -22,3 +22,12 @@ export const ModifyTagRequestPattern = {
 	mixcloud_url: P.optional(P.string),
 } as const;
 export type ModifyTagRequest = P.infer<typeof ModifyTagRequestPattern>;
+
+/** Updates only review status without replacing editable metadata. */
+export const ModifyTagReviewRequestPattern = {
+	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
+	reviewed: P.boolean,
+} as const;
+export type ModifyTagReviewRequest = P.infer<
+	typeof ModifyTagReviewRequestPattern
+>;

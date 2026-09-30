@@ -7,10 +7,7 @@ import {
 export const buildCreateTagRequest = (
 	fields: TagFormValues,
 ): CreateTagRequest => {
-	const { title, color, mixcloud_key, mixcloud_url } = buildTagFields(
-		1,
-		fields,
-	);
+	const { title, color, mixcloud_key, mixcloud_url } = buildTagFields(fields);
 	return {
 		title,
 		color,

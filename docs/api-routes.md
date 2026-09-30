@@ -257,8 +257,8 @@ applicable. Preserve the authenticated route boundary while testing through
 `title`, and `color`, plus optional string `mixcloud_key` and `mixcloud_url`.
 All text is trimmed. Title must be nonempty, color must be `#RRGGBB`, and a
 nonempty Mixcloud URL must be absolute HTTP(S). Blank or omitted metadata clears
-its respective column independently. Every successful save marks the tag
-reviewed, including unchanged saves.
+its respective column independently. Every successful metadata save marks the
+tag reviewed, including unchanged saves.
 
 The transaction checks the target and rejects another tag with the same title
 ignoring case and surrounding whitespace. Case-only renames are allowed. It
@@ -268,3 +268,14 @@ shape; an unknown ID returns `404`, invalid fields or conflicting titles return
 actionable `400` errors, and unexpected failures roll back and return `500`.
 Lifecycle logs omit form values. Matching remains application-level; no global
 uniqueness constraint or migration is added.
+
+The same endpoint also accepts a review-only request:
+`{ id, reviewed: boolean }`. It updates only `reviewed`, allowing both `true`
+and `false`, and preserves all metadata, identity, creation timestamp, and
+relationships. It does not run rename collision checks or clear omitted Mixcloud
+fields. The ID uses the same positive safe-integer validation as metadata edits.
+Review-only requests must contain only `id` and `reviewed`; mixed
+metadata/review payloads and nonboolean review values return `400`. Success
+returns the updated `TagsJSON` item, missing targets return `404`, and
+unexpected failures roll back and return `500`. Both request shapes remain under
+the existing authenticated admin boundary.

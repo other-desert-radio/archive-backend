@@ -188,13 +188,14 @@ periods. The shared shell's optional action helper explains that saving marks
 the tag reviewed. There is no reviewed checkbox. Dirty comparison uses opening
 values; failed saves retain edits, successful saves close and reload Tags.
 Returning to DJs or Shows reloads their tag dictionary through their normal
-loaders. The Tags toolbar’s “+ tag” action opens onboarding with the same metadata
-fields, native color picker, and live chip. Title and color are required; color
-starts at `#000000`. Optional blank metadata is omitted from creation requests.
-New tags are reviewed; existing titles reuse their current tag without changing
-its metadata. Success closes and refreshes Tags, clearing the search so the tag
-can be found. Failed submissions retain values; dirty dismissal requires
-confirmation. Merging, deletion, and grid views remain outside this workflow.
+loaders. The Tags toolbar’s “+ tag” action opens onboarding with the same
+metadata fields, native color picker, and live chip. Title and color are
+required; color starts at `#cccccc`. Optional blank metadata is omitted from
+creation requests. New tags are reviewed; existing titles reuse their current
+tag without changing its metadata. Success closes and refreshes Tags, clearing
+the search so the tag can be found. Failed submissions retain values; dirty
+dismissal requires confirmation. Merging, deletion, and grid views remain
+outside this workflow.
 
 ## Verification and delivery
 

@@ -17,6 +17,8 @@ import {
 	CreateTagsRequestPattern,
 	type ModifyTagRequest,
 	ModifyTagRequestPattern,
+	type ModifyTagReviewRequest,
+	ModifyTagReviewRequestPattern,
 } from "./types.js";
 
 /** Registers authenticated Tags API routes. */
@@ -110,13 +112,79 @@ export const tagRoutes =
 		});
 
 		app.post<{
-			Body: ModifyTagRequest;
+			Body: ModifyTagRequest | ModifyTagReviewRequest;
 			Reply: AdminApiReply<TagsJSON>;
 		}>("/modify-tag", async (request, reply) => {
 			request.log.info(
 				{ client: clientDescription(request) },
 				"[Tag Editing] started",
 			);
+
+			if (isMatching(ModifyTagReviewRequestPattern, request.body)) {
+				if (
+					Object.keys(request.body).some(
+						(key) => key !== "id" && key !== "reviewed",
+					)
+				) {
+					request.log.warn(
+						"[Tag Editing] rejected -- review-only requests accept id and reviewed only",
+					);
+					return reply.code(400).send({
+						error: "Review-only updates must contain only id and reviewed",
+					});
+				}
+				const { id, reviewed } = request.body;
+				try {
+					const tag = await database
+						.transaction()
+						.execute(async (transaction) => {
+							const target = await transaction
+								.selectFrom("tags")
+								.select("id")
+								.where("id", "=", id)
+								.forUpdate()
+								.executeTakeFirst();
+							if (target === undefined) return undefined;
+							return transaction
+								.updateTable("tags")
+								.set({ reviewed })
+								.where("id", "=", id)
+								.returningAll()
+								.executeTakeFirstOrThrow();
+						});
+					if (tag === undefined) {
+						request.log.warn(
+							{ tagId: id },
+							`[Tag Editing] review update rejected -- Tag ${id} not found`,
+						);
+						return reply.code(404).send({ error: "Not Found" });
+					}
+					const [modified] = transformTags({ tags: [tag] });
+					if (modified === undefined)
+						throw new Error("Tag transformation failed");
+					request.log.info(
+						{ tagId: id, client: clientDescription(request) },
+						`[Tag Editing] review status saved -- id: ${id}, reviewed: ${reviewed}`,
+					);
+					return reply.code(200).send(modified);
+				} catch (error) {
+					request.log.error(
+						{ err: error, tagId: id },
+						`[Tag Editing] review update failed -- id: ${id}`,
+					);
+					return reply.code(500).send({ error: "Internal Server Error" });
+				}
+			}
+			// A supplied review value must use the review-only request shape.
+			if (isMatching({ reviewed: P.any }, request.body)) {
+				request.log.warn(
+					"[Tag Editing] rejected -- invalid review-only request shape",
+				);
+				return reply.code(400).send({
+					error:
+						"Review-only updates require a boolean reviewed value and valid id",
+				});
+			}
 			if (!isMatching(ModifyTagRequestPattern, request.body)) {
 				request.log.warn("[Tag Editing] rejected -- invalid request shape");
 				return reply.code(400).send({ error: "Validation error" });
