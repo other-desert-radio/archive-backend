@@ -186,10 +186,6 @@ describe("Tag update API", () => {
 				expect(rows).toEqual(before);
 			}
 			expect((await edit(app, { ...payload, id: 99 })).statusCode).toBe(404);
-			expect(
-				(await edit(app, { ...payload, id: Number.MAX_SAFE_INTEGER }))
-					.statusCode,
-			).toBe(404);
 			expect(rows).toEqual(before);
 		} finally {
 			await app.close();

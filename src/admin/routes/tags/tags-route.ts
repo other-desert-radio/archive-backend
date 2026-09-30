@@ -151,8 +151,6 @@ export const tagRoutes =
 				const result = await database
 					.transaction()
 					.execute(async (transaction) => {
-						// Tags use PostgreSQL integer IDs; larger safe integers cannot exist.
-						if (id > 2_147_483_647) return { status: "missing" } as const;
 						const target = await transaction
 							.selectFrom("tags")
 							.select("id")

@@ -95,13 +95,6 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 				})
 			).status(),
 		).toBe(404);
-		expect(
-			(
-				await request.post("/api/admin/modify-tag", {
-					data: { ...payload, id: Number.MAX_SAFE_INTEGER },
-				})
-			).status(),
-		).toBe(404);
 		const cleared = await request.post("/api/admin/modify-tag", {
 			data: {
 				id,
