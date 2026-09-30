@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import styles from "./labeled-form-control.module.css";
 
 type LabeledFormControlProps = {
@@ -14,6 +15,7 @@ type LabeledFormControlProps = {
 	required?: boolean;
 	textarea?: boolean;
 	helper?: string;
+	trailingContent?: ReactNode;
 	error?: string;
 };
 
@@ -32,6 +34,7 @@ export const LabeledFormControl = ({
 	required = false,
 	textarea = false,
 	helper,
+	trailingContent,
 	error,
 }: LabeledFormControlProps) => (
 	<div className={`${styles.field} ${textarea ? styles.multiline : ""}`}>
@@ -52,23 +55,30 @@ export const LabeledFormControl = ({
 					}
 				/>
 			) : (
-				<input
-					id={id}
-					name={name}
-					type={type}
-					min={min}
-					max={max}
-					step={step}
-					value={value}
-					onChange={(event) => onChange(event.target.value)}
-					onBlur={onBlur}
-					required={required}
-					aria-describedby={
-						helper === undefined && error === undefined
-							? undefined
-							: `${id}-help`
-					}
-				/>
+				<div
+					className={`${styles.control} ${trailingContent === undefined ? "" : styles.withTrailing}`}
+				>
+					<input
+						id={id}
+						name={name}
+						type={type}
+						min={min}
+						max={max}
+						step={step}
+						value={value}
+						onChange={(event) => onChange(event.target.value)}
+						onBlur={onBlur}
+						required={required}
+						aria-describedby={
+							helper === undefined && error === undefined
+								? undefined
+								: `${id}-help`
+						}
+					/>
+					{trailingContent !== undefined && (
+						<div className={styles.trailing}>{trailingContent}</div>
+					)}
+				</div>
 			)}
 			{(helper !== undefined || error !== undefined) && (
 				<p

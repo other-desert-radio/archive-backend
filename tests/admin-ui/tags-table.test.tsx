@@ -1,10 +1,35 @@
 import { describe, expect, test } from "bun:test";
 import { isValidElement } from "react";
 import { Tag } from "../../src/admin-ui/components/shared/resource-views/index.js";
-import { tagColumns } from "../../src/admin-ui/components/tags/tags-table.js";
-import { filterTags } from "../../src/admin-ui/components/tags/tags-table-utils.js";
+import {
+	filterTags,
+	ReviewedCell,
+	TagsTable,
+	tagColumns,
+} from "../../src/admin-ui/components/tags/index.js";
 
 describe("tags table", () => {
+	test("routes the reviewed cell to its own mutation callback", () => {
+		const onSave = async () => undefined;
+		const tag = { id: 1, title: "Ambient", color: "#abcdef", reviewed: false };
+		const table = TagsTable({
+			tags: [tag],
+			sortColumn: "id",
+			sortDirection: "asc",
+			onSort: () => undefined,
+			onEdit: () => undefined,
+			onReviewSave: onSave,
+		});
+		const cell = table.props.columns
+			.find((column) => column.key === "reviewed")
+			?.render(tag);
+		expect(isValidElement(cell)).toBe(true);
+		if (isValidElement<{ tag: typeof tag; onSave: typeof onSave }>(cell)) {
+			expect(cell.type).toBe(ReviewedCell);
+			expect(cell.props.tag).toBe(tag);
+			expect(cell.props.onSave).toBe(onSave);
+		}
+	});
 	test("renders the title as a colored tag chip", () => {
 		const titleColumn = tagColumns.find(({ key }) => key === "title");
 		const cell = titleColumn?.render({

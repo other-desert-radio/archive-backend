@@ -20,6 +20,7 @@ type OnboardingModalProps = {
 	submitLabel?: string;
 	submittingLabel?: string;
 	cancelLabel: string;
+	actionHelper?: string;
 	isSubmitDisabled?: boolean;
 	children: ReactNode;
 };
@@ -34,6 +35,7 @@ export const OnboardingModal = ({
 	submitLabel = "Submit",
 	submittingLabel = "Submitting…",
 	cancelLabel,
+	actionHelper,
 	isSubmitDisabled = false,
 	children,
 }: OnboardingModalProps) => {
@@ -151,6 +153,9 @@ export const OnboardingModal = ({
 							<p className={styles.error} role="alert">
 								{error}
 							</p>
+						)}
+						{actionHelper !== undefined && (
+							<p className={styles.actionHelper}>{actionHelper}</p>
 						)}
 						<button
 							type="submit"

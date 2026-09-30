@@ -126,6 +126,7 @@ POST /api/admin/create-show
 POST /api/admin/modify-show
 POST /api/admin/create-tag
 POST /api/admin/create-tags
+POST /api/admin/modify-tag
 ```
 
 `GET /api/admin/djs` includes each DJ's `createdAt` timestamp in ISO JSON date
@@ -249,3 +250,36 @@ Add focused tests for each new route or helper. Cover successful responses,
 invalid request bodies, authentication behavior, and database failures where
 applicable. Preserve the authenticated route boundary while testing through
 `adminRoutes`.
+
+## Tag editing
+
+`POST /api/admin/modify-tag` requires an `edit_type` discriminator. For
+`edit_type: "full_edit"`, it accepts required positive safe-integer `id`,
+`title`, and `color`, plus optional string `mixcloud_key` and `mixcloud_url`.
+All text is trimmed. Title must be nonempty, color must be `#RRGGBB`, and a
+nonempty Mixcloud URL must be absolute HTTP(S). Blank or omitted metadata clears
+its respective column independently. Every successful metadata save marks the
+tag reviewed, including unchanged saves.
+
+The transaction checks the target and rejects another tag with the same title
+ignoring case and surrounding whitespace. Case-only renames are allowed. It
+updates the existing row, preserving ID, creation timestamp, and all
+relationships. Success returns `200` with the list endpoint's `TagsJSON` item
+shape; an unknown ID returns `404`, invalid fields or conflicting titles return
+actionable `400` errors, and unexpected failures roll back and return `500`.
+Lifecycle logs omit form values. Matching remains application-level; no global
+uniqueness constraint or migration is added.
+
+For `edit_type: "review"`, the request is
+`{ edit_type: "review", id, reviewed: boolean }`. It updates only `reviewed`,
+allowing both `true` and `false`, and preserves metadata, identity, creation
+timestamp, and relationships. It skips rename collision checks and does not
+clear omitted Mixcloud fields. ID validation is the same positive safe-integer
+rule as full edits. Metadata fields in review requests and a `reviewed` value in
+full edits are rejected with `400`; missing or unknown `edit_type` values are
+also rejected. Runtime patterns define the shared discriminated request union,
+and exhaustive `ts-pattern` matches normalize each operation and choose its
+persistence behavior. Both operations share the transaction, transformed
+response, authentication, and error handling. Success returns the updated
+`TagsJSON` item; missing targets return `404`, and unexpected failures roll back
+and return `500`.

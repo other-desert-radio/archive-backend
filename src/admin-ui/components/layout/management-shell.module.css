@@ -1,15 +1,21 @@
 .layout {
+	--management-sidebar-gap: 2rem;
+	--management-sidebar-top: calc(
+		var(--management-header-height) +
+		var(--management-sidebar-gap)
+	);
+	--management-sidebar-width: 10.75rem;
 	min-height: 100vh;
-	padding-top: 3.0625rem;
+	padding-top: var(--management-header-height);
 }
 .header {
 	position: fixed;
 	top: 0;
 	left: 0;
-	z-index: 2;
+	z-index: 3;
 	display: grid;
 	width: 100%;
-	height: 3.0625rem;
+	height: var(--management-header-height);
 	place-items: center;
 	color: #fff;
 	background: #000;
@@ -18,10 +24,10 @@
 }
 .sidebar {
 	position: fixed;
-	top: 5.1rem;
-	left: 2rem;
+	top: var(--management-sidebar-top);
+	left: var(--management-sidebar-gap);
 	z-index: 1;
-	width: 10.75rem;
+	width: var(--management-sidebar-width);
 	padding: 1.25rem;
 	color: #fff;
 	isolation: isolate;
@@ -36,17 +42,17 @@
 	background: #000;
 	content: "";
 	transition:
-		top 250ms ease,
-		height 250ms ease,
-		left 250ms ease,
-		width 250ms ease;
+		top 180ms ease,
+		height 180ms ease,
+		left 180ms ease,
+		width 180ms ease;
 }
 .sidebar:hover::before,
 .sidebar:has(a:focus-visible)::before {
-	top: -5.1rem;
+	top: calc(-1 * var(--management-sidebar-top));
 	height: 100vh;
-	left: -2rem;
-	width: calc(100% + 2rem);
+	left: calc(-1 * var(--management-sidebar-gap));
+	width: calc(100% + var(--management-sidebar-gap));
 }
 .sidebar p {
 	margin: 0 0 1rem;
@@ -76,8 +82,8 @@
 	font-weight: 700;
 }
 .content {
-	min-height: calc(100vh - 3.0625rem);
-	margin-left: 10.75rem;
+	min-height: calc(100vh - var(--management-header-height));
+	margin-left: var(--management-sidebar-width);
 	padding: 2rem clamp(1.25rem, 10vw, 16rem) 2rem clamp(3rem, 16vw, 22rem);
 }
 @media (max-width: 42rem) {
