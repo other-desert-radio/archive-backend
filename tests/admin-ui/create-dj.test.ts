@@ -39,6 +39,35 @@ describe("createDJ loader", () => {
 		expect(result).toEqual(dj);
 	});
 
+	test("passes the normalized WebP file through multipart upload", async () => {
+		let body: FormData | undefined;
+		const image = new File(["cropped image bytes"], "portrait.webp", {
+			type: "image/webp",
+		});
+
+		await createDJ(
+			{ title: "DJ New", bio: "A bio", image },
+			async (_, requestInit) => {
+				body = requestInit?.body as FormData;
+				return new Response(
+					JSON.stringify({
+						id: 42,
+						title: "DJ New",
+						bio: "<p>A bio</p>",
+						shows: [],
+						tags: [],
+					}),
+					{ status: 201 },
+				);
+			},
+		);
+
+		const uploaded = body?.get("image");
+		expect(uploaded).toBeInstanceOf(File);
+		expect((uploaded as File).name).toBe("portrait.webp");
+		expect((uploaded as File).type).toBe("image/webp");
+	});
+
 	test("rejects an unsuccessful response", async () => {
 		await expect(
 			createDJ(

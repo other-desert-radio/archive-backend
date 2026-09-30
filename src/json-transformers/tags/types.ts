@@ -6,6 +6,8 @@ export type TagsJSON = {
 	title: string;
 	color: string;
 	reviewed: boolean;
+	mixcloud_key?: string;
+	mixcloud_url?: string;
 };
 
 export type TransformTagsParams = {

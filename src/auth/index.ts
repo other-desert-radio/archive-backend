@@ -1,4 +1,4 @@
-export { createAuth, type AdminAuth } from "./create-auth.js";
+export { type AdminAuth, createAuth } from "./create-auth.js";
 export {
 	AccountOperationError,
 	createAdminAccount,

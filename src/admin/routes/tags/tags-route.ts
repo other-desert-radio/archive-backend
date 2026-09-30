@@ -1,18 +1,25 @@
 import type { FastifyPluginAsync } from "fastify";
-import { isMatching, P } from "ts-pattern";
+import { isMatching, match, P } from "ts-pattern";
 import type { TagsJSON } from "../../../json-transformers/index.js";
 import { transformTags } from "../../../json-transformers/index.js";
 import {
 	type ValidateTagsResult,
 	validateTags,
 } from "../../../utils/validate-tags.js";
+import { clientDescription } from "../../logging.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
+import {
+	normalizeModifyTagRequest,
+	TagEditValidationError,
+} from "./normalize-modify-tag-request.js";
 import { type CreatedTag, createTag, createTags } from "./tag-service.js";
 import {
 	type CreateTagRequest,
 	CreateTagRequestPattern,
 	type CreateTagsRequest,
 	CreateTagsRequestPattern,
+	type ModifyTagRequest,
+	ModifyTagRequestPattern,
 } from "./types.js";
 
 /** Registers authenticated Tags API routes. */
@@ -25,7 +32,15 @@ export const tagRoutes =
 				try {
 					const tags = await database
 						.selectFrom("tags")
-						.select(["id", "createdAt", "title", "color", "reviewed"])
+						.select([
+							"id",
+							"createdAt",
+							"title",
+							"color",
+							"reviewed",
+							"mixcloud_key",
+							"mixcloud_url",
+						])
 						.orderBy("id")
 						.execute();
 
@@ -97,9 +112,91 @@ export const tagRoutes =
 			}
 		});
 
-		app.post("/modify-tag", async () => {
-			// TODO: set reviewed column to true
-			return undefined;
+		app.post<{
+			Body: ModifyTagRequest;
+			Reply: AdminApiReply<TagsJSON>;
+		}>("/modify-tag", async (request, reply) => {
+			request.log.info(
+				{ client: clientDescription(request) },
+				"[Tag Editing] started",
+			);
+
+			if (!isMatching(ModifyTagRequestPattern)(request.body)) {
+				request.log.warn("[Tag Editing] rejected -- invalid request shape");
+				return reply.code(400).send({ error: "Validation error" });
+			}
+			const { id } = request.body;
+			try {
+				const normalized = normalizeModifyTagRequest(request.body);
+				const result = await database
+					.transaction()
+					.execute(async (transaction) => {
+						const target = await transaction
+							.selectFrom("tags")
+							.select("id")
+							.where("id", "=", id)
+							.forUpdate()
+							.executeTakeFirst();
+						if (target === undefined) return { status: "missing" } as const;
+						const duplicate = await match(normalized)
+							.with({ edit_type: "review" }, () => false)
+							.with({ edit_type: "full_edit" }, async ({ values }) => {
+								const others = await transaction
+									.selectFrom("tags")
+									.select("title")
+									.where("id", "!=", id)
+									.execute();
+								return others.some(
+									(tag) =>
+										tag.title.trim().toLowerCase() ===
+										values.title.toLowerCase(),
+								);
+							})
+							.exhaustive();
+						if (duplicate) return { status: "duplicate" } as const;
+						const tag = await transaction
+							.updateTable("tags")
+							.set(normalized.values)
+							.where("id", "=", id)
+							.returningAll()
+							.executeTakeFirstOrThrow();
+						return { status: "saved", tag } as const;
+					});
+				if (result.status !== "saved") {
+					const error =
+						result.status === "missing"
+							? "Not Found"
+							: "Another tag already uses this title. Choose a different title.";
+					request.log.warn(
+						{ tagId: id },
+						`[Tag Editing] rejected -- id: ${id}, reason: ${error}`,
+					);
+					return reply
+						.code(result.status === "missing" ? 404 : 400)
+						.send({ error });
+				}
+				const [modified] = transformTags({ tags: [result.tag] });
+				if (modified === undefined)
+					throw new Error("Tag transformation failed");
+				request.log.info(
+					{ tagId: id, client: clientDescription(request) },
+					`[Tag Editing] Tag saved -- id: ${id}, edit_type: ${request.body.edit_type}`,
+				);
+				return reply.code(200).send(modified);
+			} catch (error) {
+				if (error instanceof TagEditValidationError) {
+					request.log.warn(
+						{ tagId: id },
+						`[Tag Editing] rejected -- id: ${id}, reason: ${error.message}`,
+					);
+					return reply.code(400).send({ error: error.message });
+				}
+				request.log.error(
+					{ err: error, tagId: id },
+					`[Tag Editing] failed -- id: ${id}`,
+				);
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
 		});
 
 		app.post("/remove-tag", async () => {

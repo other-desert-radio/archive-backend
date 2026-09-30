@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import Fastify from "fastify";
+import sharp from "sharp";
 import { adminRoutes } from "../../src/admin/admin.js";
 import { buildApp } from "../../src/app.js";
 import { multipartPayload } from "./multipart-test-utils.js";
@@ -28,8 +29,8 @@ const testDatabase = {
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
 					title: "DJ One",
 					bio: "<p>Bio</p>",
-					image: null,
-					image_filename: null,
+					image_small: null,
+					image_large: null,
 					socials: "<p>@dj-one</p>",
 				},
 			],
@@ -282,6 +283,7 @@ describe("admin route boundary", () => {
 				socials: "<p>@dj-one</p>",
 				shows: [10],
 				tags: [20, 21],
+				directTags: [20],
 			},
 		]);
 
@@ -350,6 +352,65 @@ describe("admin route boundary", () => {
 
 		expect(response.statusCode).toBe(500);
 		expect(response.json()).toEqual({ error: "Internal Server Error" });
+
+		await app.close();
+	});
+
+	test("returns optional Mixcloud metadata for authenticated tag requests", async () => {
+		const tagsDatabase = {
+			selectFrom: () => {
+				const query = {
+					select: () => query,
+					orderBy: () => query,
+					execute: async () => [
+						{
+							id: 1,
+							createdAt: new Date("2026-01-01T00:00:00.000Z"),
+							title: "Experimental",
+							color: "#123456",
+							reviewed: true,
+							mixcloud_key: "/genres/experimental/",
+							mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
+						},
+						{
+							id: 2,
+							createdAt: new Date("2026-01-01T00:00:00.000Z"),
+							title: "Ambient",
+							color: "#654321",
+							reviewed: false,
+							mixcloud_key: null,
+							mixcloud_url: null,
+						},
+					],
+				};
+				return query;
+			},
+		} as never;
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, tagsDatabase));
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/admin/tags",
+		});
+
+		expect(response.statusCode).toBe(200);
+		expect(response.json()).toEqual([
+			{
+				id: 1,
+				title: "Experimental",
+				color: "#123456",
+				reviewed: true,
+				mixcloud_key: "/genres/experimental/",
+				mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
+			},
+			{
+				id: 2,
+				title: "Ambient",
+				color: "#654321",
+				reviewed: false,
+			},
+		]);
 
 		await app.close();
 	});
@@ -487,7 +548,22 @@ describe("admin route boundary", () => {
 				socials: " @dj-new ",
 				showTitle: " Late Night Session ",
 				showDescription: " A late-night broadcast ",
-				image: new File(["image bytes"], "dj.png", { type: "image/png" }),
+				image: new File(
+					[
+						await sharp({
+							create: {
+								width: 10,
+								height: 10,
+								channels: 3,
+								background: { r: 40, g: 50, b: 60 },
+							},
+						})
+							.webp()
+							.toBuffer(),
+					],
+					"dj.webp",
+					{ type: "image/webp" },
+				),
 			})),
 		});
 
@@ -496,7 +572,8 @@ describe("admin route boundary", () => {
 			id: 42,
 			title: "DJ New",
 			bio: "<p>First line<br />Second line</p>",
-			imagePath: "/api/admin/djs/42/image",
+			image_small: "/api/admin/djs/42/image/small",
+			image_large: "/api/admin/djs/42/image/large",
 			socials: "<p>@dj-new</p>",
 			showTitle: "Late Night Session",
 			showDescription: "A late-night broadcast",
@@ -576,6 +653,30 @@ describe("admin route boundary", () => {
 			title: "Dance",
 			color: "#ABC123",
 			reviewed: true,
+		});
+
+		await app.close();
+	});
+
+	test("creates a tag with optional Mixcloud metadata", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(adminRoutes(adminSession, createTagsDatabase));
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/create-tag",
+			payload: {
+				title: "Experimental",
+				mixcloud_key: "/genres/experimental/",
+				mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
+			},
+		});
+
+		expect(response.statusCode).toBe(201);
+		expect(response.json()).toMatchObject({
+			title: "Experimental",
+			mixcloud_key: "/genres/experimental/",
+			mixcloud_url: "https://www.mixcloud.com/genres/experimental/",
 		});
 
 		await app.close();

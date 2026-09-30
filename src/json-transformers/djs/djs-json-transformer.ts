@@ -21,7 +21,8 @@ import type { DJJSON, TransformDJsParams } from "./types.js";
  *     "id": 1,
  *     "title": "DJ One",
  *     "bio": "A resident DJ.",
- *     "imagePath": "/api/admin/djs/1/image",
+ *     "image_small": "/api/admin/djs/1/image/small",
+ *     "image_large": "/api/admin/djs/1/image/large",
  *     "shows": [10, 11],
  *     "tags": [20, 21]
  *   },
@@ -71,9 +72,12 @@ export const transformDJs = ({
 		createdAt: dj.createdAt,
 		title: dj.title,
 		bio: sanitizeArchiveHtml(dj.bio),
-		...(dj.image_filename == null
+		...(dj.image_small === null || dj.image_large === null
 			? {}
-			: { imagePath: `/api/admin/djs/${dj.id}/image` }),
+			: {
+					image_small: `/api/admin/djs/${dj.id}/image/small`,
+					image_large: `/api/admin/djs/${dj.id}/image/large`,
+				}),
 		...(dj.socials === null
 			? {}
 			: { socials: sanitizeArchiveHtml(dj.socials) }),

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
-	parseAccountCommand,
-	runAccountCommand,
-} from "../../src/auth/operator-command.js";
-import {
 	normalizeAccountEmail,
 	validateAccountPassword,
 } from "../../src/auth/index.js";
+import {
+	parseAccountCommand,
+	runAccountCommand,
+} from "../../src/auth/operator-command.js";
 
 describe("operator account commands", () => {
 	test("normalizes identity and rejects malformed or secret-bearing arguments", () => {

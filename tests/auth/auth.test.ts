@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { buildApp } from "../../src/app.js";
 import { Pool } from "pg";
+import { buildApp } from "../../src/app.js";
 import { createAuth } from "../../src/auth/index.js";
 
 const pool = new Pool({

@@ -8,7 +8,9 @@ describe("dummy DJ seed data", () => {
 			dummyDJs.every((dj) => dj.title.length > 0 && dj.bio.length > 0),
 		).toBe(true);
 		expect(
-			dummyDJs.every((dj) => dj.image === null && dj.image_filename === null),
+			dummyDJs.every(
+				(dj) => dj.image_small === null && dj.image_large === null,
+			),
 		).toBe(true);
 	});
 

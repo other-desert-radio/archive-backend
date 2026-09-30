@@ -1,0 +1,33 @@
+.imageField {
+	min-width: 0;
+}
+.imageActions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+.imageUploadActions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+.currentImage {
+	width: 7.5rem;
+	height: 7.5rem;
+	object-fit: cover;
+}
+.imageAction {
+	padding: 0;
+	border: 0;
+	color: inherit;
+	background: transparent;
+	font: inherit;
+	text-decoration: underline;
+}
+.imageError {
+	margin: 0.5rem 0 0;
+	font-size: var(--modal-helper-size);
+}
+.imageError {
+	color: #ff2c2c;
+}

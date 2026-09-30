@@ -1,5 +1,5 @@
-import { createAuth } from "./create-auth.js";
 import { pool } from "../db/db.js";
+import { createAuth } from "./create-auth.js";
 
 const authSecret = process.env.BETTER_AUTH_SECRET;
 const authUrl = process.env.BETTER_AUTH_URL;

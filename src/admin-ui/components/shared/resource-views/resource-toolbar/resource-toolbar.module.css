@@ -1,0 +1,71 @@
+.toolbar {
+	position: sticky;
+	top: var(--management-header-height);
+	z-index: 2;
+	display: flex;
+	gap: 1rem;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	padding-block: 0.75rem;
+	margin-bottom: 1.5rem;
+	border-bottom: 1px solid transparent;
+}
+.stuck {
+	padding-inline: 16px;
+	background: #efefef;
+	border-bottom-color: #000;
+}
+.toolbar input {
+	min-width: 0;
+	width: 18rem;
+	max-width: 400px;
+	flex: 1;
+	padding: 0.75rem;
+	border: 1px solid #000;
+	font: inherit;
+}
+.actions {
+	margin-left: auto;
+	display: flex;
+	gap: 8px;
+}
+.switcher {
+	margin: 0;
+	padding: 0;
+	border: none;
+	display: flex;
+}
+.switcher button,
+.add {
+	border-radius: 0;
+	background: transparent;
+}
+.switcher button {
+	width: 5rem;
+}
+.switcher button.selected {
+	font-weight: 700;
+	background: #fff;
+}
+.switcher button:focus {
+	outline: none;
+}
+.switcher button:focus-visible {
+	outline: 2px solid #000;
+	outline-offset: 2px;
+}
+.add {
+	font-weight: 700;
+	background: #fff;
+}
+
+@media (max-width: 450px) {
+	.stuck {
+		padding-inline: 12px;
+	}
+	.toolbar input {
+		flex: 1 0 100%;
+		width: 100%;
+		max-width: none;
+	}
+}

@@ -1,6 +1,10 @@
 import type { DJJSON } from "../../json-transformers/index.js";
 
-export type DJsAdminRow = Omit<DJJSON, "createdAt"> & { createdAt: string };
+export type DJsAdminRow = Omit<DJJSON, "createdAt"> & {
+	createdAt: string;
+	/** Direct DJ tag assignments; `tags` also includes tags inherited from shows. */
+	directTags?: number[];
+};
 
 export const loadDJs = async (
 	fetcher: typeof fetch = fetch,

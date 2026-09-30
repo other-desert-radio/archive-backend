@@ -29,29 +29,27 @@ roadmap; mutation CSRF protection and login rate limiting are part of this MVP.
 The following is established by code inspection, not a claim of fresh browser or
 production verification:
 
-- DJs, Shows, and Tags have list APIs and sortable tables. DJs and Shows also
-  have client-side search and working onboarding.
-- DJ creation stores multipart image uploads and metadata, direct DJ tags, and
-  missing tags transactionally. Show creation stores metadata, existing-DJ
-  assignments, and reused/new tags transactionally.
-- Tags has read-only UI; tag creation and validation APIs exist. Modification
-  and removal routes for DJs/Tags are placeholders, not working management
-  features.
-- All three pages use shared `ResourceView` and `ResourceTable` components.
-  DJs/Shows share toolbar, modal, and form primitives. `DatabaseTableView` is an
-  older component, not the current page composition.
-- Hash navigation supports `#shows` (default), `#djs`, and `#tags`. There is no
-  Upload sidebar item in the current shell.
-- Bio/socials HTML is sanitized. Rich editing, tag chips, and autocomplete are
-  not implemented; onboarding currently uses comma-separated tags.
-- DJ list tag IDs combine direct and inherited tags. Editing must distinguish
-  those sources to avoid persisting inherited tags as direct assignments.
-- Better Auth routes and session/role guards exist. Configured Basic Auth
-  credentials independently grant admin access; they are not a Better Auth
-  sign-in. Successful real-database credential login is not covered yet.
-- Migrations through `0014` exist. This inventory does not establish which are
+- DJs, Shows, and Tags have list APIs, sortable/searchable tables, creation and
+  editing controls. DJs/Shows also have persistent table/grid preferences.
+- Shared modal primitives include focus containment, dirty-draft dismissal,
+  pending-submit protection, tag chips/autocomplete, and retryable errors.
+- DJ edits distinguish direct tags from inherited tags. Images support crop,
+  rotation, replacement/removal, and paired 400px/1024px WebP storage.
+- Show edits replace metadata, DJ assignments, and tags transactionally.
+- Tag editing preserves identity/relationships and supports full metadata edits
+  and explicit true/false review updates. Tags creation and inline review work.
+  The unreviewed filter remains missing; normalized uniqueness is not enforced
+  by a database constraint.
+- Resource toolbars are sticky, sidebar navigation is responsive, and Space Mono
+  fonts and shared layout/modal tokens are established. Use ADMIN_UI_DESIGN.md.
+- Bio/socials HTML is sanitized; the formatting editor remains unimplemented.
+- Better Auth session/role guards exist; Basic Auth still independently grants
+  access. Account provisioning is the current chunk; browser login, CSRF, and
+  Basic Auth removal remain future checkpoints.
+- Migrations through `0017` exist. This does not establish which migrations are
   applied to any particular database; never apply them automatically at startup.
-- Local export includes DJ indexes/details/images, tags, and the show index.
+- Local export includes DJ indexes/details/WebP images, tags, and the show
+  index.
 
 The three Show implementation chunks are recorded as reviewed in
 [`SHOWS_IMPLEMENTATION_PLAN.md`](SHOWS_IMPLEMENTATION_PLAN.md). Earlier plans
@@ -175,67 +173,45 @@ Reference documentation:
 - [Better Auth Fastify integration](https://better-auth.com/docs/integrations/fastify)
 - [Tiptap React integration](https://tiptap.dev/docs/editor/getting-started/install/react)
 
-### Chunk status
+### Merge reconciliation — 2026-09-30
 
-| Chunk        | Implemented | Verified       | Reviewed |
-| ------------ | ----------- | -------------- | -------- |
-| 1 — baseline | Yes         | Yes            | Yes      |
-| 2 — accounts | Partial     | Typecheck only | No       |
-| 3–15         | No          | No             | No       |
+Main advanced by 15 commits since this branch diverged, through `b5fecc4`. The
+README conflict combined an old UI handoff with the newer resource behavior;
+retain main's implemented workflows and this branch's authentication plan. Main
+supplied tag chips, resource editing, image processing, integration tests, and
+the shared design/component guide. Do not reimplement these features.
 
-Chunk 1 was accepted when the user requested continuation to chunk 2.
+- Chunk 1: implemented, verified, and reviewed.
+- Chunk 2: implemented and verified below; pending review.
+- Chunks 3–5: authentication cutover remains unimplemented.
+- Chunk 6: tag picker supplied by main with existing coverage.
+- Chunk 7: Tags list/create supplied by main; unreviewed filter remains.
+- Chunk 8: normalized database title uniqueness remains unimplemented.
+- Chunks 9–10: Tag editing/review supplied by main with existing coverage.
+- Chunk 11: formatting editor remains unimplemented.
+- Chunks 12–15: DJ/Show editing supplied by main; final acceptance remains.
 
-### Paused handoff — 2026-09-25
+Main's implementation review occurred through its merged PRs. Existing coverage
+is not a claim of fresh browser verification on this branch.
 
-The user requested that work pause and the plan be saved. Resume chunk 2, not
-chunk 3. The complete approved sequence and acceptance requirements are above.
-The in-progress implementation remains in the working tree, including untracked
-files; do not discard it or mistake it for a finished authentication feature.
+Finish chunk 2 and stop for review. Then proceed with chunks 3, 4, and 5 in
+order. After authentication cutover, implement the remaining unreviewed filter,
+normalized uniqueness, and formatting editor as separate checkpoints, followed
+by final acceptance. Existing list responses already supply edit values and
+`directTags`; separate DJ/Show detail endpoints are unnecessary for these forms.
+Preserve the implemented request contracts (including Tag `edit_type`) and
+shared component organization. Remove deferred deletion placeholders in a
+separate resource cleanup checkpoint if still present.
 
-Implemented so far, pending full verification:
+### Account chunk handoff — 2026-09-30
 
-- `src/auth/create-auth.ts` provides an injectable Better Auth factory and
-  shared password-length limits. Runtime `auth.ts` now uses the factory.
-- `src/auth/operator-accounts.ts` provides transactional administrator creation
-  and password reset using Better Auth hashing. Creation normalizes email and
-  rejects duplicates; reset updates the credential and deletes existing
-  sessions.
-- `src/auth/operator-command.ts`, `password-prompt.ts`, and `manage-admin.ts`
-  provide argument validation, hidden terminal password confirmation, safe
-  operator messages, and database cleanup. The new barrel is
-  `src/auth/index.ts`.
-- `bunfig.toml` preloads `tests/setup.ts` to initialize harmless test settings
-  before imports. The configured auth test now constructs its own auth instance
-  and pool. New operator-command unit tests cover arguments, confirmation,
-  cancellation, and avoiding password logging.
-- Package commands were added for `auth:create-admin`, `auth:reset-password`,
-  and `test:auth:integration`.
-
-**Known unfinished wiring:** `test:auth:integration` currently points to
-`scripts/test-auth-integration`, which has not been created. The real-database
-integration tests and account-operations runbook have not been written either.
-
-Next actions within chunk 2:
-
-1. Review the partial implementation, including hidden input cleanup, account
-   validation, transaction rollback, and session revocation behavior.
-2. Add the disposable PostgreSQL harness and integration tests. Exercise actual
-   login through Fastify, cookie reuse on protected routes, logout, disabled
-   signup, duplicate provisioning, reset/new-password login, and invalidation of
-   old sessions. Cover persistence failures and rollback as well as success.
-3. Test the CLI's hidden terminal entry and failure behavior. Document account
-   creation/recovery, required configuration/migrations, and safe test cleanup.
-4. Run the full suite without a placeholder environment override to verify the
-   preload fix. Run the integration harness, formatting, typecheck, build, lint,
-   and diff checks. Record results and stop for chunk 2 review.
-
-Only `bun run typecheck` has passed for the partial chunk 2 changes. New tests,
-the full suite, formatting, lint, and terminal interaction have not yet been run
-on this implementation. The earlier 103-test baseline below applies to chunk 1,
-not these changes. Docker access was confirmed with elevated permission
-(`docker info`, server 20.10.23); no test container was started. No account was
-created or reset, and no database migration was applied. Browser login, Basic
-Auth removal, CSRF protection, and all later chunks remain unimplemented.
+The injectable auth factory, operator creation/reset commands, password prompts,
+and unit-test preload are retained. The missing `test:auth:integration` script
+now builds a disposable PostgreSQL test stack with Basic Auth disabled, applies
+migrations only there, and tests real Fastify login/cookie/logout/reset behavior
+and transaction rollback. See [account operations](ADMIN_ACCOUNTS.md) for setup,
+recovery, test isolation, and verification results. Browser login is a later
+chunk; this chunk changes no admin UI.
 
 ### Baseline verification — 2026-09-25
 
@@ -384,8 +360,17 @@ and the Tags UI remain read-only.
   now opens the reusable onboarding modal with all plain-text fields, Submit,
   and required title/bio validation.
 - DJs, Shows, and Tags use the shared resource view and sortable table
-  components. The DJ table scroll area keeps leading padding but extends to the
-  right edge of the view.
+  components. Tables with sticky Actions columns extend to both edges of the
+  view.
+- The DJ and Shows grid/table choices are retained independently in browser
+  local storage through the global `userPreferences` singleton.
+- The DJ, Shows, and Tags tables include a sticky, opaque left-side Actions
+  column. Their Edit buttons call page-provided callbacks, which are
+  intentionally inert until the edit workflow is implemented.
+- The table-only Tags view uses the shared search and create toolbar. It renders
+  read-only ID, title, color, reviewed, Mixcloud key, and Mixcloud URL columns.
+  Its search filters title and color, while its `+ tag` action is intentionally
+  inert until tag creation is implemented.
 - The modal shell, plain-text field/validation slice, and API submission are
   complete. The next UI slice is the reusable tags component.
 
@@ -399,18 +384,21 @@ The DJ onboarding slice has progressed beyond the earlier read-only handoff:
   Tags-module service. Automatically colored tags are unreviewed; explicit
   colors are reviewed. `tags.reviewed` is provided by migration `0012`.
 - The onboarding modal submits normalized plain-text fields, including optional
-  show title and show description metadata, calls
-  `POST /api/admin/validate-tags` when the tags field is left, and only shows
-  helper copy for tags missing from the database. Chips, autocomplete, and other
-  richer tag UI remain deferred.
+  show title and show description metadata. Show onboarding retains plain-text
+  tag validation on blur.
+- DJ onboarding now uses the reusable Figma-aligned tag combobox: existing tags
+  load for each modal session, matching tags appear in a compact dropdown, and
+  selected tags become stored-color chips. Prefix matches show gray inline
+  completion accepted with Tab; unknown tags use the white/red chip treatment
+  and explanatory helper text. The component does not create tags itself.
 - Each new onboarding session starts with an empty form, including the selected
   image and validation feedback.
 - `DJsPage` refreshes the table after a successful submission while preserving
   its search and sort state. The authenticated loader and focused frontend,
   route, service, persistence, and transformer tests are in place.
 
-The next work should be reviewed in small chunks. The reusable tags component
-and any later tag-management UI remain separate from this onboarding behavior.
+The next work should be reviewed in small chunks. Any later tag-management UI
+remains separate from this onboarding behavior.
 
 ### Next-agent checklist
 
@@ -418,9 +406,8 @@ Implement one item at a time and stop for review after each item:
 
 1. Review the completed DJ onboarding persistence and tag-creation behavior,
    including the migration verification and current API documentation.
-2. Add the reusable tags component for chips, matching, and richer interaction
-   only after that review. Keep it separate from the already-working plain
-   helper-copy behavior on tags blur.
+2. Review the reusable DJ tags component’s dropdown, chip, and inline-completion
+   behavior separately from any later tag-management UI.
 3. [x] Connect the Tags sidebar item to `#tags` and verify Shows, DJs, and Tags
        navigation without adding CRUD behavior.
 4. [x] Add the background asset and replace only the gray background in a
@@ -525,17 +512,18 @@ These decisions are recorded before application implementation begins.
     "id": 1,
     "title": "name",
     "bio": "safe html",
-    "imagePath": "/api/admin/djs/1/image",
+    "image_small": "/api/admin/djs/1/image/small",
+    "image_large": "/api/admin/djs/1/image/large",
     "shows": [1, 2],
     "tags": [3, 4]
   }
 ]
 ```
 
-`imagePath` is omitted when the database image is `NULL`. Show IDs come from
-`show_djs`. Tag IDs are the distinct union of direct `dj_tags` entries and tags
-assigned to the DJ's shows through `show_tags`. Database errors return
-`500 { "error": "Internal Server Error" }`.
+`image_small` and `image_large` are omitted when the database image pair is
+`NULL`. Show IDs come from `show_djs`. Tag IDs are the distinct union of direct
+`dj_tags` entries and tags assigned to the DJ's shows through `show_tags`.
+Database errors return `500 { "error": "Internal Server Error" }`.
 
 - [x] Serve the empty React/Vite shell at `/admin`.
 - [x] Render the read-only DJ list with loading, empty, and error states.

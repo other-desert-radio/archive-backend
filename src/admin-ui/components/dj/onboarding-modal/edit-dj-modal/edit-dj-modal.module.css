@@ -1,0 +1,26 @@
+.inheritedTags {
+	display: contents;
+}
+.inheritedTags > p {
+	margin: -1rem 0 0;
+}
+.inheritedTagsList {
+	grid-column: 2;
+	min-width: 0;
+	margin-top: -1rem;
+}
+
+@media (max-width: 450px) {
+	.inheritedTags {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.inheritedTags > p {
+		margin: 0;
+	}
+	.inheritedTagsList {
+		grid-column: auto;
+		margin-top: 0;
+	}
+}

@@ -1,0 +1,140 @@
+.overlay {
+	position: fixed;
+	top: 3.0625rem;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 4;
+	display: grid;
+	place-items: center;
+	background: rgb(0 0 0 / 60%);
+}
+.backdrop {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	cursor: default;
+}
+.panel {
+	position: relative;
+	width: min(864px, calc(100vw - 32px));
+	max-height: calc(100vh - 5rem);
+	min-width: 0;
+	padding: var(--modal-padding);
+	font-size: max(14px, 1rem);
+	line-height: 1.5;
+	overflow-y: auto;
+	background: #fff;
+}
+.panel:focus {
+	outline: none;
+}
+.header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+}
+.header h2 {
+	margin: 0;
+	font-size: 2rem;
+}
+.close {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+}
+.close svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.5;
+}
+.form {
+	display: grid;
+	grid-template-columns: 7rem minmax(0, 1fr);
+	gap: var(--modal-field-gap) 16px;
+	align-items: center;
+	margin-top: 28px;
+	padding: 0;
+	border: 0;
+}
+.submit {
+	display: block;
+	margin: 28px auto 0;
+	padding: 10px 28px;
+	min-height: var(--modal-control-height);
+	font: inherit;
+	border: 2px solid #000;
+	border-radius: 0;
+	color: #000;
+	background: #fff;
+	font-weight: 700;
+	transition:
+		transform 120ms ease,
+		box-shadow 120ms ease;
+}
+.cancel {
+	display: block;
+	margin: 10px auto 0;
+	padding: 0;
+	border: 0;
+	color: inherit;
+	background: transparent;
+	font: inherit;
+}
+.close:enabled:hover {
+	background: #efefef;
+}
+.close:enabled:hover svg {
+	stroke-width: 2.5;
+}
+.cancel:enabled:hover {
+	font-weight: 700;
+}
+.submit:enabled:hover {
+	transform: translate(-4px, -4px);
+	box-shadow: 4px 4px 0 #000;
+}
+@media (prefers-reduced-motion: reduce) {
+	.submit {
+		transition: none;
+	}
+}
+.error {
+	margin: 1.5rem 0 0;
+	padding: 0.75rem 1rem;
+	border: 1px solid currentColor;
+	color: #ff2c2c;
+	font-size: var(--modal-helper-size);
+	line-height: 1.5;
+	white-space: pre-line;
+	text-align: center;
+}
+@media (max-width: 450px) {
+	.form {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.panel {
+		width: 100%;
+		max-height: calc(100vh - 3.0625rem);
+		padding: var(--modal-padding);
+	}
+}
+
+.actionHelper {
+	margin: 28px 0 0;
+	text-align: center;
+	font-size: var(--modal-helper-size);
+	color: #555;
+}
+.actionHelper + .submit {
+	margin-top: 10px;
+}

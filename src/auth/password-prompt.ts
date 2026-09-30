@@ -11,13 +11,13 @@ export const promptPassword = (label: string): Promise<string> => {
 		);
 	return new Promise((resolve, reject) => {
 		const wasRaw = input.isRaw;
-		const wasPaused = input.isPaused();
+		const wasFlowing = input.readableFlowing === true;
 		let password = "";
 		const cleanup = () => {
 			input.off("keypress", onKey);
 			input.off("error", onError);
 			input.setRawMode(wasRaw);
-			if (wasPaused) input.pause();
+			if (!wasFlowing) input.pause();
 			output.write("\n");
 		};
 		const onError = () => {
@@ -42,7 +42,10 @@ export const promptPassword = (label: string): Promise<string> => {
 				!key.ctrl &&
 				!key.meta &&
 				text &&
-				!/[\x00-\x1f\x7f]/.test(text)
+				Array.from(text).every((character) => {
+					const code = character.codePointAt(0) ?? 0;
+					return code >= 32 && code !== 127;
+				})
 			) {
 				password += text;
 			}

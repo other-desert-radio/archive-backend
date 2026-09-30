@@ -1,0 +1,57 @@
+.cell {
+	margin-inline: auto;
+	width: calc(9ch + 72px);
+	min-width: calc(9ch + 72px);
+}
+.value,
+.controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+.edit,
+.icon {
+	border: 1px solid #000;
+	border-radius: 0;
+	background: #fff;
+	font: inherit;
+}
+.edit {
+	padding: 0.25rem 0.5rem;
+}
+.icon {
+	display: grid;
+	place-items: center;
+	width: 28px;
+	flex: 0 0 28px;
+	height: 28px;
+	padding: 4px;
+}
+.icon svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+}
+.edit:not(.reviewed):enabled:hover,
+.icon:enabled:hover {
+	background: #efefef;
+}
+.error {
+	margin: 8px 0 0;
+	color: #b00020;
+	font-size: 12px;
+	line-height: 1.5;
+	text-align: center;
+	white-space: pre-line;
+	overflow-wrap: anywhere;
+}
+
+.controls > span {
+	white-space: nowrap;
+}
+
+.reviewed {
+	border-style: dashed;
+	background: transparent;
+}

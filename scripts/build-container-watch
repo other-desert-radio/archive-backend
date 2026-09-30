@@ -6,6 +6,8 @@ if [[ ! -f .env ]]; then
 	exit 1
 fi
 
+mkdir -p dist/admin
+
 docker compose -f compose.yml -f compose.watch.yml up --build -d
 docker compose -f compose.yml -f compose.watch.yml ps
 ./node_modules/.bin/vite build --watch
