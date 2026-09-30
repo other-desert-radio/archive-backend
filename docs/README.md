@@ -117,8 +117,10 @@ its admin-only `createdAt` timestamp; `POST /api/admin/create-show` validates
 and atomically persists Shows, existing-DJ links, and reused or newly created
 tags. `POST /api/admin/modify-show` shares creation validation and persistence,
 replacing Show metadata and relationships atomically while preserving identity
-and creation timestamp. Show editing controls remain placeholders until the next
-UI chunk. Public archive response contracts remain unchanged.
+and creation timestamp. Both Shows table and grid Edit controls open a prefilled
+editor that shares creation fields and modal behavior. Saving updates metadata,
+linked DJs, and tags; an unresolved existing tag blocks saving until retry
+succeeds. Public archive response contracts remain unchanged.
 
 For detailed runtime state, migration status, verification results, and known
 test gaps, see the
@@ -137,9 +139,9 @@ archive dataset, use the
 - `bun run test` builds the admin bundle and runs the Bun suite in `tests/`.
   Playwright files in `integration-tests/` run through the separate integration
   runner.
-- `./scripts/run-integration-tests` builds and runs the DJ browser editing suite
-  in a disposable Docker Compose stack. It uses its own Postgres volume and API;
-  the test data and containers are removed when the command finishes.
+- `./scripts/run-integration-tests` builds and runs the DJ and Show editing
+  suites in a disposable Docker Compose stack. It uses its own Postgres volume
+  and API; the test data and containers are removed when the command finishes.
   `bun run test:integration` is an equivalent package-script shortcut.
 - `bun run auth:generate` regenerates the review-only Better Auth schema.
 - `bun run db:migrate` applies one pending migration.

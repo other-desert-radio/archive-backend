@@ -170,5 +170,11 @@ through API fixtures. Coverage verifies metadata replacement, image/tag
 clearing, case-insensitive tag reuse, new tags, DJ-link replacement and its
 inverse DJ response, preservation of identity and creation timestamp, invalid
 requests, and unknown Shows. Persisted state is reloaded through the API after
-mutations and rejections. These are API integration tests; Show browser editing
-coverage belongs to the subsequent UI chunk.
+mutations and rejections. `integration-tests/edit-show.spec.ts` additionally
+exercises table/grid entry points, every editable field, reload/reopening,
+DJ-link replacement, existing and focused-draft tags, image URL
+clearing/addition, required-field validation, discard paths and reversion,
+retained values after failure, submission protection, unresolved-tag retry, and
+390px/320px layouts. Tests use a Los Angeles timezone to verify UTC calendar
+date prefilling. The existing modal suite continues to cover Show creation after
+shared-field extraction.

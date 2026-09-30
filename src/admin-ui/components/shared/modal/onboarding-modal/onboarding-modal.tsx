@@ -106,6 +106,7 @@ export const OnboardingModal = ({
 					className={styles.backdrop}
 					tabIndex={-1}
 					aria-label="Cancel form"
+					data-modal-dismiss
 					disabled={isSubmitting || isCovered || isConfirming}
 					onClick={dismiss}
 				/>
@@ -125,6 +126,7 @@ export const OnboardingModal = ({
 							type="button"
 							className={styles.close}
 							aria-label="Close"
+							data-modal-dismiss
 							onClick={dismiss}
 							disabled={isSubmitting || isCovered}
 						>
@@ -160,6 +162,7 @@ export const OnboardingModal = ({
 						<button
 							type="button"
 							className={styles.cancel}
+							data-modal-dismiss
 							onClick={dismiss}
 							disabled={isSubmitting || isCovered}
 						>

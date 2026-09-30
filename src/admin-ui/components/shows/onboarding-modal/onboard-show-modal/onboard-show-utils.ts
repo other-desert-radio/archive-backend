@@ -1,15 +1,8 @@
 import { isMatching, P } from "ts-pattern";
-import { splitCommaSeparated } from "../../../../utils/index.js";
+import type { CreateShowRequest } from "../../../../../admin/routes/shows/index.js";
+import { splitCommaSeparated } from "../../../../../utils/index.js";
 
-export type CreateShowForm = {
-	title: string;
-	date: string;
-	duration: number;
-	url: string;
-	djs: number[];
-	image?: string;
-	tags?: string[];
-};
+export type CreateShowForm = CreateShowRequest;
 
 export const buildCreateShowRequest = (fields: {
 	title: string;

@@ -105,6 +105,23 @@ Keep request builders in private resource utilities and leave wire contracts in
 the existing loaders/shared API types. The public `OnboardingModal` name remains
 in use even for editing.
 
+### Show create/edit reuse
+
+Show onboarding and editing share `ShowFormModal`, including fields, opening
+values, validation, tag loading, DJ selection, and unsaved-change comparison.
+Small resource wrappers supply empty or existing values and the mutation
+callback. Edit controls in both table and grid open the same form. Dates prefill
+from the UTC calendar portion of the stored timestamp; duration stays in integer
+seconds. All creation fields are editable, and clearing the image URL removes
+the image.
+
+Assigned tag titles come from the loaded resource data. If an assigned tag is
+unresolved, saving stays disabled until tag loading or Retry resolves it. Late
+resolution appends only those opening tags to the selection and baseline without
+resetting metadata edits or drafts. Failed saves retain values; successful saves
+close directly and refresh Shows, DJs, and tags. Existing Show creation IDs
+remain stable, while edit controls use the `edit-show` prefix.
+
 ### Message modal contract
 
 Supply `title`, `message`, `primaryAction`, and `onDismiss`. Each action
@@ -142,9 +159,9 @@ text and gray completion flow together on one baseline, synchronized with input
 scrolling. Do not position completion with character-count offsets or different
 text metrics. Preserve keyboard acceptance and chip removal behavior. Commit
 drafts before chip-removal clicks so stale blur callbacks cannot restore removed
-tags. When focus moves to Submit/Save, leave the draft in place until
-submission; request builders include it, and converting it into chips could move
-the button during the click.
+tags. When focus moves to Submit/Save or a modal dismissal action, leave the
+draft in place; request builders and dirty-state checks include it, and
+converting it into chips could move the button during the click.
 
 Show duration is one required positive-integer seconds input (`min=1`, `step=1`,
 maximum 2,147,483,647). Send seconds directly through the existing API contract.
@@ -161,9 +178,8 @@ message modal's primary action. Propose the concrete styling before implementing
 it; keep it consistent with the bordered form actions and choose initial focus
 according to the safest action for that message.
 
-Show editing and Tag create/edit were outside this work and are not implemented.
-When those workflows are authorized, reuse these primitives rather than copying
-DJ markup. Do not infer permission to add them from this guide.
+Tag create/edit remains unimplemented. Reuse these primitives when that workflow
+is authorized.
 
 ## Verification and delivery
 

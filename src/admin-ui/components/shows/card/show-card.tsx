@@ -6,8 +6,6 @@ import styles from "./show-card.module.css";
 type ShowCardTag = Pick<TagsAdminRow, "color" | "title">;
 type ShowCardDJ = { title: string };
 
-const editShow = () => undefined;
-
 const showImage = (show: Pick<ShowsAdminRow, "image" | "title">) =>
 	show.image === undefined ? (
 		<div className={styles.imagePlaceholder}>No image</div>
@@ -59,6 +57,7 @@ export const renderShowCard = (
 	tagsById: ReadonlyMap<number, ShowCardTag> = new Map(),
 	djsById: ReadonlyMap<number, ShowCardDJ> = new Map(),
 	key: string | number = show.id,
+	onEdit?: (show: ShowsAdminRow) => void,
 ) => {
 	return (
 		<article className={styles.card} key={key}>
@@ -69,7 +68,7 @@ export const renderShowCard = (
 			<button
 				type="button"
 				className={styles.edit}
-				onClick={editShow}
+				onClick={() => onEdit?.(show)}
 				aria-label={`Edit ${show.title}`}
 			>
 				Edit
