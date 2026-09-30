@@ -125,7 +125,7 @@ The expected output is no container name and `000` for the stopped temporary
 API. Never run `docker compose down -v` as part of this workflow: it can remove
 the persistent local archive volume.
 
-## Automated DJ editing coverage
+## Automated editing coverage
 
 From the repository root, run the integration runner script:
 
@@ -161,3 +161,20 @@ setup; onboarding UI coverage is outside this suite.
 Tag drafts commit synchronously on blur, so subsequent chip removal cannot be
 overwritten by a delayed commit using an older selection. The integration suite
 checks that removing all remaining direct tags persists an empty assignment.
+
+### Show update API coverage
+
+`integration-tests/modify-show-api.spec.ts` runs against the same disposable
+PostgreSQL/API stack. Each test creates its own Show and prerequisite DJs
+through API fixtures. Coverage verifies metadata replacement, image/tag
+clearing, case-insensitive tag reuse, new tags, DJ-link replacement and its
+inverse DJ response, preservation of identity and creation timestamp, invalid
+requests, and unknown Shows. Persisted state is reloaded through the API after
+mutations and rejections. `integration-tests/edit-show.spec.ts` additionally
+exercises table/grid entry points, every editable field, reload/reopening,
+DJ-link replacement, existing and focused-draft tags, image URL
+clearing/addition, required-field validation, discard paths and reversion,
+retained values after failure, submission protection, unresolved-tag retry, and
+390px/320px layouts. Tests use a Los Angeles timezone to verify UTC calendar
+date prefilling. The existing modal suite continues to cover Show creation after
+shared-field extraction.

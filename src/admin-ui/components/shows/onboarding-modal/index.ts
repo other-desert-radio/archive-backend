@@ -1,2 +1,2 @@
-export * from "./onboard-show-modal.js";
-export * from "./onboard-show-utils.js";
+export * from "./edit-show-modal/index.js";
+export * from "./onboard-show-modal/index.js";

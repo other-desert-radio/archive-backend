@@ -123,6 +123,7 @@ The current authenticated mutation routes are:
 ```text
 POST /api/admin/create-dj
 POST /api/admin/create-show
+POST /api/admin/modify-show
 POST /api/admin/create-tag
 POST /api/admin/create-tags
 ```
@@ -145,6 +146,17 @@ calendar dates and URLs, deduplicates DJ IDs and tag titles, and stores the date
 at midnight UTC. It creates the Show, relationships, and any missing unreviewed
 tags in one transaction, returning `201` with the same admin Show shape as the
 list response.
+
+`POST /api/admin/modify-show` accepts the same JSON fields as Show creation plus
+required positive safe-integer `id`. Creation and editing share validation and
+transactional persistence. Editing replaces all editable metadata, DJ links, and
+Show tags while retaining `id` and `createdAt`. Omitted or blank `image` clears
+the stored URL; omitted or empty `tags` clears Show tag assignments. At least
+one existing DJ remains required. Unlinked DJs and tags are preserved; missing
+tag titles are created through the shared tag service. Success returns `200`
+with the admin Show shape; an unknown Show returns
+`404 { "error": "Not Found" }`. Invalid fields or missing selected DJs return
+`400`, and unexpected failures roll back all writes and return `500`.
 
 Tag creation accepts `{ title: string }`, optionally with `color`,
 `mixcloud_key`, and `mixcloud_url`, for `create-tag`, and an array of those

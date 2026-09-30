@@ -5,6 +5,7 @@ import {
 	ResourceView,
 } from "../components/shared/resource-views/index.js";
 import {
+	EditShowModal,
 	filterShows,
 	OnboardShowModal,
 	renderShowCard,
@@ -16,11 +17,10 @@ import {
 } from "../components/shows/index.js";
 import { createShow } from "../loaders/create-show.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
+import { modifyShow } from "../loaders/modify-show.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 import { userPreferences } from "../user-preferences.js";
-
-const handleEditShow = (_show: ShowsAdminRow) => undefined;
 
 export const ShowsPage = () => {
 	const [shows, setShows] = useState<ShowsAdminRow[]>([]);
@@ -37,6 +37,7 @@ export const ShowsPage = () => {
 	const [isDJsLoading, setIsDJsLoading] = useState(false);
 	const [djsError, setDJsError] = useState<string>();
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [editingShow, setEditingShow] = useState<ShowsAdminRow>();
 	const loadVersion = useRef(0);
 
 	const refreshShows = useCallback(() => {
@@ -112,6 +113,13 @@ export const ShowsPage = () => {
 		await createShow(request);
 		refreshShows();
 	};
+	const handleEditShow = (show: ShowsAdminRow) => setEditingShow(show);
+	const handleModifyShow = async (
+		request: Parameters<typeof modifyShow>[0],
+	) => {
+		await modifyShow(request);
+		refreshShows();
+	};
 	const handleViewModeChange = (mode: ResourceViewMode) => {
 		userPreferences.setResourceViewMode("shows", mode);
 		setViewMode(mode);
@@ -146,7 +154,7 @@ export const ShowsPage = () => {
 									rows={visibleShows}
 									rowKey={(show) => show.id}
 									renderCard={(show, key) =>
-										renderShowCard(show, tagsById, djsById, key)
+										renderShowCard(show, tagsById, djsById, key, handleEditShow)
 									}
 								/>
 							);
@@ -172,6 +180,19 @@ export const ShowsPage = () => {
 				onClose={() => setIsModalOpen(false)}
 				onSubmit={handleCreateShow}
 			/>
+			{editingShow !== undefined && (
+				<EditShowModal
+					key={editingShow.id}
+					show={editingShow}
+					tags={tags}
+					djs={djs}
+					isDJsLoading={isDJsLoading}
+					{...(djsError === undefined ? {} : { djsError })}
+					onRetryDJs={refreshDJs}
+					onClose={() => setEditingShow(undefined)}
+					onSubmit={handleModifyShow}
+				/>
+			)}
 		</>
 	);
 };

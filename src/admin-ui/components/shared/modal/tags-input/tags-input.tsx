@@ -140,10 +140,11 @@ export const TagsInput = ({
 	// restore the pre-click selection. Options prevent blur on mouse down.
 	const commitOnBlur = (event: FocusEvent<HTMLInputElement>) => {
 		setIsFocused(false);
-		// Submission includes the draft. Avoid moving Submit between pointer down/up.
+		// Keep action buttons still between pointer down/up; drafts already count as changes.
 		if (
 			event.relatedTarget instanceof HTMLButtonElement &&
-			event.relatedTarget.type === "submit"
+			(event.relatedTarget.type === "submit" ||
+				event.relatedTarget.hasAttribute("data-modal-dismiss"))
 		)
 			return;
 		commit();
