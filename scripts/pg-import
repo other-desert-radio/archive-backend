@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 2 || "$2" != "--confirm" ]]; then
+	echo "Usage: scripts/pg-import INPUT.dump --confirm" >&2
+	echo "Restore replaces matching database objects and their data." >&2
+	exit 1
+fi
+
+# Open before changing directory so caller-relative paths work.
+exec 3< "$1"
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+docker compose exec -T postgres sh -c 'exec pg_restore --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --clean --if-exists --no-owner --no-acl --single-transaction --exit-on-error' <&3
+echo "Database restored."
