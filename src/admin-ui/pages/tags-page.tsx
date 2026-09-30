@@ -7,17 +7,18 @@ import {
 import {
 	EditTagModal,
 	filterTags,
+	OnboardTagModal,
 	type TagSortColumn,
 	TagsTable,
 	TagsToolbar,
 	tagColumns,
 } from "../components/tags/index.js";
+import { createTag } from "../loaders/create-tag.js";
 import { modifyTag } from "../loaders/modify-tag.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 
-const handleAddTag = () => undefined;
-
 export const TagsPage = () => {
+	const [isOnboarding, setIsOnboarding] = useState(false);
 	const [editingTag, setEditingTag] = useState<TagsAdminRow>();
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
@@ -74,7 +75,7 @@ export const TagsPage = () => {
 					<TagsToolbar
 						query={query}
 						onQueryChange={setQuery}
-						onAddTag={handleAddTag}
+						onAddTag={() => setIsOnboarding(true)}
 					/>
 				}
 			>
@@ -86,6 +87,16 @@ export const TagsPage = () => {
 					onEdit={setEditingTag}
 				/>
 			</ResourceView>
+			{isOnboarding && (
+				<OnboardTagModal
+					onClose={() => setIsOnboarding(false)}
+					onSubmit={async (request) => {
+						await createTag(request);
+						setQuery("");
+						refreshTags();
+					}}
+				/>
+			)}
 			{editingTag !== undefined && (
 				<EditTagModal
 					key={editingTag.id}

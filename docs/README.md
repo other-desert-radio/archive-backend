@@ -72,7 +72,10 @@ normalized titles are rejected. Tag IDs use the same positive safe-integer
 validation as Show editing. The Tags table Edit action opens a prefilled
 shared-modal editor with hex input, a native color picker, and a live inline
 chip. Saving marks reviewed and reloads Tags; failed saves retain values.
-Creation, merging, deletion, and grid views remain outside this workflow.
+The “+ tag” action now opens onboarding with the same validated fields and color
+preview. New tags are reviewed; existing titles reuse the current tag. Successful
+creation refreshes Tags and clears search. Merging, deletion, and grid views
+remain outside this workflow.
 
 For UI implementation and review, read the
 [admin UI design and reuse guide](ADMIN_UI_DESIGN.md). It documents the reviewed
