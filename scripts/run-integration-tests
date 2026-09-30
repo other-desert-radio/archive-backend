@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
 
+if [[ $# -gt 1 || ( $# -eq 1 && "$1" != "--auth-only" ) ]]; then
+	echo 'Usage: scripts/run-integration-tests [--auth-only]' >&2
+	exit 2
+fi
 compose=(docker compose --project-name archive-backend-integration -f compose.integration.yml)
 cleanup() {
 	"${compose[@]}" down --volumes --remove-orphans
 }
 trap cleanup EXIT
 
-"${compose[@]}" up --build --wait api
-"${compose[@]}" run --rm --build test
-exit $?
+# Run direct database tests before browser/API tests: rollback fixtures install
+# temporary auth-table triggers and must not overlap other authentication work.
+"${compose[@]}" run --rm --build auth-test
+if [[ "${1:-}" != "--auth-only" ]]; then
+	"${compose[@]}" up --build --wait api
+	"${compose[@]}" run --rm --build test
+fi

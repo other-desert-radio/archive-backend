@@ -48,14 +48,16 @@ For commands run locally, the backend constructs the connection URL from those
 same `POSTGRES_*` variables and defaults the host to `localhost`. A supplied
 `DATABASE_URL` takes precedence. The `.env` file is ignored by Git.
 
-The production admin routes require an authenticated Better Auth session.
-Requests to `/admin` and `/api/admin/*` are rejected with `401 Unauthorized`
-when no session is present and `403 Forbidden` when the authenticated user does
-not have the `admin` role. Until the admin login page is added, an HTTP Basic
-Auth challenge provides the browser's native username/password dialog. Configure
-it with `ADMIN_BASIC_USERNAME` and `ADMIN_BASIC_PASSWORD`; the example local
-values are `admin` / `admin` and must be changed outside local development. The
-application factory requires Better Auth.
+The admin routes currently accept either an authenticated Better Auth admin
+session or configured temporary HTTP Basic Auth credentials. Basic Auth grants
+access independently; it does not establish a Better Auth session. Without valid
+Basic credentials, requests to `/admin` and `/api/admin/*` return `401` when no
+session is present and `403` when the session user lacks the `admin` role. Until
+browser login replaces Basic Auth, a challenge provides the browser's native
+username/password dialog. Configure it with `ADMIN_BASIC_USERNAME` and
+`ADMIN_BASIC_PASSWORD`; the example local values are `admin` / `admin` and must
+be changed outside local development. The application factory requires Better
+Auth.
 
 The Better Auth configuration also requires `BETTER_AUTH_SECRET` and
 `BETTER_AUTH_URL`. The secret must be generated and stored outside Git. The
@@ -119,17 +121,17 @@ WebP variants; the submitted crop is not retained.
 The DJs and Shows toolbars support table and grid views. DJ cards render their
 available image, title, and colored tags; Show cards also render linked DJ
 names. Both include clear image/relationship fallbacks and a square, bordered
-placeholder Edit control for the future edit workflow.
+Edit control opening the resource editor.
 
 Phases 0–4 of the admin plan are implemented. `/api/admin` still returns a
-boundary status object and `/admin` serves the authenticated empty React/Vite
-shell. The production container builds the shell into `dist/admin`; a missing
-bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array with
-`id`, `createdAt`, `title`, `bio`, optional `image_small` and `image_large`,
-`socials`, `showTitle`, and `showDescription`, `shows`, and `tags`; its
-relationship IDs are derived from the relationship tables. The admin-only
-`directTags` array identifies the directly assigned subset of the combined
-`tags` list, whose other entries may be inherited through linked shows.
+boundary status object and `/admin` serves the authenticated React/Vite
+application. The production container builds the shell into `dist/admin`; a
+missing bundle returns `503`. `GET /api/admin/djs` returns a top-level DJ array
+with `id`, `createdAt`, `title`, `bio`, optional `image_small` and
+`image_large`, `socials`, `showTitle`, and `showDescription`, `shows`, and
+`tags`; its relationship IDs are derived from the relationship tables. The
+admin-only `directTags` array identifies the directly assigned subset of the
+combined `tags` list, whose other entries may be inherited through linked shows.
 `POST /api/admin/create-dj` creates DJs transactionally and sanitizes
 bio/socials HTML. `POST /api/admin/modify-dj` transactionally replaces a DJ's
 editable metadata and direct tags, and can preserve, replace, or remove the
@@ -147,9 +149,15 @@ editor that shares creation fields and modal behavior. Saving updates metadata,
 linked DJs, and tags; an unresolved existing tag blocks saving until retry
 succeeds. Public archive response contracts remain unchanged.
 
-For detailed runtime state, migration status, verification results, and known
-test gaps, see the
-[admin plan handoff](ADMIN_UI_PLAN.md#handoff-for-the-next-agent).
+The approved next milestone adds browser login, operator account provisioning
+and recovery (no email infrastructure), reusable tag/formatting controls, and
+resource editing. Basic Auth removal follows verified browser login. Deletion,
+audio publishing, GitHub publication, and deployment remain deferred. Follow the
+[active admin MVP plan](ADMIN_UI_PLAN.md#active-mvp-plan--2026-09-25), one
+reviewed chunk at a time. Account provisioning and recovery commands and
+isolated real-database login coverage are documented in
+[account operations](ADMIN_ACCOUNTS.md). Browser authentication and mutation
+protection remain the next review checkpoints.
 
 For real-database feature verification that must not alter the normal local
 archive dataset, use the
@@ -164,10 +172,11 @@ archive dataset, use the
 - `bun run test` builds the admin bundle and runs the Bun suite in `tests/`.
   Playwright files in `integration-tests/` run through the separate integration
   runner.
-- `./scripts/run-integration-tests` builds and runs the DJ and Show editing
-  suites in a disposable Docker Compose stack. It uses its own Postgres volume
-  and API; the test data and containers are removed when the command finishes.
-  `bun run test:integration` is an equivalent package-script shortcut.
+- `./scripts/run-integration-tests` builds and runs the Bun auth tests followed
+  by Playwright resource API/browser suites in a disposable Docker Compose
+  stack. It uses its own Postgres volume and API; the test data and containers
+  are removed when the command finishes. `bun run test:integration` is an
+  equivalent package-script shortcut.
 - `bun run auth:generate` regenerates the review-only Better Auth schema.
 - `bun run db:migrate` applies one pending migration.
 - `bun run db:migrate:all` applies all pending migrations.
@@ -187,6 +196,12 @@ archive dataset, use the
 - `bun run typecheck` runs TypeScript validation.
 - `bun run lint` runs Biome and Markdown checks.
 - `bun run setup-hooks` configures the tracked Git pre-commit hook.
+
+In a checkout without database environment configuration, the current test
+imports require a placeholder `DATABASE_URL` before the process starts. See the
+[baseline verification](ADMIN_UI_PLAN.md#baseline-verification--2026-09-25) for
+the reproducible command and the planned test-setup fix. This does not replace
+isolated real-database verification.
 
 - `scripts/build-container` rebuilds and starts the Docker Compose stack in the
   background.

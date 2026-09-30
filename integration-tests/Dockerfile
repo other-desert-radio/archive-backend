@@ -7,6 +7,8 @@ RUN npm install --global bun@1.4.2
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
+COPY src ./src
 COPY integration-tests ./integration-tests
+COPY playwright.config.ts ./playwright.config.ts
 
 CMD ["sh", "-c", "bunx playwright test integration-tests"]

@@ -41,3 +41,17 @@ services:
     depends_on:
       api:
         condition: service_started
+
+  auth-test:
+    build:
+      context: .
+      dockerfile: integration-tests/Dockerfile
+    environment:
+      DATABASE_URL: postgres://integration:integration@postgres:5432/archive_integration
+      AUTH_INTEGRATION_DATABASE_URL: postgres://integration:integration@postgres:5432/archive_integration
+      ADMIN_BASIC_USERNAME: ""
+      ADMIN_BASIC_PASSWORD: ""
+    command: ["bun", "test", "./integration-tests/auth"]
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
