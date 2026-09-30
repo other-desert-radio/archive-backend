@@ -1,15 +1,15 @@
 .layout {
 	min-height: 100vh;
-	padding-top: 3.0625rem;
+	padding-top: var(--management-header-height);
 }
 .header {
 	position: fixed;
 	top: 0;
 	left: 0;
-	z-index: 2;
+	z-index: 3;
 	display: grid;
 	width: 100%;
-	height: 3.0625rem;
+	height: var(--management-header-height);
 	place-items: center;
 	color: #fff;
 	background: #000;
@@ -18,7 +18,7 @@
 }
 .sidebar {
 	position: fixed;
-	top: 3.0625rem;
+	top: var(--management-header-height);
 	bottom: 0;
 	left: 0;
 	width: 10.75rem;
@@ -46,7 +46,7 @@
 	font-weight: 700;
 }
 .content {
-	min-height: calc(100vh - 3.0625rem);
+	min-height: calc(100vh - var(--management-header-height));
 	margin-left: 10.75rem;
 	padding: 2rem clamp(1.25rem, 10vw, 16rem) 2rem clamp(3rem, 16vw, 22rem);
 }

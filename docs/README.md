@@ -65,6 +65,10 @@ session and sign-out coverage is included in the authentication tests.
 
 ## Handoff
 
+DJs, Shows, and Tags share a sticky resource toolbar below the management
+header. Search, view switches, and create actions remain visible while tables
+and grids scroll underneath, including at phone widths.
+
 The existing `modify-tag` endpoint additionally supports review-only
 `{ edit_type: "review", id, reviewed: boolean }` updates. These preserve
 metadata and relationships; `edit_type: "full_edit"` metadata saves continue to
