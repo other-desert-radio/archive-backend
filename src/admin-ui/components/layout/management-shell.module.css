@@ -1,4 +1,10 @@
 .layout {
+	--management-sidebar-gap: 2rem;
+	--management-sidebar-top: calc(
+		var(--management-header-height) +
+		var(--management-sidebar-gap)
+	);
+	--management-sidebar-width: 10.75rem;
 	min-height: 100vh;
 	padding-top: var(--management-header-height);
 }
@@ -18,46 +24,90 @@
 }
 .sidebar {
 	position: fixed;
-	top: var(--management-header-height);
-	bottom: 0;
-	left: 0;
-	width: 10.75rem;
-	padding: 3.75rem 1.25rem;
+	top: var(--management-sidebar-top);
+	left: var(--management-sidebar-gap);
+	z-index: 1;
+	width: var(--management-sidebar-width);
+	padding: 1.25rem;
 	color: #fff;
+	isolation: isolate;
+}
+.sidebar::before {
+	position: absolute;
+	z-index: -1;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
 	background: #000;
+	content: "";
+	transition:
+		top 180ms ease,
+		height 180ms ease,
+		left 180ms ease,
+		width 180ms ease;
+}
+.sidebar:hover::before,
+.sidebar:has(a:focus-visible)::before {
+	top: calc(-1 * var(--management-sidebar-top));
+	height: 100vh;
+	left: calc(-1 * var(--management-sidebar-gap));
+	width: calc(100% + var(--management-sidebar-gap));
 }
 .sidebar p {
-	margin: 0 0 1.25rem;
+	margin: 0 0 1rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 2px solid #fff;
 }
 .sidebar p + p {
 	margin-top: 2.5rem;
 }
 .sidebar ul {
 	display: grid;
-	gap: 1.25rem;
+	gap: 0.5rem;
 	margin: 0;
-	padding: 0;
+	padding: 0 0 0 0.5rem;
 	list-style: none;
 }
 .sidebar a {
+	display: block;
+	padding-block: 0.25rem;
+	font-size: 1.0625rem;
+	line-height: 1.5;
 	text-decoration: none;
 }
+.sidebar a:hover,
+.sidebar a:focus-visible,
 .active {
 	font-weight: 700;
 }
 .content {
 	min-height: calc(100vh - var(--management-header-height));
-	margin-left: 10.75rem;
+	margin-left: var(--management-sidebar-width);
 	padding: 2rem clamp(1.25rem, 10vw, 16rem) 2rem clamp(3rem, 16vw, 22rem);
 }
 @media (max-width: 42rem) {
 	.sidebar {
-		position: static;
+		position: relative;
+		top: auto;
+		left: auto;
 		width: 100%;
 		padding: 1.25rem;
+	}
+	.sidebar:hover::before,
+	.sidebar:has(a:focus-visible)::before {
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
 	}
 	.content {
 		margin-left: 0;
 		padding: 2rem 1.25rem;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.sidebar::before {
+		transition: none;
 	}
 }

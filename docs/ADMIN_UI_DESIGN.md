@@ -64,6 +64,24 @@ reachable.
 
 ## Reusable components and ownership
 
+### Floating navigation
+
+On desktop, the black sidebar rests at `left: 2rem`, a top offset of the shared
+header height plus `2rem`, with a `10.75rem` width and `1.25rem` padding on
+every side. Its height follows the navigation content, keeping top and bottom
+padding equal. Shell variables share the sidebar gap, top offset, and width
+between resting, expanded, and content styles; the top offset derives from
+`--management-header-height`. Hover or keyboard focus expands its background to
+the left edge and full viewport height behind the header over 250ms. Navigation
+text stays fixed throughout expansion and collapse. Mouse exit collapses the
+pane even after clicking a link. Reduced-motion preferences disable the
+transition. At widths of 42rem or less, navigation remains a compact full-width
+block above the resource content. Links use `⤷` markers, `1.0625rem` text with a
+1.5 line height, `0.25rem` vertical padding, `0.5rem` gaps, and a `0.5rem` left
+indent. The DATABASE label has a 2px solid white bottom border, `0.5rem` padding
+below its text, and a `1rem` gap below it. Active, hovered, and keyboard-focused
+links are bold without moving surrounding items.
+
 Keep resource orchestration separate from shared presentation and lifecycle
 logic. Extract repeated responsibilities into focused components or hooks; avoid
 a generic form framework or components with many unrelated mode flags.

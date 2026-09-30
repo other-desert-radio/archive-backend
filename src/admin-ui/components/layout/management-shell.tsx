@@ -22,7 +22,7 @@ export const ManagementShell = ({
 							href="#shows"
 							aria-current={activeResource === "shows" ? "page" : undefined}
 						>
-							- shows
+							⤷ shows
 						</a>
 					</li>
 					<li>
@@ -31,7 +31,7 @@ export const ManagementShell = ({
 							href="#djs"
 							aria-current={activeResource === "djs" ? "page" : undefined}
 						>
-							- DJs
+							⤷ DJs
 						</a>
 					</li>
 					<li>
@@ -40,7 +40,7 @@ export const ManagementShell = ({
 							href="#tags"
 							aria-current={activeResource === "tags" ? "page" : undefined}
 						>
-							- tags
+							⤷ tags
 						</a>
 					</li>
 				</ul>
