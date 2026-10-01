@@ -218,12 +218,12 @@ linked through `show_djs` and `show_tags`.
 
 Migration `0018_create_mixcloud_import_table` implements the tracking schema
 from `human_docs/databases_human.md`. The importer itself remains future work.
-`./scripts/import-mixcloud` currently runs `src/db/import-mixcloud.ts`, which
-reads `src/res/mixcloud.json`, parses cloudcast names, and prints diagnostics
-without database writes. Keep that parsing workflow read-only until the import
-phase is implemented. The following documents the tracking schema and future
-importer requirements; the migration does not enable imports or add show soft
-deletion.
+This branch includes the WIP parser and launcher. `./scripts/import-mixcloud`
+runs `src/db/import-mixcloud.ts`, which reads `src/res/mixcloud.json`, parses
+cloudcast names, and prints diagnostics without database writes. Keep that
+parsing workflow read-only until the import phase is implemented. The following
+documents the tracking schema and future importer requirements; the migration
+does not enable imports or add show soft deletion.
 
 ### `mixcloud_import`
 

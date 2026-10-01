@@ -11,8 +11,22 @@ import {
 export type MixcloudSortColumn = keyof Row;
 const text = (a: string | undefined, b: string | undefined) =>
 	(a ?? "").localeCompare(b ?? "");
-const number = (a: number | undefined, b: number | undefined) =>
-	a === undefined ? (b === undefined ? 0 : -1) : b === undefined ? 1 : a - b;
+/** Sorts missing numeric values before present values. */
+const compareOptionalNumbers = (
+	left: number | undefined,
+	right: number | undefined,
+): number => {
+	switch (true) {
+		case left === undefined && right === undefined:
+			return 0;
+		case left === undefined:
+			return -1;
+		case right === undefined:
+			return 1;
+		default:
+			return left - right;
+	}
+};
 export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 	{
 		key: "id",
@@ -30,7 +44,7 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 		key: "show_id",
 		label: "show_id",
 		render: (r) => formatMissing(r.show_id),
-		compare: (a, b) => number(a.show_id, b.show_id),
+		compare: (a, b) => compareOptionalNumbers(a.show_id, b.show_id),
 	},
 	{
 		key: "imported_at",
@@ -42,7 +56,7 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 					: formatUTCDateTime(r.imported_at),
 			),
 		compare: (a, b) =>
-			number(
+			compareOptionalNumbers(
 				a.imported_at === undefined ? undefined : Date.parse(a.imported_at),
 				b.imported_at === undefined ? undefined : Date.parse(b.imported_at),
 			),
@@ -75,7 +89,7 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 			formatMissing(
 				r.duration === undefined ? undefined : formatDuration(r.duration),
 			),
-		compare: (a, b) => number(a.duration, b.duration),
+		compare: (a, b) => compareOptionalNumbers(a.duration, b.duration),
 	},
 	{
 		key: "tags",

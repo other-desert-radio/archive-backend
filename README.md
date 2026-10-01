@@ -93,12 +93,3 @@ to consume:
 ```
 
 </details>
-
-### Mixcloud admin view
-
-The authenticated admin sidebar includes Mixcloud below Tags (`#mixcloud`). It
-displays import tracking records in a read-only table with search and column
-sorting. Show names, DJ IDs/names, duration, and tag IDs come from linked
-archive records; unimported records remain visible with empty details. The
-authenticated `GET /api/admin/mixcloud-imports` endpoint supplies the view. No
-import execution or editing controls are included.
