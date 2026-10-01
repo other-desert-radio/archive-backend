@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repository_root=$(cd "$(dirname "$0")/.." && pwd)
+url='https://api.mixcloud.com/otherdesertradio/cloudcasts/?limit=100&offset=0'
+
+while [ -n "$url" ]; do
+	response=$(curl --fail --silent --show-error "$url")
+	printf '%s\n' "$response"
+	url=$(jq -r '.paging.next // empty' <<<"$response")
+done | jq -s '{ data: [.[].data[]] }' > "$repository_root/src/res/mixcloud.json"

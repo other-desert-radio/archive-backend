@@ -7,10 +7,19 @@ export type Database = {
 	show_djs: ShowDJsTable;
 	show_tags: ShowTagsTable;
 	dj_tags: DjTagsTable;
+	mixcloud_import: MixcloudImportTable;
 	user: BetterAuthUserTable;
 	session: BetterAuthSessionTable;
 	account: BetterAuthAccountTable;
 	verification: BetterAuthVerificationTable;
+};
+
+export type MixcloudImportTable = {
+	id: Generated<number>;
+	createdAt: Generated<Date>;
+	key: string;
+	show_id: number | null;
+	imported_at: Date | null;
 };
 
 export type DJsTable = {
