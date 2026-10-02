@@ -1,5 +1,5 @@
 import { parsers } from "./parsers.js";
-import { excludedShowNames } from "./shared.js";
+import { excludedShowNames, manualDJOverrides } from "./shared.js";
 import type { MixcloudParserInput, ParseEntryResult } from "./types.js";
 
 /** Version zero identifies the scaffold; the completed initial pipeline uses one. */
@@ -19,11 +19,20 @@ export const parseMixcloudEntry = (
 			continue;
 		}
 
+		// path DJ names
+		const djName = parsed.djName.trim();
+		const resolvedDJNames = manualDJOverrides.get(djName) ?? djName;
+		const djNames = Array.isArray(resolvedDJNames)
+			? resolvedDJNames
+			: [resolvedDJNames];
+		const nonEmptyDJNames = djNames.map((name) => name.trim()).filter(Boolean);
+		const decodedDJs = [...new Set(nonEmptyDJNames)];
+
 		return {
 			key: entry.key,
 			derived_title: parsed.title,
 			derived_date: null,
-			decoded_djs: [parsed.djName],
+			decoded_djs: decodedDJs,
 			parser_version: MIXCLOUD_PARSER_VERSION,
 			parser_key: parser.key,
 			date_source: null,

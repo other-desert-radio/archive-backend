@@ -21,32 +21,6 @@ type ParsedShow = MixcloudParserResult & {
 	tags: string[];
 };
 
-// Keep these diagnostic-only overrides until shared DJ normalization is added.
-// Exact parsed DJ names can be renamed to one DJ or split into multiple DJs.
-const manualDJOverrides = new Map<string, string | string[]>([
-	["Caroline + Ethan", ["Caroline", "Ethan"]],
-	["Caroline and Ethan", ["Caroline", "Ethan"]],
-	["Ethan and Caroline", ["Caroline", "Ethan"]],
-	["Tara Jane O'Neil (TJO)", "Tara Jane O'Neil"],
-	["Lodi Dottie X Muzizmu", ["Lodi Dottie", "Muzizmu"]],
-	["Modular Monday (prepared by Caroline)", "Modular Monday"],
-	[
-		"Pequeña Cretina + Axaxaxas Mlö (Justin Paszul)",
-		["Pequeña Cretina", "Justin Paszul"],
-	],
-
-	["HQ Pequeña Cretina", "Pequeña Cretina"],
-	["K Serah Sarah", "K Sera Sarah"],
-	["Lodi Dottie X Peacetime Product B2B", ["Lodi Dottie", "Peacetime Product"]],
-	["Nazmi + Caroline", ["Nazmi", "Caroline"]],
-	["Nathan Ober aka DJ NASTY NATE", "Nathan Ober"],
-	["Peacetime Product X Lodi Dottie B2B", ["Peacetime Product", "Lodi Dottie"]],
-	[
-		"John Zoon (hans f wagner) and General Baby (jon nielson)",
-		["Hans F. Wagner", "Jon Nielson"],
-	],
-]);
-
 if (import.meta.main) {
 	console.log(`Loaded ${mixcloudCloudcasts.data.length} Mixcloud shows.`);
 
@@ -60,14 +34,7 @@ if (import.meta.main) {
 			continue;
 		}
 
-		const djNames = (parsed.decoded_djs ?? []).flatMap((djName) => {
-			const override = manualDJOverrides.get(djName);
-			return override === undefined
-				? [djName]
-				: Array.isArray(override)
-					? override
-					: [override];
-		});
+		const djNames = parsed.decoded_djs ?? [];
 		const date = parsed.derived_date?.toISOString() ?? "not extracted yet";
 		console.log(
 			`parsing "${entry.name}",\n | ${gray(`parser: ${parsed.parser_key} (version ${parsed.parser_version})`)}\n | key: ${parsed.key}\n | dj_names: ${djNames.join(", ")}\n | title: ${parsed.derived_title}\n | derived_date: ${date}\n | date_source: ${parsed.date_source ?? "not extracted yet"}\n | url: ${entry.url}\n | tags: ${entry.tags.map((tag) => tag.name).join(", ")}\n\n`,

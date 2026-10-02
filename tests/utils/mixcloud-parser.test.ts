@@ -109,3 +109,34 @@ test("specific apostrophe and date matchers win over broad fallbacks", () => {
 		parser_key: "known-dj-name",
 	});
 });
+
+for (const [djName, expected] of [
+	["Tara Jane O'Neil (TJO)", ["Tara Jane O'Neil"]],
+	["K Serah Sarah", ["K Sera Sarah"]],
+	["Caroline + Ethan", ["Caroline", "Ethan"]],
+	["Ethan and Caroline", ["Caroline", "Ethan"]],
+	["Lodi Dottie X Muzizmu", ["Lodi Dottie", "Muzizmu"]],
+	["  Caroline and Ethan  ", ["Caroline", "Ethan"]],
+	["Mellow and Normal", ["Mellow and Normal"]],
+	["Unknown + Collaborator", ["Unknown + Collaborator"]],
+	["   ", []],
+] as const) {
+	test(`normalizes DJ names for ${JSON.stringify(djName)}`, () => {
+		const entry = {
+			key: "/normalization/",
+			name: `${djName} - Test show`,
+			created_time: "2026-01-01T00:00:00Z",
+		};
+		expect(parseMixcloudEntry(entry)?.decoded_djs).toEqual([...expected]);
+	});
+}
+
+test("returned DJ names do not mutate shared override arrays", () => {
+	const entry = {
+		key: "/normalization/",
+		name: "Caroline and Ethan - Test show",
+		created_time: "2026-01-01T00:00:00Z",
+	};
+	parseMixcloudEntry(entry)?.decoded_djs?.push("Changed");
+	expect(parseMixcloudEntry(entry)?.decoded_djs).toEqual(["Caroline", "Ethan"]);
+});

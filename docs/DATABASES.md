@@ -312,18 +312,20 @@ barrel and the utils barrel. It accepts the source `key`, `name`, and
 `created_time`, preserves the key verbatim, and returns database-facing nullable
 suggestions with a non-null `parser_version`. `MIXCLOUD_PARSER_VERSION` is
 currently `0` while the pipeline is incomplete. The function tries the ordered
-matchers and returns the first match's title, single raw DJ name, and parser
+matchers and returns the first match's title, normalized DJ names, and parser
 key. Unmatched or excluded titles return `undefined`. Date suggestions and date
-source remain null until date conversion is implemented; DJ overrides are not
-applied yet. It has no file, network, or database side effects and is not
-connected to refresh yet. The read-only diagnostic import script calls this
-shared function, retains source keys, reports stable parser keys and versions,
-and treats undefined results as parse failures. It retains its local DJ overrides
-for diagnostic listings until shared normalization is added. Missing date
-suggestions are reported explicitly; the script no longer independently converts
-dates or substitutes upload dates. Normalization and pipeline
-version `1` follow in separate reviewed chunks.
-`tests/utils/mixcloud-parser.test.ts` checks this contract.
+source remain null until date conversion is implemented. DJ overrides in
+`shared.ts` rename exact names or split explicitly listed collaborations;
+unlisted names are not split. Names are trimmed before lookup, and output names
+are trimmed, stripped of empty entries, and deduplicated in their original
+order. It has no file, network, or database side effects and is not connected to
+refresh yet. The read-only diagnostic import script calls this shared function,
+retains source keys, reports stable parser keys and versions, and treats
+undefined results as parse failures. DJ listings use the shared normalized names
+without script-local overrides. Missing date suggestions are reported
+explicitly; the script no longer independently converts dates or substitutes
+upload dates. Date handling and pipeline version `1` follow in separate reviewed
+chunks. `tests/utils/mixcloud-parser.test.ts` checks this contract.
 
 `src/utils/mixcloud-parser/parsers.ts` contains all fourteen regex matchers,
 known-DJ prefix fallbacks and their comments from the diagnostic script.
@@ -335,8 +337,8 @@ narrower `common-comma-date` matcher. Known-DJ prefixes run last and escape
 literal names before constructing regexes. Each matcher uses a stable text key
 as its identifier and diagnostic label; there is no separate parser name.
 `ParserFnResult` retains raw `djName`, `title`, and optional `date` captures.
-The script uses these shared matchers through `parseMixcloudEntry`. Each
-matcher has its own named variable; the `parsers` array lists those variables in
+The script uses these shared matchers through `parseMixcloudEntry`. Each matcher
+has its own named variable; the `parsers` array lists those variables in
 matching order, with example comments kept beside their definitions. Focused
 matcher coverage is in `tests/utils/mixcloud-title-parsers.test.ts`.
 
