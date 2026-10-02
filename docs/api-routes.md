@@ -322,6 +322,11 @@ names, write files, or access the database. The UI button remains disconnected
 until a later review chunk. The shared `RefreshMixcloudResponse` type is
 exported from the Mixcloud imports resource barrel.
 
+Source validation patterns (`PicturesPattern`, `CloudcastPattern`, and
+`PagePattern`) live in the resource's `types.ts` and are exported alongside
+their `P.infer` types. The combined fetch result uses the inferred page's `data`
+type. Invalid cloudcast data rejects the entire refresh.
+
 `GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
 plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.
 It returns every tracking record in ID order, including unimported records. Each
