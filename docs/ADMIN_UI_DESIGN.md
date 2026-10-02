@@ -306,10 +306,12 @@ opt-in opener focus restoration; existing callers retain their defaults.
 The sidebar entry follows Tags and opens `#mixcloud`, with lowercase “mixcloud”
 and “import” on two lines. The page heading is “Mixcloud Import.” This read-only
 view uses the shared resource layout, sticky search toolbar, sortable table,
-loading/retry, empty, and no-results states. Its nine columns are ID, Key,
-show_id, imported_at, show name, djs, dj names, duration, and tags. Search
-covers all displayed fields; sorting defaults to ID ascending. Timestamps use
-UTC, durations use HH:MM:SS, arrays display comma-separated values, and missing
-values show muted “None.” Unimported records remain visible. There are no
-Create/Edit actions or view toggles. Shared toolbar creation controls and table
-Edit controls are optional; existing resources continue supplying them.
+loading/retry, empty, and no-results states. Its fourteen columns are ID, Key,
+url, name, created_time, image_small, image_large, show_id, imported_at, show
+name, djs, dj names, duration, and tags. URL and image URL fields display source
+text; duration is the stored Mixcloud duration, including for pending rows.
+Search covers all displayed fields; sorting defaults to ID ascending. Timestamps
+use UTC, durations use HH:MM:SS, arrays display comma-separated values, and
+missing values show muted “None.” Unimported records remain visible. There are
+no Create/Edit actions or view toggles. Shared toolbar creation controls and
+table Edit controls are optional; existing resources continue supplying them.

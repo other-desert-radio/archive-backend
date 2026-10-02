@@ -130,7 +130,7 @@ WebPs. There is no image-byte upload limit in this workflow.
 DJs: ID | Title | Bio | image_small | image_large | Socials | Show Title |
      Show Description
 Shows: ID | Title | Date | Duration | Image | URL
-Tags: ID | Title | Color | Reviewed
+Tags: ID | Title | Color | Reviewed | mixcloud_key (unique, nullable) | mixcloud_url
 ```
 
 Show_DJs: ID | show_id | dj_id show_id FOREIGN KEY -> Shows.ID dj_id FOREIGN KEY
@@ -171,15 +171,32 @@ is excluded from this branch.
 
 every mixcloud show has a `key`. we use that to create this table:
 
-id | key (from mixcloud) | show_id (null unless imported into an actual show) |
+```text
+id |
+key (from mixcloud) |
+url | name | created_time | duration | image_small | image_large |
+mixcloud_tag_keys (array of strings) |
+show_id (null unless imported into an actual show) |
 imported_at (null unless imported into an actual show)
+```
 
 - key is UNIQUE
+- `mixcloud_tag_keys` stores Mixcloud genre keys as a nullable text array, for
+  example `["/genres/house/", "/genres/ambient/"]`. Null means unknown; an empty
+  array means no source tags. It contains source keys, not archive tag IDs.
+- `tags.mixcloud_key` is unique for non-null values; multiple tags may have no
+  Mixcloud key. Matching uses exact text. Migration `0020_add_mixcloud_tag_keys`
+  adds the array and uniqueness constraint. Existing duplicate tag keys must be
+  resolved before it can be applied; it does not merge or delete tags.
+- `url` and `name` store the original Mixcloud cloudcast URL and name.
+- `created_time` stores Mixcloud's creation timestamp, separately from the
+  tracking row's `createdAt` and the successful import's `imported_at`.
+- `duration` stores the cloudcast's `audio_length` in seconds.
+- `image_small` and `image_large` store source image URLs, not image bytes.
+- These six source fields are nullable so existing tracking rows remain valid.
+  Migration `0019_add_mixcloud_source_metadata` adds them; it does not backfill
+  source data or run the importer.
 
-deletion stratergy: Action Effect ━━━━━━━━━━━━━━━━━━━━━━
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Delete an import row
-Show stays untouched ──────────────────────
-───────────────────────────────────────────────────────── Soft-delete a show
-Import row stays unchanged ──────────────────────
-───────────────────────────────────────────────────────── Hard-delete a show
-Import row remains; show_id and imported_at become null
+deletion stratergy: Action Effect Delete an import row -> Show stays untouched
+Soft-delete a show -> Import row stays unchanged Hard-delete a show -> Import
+row remains; show_id and imported_at become null

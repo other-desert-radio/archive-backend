@@ -12,6 +12,12 @@ export const filterMixcloudImports = (
 		[
 			row.id,
 			row.key,
+			row.url,
+			row.name,
+			row.created_time,
+			row.created_time === undefined ? "" : formatUTCDateTime(row.created_time),
+			row.image_small,
+			row.image_large,
 			row.show_id,
 			row.imported_at,
 			row.imported_at === undefined ? "" : formatUTCDateTime(row.imported_at),
