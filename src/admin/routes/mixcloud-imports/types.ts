@@ -1,4 +1,8 @@
 import { P } from "ts-pattern";
+import {
+	createdTimeRegex,
+	parseCreatedTimeDate,
+} from "../../../utils/mixcloud-parser/index.js";
 
 // unused fields are commented out for performance but left here for documentation
 export const PicturesPattern = {
@@ -19,7 +23,16 @@ export const CloudcastPattern = {
 	url: P.string,
 	name: P.string,
 	tags: P.array({ key: P.string, url: P.string, name: P.string }),
-	created_time: P.string,
+	// Format examples: "2020-04-07T12:00:00Z", "2020-04-07T01:30:00.123+02:00".
+	created_time: P.string
+		.regex(createdTimeRegex)
+		.and(
+			P.when(
+				(value) =>
+					typeof value === "string" &&
+					parseCreatedTimeDate(value) !== undefined,
+			),
+		),
 	updated_time: P.string,
 	play_count: P.number,
 	pictures: {

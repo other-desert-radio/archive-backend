@@ -1,3 +1,7 @@
+/** ISO source timestamps require seconds and an explicit timezone. */
+export const createdTimeRegex =
+	/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-](\d{2}):(\d{2}))$/;
+
 const months = [
 	"January",
 	"February",
@@ -49,9 +53,7 @@ export const parseCreatedTimeDate = (value: string): Date | undefined => {
 	// and "2020-04-07T23:30:00-02:00"; a timezone is required.
 	// Captures: year, month, day, hour, minute, second, timezone, offset hour/minute.
 	// Fractional seconds are optional and not captured; ranges are validated below.
-	const match = value.match(
-		/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-](\d{2}):(\d{2}))$/,
-	);
+	const match = value.match(createdTimeRegex);
 	if (
 		!match ||
 		!calendarDate(Number(match[1]), Number(match[2]) - 1, Number(match[3])) ||

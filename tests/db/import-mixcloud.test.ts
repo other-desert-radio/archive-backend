@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test";
-import { mixcloudCloudcasts } from "../../src/db/import-mixcloud.js";
+import {
+	mixcloudCloudcasts,
+	validateMixcloudCloudcasts,
+} from "../../src/db/import-mixcloud.js";
 import { parseMixcloudEntry } from "../../src/utils/index.js";
 
 test("diagnostic import uses shared suggestions and reports failures and missing dates", () => {
@@ -37,4 +40,21 @@ test("diagnostic import uses shared suggestions and reports failures and missing
 	expect(stdout).toContain("date_source: created_time");
 	expect(stdout).toContain("dj_names: Caroline, Ethan");
 	expect(stdout).toContain("key: /otherdesertradio/");
+});
+
+test("validates bundled JSON and rejects invalid source data before parsing", () => {
+	expect(mixcloudCloudcasts.data).toHaveLength(402);
+	expect(validateMixcloudCloudcasts(mixcloudCloudcasts)).toBe(
+		mixcloudCloudcasts,
+	);
+	for (const value of [
+		null,
+		{},
+		{ data: [{ ...mixcloudCloudcasts.data[0], created_time: "invalid" }] },
+		{ data: [{ ...mixcloudCloudcasts.data[0], tags: "invalid" }] },
+	]) {
+		expect(() => validateMixcloudCloudcasts(value)).toThrow(
+			"Invalid Mixcloud JSON",
+		);
+	}
 });

@@ -1,11 +1,25 @@
-import type { MixcloudCloudcasts } from "../admin/routes/mixcloud-imports/types.js";
+import { isMatching } from "ts-pattern";
+import {
+	type MixcloudCloudcasts,
+	PagePattern,
+} from "../admin/routes/mixcloud-imports/types.js";
 import mixcloudCloudcastsJson from "../res/mixcloud.json" with { type: "json" };
 import {
 	type MixcloudParserResult,
 	parseMixcloudEntry,
 } from "../utils/index.js";
 
-export const mixcloudCloudcasts: MixcloudCloudcasts = mixcloudCloudcastsJson;
+/** Validate file input with the same source contract used by the fetch path. */
+export const validateMixcloudCloudcasts = (
+	value: unknown,
+): MixcloudCloudcasts => {
+	if (!isMatching(PagePattern, value)) throw new Error("Invalid Mixcloud JSON");
+	return value;
+};
+
+export const mixcloudCloudcasts = validateMixcloudCloudcasts(
+	mixcloudCloudcastsJson,
+);
 
 /** Format an application error message in red terminal text. */
 const red = (text: string): string => `\u001b[31m${text}\u001b[0m`;

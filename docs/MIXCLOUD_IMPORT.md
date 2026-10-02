@@ -1,8 +1,9 @@
 # Mixcloud Import Tracking
 
-Read this when changing source refresh persistence, tracking constraints, deletion
-behavior, or implementing imports. See [DATABASES.md](DATABASES.md) for archive
-relationships and [API routes](api-routes.md#mixcloud-import-list) for the API.
+Read this when changing source refresh persistence, tracking constraints,
+deletion behavior, or implementing imports. See [DATABASES.md](DATABASES.md) for
+archive relationships and [API routes](api-routes.md#mixcloud-import-list) for
+the API.
 
 ## Current scope
 
@@ -99,11 +100,12 @@ default: pending rows must have both import fields null. There is no stored
 `imported` boolean; derive it with `show_id IS NOT NULL`, including when the
 referenced show is soft-deleted.
 
-Preserve `entry.key` verbatim in the normalized parsed-show result. Do not substitute the title or URL as the import
-identity. The unique constraint on `key` supplies the lookup index and prevents
-duplicate tracking rows. The `mixcloud_import_show_id_idx` index on `show_id` supports lookups and
-foreign-key actions when shows are deleted. No uniqueness
-constraint on `show_id` is required by this design.
+Preserve `entry.key` verbatim in the normalized parsed-show result. Do not
+substitute the title or URL as the import identity. The unique constraint on
+`key` supplies the lookup index and prevents duplicate tracking rows. The
+`mixcloud_import_show_id_idx` index on `show_id` supports lookups and
+foreign-key actions when shows are deleted. No uniqueness constraint on
+`show_id` is required by this design.
 
 ### Consistency and deletion
 
@@ -179,8 +181,8 @@ are outside this schema's scope.
 
 Migration `0018` creates the table, index, check constraint, function, and
 trigger together. Its rollback drops the tracking table before the trigger
-function, leaving shows untouched. Typed wiring is in `src/db/types.ts`.
-Add new migrations rather than editing applied migrations.
+function, leaving shows untouched. Typed wiring is in `src/db/types.ts`. Add new
+migrations rather than editing applied migrations.
 
 `tests/db/mixcloud-import-migration.test.ts` runs against an explicitly supplied
 disposable PostgreSQL database, creates a unique test schema, and removes that

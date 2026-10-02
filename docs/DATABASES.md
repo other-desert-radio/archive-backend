@@ -3,12 +3,13 @@
 Read this when changing archive tables, relationships, migrations, or typed
 database wiring. Read only the linked workflow guidance relevant to the task:
 
-- [Mixcloud tracking and imports](MIXCLOUD_IMPORT.md): source metadata,
-  refresh persistence, import state, deletion, and future import transactions.
+- [Mixcloud tracking and imports](MIXCLOUD_IMPORT.md): source metadata, refresh
+  persistence, import state, deletion, and future import transactions.
 - [Mixcloud parser](MIXCLOUD_PARSER.md): matchers, DJ names, date suggestions,
   and read-only diagnostics.
 - [Static archive export](ARCHIVE_EXPORT.md): JSON contracts and image assets.
-- [Development commands](README.md#commands-and-checks): seed and delete scripts.
+- [Development commands](README.md#commands-and-checks): seed and delete
+  scripts.
 - [Database testing](DATABASE_E2E_TESTING.md): disposable PostgreSQL setup.
 - [Human design notes](../human_docs/databases_human.md): intent and plans.
 
@@ -105,10 +106,10 @@ mixcloud_key text unique
 mixcloud_url text
 ```
 
-Tags represent genres or other archive labels. Tag title normalization and conflict handling follow the
-[API conventions](api-routes.md); do not assume a database uniqueness constraint. Tags created
-with an automatically generated color are unreviewed; tags created with an
-explicit color are marked reviewed.
+Tags represent genres or other archive labels. Tag title normalization and
+conflict handling follow the [API conventions](api-routes.md); do not assume a
+database uniqueness constraint. Tags created with an automatically generated
+color are unreviewed; tags created with an explicit color are marked reviewed.
 
 `mixcloud_key` and `mixcloud_url` are optional source metadata for the matching
 Mixcloud genre, for example `/genres/experimental/` and

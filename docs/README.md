@@ -167,8 +167,12 @@ Report what was verified and any local runtime blocker. See the
 | `scripts/fetch-mixcloud`                                                      | Fetch the public Mixcloud export; requires curl and jq              |
 
 Run formatting, lint, TypeScript checks, and the smallest relevant tests before
-handoff. The installed pre-commit hook runs formatting and lint. Biome and
-Markdown rules live in `biome.json` and `.markdownlint-cli2.yaml`.
+handoff. The installed pre-commit hook formats only staged files, stages those
+formatting edits automatically, then runs repository-wide lint. Unstaged files
+are not formatted or added. Partially staged files stop the commit before
+formatting: stage the remaining changes, or stash the unstaged changes before
+retrying. Biome and Markdown rules live in `biome.json` and
+`.markdownlint-cli2.yaml`.
 
 Playwright files are separate from the Bun suite. The integration runner uses
 `compose.integration.yml` with project name `archive-backend-integration`, then
