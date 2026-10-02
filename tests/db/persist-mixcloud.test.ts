@@ -10,7 +10,9 @@ import { up as createShows } from "../../src/db/migrations/0002_create_shows_tab
 import { up as createImports } from "../../src/db/migrations/0018_create_mixcloud_import_table.js";
 import { up as addMetadata } from "../../src/db/migrations/0019_add_mixcloud_source_metadata.js";
 import { up as addFlag } from "../../src/db/migrations/0021_add_mixcloud_data_changed.js";
+import { up as addParserResults } from "../../src/db/migrations/0022_add_mixcloud_parser_results.js";
 import type { Database } from "../../src/db/types.js";
+import { parseMixcloudEntry } from "../../src/utils/index.js";
 
 const databaseUrl = process.env.MIXCLOUD_MIGRATION_TEST_DATABASE_URL;
 const entry: MixcloudCloudcast = {
@@ -57,6 +59,7 @@ test.skipIf(!databaseUrl)(
 				.addColumn("mixcloud_tag_keys", sql`text[]`)
 				.execute();
 			await addFlag(db);
+			await addParserResults(db);
 			await persistMixcloudEntry(db, entry);
 			await persistMixcloudEntry(db, { ...entry, key: "/missing-later/" });
 			const first = await read();
@@ -168,9 +171,95 @@ test.skipIf(!databaseUrl)(
 			).toHaveLength(2);
 			await persistMixcloud(db, { data: [] });
 			expect(await read()).toEqual(saved);
+			const matchedEntry = { ...entry, name: "Ethan - Side A, April 6, 2020" };
+			await persistMixcloud(db, { data: [matchedEntry] });
+			expect(await read()).toMatchObject({
+				...parseMixcloudEntry(matchedEntry),
+				id: first.id,
+				show_id: showId,
+				imported_at: importedAt,
+			});
+			await db
+				.updateTable("mixcloud_import")
+				.set({ data_changed: false })
+				.where("key", "=", entry.key)
+				.execute();
+			const parsed = parseMixcloudEntry(matchedEntry);
+			if (parsed === undefined)
+				throw new Error("Expected the fixture to match");
+			const updatedResult = {
+				...parsed,
+				derived_title: "Updated suggestion",
+				parser_version: 2,
+			};
+			await persistMixcloud(
+				db,
+				{ data: [matchedEntry] },
+				undefined,
+				new Map([[entry.key, updatedResult]]),
+			);
+			expect(await read()).toMatchObject({
+				derived_title: "Updated suggestion",
+				parser_version: 2,
+				data_changed: false,
+				show_id: showId,
+				imported_at: importedAt,
+			});
+			expect(
+				(await db.selectFrom("shows").select("title").executeTakeFirstOrThrow())
+					.title,
+			).toBe("Approved");
 		} finally {
 			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(db);
 			await db.destroy();
 		}
 	},
 );
+
+for (const [name, source, date] of [
+	["Ethan - Side A, April 6, 2020", "title", "2020-04-06"],
+	["Caroline and Ethan - Show", "created_time", "2026-09-01"],
+] as const) {
+	test(`upserts all parser suggestions with ${source} dates`, async () => {
+		const queries: { sql: string; parameters: unknown[] }[] = [];
+		const db = new Kysely<Database>({
+			dialect: new PostgresDialect({
+				pool: {
+					connect: async () => ({
+						query: async (sql: string, parameters: unknown[]) => {
+							queries.push({ sql, parameters });
+							return { rows: [] };
+						},
+						release: () => {},
+					}),
+					end: async () => {},
+				} as never,
+			}),
+		});
+		try {
+			await persistMixcloud(db, { data: [{ ...entry, name }] });
+			const insert = queries.find((query) => query.sql.startsWith("insert"));
+			expect(insert).toBeDefined();
+			for (const field of [
+				"derived_title",
+				"derived_date",
+				"decoded_djs",
+				"parser_version",
+				"parser_key",
+				"date_source",
+			]) {
+				expect(insert?.sql).toContain(`"${field}"`);
+				expect(insert?.sql).toContain(`"${field}" = "excluded"."${field}"`);
+			}
+			expect(insert?.parameters).toContain(source);
+			expect(insert?.parameters).toContain(1);
+			expect(insert?.parameters).toContainEqual(new Date(`${date}T00:00:00Z`));
+			expect(insert?.parameters).toContainEqual(
+				source === "title" ? ["Ethan"] : ["Caroline", "Ethan"],
+			);
+			expect(queries.at(-1)?.sql).toBe("commit");
+		} finally {
+			await db.destroy();
+		}
+	});
+}

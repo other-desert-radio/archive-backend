@@ -320,13 +320,16 @@ importer, including nested tags and small/large picture strings, against the
 structure in `src/res/mixcloud.json`. Unused fields are excluded from validation
 for performance and remain documented as comments in the patterns. It does not
 write files. After source validation, it calls `parseMixcloudEntry` for every
-cloudcast and logs matched/unmatched counts and parser version. Parser results
-are not persisted yet; source metadata persistence remains unchanged. The UI
-button calls this route and reloads the list after success while preserving
-search and sort. Refresh failures appear as human-readable feedback below the
-toolbar; network, unreadable response, and table reload failures are identified
-separately. The shared `RefreshMixcloudResponse` type is exported from the
-Mixcloud imports resource barrel.
+cloudcast and logs matched/unmatched counts and parser version. Successful
+matches save all six parser fields in the source upsert transaction, on both
+insert and refresh. Parser results are reused for persistence. Unmatched or
+excluded titles preserve existing suggestions for now; clearing stale results is
+a separate chunk. The UI button calls this route and reloads the list after
+success while preserving search and sort. Refresh failures appear as
+human-readable feedback below the toolbar; network, unreadable response, and
+table reload failures are identified separately. The shared
+`RefreshMixcloudResponse` type is exported from the Mixcloud imports resource
+barrel.
 
 Source validation patterns (`PicturesPattern`, `CloudcastPattern`, and
 `PagePattern`) live in the resource's `types.ts` and are exported alongside
@@ -347,7 +350,7 @@ source metadata on imported rows sets `data_changed`; tag order and duplicate
 keys alone do not count as changes. Existing true flags remain true, including
 on pending rows. No archive Shows, DJs, or tags are created or changed. Database
 failures roll back the entire refresh and return human-readable `500` errors.
-Apply migrations through `0021` before refreshing.
+Apply migrations through `0022` before refreshing.
 
 Refresh logs include page URLs, response status/timing, validated page and total
 counts, next URLs, the save stage, progress every 100 records, and commit
@@ -374,8 +377,9 @@ metadata rather than the linked Show duration. Optional parser suggestions are
 `created_time`). Null parser fields are omitted independently, preserving
 partial results; non-null empty DJ arrays and parser version zero are included.
 Suggestions come directly from the source row, independently of linked Show/DJ
-details. Refresh does not populate them yet, and this chunk adds no UI controls
-or import actions. Migration `0022` must be applied before using this endpoint.
-Show/DJ/tag details come from linked archive records; missing relationships
-produce empty arrays. Distinct correlated relationship queries avoid duplicate
-imports or IDs. Failures return the generic `500` error.
+details. Refresh populates suggestions for successful matches. Parser-only
+changes do not set `data_changed`, and no archive records are modified.
+Migration `0022` must be applied before using this endpoint. Show/DJ/tag details
+come from linked archive records; missing relationships produce empty arrays.
+Distinct correlated relationship queries avoid duplicate imports or IDs.
+Failures return the generic `500` error.

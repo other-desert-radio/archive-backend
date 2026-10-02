@@ -188,3 +188,15 @@ its first column; reverse indexes begin with `dj_id` on `show_djs`, `tag_id` on
 Choose deletion behavior deliberately when adding new relationships. Preserve
 these constraints in migrations and update types and the relevant workflow
 document when a data contract changes.
+
+### Persisting Mixcloud parser suggestions
+
+Refresh reuses each cloudcast's parsed result when upserting source metadata.
+Successful matches insert or replace `derived_title`, `derived_date`,
+`decoded_djs`, `parser_version`, `parser_key`, and `date_source` in the same
+transaction. Partial successful results retain their nullable fields.
+Parser-only changes do not set `data_changed` or alter approved Shows or import
+links. Unmatched or excluded titles currently leave existing suggestions intact;
+clearing stale results and recording failed-attempt versions follow separately.
+Apply migration `0022` before refresh. Direct `persistMixcloudEntry` callers
+without precomputed results use the shared parser themselves.

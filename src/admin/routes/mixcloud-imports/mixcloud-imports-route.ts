@@ -28,8 +28,10 @@ export const mixcloudImportRoutes =
 					const source = await fetchMixcloud(fetch, request.log);
 					stage = "save";
 
-					const parserResults = source.data.map(parseMixcloudEntry);
-					const matched = parserResults.filter(
+					const parserResults = new Map(
+						source.data.map((entry) => [entry.key, parseMixcloudEntry(entry)]),
+					);
+					const matched = [...parserResults.values()].filter(
 						(result) => result !== undefined,
 					).length;
 
@@ -48,7 +50,7 @@ export const mixcloudImportRoutes =
 						`[Mixcloud Refresh] saving started -- ${source.data.length} cloudcasts in one transaction`,
 					);
 
-					await persistMixcloud(database, source, request.log);
+					await persistMixcloud(database, source, request.log, parserResults);
 
 					request.log.info(
 						{ count: source.data.length, elapsedMs: Date.now() - startedAt },
