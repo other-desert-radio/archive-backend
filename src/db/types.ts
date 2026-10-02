@@ -18,6 +18,7 @@ export type MixcloudImportTable = {
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	key: string;
+	mixcloud_tag_keys: string[] | null;
 	url: string | null;
 	name: string | null;
 	created_time: Date | null;
