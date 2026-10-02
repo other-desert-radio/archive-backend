@@ -333,7 +333,8 @@ type. Invalid cloudcast data rejects the entire refresh.
 
 After fetching and validation, one transaction upserts `mixcloud_import` by
 exact source key. It maps source URL, name, and creation timestamp directly,
-`audio_length` to duration, `pictures.small/large` to image URLs, and tag keys
+`audio_length` to duration, `pictures.large` to `image_small`,
+`pictures["1024wx1024h"]` to `image_large`, and tag keys
 to a sorted, deduplicated array. Existing IDs, creation timestamps, Show links,
 and import timestamps are preserved; records absent from the fetch are retained.
 Changed source metadata on imported rows sets `data_changed`; tag order and
@@ -356,12 +357,12 @@ row includes `id`, `key`, required boolean `data_changed`, `djs` (numeric IDs),
 `dj_names` (strings aligned with ascending DJ IDs), and `tags` (ascending Show
 tag IDs). Optional `show_id`, `imported_at` (ISO timestamp), and `show_name` are
 omitted when absent. Source metadata includes optional `url`, `name`,
-`mixcloud_tag_keys` (array of source genre key strings, omitted when unknown;
-an empty array means no source tags),
-`created_time` (ISO timestamp), `duration` (seconds), `image_small`, and
-`image_large` (image URLs), read directly from `mixcloud_import`, including for
-pending records. Duration now represents source metadata rather than the linked
-Show duration. Migration `0021` must be applied before using this endpoint.
-Show/DJ/tag details come from linked archive records; missing relationships
-produce empty arrays. Distinct correlated relationship queries avoid duplicate
-imports or IDs. Failures return the generic `500` error.
+`mixcloud_tag_keys` (array of source genre key strings, omitted when unknown; an
+empty array means no source tags), `created_time` (ISO timestamp), `duration`
+(seconds), `image_small`, and `image_large` (image URLs), read directly from
+`mixcloud_import`, including for pending records. Duration now represents source
+metadata rather than the linked Show duration. Migration `0021` must be applied
+before using this endpoint. Show/DJ/tag details come from linked archive
+records; missing relationships produce empty arrays. Distinct correlated
+relationship queries avoid duplicate imports or IDs. Failures return the generic
+`500` error.

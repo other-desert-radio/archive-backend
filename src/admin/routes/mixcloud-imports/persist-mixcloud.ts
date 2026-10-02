@@ -15,8 +15,8 @@ export const persistMixcloudEntry = async (
 			name: entry.name,
 			created_time: new Date(entry.created_time),
 			duration: entry.audio_length,
-			image_small: entry.pictures.small,
-			image_large: entry.pictures.large,
+			image_small: entry.pictures.large,
+			image_large: entry.pictures["1024wx1024h"],
 			mixcloud_tag_keys: [...new Set(entry.tags.map((tag) => tag.key))].sort(),
 		})
 		.onConflict((conflict) =>

@@ -18,6 +18,7 @@
 		"db:delete:shows": "./scripts/delete-shows",
 		"db:export:archive": "./scripts/export-archive",
 		"db:delete:djs": "./scripts/delete-djs",
+		"db:delete:mixcloud-imports": "./scripts/delete-mixcloud-imports",
 		"format": "./scripts/format",
 		"lint": "./scripts/lint",
 		"typecheck": "tsc --noEmit",

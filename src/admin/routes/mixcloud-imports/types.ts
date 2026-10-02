@@ -2,8 +2,9 @@ import { P } from "ts-pattern";
 
 // unused fields are commented out for performance but left here for documentation
 export const PicturesPattern = {
-	small: P.string,
 	large: P.string,
+	"1024wx1024h": P.string,
+	//small: P.string,
 	//thumbnail: P.string,
 	//medium_mobile: P.string,
 	//medium: P.string,
@@ -24,7 +25,6 @@ export const CloudcastPattern = {
 	pictures: {
 		...PicturesPattern,
 		//"768wx768h": P.string,
-		//"1024wx1024h": P.string,
 	},
 	slug: P.string,
 	audio_length: P.number,

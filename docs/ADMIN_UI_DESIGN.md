@@ -307,25 +307,25 @@ The sidebar entry follows Tags and opens `#mixcloud`, with lowercase “mixcloud
 and “import” on two lines. The page heading is “Mixcloud Import.” This read-only
 view uses the shared resource layout, sticky search toolbar, sortable table,
 loading/retry, empty, and no-results states. Its sixteen columns are ID, Key,
-url, name, created_time, image_small, image_large, mixcloud_tag_keys, duration, show_id,
-imported_at, data_changed, show name, djs, dj names, and tags. URL and image URL
-fields display source text; image URLs are clickable and open their image in a
-new tab. Duration is the stored Mixcloud duration, including for pending rows.
-`mixcloud_tag_keys` displays comma-separated source genre keys, supports search
-and sorting, and shows muted “None” for missing or empty arrays. These keys are
-separate from the archive tag IDs in `tags`; matching them to archive tags comes later.
-The read-only `data_changed` column displays `true` or `false`, participates in
-search, and sorts false before true in ascending order. There are no segmented
-import/review views yet. Search covers all displayed fields; sorting defaults to
-ID ascending. Timestamps use UTC, durations use HH:MM:SS, arrays display
-comma-separated values, and missing values show muted “None.” Unimported records
-remain visible. There are no Edit actions or view toggles. An enabled “Refresh
-Mixcloud” button uses the shared toolbar action position and styling beside
-search. It calls the refresh route, disables itself with “Refreshing Mixcloud…”
-while refreshing and reloading the table, and preserves search and sort. Inline
-status/error messages appear below the toolbar. Refresh failures retain existing
-rows and allow another button click to retry; errors include human-readable
-server feedback rather than raw internal errors. A reload failure after a
-successful refresh is identified separately. Shared toolbar creation controls
-and table Edit controls are optional; existing resources continue supplying
-them.
+url, name, created_time, image_small, image_large, mixcloud_tag_keys, duration,
+show_id, imported_at, data_changed, show name, djs, dj names, and tags. URL and
+image URL fields display source text; image URLs are clickable and open their
+image in a new tab. Duration is the stored Mixcloud duration, including for
+pending rows. `mixcloud_tag_keys` displays comma-separated source genre keys,
+supports search and sorting, and shows muted “None” for missing or empty arrays.
+These keys are separate from the archive tag IDs in `tags`; matching them to
+archive tags comes later. The read-only `data_changed` column displays `true` or
+`false`, participates in search, and sorts false before true in ascending order.
+There are no segmented import/review views yet. Search covers all displayed
+fields; sorting defaults to ID ascending. Timestamps use UTC, durations use
+HH:MM:SS, arrays display comma-separated values, and missing values show muted
+“None.” Unimported records remain visible. There are no Edit actions or view
+toggles. An enabled “Refresh Mixcloud” button uses the shared toolbar action
+position and styling beside search. It calls the refresh route, disables itself
+with “Refreshing Mixcloud…” while refreshing and reloading the table, and
+preserves search and sort. Inline status/error messages appear below the
+toolbar. Refresh failures retain existing rows and allow another button click to
+retry; errors include human-readable server feedback rather than raw internal
+errors. A reload failure after a successful refresh is identified separately.
+Shared toolbar creation controls and table Edit controls are optional; existing
+resources continue supplying them.

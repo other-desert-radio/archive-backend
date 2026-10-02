@@ -22,7 +22,7 @@ const entry: MixcloudCloudcast = {
 	play_count: 0,
 	slug: "source",
 	audio_length: 3600,
-	pictures: { small: "small.jpg", large: "large.jpg" },
+	pictures: { large: "small.jpg", "1024wx1024h": "large.jpg" },
 	tags: [
 		{ key: "/a/", url: "https://example.test/a", name: "A" },
 		{ key: "/b/", url: "https://example.test/b", name: "B" },
@@ -106,8 +106,11 @@ test.skipIf(!databaseUrl)(
 				{ ...entry, url: "https://example.test/new" },
 				{ ...entry, created_time: "2026-09-02T12:00:00Z" },
 				{ ...entry, audio_length: 4000 },
-				{ ...entry, pictures: { ...entry.pictures, small: "new-small" } },
-				{ ...entry, pictures: { ...entry.pictures, large: "new-large" } },
+				{ ...entry, pictures: { ...entry.pictures, large: "new-small" } },
+				{
+					...entry,
+					pictures: { ...entry.pictures, "1024wx1024h": "new-large" },
+				},
 				{ ...entry, tags: [] },
 			]) {
 				await persistMixcloudEntry(db, entry);

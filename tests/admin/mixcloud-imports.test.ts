@@ -77,7 +77,7 @@ describe("Mixcloud import list", () => {
 						play_count: 0,
 						slug: "source",
 						audio_length: 3600,
-						pictures: { small: "small", large: "large" },
+						pictures: { large: "small", "1024wx1024h": "large" },
 						tags: [],
 					},
 				],
@@ -128,7 +128,7 @@ describe("Mixcloud import list", () => {
 				play_count: 0,
 				slug: "source",
 				audio_length: 3600,
-				pictures: { small: "small", large: "large" },
+				pictures: { large: "small", "1024wx1024h": "large" },
 				tags: [],
 			};
 			const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(

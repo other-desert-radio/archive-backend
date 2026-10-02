@@ -148,7 +148,8 @@ for (const invalid of [
 	null,
 	{ ...cloudcast, tags: [{ key: "/genres/live/", url: 123, name: "Live" }] },
 	{ ...cloudcast, pictures: { ...pictures, large: null } },
-	{ ...cloudcast, pictures: { ...pictures, small: null } },
+	{ ...cloudcast, pictures: { ...pictures, "1024wx1024h": null } },
+	{ ...cloudcast, pictures: { large: pictures.large } },
 ]) {
 	test("rejects invalid cloudcasts and nested metadata", async () => {
 		await expect(
@@ -167,7 +168,7 @@ test("accepts omitted or malformed unused metadata while preserving source recor
 		created_time: cloudcast.created_time,
 		updated_time: cloudcast.updated_time,
 		play_count: cloudcast.play_count,
-		pictures: { small: pictures.small, large: pictures.large },
+		pictures: { large: pictures.large, "1024wx1024h": pictures["1024wx1024h"] },
 		slug: cloudcast.slug,
 		audio_length: cloudcast.audio_length,
 	};
@@ -190,7 +191,7 @@ test("accepts omitted or malformed unused metadata while preserving source recor
 				extra_large: null,
 				"640wx640h": null,
 				"768wx768h": null,
-				"1024wx1024h": null,
+				small: null,
 			},
 		},
 	];
