@@ -1,5 +1,9 @@
 import type { FastifyPluginAsync } from "fastify";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
+import {
+	MIXCLOUD_PARSER_VERSION,
+	parseMixcloudEntry,
+} from "../../../utils/index.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { fetchMixcloud } from "./fetch-mixcloud.js";
 import { persistMixcloud } from "./persist-mixcloud.js";
@@ -23,11 +27,29 @@ export const mixcloudImportRoutes =
 				try {
 					const source = await fetchMixcloud(fetch, request.log);
 					stage = "save";
+
+					const parserResults = source.data.map(parseMixcloudEntry);
+					const matched = parserResults.filter(
+						(result) => result !== undefined,
+					).length;
+
+					request.log.info(
+						{
+							count: source.data.length,
+							matched,
+							unmatched: source.data.length - matched,
+							parserVersion: MIXCLOUD_PARSER_VERSION,
+						},
+						`[Mixcloud Refresh] parsing completed -- ${matched}/${source.data.length} matched, ${source.data.length - matched} unmatched or excluded, parser version: ${MIXCLOUD_PARSER_VERSION}`,
+					);
+
 					request.log.info(
 						{ count: source.data.length },
 						`[Mixcloud Refresh] saving started -- ${source.data.length} cloudcasts in one transaction`,
 					);
+
 					await persistMixcloud(database, source, request.log);
+
 					request.log.info(
 						{ count: source.data.length, elapsedMs: Date.now() - startedAt },
 						`[Mixcloud Refresh] completed -- committed ${source.data.length} cloudcasts, elapsed: ${Date.now() - startedAt}ms`,

@@ -159,7 +159,7 @@ describe("Mixcloud import list", () => {
 					{
 						key: "/source/",
 						url: "https://example.test/source",
-						name: "Source",
+						name: "Ethan - Side A, April 6, 2020",
 						created_time: "2026-09-01T12:00:00Z",
 						updated_time: "2026-09-01T12:00:00Z",
 						play_count: 0,
@@ -194,6 +194,7 @@ describe("Mixcloud import list", () => {
 				"fetching page 1",
 				"page 1 response -- status: 200",
 				"page 1 validated -- records: 1",
+				"parsing completed -- 1/1 matched, 0 unmatched or excluded, parser version: 1",
 				"saving started -- 1 cloudcasts",
 				"saving progress -- 1/1",
 				"completed -- committed 1 cloudcasts",

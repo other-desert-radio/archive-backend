@@ -319,12 +319,14 @@ retained unchanged; this chunk validates the cloudcast fields used by the
 importer, including nested tags and small/large picture strings, against the
 structure in `src/res/mixcloud.json`. Unused fields are excluded from validation
 for performance and remain documented as comments in the patterns. It does not
-parse names or write files. The UI button calls this route and reloads the list
-after success while preserving search and sort. Refresh failures appear as
-human-readable feedback below the toolbar; network, unreadable response, and
-table reload failures are identified separately. The shared
-`RefreshMixcloudResponse` type is exported from the Mixcloud imports resource
-barrel.
+write files. After source validation, it calls `parseMixcloudEntry` for every
+cloudcast and logs matched/unmatched counts and parser version. Parser results
+are not persisted yet; source metadata persistence remains unchanged. The UI
+button calls this route and reloads the list after success while preserving
+search and sort. Refresh failures appear as human-readable feedback below the
+toolbar; network, unreadable response, and table reload failures are identified
+separately. The shared `RefreshMixcloudResponse` type is exported from the
+Mixcloud imports resource barrel.
 
 Source validation patterns (`PicturesPattern`, `CloudcastPattern`, and
 `PagePattern`) live in the resource's `types.ts` and are exported alongside
