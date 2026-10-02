@@ -1,5 +1,20 @@
 import { P } from "ts-pattern";
 
+export const RemoveTagRequestPattern = {
+	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
+} as const;
+export type RemoveTagRequest = P.infer<typeof RemoveTagRequestPattern>;
+export type RemoveTagResponse = { id: number };
+export type TagDeleteImpact = {
+	tag: { id: number; title: string };
+	shows: { id: number; title: string }[];
+	djs: {
+		id: number;
+		title: string;
+		assignment: "direct" | "inherited" | "both";
+	}[];
+};
+
 export const CreateTagRequestPattern = {
 	title: P.string.minLength(1),
 	color: P.optional(P.string.regex(/^#[0-9a-fA-F]{6}$/)), // hex color pattern

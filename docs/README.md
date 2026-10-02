@@ -78,6 +78,18 @@ Repeat migration steps after each review checkpoint. Use
 `scripts/run-migrations` only when all pending migrations have been reviewed.
 Startup checks PostgreSQL connectivity; `/health` is public.
 
+Tag editing API chunk is complete: `POST /api/admin/modify-tag` validates and
+replaces title, hex color, and optional Mixcloud metadata, marks reviewed, and
+preserves identity, creation timestamp, and DJ/Show links. Conflicting
+normalized titles are rejected. Tag IDs use the same positive safe-integer
+validation as Show editing. The Tags table Edit action opens a prefilled
+shared-modal editor with hex input, a native color picker, and a live inline
+chip. Saving marks reviewed and reloads Tags; failed saves retain values. The “+
+tag” action now opens onboarding with the same validated fields and color
+preview. New tags are reviewed; existing titles reuse the current tag.
+Successful creation refreshes Tags and clears search. Merging and grid views
+remain outside this workflow.
+
 For UI development, run `scripts/build-container-watch` after database setup. It
 builds the stack, mounts host `dist/admin` into the API container, and starts
 the Vite build watcher. Changes appear after each rebuild. Stop the watcher with
@@ -144,6 +156,21 @@ removes its containers and test volume. For manual verification, follow the
 [isolated database runbook](DATABASE_E2E_TESTING.md); do not create test records
 in the normal archive database. The Mixcloud migration test requires an explicit
 disposable `MIXCLOUD_MIGRATION_TEST_DATABASE_URL` and otherwise skips.
+
+Verify alignment, horizontal scrolling, grid columns, and sticky controls with
+`integration-tests/resource-layout.spec.ts` and agent-browser at desktop,
+tablet, and phone widths. The layout suite mocks resource reads and writes no
+archive records.
+
+### Tag deletion API
+
+The authenticated Tag hard-deletion API is implemented. The
+`GET /api/admin/tags/:id/delete-impact` preview lists linked Shows and affected
+DJs, including direct and inherited assignments. `POST /api/admin/remove-tag`
+permanently deletes a tag and its cascading assignment rows while preserving
+Shows and DJs. See [the route contract](api-routes.md#tag-hard-deletion). The
+Tags UI previews affected records before confirmation and retains search and
+sort after deletion.
 
 The archive exporter uses absolute `ARCHIVE_RESOURCE_DIRECTORY` and
 `ARCHIVE_ASSET_DIRECTORY` constants in `src/db/export-archive.ts`. Inspect them

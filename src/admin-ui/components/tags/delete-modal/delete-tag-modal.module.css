@@ -1,0 +1,35 @@
+.impact {
+	margin: 20px 0;
+	overflow-wrap: anywhere;
+}
+.impact h3 {
+	font-size: inherit;
+	margin: 16px 0 8px;
+}
+.impact ul {
+	max-height: 160px;
+	overflow-y: auto;
+	margin: 8px 0;
+	padding-left: 24px;
+}
+.impact li + li {
+	margin-top: 8px;
+}
+.note {
+	font-size: 12px;
+}
+.error {
+	color: #b00020;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	margin-bottom: 20px;
+}
+.error button {
+	min-height: var(--modal-control-height);
+	padding: var(--modal-control-padding);
+	font: inherit;
+	border: 1px solid #000;
+	border-radius: 0;
+	background: #fff;
+	color: #000;
+}
