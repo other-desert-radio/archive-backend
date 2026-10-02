@@ -314,17 +314,17 @@ complete and source metadata is saved, logging start and completion with the
 persisted count. Each page has a 30-second timeout; failed requests, invalid
 JSON/page envelopes or cloudcast records, or repeated pagination URLs stop the
 refresh without retries and return human-readable `500` errors identifying
-fetch/validation or save failures after logging the
-failure. Source records are retained unchanged; this chunk validates the
-cloudcast fields used by the importer, including nested tags and small/large
-picture strings, against the structure in `src/res/mixcloud.json`. Unused fields
-are excluded from validation for performance and remain documented as comments
-in the patterns. It does not parse names or write files. The UI button calls
-this route and reloads the list after success while preserving search and sort.
-Refresh failures appear as human-readable feedback below the toolbar; network,
-unreadable response, and table reload failures are identified separately.
-The shared `RefreshMixcloudResponse`
-type is exported from the Mixcloud imports resource barrel.
+fetch/validation or save failures after logging the failure. Source records are
+retained unchanged; this chunk validates the cloudcast fields used by the
+importer, including nested tags and small/large picture strings, against the
+structure in `src/res/mixcloud.json`. Unused fields are excluded from validation
+for performance and remain documented as comments in the patterns. It does not
+parse names or write files. The UI button calls this route and reloads the list
+after success while preserving search and sort. Refresh failures appear as
+human-readable feedback below the toolbar; network, unreadable response, and
+table reload failures are identified separately. The shared
+`RefreshMixcloudResponse` type is exported from the Mixcloud imports resource
+barrel.
 
 Source validation patterns (`PicturesPattern`, `CloudcastPattern`, and
 `PagePattern`) live in the resource's `types.ts` and are exported alongside
@@ -339,15 +339,15 @@ and import timestamps are preserved; records absent from the fetch are retained.
 Changed source metadata on imported rows sets `data_changed`; tag order and
 duplicate keys alone do not count as changes. Existing true flags remain true,
 including on pending rows. No archive Shows, DJs, or tags are created or
-changed. Database failures roll back the entire refresh and return human-readable `500`
-errors. Apply migrations through `0021` before refreshing.
+changed. Database failures roll back the entire refresh and return
+human-readable `500` errors. Apply migrations through `0021` before refreshing.
 
 Refresh logs include page URLs, response status/timing, validated page and total
-counts, next URLs, the save stage, progress every 100 records, and commit timing.
-Save failures log the source key and rollback context. Request IDs connect all
-stages. Browser failures that prevent requests reaching the API cannot produce
-server-stage logs; the UI advises checking the table before retrying a request
-that received no response.
+counts, next URLs, the save stage, progress every 100 records, and commit
+timing. Save failures log the source key and rollback context. Request IDs
+connect all stages. Browser failures that prevent requests reaching the API
+cannot produce server-stage logs; the UI advises checking the table before
+retrying a request that received no response.
 
 `GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
 plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.

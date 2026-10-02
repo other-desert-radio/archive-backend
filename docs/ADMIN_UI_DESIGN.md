@@ -319,10 +319,9 @@ HH:MM:SS, arrays display comma-separated values, and missing values show muted
 toggles. An enabled “Refresh Mixcloud” button uses the shared toolbar action
 position and styling beside search. It calls the refresh route, disables itself
 with “Refreshing Mixcloud…” while refreshing and reloading the table, and
-preserves search and sort. Inline status/error messages appear below the toolbar.
-Refresh failures retain existing rows and allow another button click to retry;
-errors include human-readable server feedback rather than raw internal errors.
-A reload failure after a successful refresh is identified separately.
-Shared toolbar creation
-controls and table Edit controls are optional; existing resources continue
-supplying them.
+preserves search and sort. Inline status/error messages appear below the
+toolbar. Refresh failures retain existing rows and allow another button click to
+retry; errors include human-readable server feedback rather than raw internal
+errors. A reload failure after a successful refresh is identified separately.
+Shared toolbar creation controls and table Edit controls are optional; existing
+resources continue supplying them.
