@@ -69,6 +69,12 @@ export const mixcloudImportRoutes =
 							"mixcloud_import.url",
 							"mixcloud_import.name",
 							"mixcloud_import.created_time",
+							"mixcloud_import.derived_title",
+							"mixcloud_import.derived_date",
+							"mixcloud_import.decoded_djs",
+							"mixcloud_import.parser_version",
+							"mixcloud_import.parser_key",
+							"mixcloud_import.date_source",
 							"mixcloud_import.image_small",
 							"mixcloud_import.image_large",
 						])
@@ -105,6 +111,22 @@ export const mixcloudImportRoutes =
 						...(row.created_time === null
 							? {}
 							: { created_time: row.created_time.toISOString() }),
+						...(row.derived_title === null
+							? {}
+							: { derived_title: row.derived_title }),
+						...(row.derived_date === null
+							? {}
+							: { derived_date: row.derived_date.toISOString() }),
+						...(row.decoded_djs === null
+							? {}
+							: { decoded_djs: row.decoded_djs }),
+						...(row.parser_version === null
+							? {}
+							: { parser_version: row.parser_version }),
+						...(row.parser_key === null ? {} : { parser_key: row.parser_key }),
+						...(row.date_source === null
+							? {}
+							: { date_source: row.date_source }),
 						...(row.image_small === null
 							? {}
 							: { image_small: row.image_small }),

@@ -3,11 +3,28 @@ import Fastify from "fastify";
 import { Kysely, PostgresDialect } from "kysely";
 import { adminRoutes } from "../../src/admin/admin.js";
 import { mixcloudImportRoutes } from "../../src/admin/routes/mixcloud-imports/index.js";
-import type { Database } from "../../src/db/types.js";
+import type { Database, MixcloudImportTable } from "../../src/db/types.js";
 
 const timestamp = new Date("2026-09-01T12:00:00Z");
+const emptyParserFields: Pick<
+	MixcloudImportTable,
+	| "derived_title"
+	| "derived_date"
+	| "decoded_djs"
+	| "parser_version"
+	| "parser_key"
+	| "date_source"
+> = {
+	derived_title: null,
+	derived_date: null,
+	decoded_djs: null,
+	parser_version: null,
+	parser_key: null,
+	date_source: null,
+};
 const rows = [
 	{
+		...emptyParserFields,
 		id: 1,
 		data_changed: true,
 		mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
@@ -28,6 +45,7 @@ const rows = [
 		linked_tags: [{ tag_id: 3 }, { tag_id: 5 }],
 	},
 	{
+		...emptyParserFields,
 		id: 2,
 		data_changed: false,
 		mixcloud_tag_keys: null,
@@ -64,6 +82,76 @@ const database = (result: typeof rows, fail = false, queries: string[] = []) =>
 	});
 
 describe("Mixcloud import list", () => {
+	for (const dateSource of ["title", "created_time"] as const) {
+		test(`returns stored parser suggestions with ${dateSource} date source`, async () => {
+			const suggestions = {
+				derived_title: "Extracted show",
+				derived_date: timestamp,
+				decoded_djs: ["Caroline", "Ethan"],
+				parser_version: 1,
+				parser_key: "common-comma-date",
+				date_source: dateSource,
+			};
+			const queries: string[] = [];
+			const db = database([{ ...rows[1], ...suggestions }], false, queries);
+			const app = Fastify();
+			try {
+				await app.register(mixcloudImportRoutes(db));
+				const response = await app.inject("/mixcloud-imports");
+				expect(response.statusCode).toBe(200);
+				expect(response.json()).toEqual([
+					{
+						id: 2,
+						data_changed: false,
+						key: "/odr/pending/",
+						djs: [],
+						dj_names: [],
+						tags: [],
+						...suggestions,
+						derived_date: timestamp.toISOString(),
+					},
+				]);
+				for (const field of Object.keys(suggestions)) {
+					expect(queries[0]).toContain(`"mixcloud_import"."${field}"`);
+				}
+			} finally {
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+	test("preserves partial parser results, empty DJ arrays, and scaffold version zero", async () => {
+		const db = database([
+			{
+				...rows[1],
+				derived_title: "Partial show",
+				decoded_djs: [],
+				parser_version: 0,
+			},
+		]);
+		const app = Fastify();
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject("/mixcloud-imports");
+			expect(response.statusCode).toBe(200);
+			expect(response.json()).toEqual([
+				{
+					id: 2,
+					data_changed: false,
+					key: "/odr/pending/",
+					djs: [],
+					dj_names: [],
+					tags: [],
+					derived_title: "Partial show",
+					decoded_djs: [],
+					parser_version: 0,
+				},
+			]);
+		} finally {
+			await app.close();
+			await db.destroy();
+		}
+	});
 	test("logs fetch pages, save progress, and commit completion", async () => {
 		const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
 			Response.json({

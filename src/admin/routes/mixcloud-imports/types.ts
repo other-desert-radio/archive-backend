@@ -60,6 +60,12 @@ export type MixcloudImportAdminRow = {
 	url?: string;
 	name?: string;
 	created_time?: string;
+	derived_title?: string;
+	derived_date?: string;
+	decoded_djs?: string[];
+	parser_version?: number;
+	parser_key?: string;
+	date_source?: "title" | "created_time";
 	image_small?: string;
 	image_large?: string;
 	show_id?: number;
