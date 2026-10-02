@@ -26,6 +26,12 @@ const linked: MixcloudImportAdminRow = {
 	url: "https://www.mixcloud.com/odr/source-show/",
 	name: "Original cloudcast",
 	created_time: "2026-08-02T09:30:00.000Z",
+	derived_title: "Extracted broadcast",
+	derived_date: "2026-07-20T00:00:00.000Z",
+	decoded_djs: ["Caroline", "Ethan"],
+	parser_version: 2,
+	parser_key: "common-comma-date",
+	date_source: "title",
 	image_small: "https://example.test/small.jpg",
 	image_large: "https://example.test/large.jpg",
 	show_id: 10,
@@ -142,6 +148,12 @@ describe("Mixcloud table", () => {
 			"3, 5",
 			"10",
 			"2, 9",
+			"extracted broadcast",
+			"2026-07-20T00:00",
+			"2026-07-20 00:00:00 UTC",
+			"caroline, ethan",
+			"common-comma-date",
+			"title",
 		])
 			expect(filterMixcloudImports(rows, query)).toEqual([linked]);
 		expect(filterMixcloudImports(rows, "missing")).toEqual([]);
@@ -190,13 +202,19 @@ describe("Mixcloud table", () => {
 			),
 		).toEqual([pending, linked, other]);
 	});
-	test("renders all sixteen columns, formatted values, and no actions", () => {
+	test("renders all twenty-two columns, formatted values, and no actions", () => {
 		expect(mixcloudColumns.map((c) => c.label)).toEqual([
 			"ID",
 			"Key",
 			"url",
 			"name",
 			"created_time",
+			"derived_title",
+			"derived_date",
+			"decoded_djs",
+			"parser_version",
+			"parser_key",
+			"date_source",
 			"image_small",
 			"image_large",
 			"mixcloud_tag_keys",
@@ -220,6 +238,10 @@ describe("Mixcloud table", () => {
 		expect(html).toContain("2026-09-01 12:00:00 UTC");
 		expect(html).toContain("01:00:00");
 		expect(html).toContain("Original cloudcast");
+		expect(html).toContain("Extracted broadcast");
+		expect(html).toContain("2026-07-20 00:00:00 UTC");
+		expect(html).toContain("Caroline, Ethan");
+		expect(html).toContain("common-comma-date");
 		expect(html).toContain("2026-08-02 09:30:00 UTC");
 		expect(html).toContain(
 			'<a href="https://example.test/small.jpg" target="_blank" rel="noopener noreferrer">https://example.test/small.jpg</a>',
@@ -249,6 +271,66 @@ describe("Mixcloud table", () => {
 		expect(toolbar).toContain(
 			'<button type="button">Refresh Mixcloud</button>',
 		);
+	});
+	test("sorts parser fields and preserves empty arrays and version zero", () => {
+		const other: MixcloudImportAdminRow = {
+			...linked,
+			id: 3,
+			derived_title: "Z broadcast",
+			derived_date: "2026-07-21T00:00:00.000Z",
+			decoded_djs: ["Z DJ"],
+			parser_version: 10,
+			parser_key: "z-parser",
+			date_source: "created_time",
+		};
+		for (const column of [
+			"derived_title",
+			"derived_date",
+			"decoded_djs",
+			"parser_version",
+			"parser_key",
+		] as const) {
+			expect(
+				sortResourceRows(
+					[other, linked, pending],
+					mixcloudColumns,
+					column,
+					"asc",
+				),
+			).toEqual([pending, linked, other]);
+			expect(
+				sortResourceRows(
+					[other, linked, pending],
+					mixcloudColumns,
+					column,
+					"desc",
+				),
+			).toEqual([other, linked, pending]);
+		}
+		expect(
+			sortResourceRows(
+				[linked, other, pending],
+				mixcloudColumns,
+				"date_source",
+				"asc",
+			),
+		).toEqual([pending, other, linked]);
+		expect(filterMixcloudImports([linked, other], "created_time")).toEqual([
+			other,
+		]);
+		expect(filterMixcloudImports([linked, other], "10")).toEqual([
+			linked,
+			other,
+		]);
+		const empty = { ...pending, decoded_djs: [], parser_version: 0 };
+		for (const key of ["decoded_djs", "parser_version"] as const) {
+			const column = mixcloudColumns.find((c) => c.key === key);
+			if (!column) throw new Error(`Missing ${key} column`);
+			expect(renderToStaticMarkup(column.render(empty))).toContain(
+				key === "decoded_djs" ? "None" : "0",
+			);
+		}
+		expect(filterMixcloudImports([empty], "0")).toEqual([empty]);
 	});
 	test("searches and sorts the change flag", () => {
 		expect(filterMixcloudImports(rows, "true")).toEqual([linked]);

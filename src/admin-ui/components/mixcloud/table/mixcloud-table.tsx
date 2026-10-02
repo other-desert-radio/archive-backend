@@ -68,6 +68,56 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 			),
 	},
 	{
+		key: "derived_title",
+		label: "derived_title",
+		render: (r) => formatMissing(r.derived_title),
+		compare: (a, b) => text(a.derived_title, b.derived_title),
+	},
+	{
+		key: "derived_date",
+		label: "derived_date",
+		render: (r) =>
+			formatMissing(
+				r.derived_date === undefined
+					? undefined
+					: formatUTCDateTime(r.derived_date),
+			),
+		compare: (a, b) =>
+			compareOptionalNumbers(
+				a.derived_date === undefined ? undefined : Date.parse(a.derived_date),
+				b.derived_date === undefined ? undefined : Date.parse(b.derived_date),
+			),
+	},
+	{
+		key: "decoded_djs",
+		label: "decoded_djs",
+		render: (r) =>
+			formatMissing(
+				r.decoded_djs?.length ? r.decoded_djs.join(", ") : undefined,
+			),
+		compare: (a, b) =>
+			text(a.decoded_djs?.join(", "), b.decoded_djs?.join(", ")),
+	},
+	{
+		key: "parser_version",
+		label: "parser_version",
+		render: (r) => formatMissing(r.parser_version),
+		compare: (a, b) =>
+			compareOptionalNumbers(a.parser_version, b.parser_version),
+	},
+	{
+		key: "parser_key",
+		label: "parser_key",
+		render: (r) => formatMissing(r.parser_key),
+		compare: (a, b) => text(a.parser_key, b.parser_key),
+	},
+	{
+		key: "date_source",
+		label: "date_source",
+		render: (r) => formatMissing(r.date_source),
+		compare: (a, b) => text(a.date_source, b.date_source),
+	},
+	{
 		key: "image_small",
 		label: "image_small",
 		render: (r) =>

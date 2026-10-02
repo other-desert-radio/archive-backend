@@ -362,14 +362,14 @@ empty array means no source tags), `created_time` (ISO timestamp), `duration`
 (seconds), `image_small`, and `image_large` (image URLs), read directly from
 `mixcloud_import`, including for pending records. Duration now represents source
 metadata rather than the linked Show duration. Optional parser suggestions are
-`derived_title` (string), `derived_date` (ISO timestamp), `decoded_djs` (extracted
-DJ name strings, not archive IDs), `parser_version` (integer), `parser_key`
-(stable text matcher identifier), and `date_source` (`title` or `created_time`).
-Null parser fields are omitted independently, preserving partial results;
-non-null empty DJ arrays and parser version zero are included. Suggestions come
-directly from the source row, independently of linked Show/DJ details. Refresh
-does not populate them yet, and this chunk adds no UI controls or import actions.
-Migration `0022` must be applied before using this endpoint. Show/DJ/tag details come from linked archive
-records; missing relationships produce empty arrays. Distinct correlated
-relationship queries avoid duplicate imports or IDs. Failures return the generic
-`500` error.
+`derived_title` (string), `derived_date` (ISO timestamp), `decoded_djs`
+(extracted DJ name strings, not archive IDs), `parser_version` (integer),
+`parser_key` (stable text matcher identifier), and `date_source` (`title` or
+`created_time`). Null parser fields are omitted independently, preserving
+partial results; non-null empty DJ arrays and parser version zero are included.
+Suggestions come directly from the source row, independently of linked Show/DJ
+details. Refresh does not populate them yet, and this chunk adds no UI controls
+or import actions. Migration `0022` must be applied before using this endpoint.
+Show/DJ/tag details come from linked archive records; missing relationships
+produce empty arrays. Distinct correlated relationship queries avoid duplicate
+imports or IDs. Failures return the generic `500` error.
