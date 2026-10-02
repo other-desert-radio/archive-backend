@@ -171,16 +171,24 @@ currently print diagnostics without writing to the database.
 
 every mixcloud show has a `key`. we use that to create this table:
 
-```
+```text
 id |
 key (from mixcloud) |
+url | name | created_time | duration | image_small | image_large |
 show_id (null unless imported into an actual show) |
 imported_at (null unless imported into an actual show)
 ```
 
 - key is UNIQUE
+- `url` and `name` store the original Mixcloud cloudcast URL and name.
+- `created_time` stores Mixcloud's creation timestamp, separately from the
+  tracking row's `createdAt` and the successful import's `imported_at`.
+- `duration` stores the cloudcast's `audio_length` in seconds.
+- `image_small` and `image_large` store source image URLs, not image bytes.
+- These six source fields are nullable so existing tracking rows remain valid.
+  Migration `0019_add_mixcloud_source_metadata` adds them; it does not backfill
+  source data or run the importer.
 
-deletion stratergy: Action Effect
-Delete an import row -> Show stays untouched 
-Soft-delete a show -> Import row stays unchanged 
-Hard-delete a show -> Import row remains; show_id and imported_at become null
+deletion stratergy: Action Effect Delete an import row -> Show stays untouched
+Soft-delete a show -> Import row stays unchanged Hard-delete a show -> Import
+row remains; show_id and imported_at become null

@@ -41,6 +41,45 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 		compare: (a, b) => text(a.key, b.key),
 	},
 	{
+		key: "url",
+		label: "url",
+		render: (r) => formatMissing(r.url),
+		compare: (a, b) => text(a.url, b.url),
+	},
+	{
+		key: "name",
+		label: "name",
+		render: (r) => formatMissing(r.name),
+		compare: (a, b) => text(a.name, b.name),
+	},
+	{
+		key: "created_time",
+		label: "created_time",
+		render: (r) =>
+			formatMissing(
+				r.created_time === undefined
+					? undefined
+					: formatUTCDateTime(r.created_time),
+			),
+		compare: (a, b) =>
+			compareOptionalNumbers(
+				a.created_time === undefined ? undefined : Date.parse(a.created_time),
+				b.created_time === undefined ? undefined : Date.parse(b.created_time),
+			),
+	},
+	{
+		key: "image_small",
+		label: "image_small",
+		render: (r) => formatMissing(r.image_small),
+		compare: (a, b) => text(a.image_small, b.image_small),
+	},
+	{
+		key: "image_large",
+		label: "image_large",
+		render: (r) => formatMissing(r.image_large),
+		compare: (a, b) => text(a.image_large, b.image_large),
+	},
+	{
 		key: "show_id",
 		label: "show_id",
 		render: (r) => formatMissing(r.show_id),

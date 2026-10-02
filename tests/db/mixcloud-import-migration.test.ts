@@ -6,6 +6,10 @@ import {
 	down,
 	up,
 } from "../../src/db/migrations/0018_create_mixcloud_import_table.js";
+import {
+	up as addMetadata,
+	down as removeMetadata,
+} from "../../src/db/migrations/0019_add_mixcloud_source_metadata.js";
 import type { Database } from "../../src/db/types.js";
 
 // Opt in with a disposable database URL; never fall back to DATABASE_URL.
@@ -27,6 +31,56 @@ test.skipIf(!databaseUrl)(
 			await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(db);
 			await createShows(db);
 			await up(db);
+			await db
+				.insertInto("mixcloud_import")
+				.values({ key: "/existing/" })
+				.execute();
+			await addMetadata(db);
+			const sourceMetadata = {
+				url: "https://www.mixcloud.com/example/show/",
+				name: "Source cloudcast",
+				created_time: new Date("2026-01-01T12:00:00Z"),
+				duration: 3600,
+				image_small: "https://example.test/small.jpg",
+				image_large: "https://example.test/large.jpg",
+			};
+			const existing = await db
+				.selectFrom("mixcloud_import")
+				.selectAll()
+				.where("key", "=", "/existing/")
+				.executeTakeFirstOrThrow();
+			for (const column of Object.keys(
+				sourceMetadata,
+			) as (keyof typeof sourceMetadata)[]) {
+				expect(existing[column]).toBeNull();
+			}
+			await db
+				.updateTable("mixcloud_import")
+				.set(sourceMetadata)
+				.where("id", "=", existing.id)
+				.execute();
+			const stored = await db
+				.selectFrom("mixcloud_import")
+				.selectAll()
+				.where("id", "=", existing.id)
+				.executeTakeFirstOrThrow();
+			expect(stored).toEqual({ ...existing, ...sourceMetadata });
+			await removeMetadata(db);
+			const rolledBack = await sql<Record<string, unknown>>`
+				SELECT * FROM mixcloud_import WHERE id = ${existing.id}
+			`.execute(db);
+			expect(rolledBack.rows[0]).toEqual({
+				id: existing.id,
+				createdAt: existing.createdAt,
+				key: existing.key,
+				show_id: null,
+				imported_at: null,
+			});
+			await addMetadata(db);
+			await db
+				.deleteFrom("mixcloud_import")
+				.where("id", "=", existing.id)
+				.execute();
 			const createShow = () =>
 				db
 					.insertInto("shows")

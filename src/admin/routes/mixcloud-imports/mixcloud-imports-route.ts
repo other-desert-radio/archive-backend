@@ -23,7 +23,12 @@ export const mixcloudImportRoutes =
 							"mixcloud_import.show_id",
 							"mixcloud_import.imported_at",
 							"shows.title as show_name",
-							"shows.duration",
+							"mixcloud_import.duration",
+							"mixcloud_import.url",
+							"mixcloud_import.name",
+							"mixcloud_import.created_time",
+							"mixcloud_import.image_small",
+							"mixcloud_import.image_large",
 						])
 						.select((eb) => [
 							jsonArrayFrom(
@@ -49,6 +54,17 @@ export const mixcloudImportRoutes =
 					const result: MixcloudImportAdminRow[] = rows.map((row) => ({
 						id: row.id,
 						key: row.key,
+						...(row.url === null ? {} : { url: row.url }),
+						...(row.name === null ? {} : { name: row.name }),
+						...(row.created_time === null
+							? {}
+							: { created_time: row.created_time.toISOString() }),
+						...(row.image_small === null
+							? {}
+							: { image_small: row.image_small }),
+						...(row.image_large === null
+							? {}
+							: { image_large: row.image_large }),
 						...(row.show_id === null ? {} : { show_id: row.show_id }),
 						...(row.imported_at === null
 							? {}
