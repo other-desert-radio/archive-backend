@@ -101,6 +101,12 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 			),
 	},
 	{
+		key: "data_changed",
+		label: "data_changed",
+		render: (r) => String(r.data_changed),
+		compare: (a, b) => Number(a.data_changed) - Number(b.data_changed),
+	},
+	{
 		key: "show_name",
 		label: "show name",
 		render: (r) => formatMissing(r.show_name),

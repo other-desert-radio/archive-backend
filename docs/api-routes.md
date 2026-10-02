@@ -341,14 +341,14 @@ errors. Apply migrations through `0021` before refreshing.
 `GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
 plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.
 It returns every tracking record in ID order, including unimported records. Each
-row includes `id`, `key`, required boolean `data_changed`, `djs` (numeric IDs), `dj_names` (strings aligned with
-ascending DJ IDs), and `tags` (ascending Show tag IDs). Optional `show_id`,
-`imported_at` (ISO timestamp), and `show_name` are omitted when absent. Source
-metadata includes optional `url`, `name`, `created_time` (ISO timestamp),
-`duration` (seconds), `image_small`, and `image_large` (image URLs), read
-directly from `mixcloud_import`, including for pending records. Duration now
-represents source metadata rather than the linked Show duration. Migration
-`0021` must be applied before using this endpoint. Show/DJ/tag details come from
-linked archive records; missing relationships produce empty arrays. Distinct
-correlated relationship queries avoid duplicate imports or IDs. Failures return
-the generic `500` error.
+row includes `id`, `key`, required boolean `data_changed`, `djs` (numeric IDs),
+`dj_names` (strings aligned with ascending DJ IDs), and `tags` (ascending Show
+tag IDs). Optional `show_id`, `imported_at` (ISO timestamp), and `show_name` are
+omitted when absent. Source metadata includes optional `url`, `name`,
+`created_time` (ISO timestamp), `duration` (seconds), `image_small`, and
+`image_large` (image URLs), read directly from `mixcloud_import`, including for
+pending records. Duration now represents source metadata rather than the linked
+Show duration. Migration `0021` must be applied before using this endpoint.
+Show/DJ/tag details come from linked archive records; missing relationships
+produce empty arrays. Distinct correlated relationship queries avoid duplicate
+imports or IDs. Failures return the generic `500` error.

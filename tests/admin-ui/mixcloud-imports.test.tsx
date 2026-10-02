@@ -131,7 +131,7 @@ describe("Mixcloud table", () => {
 			),
 		).toEqual([pending, linked, other]);
 	});
-	test("renders all fourteen columns, formatted values, and no actions", () => {
+	test("renders all fifteen columns, formatted values, and no actions", () => {
 		expect(mixcloudColumns.map((c) => c.label)).toEqual([
 			"ID",
 			"Key",
@@ -142,6 +142,7 @@ describe("Mixcloud table", () => {
 			"image_large",
 			"show_id",
 			"imported_at",
+			"data_changed",
 			"show name",
 			"djs",
 			"dj names",
@@ -165,6 +166,8 @@ describe("Mixcloud table", () => {
 		expect(html).toContain("https://www.mixcloud.com/odr/source-show/");
 		expect(html).toContain("DJ Two, DJ Nine");
 		expect(html).toContain("None");
+		expect(html).toContain(">true<");
+		expect(html).toContain(">false<");
 		expect(html).not.toContain("Actions");
 		expect(html).not.toContain(">Edit<");
 		const toolbar = renderToStaticMarkup(
@@ -174,6 +177,16 @@ describe("Mixcloud table", () => {
 		expect(toolbar).toContain(
 			'<button type="button">Refresh Mixcloud</button>',
 		);
+	});
+	test("searches and sorts the change flag", () => {
+		expect(filterMixcloudImports(rows, "true")).toEqual([linked]);
+		expect(filterMixcloudImports(rows, "false")).toEqual([pending]);
+		expect(
+			sortResourceRows(rows, mixcloudColumns, "data_changed", "asc"),
+		).toEqual([pending, linked]);
+		expect(
+			sortResourceRows(rows, mixcloudColumns, "data_changed", "desc"),
+		).toEqual([linked, pending]);
 	});
 	test("keeps existing Edit controls", () => {
 		const html = renderToStaticMarkup(

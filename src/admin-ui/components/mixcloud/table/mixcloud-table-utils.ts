@@ -20,6 +20,7 @@ export const filterMixcloudImports = (
 			row.image_large,
 			row.show_id,
 			row.imported_at,
+			row.data_changed,
 			row.imported_at === undefined ? "" : formatUTCDateTime(row.imported_at),
 			row.show_name,
 			row.djs.join(", "),
