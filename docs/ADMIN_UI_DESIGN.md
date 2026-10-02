@@ -300,3 +300,16 @@ server/HTTP detail. Success removes the row without resetting search or sort and
 focuses search. The underlying resource view is inert while the dialog is open.
 The message shell supports optional content, destructive action styling, and
 opt-in opener focus restoration; existing callers retain their defaults.
+
+### Mixcloud table
+
+The sidebar entry follows Tags and opens `#mixcloud`, with lowercase “mixcloud”
+and “import” on two lines. The page heading is “Mixcloud Import.” This read-only
+view uses the shared resource layout, sticky search toolbar, sortable table,
+loading/retry, empty, and no-results states. Its nine columns are ID, Key,
+show_id, imported_at, show name, djs, dj names, duration, and tags. Search
+covers all displayed fields; sorting defaults to ID ascending. Timestamps use
+UTC, durations use HH:MM:SS, arrays display comma-separated values, and missing
+values show muted “None.” Unimported records remain visible. There are no
+Create/Edit actions or view toggles. Shared toolbar creation controls and table
+Edit controls are optional; existing resources continue supplying them.

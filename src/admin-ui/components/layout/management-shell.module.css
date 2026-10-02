@@ -117,3 +117,8 @@
 		transition: none;
 	}
 }
+
+.multilineLabel {
+	display: inline-block;
+	vertical-align: top;
+}

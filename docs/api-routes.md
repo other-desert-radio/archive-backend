@@ -302,3 +302,15 @@ IDs, return `400` for invalid input and `404` for unknown tags, and log failures
 before returning generic `500` errors. The Tags UI loads the preview before
 enabling confirmation; successful deletion removes the row while retaining
 search and sort.
+
+## Mixcloud import list
+
+`GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
+plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.
+It returns every tracking record in ID order, including unimported records. Each
+row includes `id`, `key`, `djs` (numeric IDs), `dj_names` (strings aligned with
+ascending DJ IDs), and `tags` (ascending Show tag IDs). Optional `show_id`,
+`imported_at` (ISO timestamp), `show_name`, and `duration` (seconds) are omitted
+when absent. Details come from linked archive records; missing relationships
+produce empty arrays. Distinct correlated relationship queries avoid duplicate
+imports or IDs. Failures return the generic `500` error.
