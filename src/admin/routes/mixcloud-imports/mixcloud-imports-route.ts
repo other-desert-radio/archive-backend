@@ -1,12 +1,27 @@
 import type { FastifyPluginAsync } from "fastify";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
-import type { MixcloudImportAdminRow } from "./types.js";
+import type {
+	MixcloudImportAdminRow,
+	RefreshMixcloudResponse,
+} from "./types.js";
 
-/** Registers authenticated, read-only Mixcloud import API routes. */
+/** Registers authenticated Mixcloud import list and refresh API routes. */
 export const mixcloudImportRoutes =
 	(database: TypedDatabase): FastifyPluginAsync =>
 	async (app) => {
+		app.post<{ Reply: AdminApiReply<RefreshMixcloudResponse> }>(
+			"/refresh-mixcloud",
+			async (request) => {
+				request.log.info(
+					"[Mixcloud Refresh] started -- /api/admin/refresh-mixcloud (scaffold)",
+				);
+				request.log.info(
+					"[Mixcloud Refresh] completed -- /api/admin/refresh-mixcloud (scaffold)",
+				);
+				return { status: "ok" };
+			},
+		);
 		app.get<{ Reply: AdminApiReply<MixcloudImportAdminRow[]> }>(
 			"/mixcloud-imports",
 			async (request, reply) => {

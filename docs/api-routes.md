@@ -305,6 +305,12 @@ search and sort.
 
 ## Mixcloud import list
 
+`POST /api/admin/refresh-mixcloud` is an authenticated scaffold requiring no
+request body. It returns `200 { "status": "ok" }` and logs start/completion.
+It does not yet fetch Mixcloud data or access the database. The UI button is
+not connected until a later review chunk. Its shared `RefreshMixcloudResponse`
+type is exported from the Mixcloud imports resource barrel.
+
 `GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
 plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.
 It returns every tracking record in ID order, including unimported records. Each

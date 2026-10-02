@@ -60,6 +60,43 @@ const database = (result: typeof rows, fail = false, queries: string[] = []) =>
 	});
 
 describe("Mixcloud import list", () => {
+	for (const role of [undefined, "user", "admin"] as const) {
+		test(`refresh scaffold enforces admin access: ${role ?? "anonymous"}`, async () => {
+			const queries: string[] = [];
+			const db = database([], true, queries);
+			const app = Fastify();
+			try {
+				await app.register(
+					adminRoutes(
+						{
+							api: {
+								getSession: async () => (role ? { user: { role } } : null),
+							},
+						} as never,
+						db,
+						{ username: "", password: "" },
+					),
+				);
+				const response = await app.inject({
+					method: "POST",
+					url: "/api/admin/refresh-mixcloud",
+				});
+				expect(response.statusCode).toBe(
+					role === "admin" ? 200 : role === "user" ? 403 : 401,
+				);
+				expect(response.json()).toEqual(
+					role === "admin"
+						? { status: "ok" }
+						: { error: role === "user" ? "Forbidden" : "Unauthorized" },
+				);
+				expect(queries).toEqual([]);
+			} finally {
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+
 	test("returns linked details and preserves unimported records using distinct correlated relationships", async () => {
 		const queries: string[] = [];
 		const db = database(rows, false, queries);

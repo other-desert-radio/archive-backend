@@ -15,3 +15,5 @@ export type MixcloudImportAdminRow = {
 	duration?: number;
 	tags: number[];
 };
+/** Temporary response contract for the Mixcloud refresh scaffold. */
+export type RefreshMixcloudResponse = { status: "ok" };
