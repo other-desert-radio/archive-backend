@@ -113,7 +113,22 @@ for (const failure of [
 	});
 }
 
-for (const [field, value] of Object.entries(cloudcast)) {
+// Only fields used by the importer are validated; unused metadata is preserved.
+const validatedFields = [
+	"key",
+	"url",
+	"name",
+	"tags",
+	"created_time",
+	"updated_time",
+	"play_count",
+	"pictures",
+	"slug",
+	"audio_length",
+] as const;
+
+for (const field of validatedFields) {
+	const value = cloudcast[field];
 	for (const invalid of [
 		undefined,
 		typeof value === "string" ? 123 : "invalid",
@@ -133,11 +148,7 @@ for (const invalid of [
 	null,
 	{ ...cloudcast, tags: [{ key: "/genres/live/", url: 123, name: "Live" }] },
 	{ ...cloudcast, pictures: { ...pictures, large: null } },
-	{ ...cloudcast, user: { ...cloudcast.user, username: 123 } },
-	{
-		...cloudcast,
-		user: { ...cloudcast.user, pictures: { ...pictures, small: null } },
-	},
+	{ ...cloudcast, pictures: { ...pictures, small: null } },
 ]) {
 	test("rejects invalid cloudcasts and nested metadata", async () => {
 		await expect(
@@ -146,3 +157,45 @@ for (const invalid of [
 		).rejects.toThrow("Invalid Mixcloud page");
 	});
 }
+
+test("accepts omitted or malformed unused metadata while preserving source records", async () => {
+	const minimal = {
+		key: cloudcast.key,
+		url: cloudcast.url,
+		name: cloudcast.name,
+		tags: cloudcast.tags,
+		created_time: cloudcast.created_time,
+		updated_time: cloudcast.updated_time,
+		play_count: cloudcast.play_count,
+		pictures: { small: pictures.small, large: pictures.large },
+		slug: cloudcast.slug,
+		audio_length: cloudcast.audio_length,
+	};
+	const records = [
+		minimal,
+		{
+			...minimal,
+			favorite_count: "unused",
+			comment_count: null,
+			listener_count: {},
+			repost_count: [],
+			user: "unused",
+			hosts: null,
+			pictures: {
+				...minimal.pictures,
+				thumbnail: null,
+				medium_mobile: null,
+				medium: null,
+				"320wx320h": null,
+				extra_large: null,
+				"640wx640h": null,
+				"768wx768h": null,
+				"1024wx1024h": null,
+			},
+		},
+	];
+	expect(
+		await fetchMixcloud((async () =>
+			Response.json({ data: records })) as typeof fetch),
+	).toEqual({ data: records });
+});
