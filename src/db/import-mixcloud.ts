@@ -1,43 +1,5 @@
+import type { MixcloudCloudcasts } from "../admin/routes/mixcloud-imports/types.js";
 import mixcloudCloudcastsJson from "../res/mixcloud.json" with { type: "json" };
-
-export type MixcloudPictures = Record<string, string>;
-
-export type MixcloudTag = {
-	key: string;
-	url: string;
-	name: string;
-};
-
-export type MixcloudUser = {
-	key: string;
-	url: string;
-	name: string;
-	username: string;
-	pictures: MixcloudPictures;
-};
-
-export type MixcloudCloudcast = {
-	key: string;
-	url: string;
-	name: string;
-	tags: MixcloudTag[];
-	created_time: string;
-	updated_time: string;
-	play_count: number;
-	favorite_count: number;
-	comment_count: number;
-	listener_count: number;
-	repost_count: number;
-	pictures: MixcloudPictures;
-	slug: string;
-	user: MixcloudUser;
-	hosts: unknown[];
-	audio_length: number;
-};
-
-export type MixcloudCloudcasts = {
-	data: MixcloudCloudcast[];
-};
 
 export const mixcloudCloudcasts: MixcloudCloudcasts = mixcloudCloudcastsJson;
 
