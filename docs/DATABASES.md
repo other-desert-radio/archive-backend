@@ -316,7 +316,12 @@ matchers and returns the first match's title, single raw DJ name, and parser
 key. Unmatched or excluded titles return `undefined`. Date suggestions and date
 source remain null until date conversion is implemented; DJ overrides are not
 applied yet. It has no file, network, or database side effects and is not
-connected to refresh or the import script yet. Normalization and pipeline
+connected to refresh yet. The read-only diagnostic import script calls this
+shared function, retains source keys, reports stable parser keys and versions,
+and treats undefined results as parse failures. It retains its local DJ overrides
+for diagnostic listings until shared normalization is added. Missing date
+suggestions are reported explicitly; the script no longer independently converts
+dates or substitutes upload dates. Normalization and pipeline
 version `1` follow in separate reviewed chunks.
 `tests/utils/mixcloud-parser.test.ts` checks this contract.
 
@@ -330,7 +335,7 @@ narrower `common-comma-date` matcher. Known-DJ prefixes run last and escape
 literal names before constructing regexes. Each matcher uses a stable text key
 as its identifier and diagnostic label; there is no separate parser name.
 `ParserFnResult` retains raw `djName`, `title`, and optional `date` captures.
-The script keeps its existing matchers until it calls the shared parser. Each
+The script uses these shared matchers through `parseMixcloudEntry`. Each
 matcher has its own named variable; the `parsers` array lists those variables in
 matching order, with example comments kept beside their definitions. Focused
 matcher coverage is in `tests/utils/mixcloud-title-parsers.test.ts`.
