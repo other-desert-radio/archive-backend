@@ -171,15 +171,15 @@ currently print diagnostics without writing to the database.
 
 every mixcloud show has a `key`. we use that to create this table:
 
-id | key (from mixcloud) | show_id (null unless imported into an actual show) |
+```
+id |
+key (from mixcloud) |
+show_id (null unless imported into an actual show) |
 imported_at (null unless imported into an actual show)
+```
 
 - key is UNIQUE
 
-deletion stratergy: Action Effect ━━━━━━━━━━━━━━━━━━━━━━
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Delete an import row
-Show stays untouched ──────────────────────
-───────────────────────────────────────────────────────── Soft-delete a show
-Import row stays unchanged ──────────────────────
-───────────────────────────────────────────────────────── Hard-delete a show
-Import row remains; show_id and imported_at become null
+deletion stratergy: Action Effect Delete an import row -> Show stays untouched
+Soft-delete a show -> Import row stays unchanged Hard-delete a show -> Import
+row remains; show_id and imported_at become null
