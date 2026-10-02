@@ -180,6 +180,7 @@ imported_at (null unless imported into an actual show)
 
 - key is UNIQUE
 
-deletion stratergy: Action Effect Delete an import row -> Show stays untouched
-Soft-delete a show -> Import row stays unchanged Hard-delete a show -> Import
-row remains; show_id and imported_at become null
+deletion stratergy: Action Effect
+Delete an import row -> Show stays untouched 
+Soft-delete a show -> Import row stays unchanged 
+Hard-delete a show -> Import row remains; show_id and imported_at become null
