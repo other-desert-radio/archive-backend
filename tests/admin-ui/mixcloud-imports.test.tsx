@@ -15,9 +15,12 @@ import {
 import {
 	loadMixcloudImports,
 	type MixcloudImportAdminRow,
+	refreshMixcloud,
 } from "../../src/admin-ui/loaders/mixcloud-imports.js";
 
 const linked: MixcloudImportAdminRow = {
+	mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
+	data_changed: true,
 	id: 2,
 	key: "/odr/test/",
 	url: "https://www.mixcloud.com/odr/source-show/",
@@ -34,6 +37,7 @@ const linked: MixcloudImportAdminRow = {
 	tags: [3, 5],
 };
 const pending: MixcloudImportAdminRow = {
+	data_changed: false,
 	id: 1,
 	key: "/odr/pending/",
 	djs: [],
@@ -42,6 +46,63 @@ const pending: MixcloudImportAdminRow = {
 };
 const rows = [linked, pending];
 describe("Mixcloud table", () => {
+	test("refresh posts to the route and describes errors for users", async () => {
+		expect(
+			await refreshMixcloud((async (url, options) => {
+				expect(url).toBe("/api/admin/refresh-mixcloud");
+				expect(options).toEqual({ method: "POST" });
+				return Response.json({ status: "ok" });
+			}) as typeof fetch),
+		).toEqual({ status: "ok" });
+		await expect(
+			refreshMixcloud((async () =>
+				Response.json(
+					{ error: "Internal Server Error" },
+					{ status: 500 },
+				)) as typeof fetch),
+		).rejects.toThrow("The server encountered an unexpected error.");
+		await expect(
+			refreshMixcloud((async () =>
+				Response.json(
+					{ error: "Mixcloud is temporarily unavailable. Please try again." },
+					{ status: 502 },
+				)) as typeof fetch),
+		).rejects.toThrow("Mixcloud is temporarily unavailable.");
+		await expect(
+			refreshMixcloud((async () => {
+				throw new Error("fetch failed");
+			}) as typeof fetch),
+		).rejects.toThrow("The browser did not receive a response");
+		await expect(
+			refreshMixcloud((async () => {
+				throw new TypeError(
+					"Request cannot be constructed from a URL that includes credentials",
+				);
+			}) as typeof fetch),
+		).rejects.toThrow("page URL contains login credentials");
+		await expect(
+			refreshMixcloud((async () => new Response("bad JSON")) as typeof fetch),
+		).rejects.toThrow("unreadable refresh response");
+		await expect(
+			refreshMixcloud((async () =>
+				Response.json({ status: "bad" })) as typeof fetch),
+		).rejects.toThrow("unexpected refresh response");
+	});
+	test("refresh toolbar disables its pending action and announces feedback", () => {
+		const html = renderToStaticMarkup(
+			<MixcloudToolbar
+				query=""
+				onQueryChange={() => {}}
+				onRefresh={() => {}}
+				isRefreshing
+				refreshFailed
+				refreshMessage="Unable to refresh Mixcloud."
+			/>,
+		);
+		expect(html).toContain("disabled");
+		expect(html).toContain("Refreshing Mixcloud…");
+		expect(html).toContain('role="alert"');
+	});
 	test("places the lowercase two-line sidebar label below tags", () => {
 		const html = renderToStaticMarkup(
 			<ManagementShell activeResource="mixcloud">content</ManagementShell>,
@@ -129,7 +190,7 @@ describe("Mixcloud table", () => {
 			),
 		).toEqual([pending, linked, other]);
 	});
-	test("renders all fourteen columns, formatted values, and no actions", () => {
+	test("renders all sixteen columns, formatted values, and no actions", () => {
 		expect(mixcloudColumns.map((c) => c.label)).toEqual([
 			"ID",
 			"Key",
@@ -138,12 +199,14 @@ describe("Mixcloud table", () => {
 			"created_time",
 			"image_small",
 			"image_large",
+			"mixcloud_tag_keys",
+			"duration",
 			"show_id",
 			"imported_at",
+			"data_changed",
 			"show name",
 			"djs",
 			"dj names",
-			"duration",
 			"tags",
 		]);
 		const html = renderToStaticMarkup(
@@ -158,18 +221,59 @@ describe("Mixcloud table", () => {
 		expect(html).toContain("01:00:00");
 		expect(html).toContain("Original cloudcast");
 		expect(html).toContain("2026-08-02 09:30:00 UTC");
-		expect(html).toContain("https://example.test/small.jpg");
-		expect(html).toContain("https://example.test/large.jpg");
+		expect(html).toContain(
+			'<a href="https://example.test/small.jpg" target="_blank" rel="noopener noreferrer">https://example.test/small.jpg</a>',
+		);
+		expect(html).toContain(
+			'<a href="https://example.test/large.jpg" target="_blank" rel="noopener noreferrer">https://example.test/large.jpg</a>',
+		);
+		expect(html.match(/<a /g)).toHaveLength(2);
 		expect(html).toContain("https://www.mixcloud.com/odr/source-show/");
 		expect(html).toContain("DJ Two, DJ Nine");
 		expect(html).toContain("None");
+		expect(html).toContain("/genres/ambient/, /genres/experimental/");
+		expect(html).toContain(">true<");
+		expect(html).toContain(">false<");
 		expect(html).not.toContain("Actions");
 		expect(html).not.toContain(">Edit<");
 		const toolbar = renderToStaticMarkup(
-			<MixcloudToolbar query="" onQueryChange={() => {}} />,
+			<MixcloudToolbar
+				query=""
+				onQueryChange={() => {}}
+				onRefresh={() => {}}
+				isRefreshing={false}
+				refreshFailed={false}
+			/>,
 		);
 		expect(toolbar).toContain("Search Mixcloud");
-		expect(toolbar).not.toContain("<button");
+		expect(toolbar).toContain(
+			'<button type="button">Refresh Mixcloud</button>',
+		);
+	});
+	test("searches and sorts the change flag", () => {
+		expect(filterMixcloudImports(rows, "true")).toEqual([linked]);
+		expect(filterMixcloudImports(rows, "false")).toEqual([pending]);
+		expect(
+			sortResourceRows(rows, mixcloudColumns, "data_changed", "asc"),
+		).toEqual([pending, linked]);
+		expect(
+			sortResourceRows(rows, mixcloudColumns, "data_changed", "desc"),
+		).toEqual([linked, pending]);
+	});
+	test("searches and sorts source tag keys and handles empty arrays", () => {
+		expect(filterMixcloudImports(rows, "/genres/experimental/")).toEqual([
+			linked,
+		]);
+		expect(
+			sortResourceRows(rows, mixcloudColumns, "mixcloud_tag_keys", "asc"),
+		).toEqual([pending, linked]);
+		const column = mixcloudColumns.find((c) => c.key === "mixcloud_tag_keys");
+		if (!column) throw new Error("Missing source tag keys column");
+		expect(
+			renderToStaticMarkup(
+				column.render({ ...pending, mixcloud_tag_keys: [] }),
+			),
+		).toContain("None");
 	});
 	test("keeps existing Edit controls", () => {
 		const html = renderToStaticMarkup(

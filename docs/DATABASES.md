@@ -74,6 +74,12 @@ cascading relationship rows. The explicit confirmation flag is required.
 rows referencing those DJs are removed by the database's `ON DELETE CASCADE`
 constraints. The explicit confirmation flag is required.
 
+`bun run db:delete:mixcloud-imports -- --confirm` permanently deletes every
+Mixcloud import tracking row, preserving the table, shows, DJs, tags, and their
+relationships. Like the Shows and DJs deletion scripts, it requires `--confirm`
+and uses the configured database. Clearing tracking removes duplicate-import
+protection; a later refresh can repopulate source rows.
+
 ## Authentication tables
 
 Better Auth owns its authentication tables separately from archive entities.
@@ -221,9 +227,8 @@ linked through `show_djs` and `show_tags`.
 
 Migration `0018_create_mixcloud_import_table` implements the tracking schema
 from `human_docs/databases_human.md`. The importer itself remains future work.
-The WIP importer and its launcher remain on the `mixcloud-import` branch and are
-excluded from this branch. There, `./scripts/import-mixcloud` runs
-`src/db/import-mixcloud.ts`, which reads `src/res/mixcloud.json`, parses
+This branch includes the WIP parser and launcher. `./scripts/import-mixcloud`
+runs `src/db/import-mixcloud.ts`, which reads `src/res/mixcloud.json`, parses
 cloudcast names, and prints diagnostics without database writes. Keep that
 parsing workflow read-only until the import phase is implemented. The following
 documents the tracking schema and future importer requirements; the migration
@@ -244,6 +249,7 @@ duration    integer null
 image_small text null
 image_large text null
 mixcloud_tag_keys text[] null
+data_changed boolean not null default false
 show_id     integer null references shows(id) on delete set null
 imported_at timestamptz null
 ```
@@ -252,11 +258,30 @@ Migration `0019_add_mixcloud_source_metadata` adds six nullable source fields,
 preserving existing rows without a backfill. `url` and `name` retain the source
 cloudcast URL and name; `created_time` is Mixcloud's creation timestamp;
 `duration` is `audio_length` in seconds; `image_small` and `image_large` are
-source image URLs. Applying this migration does not run the importer. Migration
+source image URLs. Refresh maps `pictures.large` to `image_small` and
+`pictures["1024wx1024h"]` to `image_large`; both source fields are required by
+fetch validation. Existing rows receive the new URLs on their next refresh.
+Applying this migration does not run the importer. Migration
 `0020_add_mixcloud_tag_keys` adds nullable `mixcloud_tag_keys`, an array of
 source genre key strings. Existing rows default to null (unknown); an empty
 array represents a cloudcast with no source tags. These are source metadata, not
 foreign keys or archive tag IDs.
+
+Migration `0021_add_mixcloud_data_changed` adds `data_changed`, defaulting to
+false for existing and new rows. It flags source changes needing review after
+import: refresh writes set it when relevant source metadata changes, unchanged
+refreshes preserve a set flag, and review clears it. Pending imports remain
+identifiable by their null `show_id`. Refresh upserts source metadata by exact
+key in one transaction, comparing URL, name, creation time, duration, image
+URLs, and tag keys as a set. Missing fetched records are retained. Archive
+records and import links are preserved. Review actions and API/UI flag exposure
+follow separately. No approved-source snapshot or diff history is stored.
+Rollback removes only the flag column and preserves tracking records and links.
+
+`tests/db/persist-mixcloud.test.ts` verifies that changing either image URL on a
+pending row saves the new URLs while keeping `data_changed` false; the same
+changes on a Show-linked row set the flag true. It requires the disposable
+`MIXCLOUD_MIGRATION_TEST_DATABASE_URL` described below.
 
 `createdAt` follows the archive table convention and records when the tracking
 row was created. `imported_at` records the successful database import time, not

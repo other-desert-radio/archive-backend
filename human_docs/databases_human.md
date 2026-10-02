@@ -166,8 +166,8 @@ existing show or DJ, preventing orphaned relationships.
 ## Mixcloud import
 
 The planned `./scripts/import-mixcloud` imports data from Mixcloud and may be
-run multiple times. The WIP script remains on the `mixcloud-import` branch and
-is excluded from this branch.
+run multiple times. This branch includes the WIP parser and launcher, which
+currently print diagnostics without writing to the database.
 
 every mixcloud show has a `key`. we use that to create this table:
 

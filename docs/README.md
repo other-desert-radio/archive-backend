@@ -44,10 +44,12 @@ read-only: its table lists tracking records and linked Show/DJ/tag details.
 Migration `0018_create_mixcloud_import_table` creates its backing table; apply
 it explicitly before expecting that view to load.
 
-The WIP Mixcloud importer and its launcher remain on `mixcloud-import` and are
-excluded from this branch. `scripts/fetch-mixcloud` is available and writes the
-combined public cloudcast export to ignored `src/res/mixcloud.json`; it does not
-import records into PostgreSQL.
+This branch includes the WIP Mixcloud parser (`src/db/import-mixcloud.ts`) and
+its launcher (`scripts/import-mixcloud`). They parse source records and print
+diagnostics; database import execution remains future work.
+`scripts/fetch-mixcloud` is available and writes the combined public cloudcast
+export to ignored `src/res/mixcloud.json`; it does not import records into
+PostgreSQL.
 
 ## Local environment and startup
 

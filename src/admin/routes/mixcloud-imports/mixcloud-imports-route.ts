@@ -1,12 +1,52 @@
 import type { FastifyPluginAsync } from "fastify";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
-import type { MixcloudImportAdminRow } from "./types.js";
+import { fetchMixcloud } from "./fetch-mixcloud.js";
+import { persistMixcloud } from "./persist-mixcloud.js";
+import type {
+	MixcloudImportAdminRow,
+	RefreshMixcloudResponse,
+} from "./types.js";
 
-/** Registers authenticated, read-only Mixcloud import API routes. */
+/** Registers authenticated Mixcloud import list and refresh API routes. */
 export const mixcloudImportRoutes =
 	(database: TypedDatabase): FastifyPluginAsync =>
 	async (app) => {
+		app.post<{ Reply: AdminApiReply<RefreshMixcloudResponse> }>(
+			"/refresh-mixcloud",
+			async (request, reply) => {
+				const startedAt = Date.now();
+				let stage: "fetch" | "save" = "fetch";
+				request.log.info(
+					"[Mixcloud Refresh] started -- /api/admin/refresh-mixcloud",
+				);
+				try {
+					const source = await fetchMixcloud(fetch, request.log);
+					stage = "save";
+					request.log.info(
+						{ count: source.data.length },
+						`[Mixcloud Refresh] saving started -- ${source.data.length} cloudcasts in one transaction`,
+					);
+					await persistMixcloud(database, source, request.log);
+					request.log.info(
+						{ count: source.data.length, elapsedMs: Date.now() - startedAt },
+						`[Mixcloud Refresh] completed -- committed ${source.data.length} cloudcasts, elapsed: ${Date.now() - startedAt}ms`,
+					);
+					return { status: "ok" };
+				} catch (error) {
+					request.log.error(
+						{ err: error, stage, elapsedMs: Date.now() - startedAt },
+						`[Mixcloud Refresh] failed -- stage: ${stage}, elapsed: ${Date.now() - startedAt}ms, /api/admin/refresh-mixcloud`,
+					);
+					return reply.code(500).send({
+						error:
+							stage === "fetch"
+								? "Mixcloud data could not be fetched or validated. No changes were saved. Please try again; if this continues, contact the administrator."
+								: "Mixcloud data was fetched, but could not be saved. No changes were saved. Please contact the administrator.",
+					});
+				}
+			},
+		);
 		app.get<{ Reply: AdminApiReply<MixcloudImportAdminRow[]> }>(
 			"/mixcloud-imports",
 			async (request, reply) => {
@@ -19,11 +59,13 @@ export const mixcloudImportRoutes =
 						.leftJoin("shows", "shows.id", "mixcloud_import.show_id")
 						.select([
 							"mixcloud_import.id",
+							"mixcloud_import.data_changed",
 							"mixcloud_import.key",
 							"mixcloud_import.show_id",
 							"mixcloud_import.imported_at",
 							"shows.title as show_name",
 							"mixcloud_import.duration",
+							"mixcloud_import.mixcloud_tag_keys",
 							"mixcloud_import.url",
 							"mixcloud_import.name",
 							"mixcloud_import.created_time",
@@ -53,6 +95,10 @@ export const mixcloudImportRoutes =
 						.execute();
 					const result: MixcloudImportAdminRow[] = rows.map((row) => ({
 						id: row.id,
+						data_changed: row.data_changed,
+						...(row.mixcloud_tag_keys === null
+							? {}
+							: { mixcloud_tag_keys: row.mixcloud_tag_keys }),
 						key: row.key,
 						...(row.url === null ? {} : { url: row.url }),
 						...(row.name === null ? {} : { name: row.name }),

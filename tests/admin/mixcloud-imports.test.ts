@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import Fastify from "fastify";
 import { Kysely, PostgresDialect } from "kysely";
 import { adminRoutes } from "../../src/admin/admin.js";
@@ -9,6 +9,8 @@ const timestamp = new Date("2026-09-01T12:00:00Z");
 const rows = [
 	{
 		id: 1,
+		data_changed: true,
+		mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
 		key: "/odr/show/",
 		url: "https://www.mixcloud.com/odr/show/",
 		name: "Source show",
@@ -27,6 +29,8 @@ const rows = [
 	},
 	{
 		id: 2,
+		data_changed: false,
+		mixcloud_tag_keys: null,
 		key: "/odr/pending/",
 		url: null,
 		name: null,
@@ -60,6 +64,171 @@ const database = (result: typeof rows, fail = false, queries: string[] = []) =>
 	});
 
 describe("Mixcloud import list", () => {
+	test("logs fetch pages, save progress, and commit completion", async () => {
+		const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
+			Response.json({
+				data: [
+					{
+						key: "/source/",
+						url: "https://example.test/source",
+						name: "Source",
+						created_time: "2026-09-01T12:00:00Z",
+						updated_time: "2026-09-01T12:00:00Z",
+						play_count: 0,
+						slug: "source",
+						audio_length: 3600,
+						pictures: { large: "small", "1024wx1024h": "large" },
+						tags: [],
+					},
+				],
+			}),
+		);
+		const logs: string[] = [];
+		const db = database([]);
+		const app = Fastify({
+			logger: {
+				stream: {
+					write: (line: string) => {
+						logs.push(JSON.parse(line).msg);
+					},
+				},
+			},
+		});
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject({
+				method: "POST",
+				url: "/refresh-mixcloud",
+			});
+			expect(response.statusCode).toBe(200);
+			const messages = logs.join("\n");
+			for (const text of [
+				"fetching page 1",
+				"page 1 response -- status: 200",
+				"page 1 validated -- records: 1",
+				"saving started -- 1 cloudcasts",
+				"saving progress -- 1/1",
+				"completed -- committed 1 cloudcasts",
+			])
+				expect(messages).toContain(text);
+		} finally {
+			fetchMock.mockRestore();
+			await app.close();
+			await db.destroy();
+		}
+	});
+	for (const invalidSource of [false, true]) {
+		test(`refresh fails atomically on ${invalidSource ? "invalid source" : "database failure"}`, async () => {
+			const source = {
+				key: "/source/",
+				url: "https://example.test/source",
+				name: "Source",
+				created_time: "2026-09-01T12:00:00Z",
+				updated_time: "2026-09-01T12:00:00Z",
+				play_count: 0,
+				slug: "source",
+				audio_length: 3600,
+				pictures: { large: "small", "1024wx1024h": "large" },
+				tags: [],
+			};
+			const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
+				Response.json({
+					data: [invalidSource ? { key: "/invalid/" } : source],
+				}),
+			);
+			const queries: string[] = [];
+			const db = database([], true, queries);
+			const app = Fastify();
+			try {
+				await app.register(mixcloudImportRoutes(db));
+				const response = await app.inject({
+					method: "POST",
+					url: "/refresh-mixcloud",
+				});
+				expect(response.statusCode).toBe(500);
+				expect(response.json().error).toContain(
+					invalidSource
+						? "could not be fetched or validated"
+						: "could not be saved",
+				);
+				expect(response.json().error).toContain("No changes were saved");
+				expect(queries.length > 0).toBe(!invalidSource);
+			} finally {
+				fetchMock.mockRestore();
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+
+	for (const role of [undefined, "user", "admin"] as const) {
+		test(`refresh enforces admin access: ${role ?? "anonymous"}`, async () => {
+			const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
+				Response.json({ data: [] }),
+			);
+			const queries: string[] = [];
+			const db = database([], true, queries);
+			const app = Fastify();
+			try {
+				await app.register(
+					adminRoutes(
+						{
+							api: {
+								getSession: async () => (role ? { user: { role } } : null),
+							},
+						} as never,
+						db,
+						{ username: "", password: "" },
+					),
+				);
+				const response = await app.inject({
+					method: "POST",
+					url: "/api/admin/refresh-mixcloud",
+				});
+				expect(response.statusCode).toBe(
+					role === "admin" ? 200 : role === "user" ? 403 : 401,
+				);
+				expect(response.json()).toEqual(
+					role === "admin"
+						? { status: "ok" }
+						: { error: role === "user" ? "Forbidden" : "Unauthorized" },
+				);
+				expect(queries).toEqual([]);
+				expect(fetchMock).toHaveBeenCalledTimes(role === "admin" ? 1 : 0);
+			} finally {
+				fetchMock.mockRestore();
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+
+	test("refresh returns a generic upstream failure without database access", async () => {
+		const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response("offline", { status: 503 }),
+		);
+		const queries: string[] = [];
+		const db = database([], true, queries);
+		const app = Fastify();
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject({
+				method: "POST",
+				url: "/refresh-mixcloud",
+			});
+			expect(response.statusCode).toBe(500);
+			expect(response.json().error).toContain(
+				"could not be fetched or validated",
+			);
+			expect(fetchMock).toHaveBeenCalledTimes(1);
+			expect(queries).toEqual([]);
+		} finally {
+			fetchMock.mockRestore();
+			await app.close();
+			await db.destroy();
+		}
+	});
+
 	test("returns linked details and preserves unimported records using distinct correlated relationships", async () => {
 		const queries: string[] = [];
 		const db = database(rows, false, queries);
@@ -71,6 +240,8 @@ describe("Mixcloud import list", () => {
 			expect(response.json()).toEqual([
 				{
 					id: 1,
+					data_changed: true,
+					mixcloud_tag_keys: rows[0].mixcloud_tag_keys,
 					key: "/odr/show/",
 					url: rows[0].url,
 					name: rows[0].name,
@@ -85,7 +256,14 @@ describe("Mixcloud import list", () => {
 					dj_names: ["DJ Two", "DJ Nine"],
 					tags: [3, 5],
 				},
-				{ id: 2, key: "/odr/pending/", djs: [], dj_names: [], tags: [] },
+				{
+					id: 2,
+					data_changed: false,
+					key: "/odr/pending/",
+					djs: [],
+					dj_names: [],
+					tags: [],
+				},
 			]);
 			expect(queries[0]).toContain('"mixcloud_import"."duration"');
 			expect(queries[0]).not.toContain('"shows"."duration"');
@@ -118,6 +296,8 @@ describe("Mixcloud import list", () => {
 			expect(response.statusCode).toBe(200);
 			expect(response.json()[0]).toEqual({
 				id: 1,
+				data_changed: true,
+				mixcloud_tag_keys: rows[0].mixcloud_tag_keys,
 				key: rows[0].key,
 				url: rows[0].url,
 				name: rows[0].name,
