@@ -2,12 +2,14 @@ import type { FastifyPluginAsync } from "fastify";
 import { isMatching, match, P } from "ts-pattern";
 import type { TagsJSON } from "../../../json-transformers/index.js";
 import { transformTags } from "../../../json-transformers/index.js";
+import { isDatabaseId } from "../../../utils/index.js";
 import {
 	type ValidateTagsResult,
 	validateTags,
 } from "../../../utils/validate-tags.js";
 import { clientDescription } from "../../logging.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
+import { loadTagDeleteImpact } from "./delete-impact.js";
 import {
 	normalizeModifyTagRequest,
 	TagEditValidationError,
@@ -20,6 +22,10 @@ import {
 	CreateTagsRequestPattern,
 	type ModifyTagRequest,
 	ModifyTagRequestPattern,
+	type RemoveTagRequest,
+	RemoveTagRequestPattern,
+	type RemoveTagResponse,
+	type TagDeleteImpact,
 } from "./types.js";
 
 /** Registers authenticated Tags API routes. */
@@ -199,8 +205,78 @@ export const tagRoutes =
 			}
 		});
 
-		app.post("/remove-tag", async () => {
-			// soft delete
-			return undefined;
+		app.get<{ Params: { id: string }; Reply: AdminApiReply<TagDeleteImpact> }>(
+			"/tags/:id/delete-impact",
+			async (request, reply) => {
+				request.log.info(
+					{ client: clientDescription(request) },
+					"[Tag Deletion Preview] started",
+				);
+				const rawId = request.params.id;
+				const id = Number(rawId);
+				if (
+					!/^[0-9]+$/.test(rawId) ||
+					!isMatching(RemoveTagRequestPattern, { id })
+				) {
+					request.log.warn("[Tag Deletion Preview] rejected -- invalid ID");
+					return reply.code(400).send({ error: "Validation error" });
+				}
+				try {
+					const impact = await loadTagDeleteImpact(database, id);
+					if (impact === undefined) {
+						request.log.warn(
+							`[Tag Deletion Preview] rejected -- tag not found, id: ${id}`,
+						);
+						return reply.code(404).send({ error: "Not Found" });
+					}
+					request.log.info(
+						`[Tag Deletion Preview] loaded -- id: ${id}, Shows: ${impact.shows.length}, DJs: ${impact.djs.length}`,
+					);
+					return impact;
+				} catch (error) {
+					request.log.error(
+						{ err: error },
+						`[Tag Deletion Preview] failed -- id: ${id}`,
+					);
+					return reply.code(500).send({ error: "Internal Server Error" });
+				}
+			},
+		);
+		app.post<{
+			Body: RemoveTagRequest;
+			Reply: AdminApiReply<RemoveTagResponse>;
+		}>("/remove-tag", async (request, reply) => {
+			request.log.info(
+				{ client: clientDescription(request) },
+				"[Tag Deletion] started",
+			);
+			if (!isMatching(RemoveTagRequestPattern, request.body)) {
+				request.log.warn("[Tag Deletion] rejected -- invalid request shape");
+				return reply.code(400).send({ error: "Validation error" });
+			}
+			const { id } = request.body;
+			try {
+				const removed = !isDatabaseId(id)
+					? undefined
+					: await database
+							.deleteFrom("tags")
+							.where("id", "=", id)
+							.returning("id")
+							.executeTakeFirst();
+				if (removed === undefined) {
+					request.log.warn(
+						`[Tag Deletion] rejected -- tag not found, id: ${id}`,
+					);
+					return reply.code(404).send({ error: "Not Found" });
+				}
+				request.log.info(
+					{ client: clientDescription(request) },
+					`[Tag Deletion] deleted -- id: ${id}`,
+				);
+				return removed;
+			} catch (error) {
+				request.log.error({ err: error }, `[Tag Deletion] failed -- id: ${id}`);
+				return reply.code(500).send({ error: "Internal Server Error" });
+			}
 		});
 	};

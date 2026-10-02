@@ -19,6 +19,7 @@ type ResourceTableProps<Row, ColumnKey extends string> = {
 	sortDirection: SortDirection;
 	onSort: (column: ColumnKey) => void;
 	onEdit?: (row: Row) => void;
+	onDelete?: (row: Row) => void;
 };
 
 /** Renders a typed, sortable table from resource-specific column definitions. */
@@ -31,13 +32,14 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 	sortDirection,
 	onSort,
 	onEdit,
+	onDelete,
 }: ResourceTableProps<Row, ColumnKey>) => (
 	<div className={styles.wrapper}>
 		<table className={styles.table}>
 			<caption className={styles.hidden}>{caption}</caption>
 			<thead>
 				<tr>
-					{onEdit !== undefined && (
+					{(onEdit !== undefined || onDelete !== undefined) && (
 						<th scope="col" className={styles.actionHeader}>
 							Actions
 						</th>
@@ -72,15 +74,26 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 			<tbody>
 				{rows.map((row) => (
 					<tr key={rowKey(row)}>
-						{onEdit !== undefined && (
+						{(onEdit !== undefined || onDelete !== undefined) && (
 							<td className={styles.actionCell}>
-								<button
-									type="button"
-									className={styles.editButton}
-									onClick={() => onEdit(row)}
-								>
-									Edit
-								</button>
+								{onEdit && (
+									<button
+										type="button"
+										className={styles.editButton}
+										onClick={() => onEdit(row)}
+									>
+										Edit
+									</button>
+								)}
+								{onDelete && (
+									<button
+										type="button"
+										className={styles.deleteButton}
+										onClick={() => onDelete(row)}
+									>
+										Delete
+									</button>
+								)}
 							</td>
 						)}
 						{columns.map((column) => (

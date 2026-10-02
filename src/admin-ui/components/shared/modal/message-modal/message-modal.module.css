@@ -46,3 +46,7 @@
 .actions button:enabled:hover {
 	background: #efefef;
 }
+.actions button.destructive {
+	color: #b00020;
+	border: 1px solid #b00020;
+}

@@ -284,6 +284,25 @@ response, authentication, and error handling. Success returns the updated
 `TagsJSON` item; missing targets return `404`, and unexpected failures roll back
 and return `500`.
 
+## Tag hard deletion
+
+`GET /api/admin/tags/:id/delete-impact` returns an object with
+`tag: { id, title }`, `shows: [{ id, title }]`, and
+`djs: [{ id, title, assignment }]`. DJ `assignment` is `direct`, `inherited`, or
+`both`; inherited assignments come through linked Shows. Lists are deduplicated
+and sorted by title, then ID. Unassigned tags return empty lists. The preview is
+advisory; assignments can change before confirmation.
+
+`POST /api/admin/remove-tag` accepts JSON `{ id }` and returns `200 { id }`. It
+permanently deletes the tag in one atomic statement. Existing foreign-key
+cascades remove all direct DJ and Show tag assignments present at deletion time;
+Shows, DJs, their mutual links, and other tags remain intact. No migration is
+needed. Both routes require admin authentication, validate positive safe-integer
+IDs, return `400` for invalid input and `404` for unknown tags, and log failures
+before returning generic `500` errors. The Tags UI loads the preview before
+enabling confirmation; successful deletion removes the row while retaining
+search and sort.
+
 ## Mixcloud import list
 
 `GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource

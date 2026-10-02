@@ -215,3 +215,21 @@ protection, and equal-height reachable actions at 390px and 320px. It also
 verifies the full Tag editor still marks saved metadata reviewed. All tests run
 in the disposable Compose stack alongside existing editor and toolbar
 regressions.
+
+### Tag deletion API coverage
+
+`integration-tests/remove-tag-api.spec.ts` verifies the impact preview for a tag
+assigned directly to a DJ and inherited through a linked Show. It checks
+permanent deletion and cascaded assignment removal with direct PostgreSQL
+assertions against the disposable database, then reloads Shows and DJs to verify
+other metadata, relationships, and tags remain intact. Repeated deletion and
+preview return `404`; unused tags return empty impact lists and can be deleted.
+
+### Tag deletion browser coverage
+
+`integration-tests/delete-tag.spec.ts` mocks reads and deletions to verify
+impact labels, focus containment/restoration, all cancellation paths, loading
+and retry, obsolete responses after closure, pending-request protection, failed
+deletion and retry, retained search/sort, and long-list action reachability at
+390px and 320px. Real database deletion and cascade coverage remains in the
+separate `remove-tag-api.spec.ts` suite.
