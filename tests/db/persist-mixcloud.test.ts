@@ -77,6 +77,20 @@ test.skipIf(!databaseUrl)(
 			);
 			await persistMixcloudEntry(db, { ...entry, name: "Pending changed" });
 			expect((await read()).data_changed).toBe(false);
+			for (const pictures of [
+				{ ...entry.pictures, large: "pending-small.jpg" },
+				{ ...entry.pictures, "1024wx1024h": "pending-large.jpg" },
+			]) {
+				await persistMixcloudEntry(db, entry);
+				await persistMixcloudEntry(db, { ...entry, pictures });
+				expect(await read()).toMatchObject({
+					image_small: pictures.large,
+					image_large: pictures["1024wx1024h"],
+					show_id: null,
+					imported_at: null,
+					data_changed: false,
+				});
+			}
 			await persistMixcloudEntry(db, entry);
 			const show = await sql<{
 				id: number;

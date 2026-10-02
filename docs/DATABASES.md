@@ -278,6 +278,11 @@ records and import links are preserved. Review actions and API/UI flag exposure
 follow separately. No approved-source snapshot or diff history is stored.
 Rollback removes only the flag column and preserves tracking records and links.
 
+`tests/db/persist-mixcloud.test.ts` verifies that changing either image URL on a
+pending row saves the new URLs while keeping `data_changed` false; the same
+changes on a Show-linked row set the flag true. It requires the disposable
+`MIXCLOUD_MIGRATION_TEST_DATABASE_URL` described below.
+
 `createdAt` follows the archive table convention and records when the tracking
 row was created. `imported_at` records the successful database import time, not
 Mixcloud's creation time, the broadcast date, or a parsing run's time. It has no

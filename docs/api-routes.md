@@ -334,14 +334,14 @@ type. Invalid cloudcast data rejects the entire refresh.
 After fetching and validation, one transaction upserts `mixcloud_import` by
 exact source key. It maps source URL, name, and creation timestamp directly,
 `audio_length` to duration, `pictures.large` to `image_small`,
-`pictures["1024wx1024h"]` to `image_large`, and tag keys
-to a sorted, deduplicated array. Existing IDs, creation timestamps, Show links,
-and import timestamps are preserved; records absent from the fetch are retained.
-Changed source metadata on imported rows sets `data_changed`; tag order and
-duplicate keys alone do not count as changes. Existing true flags remain true,
-including on pending rows. No archive Shows, DJs, or tags are created or
-changed. Database failures roll back the entire refresh and return
-human-readable `500` errors. Apply migrations through `0021` before refreshing.
+`pictures["1024wx1024h"]` to `image_large`, and tag keys to a sorted,
+deduplicated array. Existing IDs, creation timestamps, Show links, and import
+timestamps are preserved; records absent from the fetch are retained. Changed
+source metadata on imported rows sets `data_changed`; tag order and duplicate
+keys alone do not count as changes. Existing true flags remain true, including
+on pending rows. No archive Shows, DJs, or tags are created or changed. Database
+failures roll back the entire refresh and return human-readable `500` errors.
+Apply migrations through `0021` before refreshing.
 
 Refresh logs include page URLs, response status/timing, validated page and total
 counts, next URLs, the save stage, progress every 100 records, and commit
