@@ -310,7 +310,8 @@ body. It fetches
 `https://api.mixcloud.com/otherdesertradio/cloudcasts/?limit=100&offset=0` and
 follows `paging.next`, combining all source records into `{ data: [...] }` in
 request-local memory. It returns `200 { "status": "ok" }` after all pages
-complete, logging start and completion with the fetched count. Each page has a
+complete and source metadata is saved, logging start and completion with the
+persisted count. Each page has a
 30-second timeout; failed requests, invalid JSON/page envelopes or cloudcast
 records, or repeated pagination URLs stop the refresh without retries and return
 generic `500` errors after logging the failure. Source records are retained
@@ -318,7 +319,7 @@ unchanged; this chunk validates the cloudcast fields used by the importer,
 including nested tags and small/large picture strings, against the structure in
 `src/res/mixcloud.json`. Unused fields are excluded from validation for
 performance and remain documented as comments in the patterns. It does not parse
-names, write files, or access the database. The UI button remains disconnected
+names or write files. The UI button remains disconnected
 until a later review chunk. The shared `RefreshMixcloudResponse` type is
 exported from the Mixcloud imports resource barrel.
 
@@ -326,6 +327,17 @@ Source validation patterns (`PicturesPattern`, `CloudcastPattern`, and
 `PagePattern`) live in the resource's `types.ts` and are exported alongside
 their `P.infer` types. The combined fetch result uses the inferred page's `data`
 type. Invalid cloudcast data rejects the entire refresh.
+
+After fetching and validation, one transaction upserts `mixcloud_import` by
+exact source key. It maps source URL, name, and creation timestamp directly,
+`audio_length` to duration, `pictures.small/large` to image URLs, and tag keys
+to a sorted, deduplicated array. Existing IDs, creation timestamps, Show links,
+and import timestamps are preserved; records absent from the fetch are retained.
+Changed source metadata on imported rows sets `data_changed`; tag order and
+duplicate keys alone do not count as changes. Existing true flags remain true,
+including on pending rows. No archive Shows, DJs, or tags are created or changed.
+Database failures roll back the entire refresh and return generic `500` errors.
+Apply migrations through `0021` before refreshing.
 
 `GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
 plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.

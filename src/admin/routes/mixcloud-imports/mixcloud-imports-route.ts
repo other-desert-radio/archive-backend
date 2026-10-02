@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { fetchMixcloud } from "./fetch-mixcloud.js";
+import { persistMixcloud } from "./persist-mixcloud.js";
 import type {
 	MixcloudImportAdminRow,
 	RefreshMixcloudResponse,
@@ -19,9 +20,10 @@ export const mixcloudImportRoutes =
 				);
 				try {
 					const source = await fetchMixcloud();
+					await persistMixcloud(database, source);
 					request.log.info(
 						{ count: source.data.length },
-						`[Mixcloud Refresh] completed -- fetched ${source.data.length} cloudcasts into memory`,
+						`[Mixcloud Refresh] completed -- persisted ${source.data.length} cloudcasts`,
 					);
 					return { status: "ok" };
 				} catch (error) {

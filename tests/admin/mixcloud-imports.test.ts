@@ -60,6 +60,45 @@ const database = (result: typeof rows, fail = false, queries: string[] = []) =>
 	});
 
 describe("Mixcloud import list", () => {
+	for (const invalidSource of [false, true]) {
+		test(`refresh fails atomically on ${invalidSource ? "invalid source" : "database failure"}`, async () => {
+			const source = {
+				key: "/source/",
+				url: "https://example.test/source",
+				name: "Source",
+				created_time: "2026-09-01T12:00:00Z",
+				updated_time: "2026-09-01T12:00:00Z",
+				play_count: 0,
+				slug: "source",
+				audio_length: 3600,
+				pictures: { small: "small", large: "large" },
+				tags: [],
+			};
+			const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
+				Response.json({
+					data: [invalidSource ? { key: "/invalid/" } : source],
+				}),
+			);
+			const queries: string[] = [];
+			const db = database([], true, queries);
+			const app = Fastify();
+			try {
+				await app.register(mixcloudImportRoutes(db));
+				const response = await app.inject({
+					method: "POST",
+					url: "/refresh-mixcloud",
+				});
+				expect(response.statusCode).toBe(500);
+				expect(response.json()).toEqual({ error: "Internal Server Error" });
+				expect(queries.length > 0).toBe(!invalidSource);
+			} finally {
+				fetchMock.mockRestore();
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+
 	for (const role of [undefined, "user", "admin"] as const) {
 		test(`refresh enforces admin access: ${role ?? "anonymous"}`, async () => {
 			const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
