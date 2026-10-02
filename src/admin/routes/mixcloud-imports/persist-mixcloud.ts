@@ -1,4 +1,9 @@
 import { sql } from "kysely";
+import {
+	MIXCLOUD_PARSER_VERSION,
+	type MixcloudParserResult,
+	parseMixcloudEntry,
+} from "../../../utils/index.js";
 import type { TypedDatabase } from "../types.js";
 import type { MixcloudCloudcast, MixcloudCloudcasts } from "./types.js";
 
@@ -6,10 +11,33 @@ import type { MixcloudCloudcast, MixcloudCloudcasts } from "./types.js";
 export const persistMixcloudEntry = async (
 	database: TypedDatabase,
 	entry: MixcloudCloudcast,
+	parserResults?: ReadonlyMap<string, MixcloudParserResult | undefined>,
 ): Promise<void> => {
+	const parsed = parserResults
+		? parserResults.get(entry.key)
+		: parseMixcloudEntry(entry);
+	const suggestions =
+		parsed === undefined
+			? {
+					derived_title: null,
+					derived_date: null,
+					decoded_djs: null,
+					parser_version: MIXCLOUD_PARSER_VERSION,
+					parser_key: null,
+					date_source: null,
+				}
+			: {
+					derived_title: parsed.derived_title,
+					derived_date: parsed.derived_date,
+					decoded_djs: parsed.decoded_djs,
+					parser_version: parsed.parser_version,
+					parser_key: parsed.parser_key,
+					date_source: parsed.date_source,
+				};
 	await database
 		.insertInto("mixcloud_import")
 		.values({
+			...suggestions,
 			key: entry.key,
 			url: entry.url,
 			name: entry.name,
@@ -21,6 +49,12 @@ export const persistMixcloudEntry = async (
 		})
 		.onConflict((conflict) =>
 			conflict.column("key").doUpdateSet((eb) => ({
+				derived_title: eb.ref("excluded.derived_title"),
+				derived_date: eb.ref("excluded.derived_date"),
+				decoded_djs: eb.ref("excluded.decoded_djs"),
+				parser_version: eb.ref("excluded.parser_version"),
+				parser_key: eb.ref("excluded.parser_key"),
+				date_source: eb.ref("excluded.date_source"),
 				url: eb.ref("excluded.url"),
 				name: eb.ref("excluded.name"),
 				created_time: eb.ref("excluded.created_time"),
@@ -52,13 +86,14 @@ export const persistMixcloud = async (
 	database: TypedDatabase,
 	source: MixcloudCloudcasts,
 	logger?: FastifyBaseLogger,
+	parserResults?: ReadonlyMap<string, MixcloudParserResult | undefined>,
 ): Promise<void> => {
 	if (source.data.length === 0) return;
 	await database.transaction().execute(async (transaction) => {
 		let processed = 0;
 		for (const entry of source.data) {
 			try {
-				await persistMixcloudEntry(transaction, entry);
+				await persistMixcloudEntry(transaction, entry, parserResults);
 			} catch (error) {
 				logger?.error(
 					{ err: error, key: entry.key, processed, total: source.data.length },

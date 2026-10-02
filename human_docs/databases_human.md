@@ -180,6 +180,17 @@ show_id (null unless imported into an actual show) |
 imported_at (null unless imported into an actual show)
 ```
 
+additional columns from the parser:
+
+```text
+derrived_title |
+derrived_djs |
+derrived_date |
+date_source |  <-- title | created_time (if it was pulled from the shows title or uses the fallback)
+parser_version |
+parser_key |  <--- which parser key matched on this
+```
+
 - key is UNIQUE
 - `mixcloud_tag_keys` stores Mixcloud genre keys as a nullable text array, for
   example `["/genres/house/", "/genres/ambient/"]`. Null means unknown; an empty
@@ -193,9 +204,6 @@ imported_at (null unless imported into an actual show)
   tracking row's `createdAt` and the successful import's `imported_at`.
 - `duration` stores the cloudcast's `audio_length` in seconds.
 - `image_small` and `image_large` store source image URLs, not image bytes.
-- These six source fields are nullable so existing tracking rows remain valid.
-  Migration `0019_add_mixcloud_source_metadata` adds them; it does not backfill
-  source data or run the importer.
 
 deletion stratergy: Action Effect Delete an import row -> Show stays untouched
 Soft-delete a show -> Import row stays unchanged Hard-delete a show -> Import

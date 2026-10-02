@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+	classifyMixcloudImport,
+	type MixcloudImportCategory,
+} from "../../utils/mixcloud-import-status.js";
+import {
 	filterMixcloudImports,
 	type MixcloudSortColumn,
 	MixcloudTable,
@@ -12,12 +16,26 @@ import {
 	sortResourceRows,
 } from "../components/shared/resource-views/index.js";
 import {
+	loadMixcloudImportStatus,
 	loadMixcloudImports,
 	type MixcloudImportAdminRow,
+	type MixcloudImportStatus,
 	refreshMixcloud,
 } from "../loaders/mixcloud-imports.js";
 export const MixcloudPage = () => {
 	const [rows, setRows] = useState<MixcloudImportAdminRow[]>([]);
+	const [status, setStatus] = useState<MixcloudImportStatus>();
+	const [category, setCategory] = useState<MixcloudImportCategory>();
+	const [statusError, setStatusError] = useState<string>();
+	const loadStatus = useCallback(() => {
+		setStatusError(undefined);
+		loadMixcloudImportStatus()
+			.then(setStatus)
+			.catch(() => {
+				setStatus(undefined);
+				setStatusError("Unable to load Mixcloud import status.");
+			});
+	}, []);
 	const [query, setQuery] = useState("");
 	const [sortColumn, setSortColumn] = useState<MixcloudSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -47,12 +65,20 @@ export const MixcloudPage = () => {
 			return;
 		}
 		try {
-			setRows(await loadMixcloudImports());
+			const [newRows, newStatus] = await Promise.all([
+				loadMixcloudImports(),
+				loadMixcloudImportStatus(),
+			]);
+			setRows(newRows);
+			setStatus(newStatus);
+			setStatusError(undefined);
 			setRefreshMessage("Mixcloud refreshed.");
 		} catch {
+			setStatus(undefined);
+			setStatusError("Unable to reload Mixcloud import status.");
 			setRefreshFailed(true);
 			setRefreshMessage(
-				"Mixcloud refreshed, but the table could not be reloaded. Please try again.",
+				"Mixcloud refreshed, but the table or status counts could not be reloaded. Please try again.",
 			);
 		} finally {
 			refreshInFlight.current = false;
@@ -69,16 +95,22 @@ export const MixcloudPage = () => {
 	}, []);
 	useEffect(() => {
 		refresh();
-	}, [refresh]);
+		loadStatus();
+	}, [refresh, loadStatus]);
 	const visible = useMemo(
 		() =>
 			sortResourceRows(
-				filterMixcloudImports(rows, query),
+				filterMixcloudImports(
+					category
+						? rows.filter((row) => classifyMixcloudImport(row) === category)
+						: rows,
+					query,
+				),
 				mixcloudColumns,
 				sortColumn,
 				sortDirection,
 			),
-		[rows, query, sortColumn, sortDirection],
+		[rows, query, category, sortColumn, sortDirection],
 	);
 	const onSort = (column: MixcloudSortColumn) => {
 		if (column === sortColumn)
@@ -97,7 +129,7 @@ export const MixcloudPage = () => {
 			isEmpty={rows.length === 0}
 			emptyMessage="No Mixcloud imports yet."
 			hasNoResults={rows.length > 0 && visible.length === 0}
-			noResultsMessage="No Mixcloud imports match your search."
+			noResultsMessage="No Mixcloud imports match your filters."
 			toolbar={
 				<MixcloudToolbar
 					query={query}
@@ -106,6 +138,13 @@ export const MixcloudPage = () => {
 					isRefreshing={isRefreshing}
 					refreshMessage={refreshMessage}
 					refreshFailed={refreshFailed}
+					status={status}
+					category={category}
+					onCategoryChange={(next) =>
+						setCategory((current) => (current === next ? undefined : next))
+					}
+					statusError={statusError}
+					onRetryStatus={loadStatus}
 				/>
 			}
 		>

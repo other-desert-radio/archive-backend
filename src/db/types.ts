@@ -23,6 +23,18 @@ export type MixcloudImportTable = {
 	url: string | null;
 	name: string | null;
 	created_time: Date | null;
+	/** Show title extracted by the parser. */
+	derived_title: string | null;
+	/** Suggested show date, parsed from the title or taken from created_time. */
+	derived_date: Date | null;
+	/** Extracted, normalized DJ names; these are not archive DJ IDs. */
+	decoded_djs: string[] | null;
+	/** Version of the full parsing pipeline, including DJ and date normalization. */
+	parser_version: number | null;
+	/** Stable text identifier of the matcher that parsed the source title. */
+	parser_key: string | null;
+	/** Origin of the suggested date; created_time is Mixcloud's upload timestamp. */
+	date_source: "title" | "created_time" | null;
 	duration: number | null;
 	image_small: string | null;
 	image_large: string | null;

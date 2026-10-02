@@ -1,4 +1,8 @@
 import { P } from "ts-pattern";
+import {
+	createdTimeRegex,
+	parseCreatedTimeDate,
+} from "../../../utils/mixcloud-parser/index.js";
 
 // unused fields are commented out for performance but left here for documentation
 export const PicturesPattern = {
@@ -19,7 +23,16 @@ export const CloudcastPattern = {
 	url: P.string,
 	name: P.string,
 	tags: P.array({ key: P.string, url: P.string, name: P.string }),
-	created_time: P.string,
+	// Format examples: "2020-04-07T12:00:00Z", "2020-04-07T01:30:00.123+02:00".
+	created_time: P.string
+		.regex(createdTimeRegex)
+		.and(
+			P.when(
+				(value) =>
+					typeof value === "string" &&
+					parseCreatedTimeDate(value) !== undefined,
+			),
+		),
 	updated_time: P.string,
 	play_count: P.number,
 	pictures: {
@@ -60,6 +73,12 @@ export type MixcloudImportAdminRow = {
 	url?: string;
 	name?: string;
 	created_time?: string;
+	derived_title?: string;
+	derived_date?: string;
+	decoded_djs?: string[];
+	parser_version?: number;
+	parser_key?: string;
+	date_source?: "title" | "created_time";
 	image_small?: string;
 	image_large?: string;
 	show_id?: number;
@@ -73,3 +92,6 @@ export type MixcloudImportAdminRow = {
 };
 /** Temporary response contract for the Mixcloud refresh scaffold. */
 export type RefreshMixcloudResponse = { status: "ok" };
+
+/** Counts of pending source rows by import readiness. */
+export type MixcloudImportStatus = { auto_parsed: number; unparsable: number };

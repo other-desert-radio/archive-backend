@@ -1,5 +1,6 @@
 import type {
 	MixcloudImportAdminRow,
+	MixcloudImportStatus,
 	RefreshMixcloudResponse,
 } from "../../admin/routes/mixcloud-imports/index.js";
 
@@ -48,5 +49,22 @@ export const loadMixcloudImports = async (
 	return (await response.json()) as MixcloudImportAdminRow[];
 };
 
-import { isMatching } from "ts-pattern";
+import { isMatching, P } from "ts-pattern";
 import { describeMutationFailure } from "./mutation-error.js";
+
+export type { MixcloudImportStatus } from "../../admin/routes/mixcloud-imports/index.js";
+export const loadMixcloudImportStatus = async (
+	fetcher: typeof fetch = fetch,
+): Promise<MixcloudImportStatus> => {
+	const response = await fetcher("/api/admin/mixcloud-import/status");
+	if (!response.ok) throw new Error("Unable to load Mixcloud import status");
+	const value: unknown = await response.json();
+	if (
+		!isMatching(
+			{ auto_parsed: P.number.int().gte(0), unparsable: P.number.int().gte(0) },
+			value,
+		)
+	)
+		throw new Error("Invalid Mixcloud import status");
+	return value;
+};

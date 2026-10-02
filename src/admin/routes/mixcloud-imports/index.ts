@@ -3,6 +3,7 @@ export type {
 	MixcloudCloudcast,
 	MixcloudCloudcasts,
 	MixcloudImportAdminRow,
+	MixcloudImportStatus,
 	MixcloudPage,
 	MixcloudPictures,
 	RefreshMixcloudResponse,

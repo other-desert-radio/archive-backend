@@ -306,26 +306,56 @@ opt-in opener focus restoration; existing callers retain their defaults.
 The sidebar entry follows Tags and opens `#mixcloud`, with lowercase “mixcloud”
 and “import” on two lines. The page heading is “Mixcloud Import.” This read-only
 view uses the shared resource layout, sticky search toolbar, sortable table,
-loading/retry, empty, and no-results states. Its sixteen columns are ID, Key,
-url, name, created_time, image_small, image_large, mixcloud_tag_keys, duration,
-show_id, imported_at, data_changed, show name, djs, dj names, and tags. URL and
-image URL fields display source text; image URLs are clickable and open their
-image in a new tab. Duration is the stored Mixcloud duration, including for
-pending rows. `mixcloud_tag_keys` displays comma-separated source genre keys,
-supports search and sorting, and shows muted “None” for missing or empty arrays.
-These keys are separate from the archive tag IDs in `tags`; matching them to
-archive tags comes later. The read-only `data_changed` column displays `true` or
-`false`, participates in search, and sorts false before true in ascending order.
-There are no segmented import/review views yet. Search covers all displayed
-fields; sorting defaults to ID ascending. Timestamps use UTC, durations use
-HH:MM:SS, arrays display comma-separated values, and missing values show muted
-“None.” Unimported records remain visible. There are no Edit actions or view
-toggles. An enabled “Refresh Mixcloud” button uses the shared toolbar action
-position and styling beside search. It calls the refresh route, disables itself
-with “Refreshing Mixcloud…” while refreshing and reloading the table, and
-preserves search and sort. Inline status/error messages appear below the
-toolbar. Refresh failures retain existing rows and allow another button click to
-retry; errors include human-readable server feedback rather than raw internal
-errors. A reload failure after a successful refresh is identified separately.
-Shared toolbar creation controls and table Edit controls are optional; existing
-resources continue supplying them.
+loading/retry, empty, and no-results states. Its twenty-two columns are ID, Key,
+url, name, created_time, derived_title, derived_date, decoded_djs,
+parser_version, parser_key, date_source, image_small, image_large,
+mixcloud_tag_keys, duration, show_id, imported_at, data_changed, show name, djs,
+dj names, and tags. URL and image URL fields display source text; image URLs are
+clickable and open their image in a new tab. Duration is the stored Mixcloud
+duration, including for pending rows. `mixcloud_tag_keys` displays
+comma-separated source genre keys, supports search and sorting, and shows muted
+“None” for missing or empty arrays. These keys are separate from the archive tag
+IDs in `tags`; matching them to archive tags comes later. The read-only
+`data_changed` column displays `true` or `false`, participates in search, and
+sorts false before true in ascending order. Readiness controls filter pending
+rows into ready and review categories. Search covers all displayed parser
+fields, including raw ISO and formatted UTC derived dates. Parser dates sort
+chronologically and versions sort numerically; missing values sort first
+ascending. Extracted DJ names display comma-separated, with muted “None” for
+missing or empty arrays; version zero displays as `0`. These suggestions are
+read-only and separate from linked archive Show/DJ values. Refresh populates
+parser suggestions and clears stale results on parse failure. Search covers all
+displayed fields; sorting defaults to ID ascending. Timestamps use UTC,
+durations use HH:MM:SS, arrays display comma-separated values, and missing
+values show muted “None.” Unimported records remain visible. There are no Edit
+import actions or view toggles. Readiness buttons filter the pending queue. An
+enabled “Refresh Mixcloud” button uses the shared toolbar action position and
+styling beside search. It calls the refresh route, disables itself with
+“Refreshing Mixcloud…” while refreshing and reloading the table, and preserves
+search and sort. Inline status/error messages appear below the toolbar. Refresh
+failures retain existing rows and allow another button click to retry; errors
+include human-readable server feedback rather than raw internal errors. A reload
+failure after a successful refresh is identified separately. Shared toolbar
+creation controls and table Edit controls are optional; existing resources
+continue supplying them.
+
+The user verified and approved the parser-column UI after chunk 3. The automated
+browser verification attempt was interrupted before completion.
+
+### Mixcloud readiness controls
+
+The Mixcloud toolbar places “ready for import” and “needs review” immediately
+before “Refresh Mixcloud”. Nonzero counts appear in red square badges with a 1px
+black outline and white text, aligned to the right. Zero counts show no badge.
+Counts load from `/api/admin/mixcloud-import/status` on page load and after
+refresh. Loading hides badges and disables the controls; status failures show
+retry feedback. Clicking a category filters pending rows; clicking it again
+restores all rows. Search and sorting combine with that filter, while counts
+describe the whole pending queue. Dates derived from `created_time` require
+review. The shared toolbar exposes `actionsBeforeCreate` for these
+resource-specific controls and wraps actions on narrow screens.
+
+Verified with `agent-browser` against an isolated local PostgreSQL schema: one
+ready row, two review rows, and an imported row excluded from counts. Both
+category filters, toggle-off, search with unchanged counts, and desktop/ 390px
+phone screenshots passed acceptance checks.

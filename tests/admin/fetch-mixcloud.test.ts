@@ -200,3 +200,33 @@ test("accepts omitted or malformed unused metadata while preserving source recor
 			Response.json({ data: records })) as typeof fetch),
 	).toEqual({ data: records });
 });
+
+for (const created_time of [
+	"invalid",
+	"2020-04-07",
+	"2023-02-29T12:00:00Z",
+	"2020-04-07T24:00:00Z",
+	"2020-04-07T12:00:00+25:00",
+]) {
+	test(`rejects invalid source timestamp ${created_time}`, async () => {
+		await expect(
+			fetchMixcloud((async () =>
+				Response.json({
+					data: [{ ...cloudcast, created_time }],
+				})) as typeof fetch),
+		).rejects.toThrow("Invalid Mixcloud page");
+	});
+}
+for (const created_time of [
+	"2024-02-29T12:00:00Z",
+	"2020-04-07T01:30:00.123+02:00",
+	"2020-04-07T23:30:00-02:00",
+]) {
+	test(`accepts source timestamp ${created_time}`, async () => {
+		const record = { ...cloudcast, created_time };
+		expect(
+			await fetchMixcloud((async () =>
+				Response.json({ data: [record] })) as typeof fetch),
+		).toEqual({ data: [record] });
+	});
+}

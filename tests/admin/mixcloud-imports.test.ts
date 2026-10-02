@@ -3,11 +3,28 @@ import Fastify from "fastify";
 import { Kysely, PostgresDialect } from "kysely";
 import { adminRoutes } from "../../src/admin/admin.js";
 import { mixcloudImportRoutes } from "../../src/admin/routes/mixcloud-imports/index.js";
-import type { Database } from "../../src/db/types.js";
+import type { Database, MixcloudImportTable } from "../../src/db/types.js";
 
 const timestamp = new Date("2026-09-01T12:00:00Z");
+const emptyParserFields: Pick<
+	MixcloudImportTable,
+	| "derived_title"
+	| "derived_date"
+	| "decoded_djs"
+	| "parser_version"
+	| "parser_key"
+	| "date_source"
+> = {
+	derived_title: null,
+	derived_date: null,
+	decoded_djs: null,
+	parser_version: null,
+	parser_key: null,
+	date_source: null,
+};
 const rows = [
 	{
+		...emptyParserFields,
 		id: 1,
 		data_changed: true,
 		mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
@@ -28,6 +45,7 @@ const rows = [
 		linked_tags: [{ tag_id: 3 }, { tag_id: 5 }],
 	},
 	{
+		...emptyParserFields,
 		id: 2,
 		data_changed: false,
 		mixcloud_tag_keys: null,
@@ -64,6 +82,76 @@ const database = (result: typeof rows, fail = false, queries: string[] = []) =>
 	});
 
 describe("Mixcloud import list", () => {
+	for (const dateSource of ["title", "created_time"] as const) {
+		test(`returns stored parser suggestions with ${dateSource} date source`, async () => {
+			const suggestions = {
+				derived_title: "Extracted show",
+				derived_date: timestamp,
+				decoded_djs: ["Caroline", "Ethan"],
+				parser_version: 1,
+				parser_key: "common-comma-date",
+				date_source: dateSource,
+			};
+			const queries: string[] = [];
+			const db = database([{ ...rows[1], ...suggestions }], false, queries);
+			const app = Fastify();
+			try {
+				await app.register(mixcloudImportRoutes(db));
+				const response = await app.inject("/mixcloud-imports");
+				expect(response.statusCode).toBe(200);
+				expect(response.json()).toEqual([
+					{
+						id: 2,
+						data_changed: false,
+						key: "/odr/pending/",
+						djs: [],
+						dj_names: [],
+						tags: [],
+						...suggestions,
+						derived_date: timestamp.toISOString(),
+					},
+				]);
+				for (const field of Object.keys(suggestions)) {
+					expect(queries[0]).toContain(`"mixcloud_import"."${field}"`);
+				}
+			} finally {
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+	test("preserves partial parser results, empty DJ arrays, and scaffold version zero", async () => {
+		const db = database([
+			{
+				...rows[1],
+				derived_title: "Partial show",
+				decoded_djs: [],
+				parser_version: 0,
+			},
+		]);
+		const app = Fastify();
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject("/mixcloud-imports");
+			expect(response.statusCode).toBe(200);
+			expect(response.json()).toEqual([
+				{
+					id: 2,
+					data_changed: false,
+					key: "/odr/pending/",
+					djs: [],
+					dj_names: [],
+					tags: [],
+					derived_title: "Partial show",
+					decoded_djs: [],
+					parser_version: 0,
+				},
+			]);
+		} finally {
+			await app.close();
+			await db.destroy();
+		}
+	});
 	test("logs fetch pages, save progress, and commit completion", async () => {
 		const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
 			Response.json({
@@ -71,7 +159,7 @@ describe("Mixcloud import list", () => {
 					{
 						key: "/source/",
 						url: "https://example.test/source",
-						name: "Source",
+						name: "Ethan - Side A, April 6, 2020",
 						created_time: "2026-09-01T12:00:00Z",
 						updated_time: "2026-09-01T12:00:00Z",
 						play_count: 0,
@@ -106,6 +194,7 @@ describe("Mixcloud import list", () => {
 				"fetching page 1",
 				"page 1 response -- status: 200",
 				"page 1 validated -- records: 1",
+				"parsing completed -- 1/1 matched, 0 unmatched or excluded, parser version: 1",
 				"saving started -- 1 cloudcasts",
 				"saving progress -- 1/1",
 				"completed -- committed 1 cloudcasts",
@@ -386,4 +475,84 @@ describe("Mixcloud import list", () => {
 			await db.destroy();
 		}
 	});
+});
+
+describe("Mixcloud import status", () => {
+	test("counts only pending rows with complete title-sourced suggestions", async () => {
+		const ready = {
+			...rows[1],
+			derived_title: "Show",
+			derived_date: timestamp,
+			decoded_djs: ["DJ"],
+			parser_version: 1,
+			parser_key: "test",
+			date_source: "title" as const,
+		};
+		const db = database(
+			[
+				ready,
+				{ ...ready, date_source: "created_time" },
+				rows[1],
+				{ ...ready, show_id: 10 },
+			],
+			false,
+		);
+		const app = Fastify();
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject("/mixcloud-import/status");
+			expect(response.statusCode).toBe(200);
+			expect(response.json()).toEqual({ auto_parsed: 1, unparsable: 2 });
+		} finally {
+			await app.close();
+			await db.destroy();
+		}
+	});
+	for (const fail of [false, true]) {
+		test(`handles ${fail ? "database failure" : "empty database"}`, async () => {
+			const db = database([], fail);
+			const app = Fastify();
+			try {
+				await app.register(mixcloudImportRoutes(db));
+				const response = await app.inject("/mixcloud-import/status");
+				expect(response.statusCode).toBe(fail ? 500 : 200);
+				expect(response.json()).toEqual(
+					fail
+						? { error: "Internal Server Error" }
+						: { auto_parsed: 0, unparsable: 0 },
+				);
+			} finally {
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+	for (const role of [undefined, "user", "admin"] as const) {
+		test(`requires admin access for status: ${role ?? "anonymous"}`, async () => {
+			const queries: string[] = [];
+			const db = database([], false, queries);
+			const app = Fastify();
+			try {
+				await app.register(
+					adminRoutes(
+						{
+							api: {
+								getSession: async () => (role ? { user: { role } } : null),
+							},
+						} as never,
+						db,
+						{ username: "", password: "" },
+					),
+				);
+				const response = await app.inject("/api/admin/mixcloud-import/status");
+				expect(response.statusCode).toBe(
+					role === "admin" ? 200 : role === "user" ? 403 : 401,
+				);
+				if (role !== "admin") expect(queries).toHaveLength(0);
+			} finally {
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
 });

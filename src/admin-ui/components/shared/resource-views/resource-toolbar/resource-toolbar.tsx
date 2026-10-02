@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
 export type ResourceViewMode = "grid" | "table";
@@ -12,6 +13,7 @@ type ResourceToolbarProps = {
 	createLabel?: string;
 	onCreate?: () => void;
 	createDisabled?: boolean;
+	actionsBeforeCreate?: ReactNode;
 };
 
 import styles from "./resource-toolbar.module.css";
@@ -27,6 +29,7 @@ export const ResourceToolbar = ({
 	createLabel,
 	onCreate,
 	createDisabled = false,
+	actionsBeforeCreate,
 }: ResourceToolbarProps) => {
 	const sentinelRef = useRef<HTMLDivElement>(null);
 	const toolbarRef = useRef<HTMLDivElement>(null);
@@ -85,6 +88,7 @@ export const ResourceToolbar = ({
 								</button>
 							</fieldset>
 						)}
+					{actionsBeforeCreate}
 					{onCreate !== undefined && createLabel !== undefined && (
 						<button
 							type="button"

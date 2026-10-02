@@ -1,10 +1,16 @@
 import type { FastifyPluginAsync } from "fastify";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
+import {
+	classifyMixcloudImport,
+	MIXCLOUD_PARSER_VERSION,
+	parseMixcloudEntry,
+} from "../../../utils/index.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
 import { fetchMixcloud } from "./fetch-mixcloud.js";
 import { persistMixcloud } from "./persist-mixcloud.js";
 import type {
 	MixcloudImportAdminRow,
+	MixcloudImportStatus,
 	RefreshMixcloudResponse,
 } from "./types.js";
 
@@ -23,11 +29,31 @@ export const mixcloudImportRoutes =
 				try {
 					const source = await fetchMixcloud(fetch, request.log);
 					stage = "save";
+
+					const parserResults = new Map(
+						source.data.map((entry) => [entry.key, parseMixcloudEntry(entry)]),
+					);
+					const matched = [...parserResults.values()].filter(
+						(result) => result !== undefined,
+					).length;
+
+					request.log.info(
+						{
+							count: source.data.length,
+							matched,
+							unmatched: source.data.length - matched,
+							parserVersion: MIXCLOUD_PARSER_VERSION,
+						},
+						`[Mixcloud Refresh] parsing completed -- ${matched}/${source.data.length} matched, ${source.data.length - matched} unmatched or excluded, parser version: ${MIXCLOUD_PARSER_VERSION}`,
+					);
+
 					request.log.info(
 						{ count: source.data.length },
 						`[Mixcloud Refresh] saving started -- ${source.data.length} cloudcasts in one transaction`,
 					);
-					await persistMixcloud(database, source, request.log);
+
+					await persistMixcloud(database, source, request.log, parserResults);
+
 					request.log.info(
 						{ count: source.data.length, elapsedMs: Date.now() - startedAt },
 						`[Mixcloud Refresh] completed -- committed ${source.data.length} cloudcasts, elapsed: ${Date.now() - startedAt}ms`,
@@ -44,6 +70,48 @@ export const mixcloudImportRoutes =
 								? "Mixcloud data could not be fetched or validated. No changes were saved. Please try again; if this continues, contact the administrator."
 								: "Mixcloud data was fetched, but could not be saved. No changes were saved. Please contact the administrator.",
 					});
+				}
+			},
+		);
+		app.get<{ Reply: AdminApiReply<MixcloudImportStatus> }>(
+			"/mixcloud-import/status",
+			async (request, reply) => {
+				request.log.info(
+					"[Mixcloud Status] loading -- /api/admin/mixcloud-import/status",
+				);
+				try {
+					const rows = await database
+						.selectFrom("mixcloud_import")
+						.select([
+							"show_id",
+							"derived_title",
+							"derived_date",
+							"decoded_djs",
+							"parser_version",
+							"parser_key",
+							"date_source",
+						])
+						.where("show_id", "is", null)
+						.execute();
+					const status: MixcloudImportStatus = {
+						auto_parsed: 0,
+						unparsable: 0,
+					};
+					for (const row of rows) {
+						const category = classifyMixcloudImport(row);
+						if (category !== undefined) status[category]++;
+					}
+					request.log.info(
+						status,
+						`[Mixcloud Status] loaded -- ${status.auto_parsed} ready, ${status.unparsable} need review`,
+					);
+					return status;
+				} catch (error) {
+					request.log.error(
+						{ err: error },
+						"[Mixcloud Status] failed -- /api/admin/mixcloud-import/status",
+					);
+					return reply.code(500).send({ error: "Internal Server Error" });
 				}
 			},
 		);
@@ -69,6 +137,12 @@ export const mixcloudImportRoutes =
 							"mixcloud_import.url",
 							"mixcloud_import.name",
 							"mixcloud_import.created_time",
+							"mixcloud_import.derived_title",
+							"mixcloud_import.derived_date",
+							"mixcloud_import.decoded_djs",
+							"mixcloud_import.parser_version",
+							"mixcloud_import.parser_key",
+							"mixcloud_import.date_source",
 							"mixcloud_import.image_small",
 							"mixcloud_import.image_large",
 						])
@@ -105,6 +179,22 @@ export const mixcloudImportRoutes =
 						...(row.created_time === null
 							? {}
 							: { created_time: row.created_time.toISOString() }),
+						...(row.derived_title === null
+							? {}
+							: { derived_title: row.derived_title }),
+						...(row.derived_date === null
+							? {}
+							: { derived_date: row.derived_date.toISOString() }),
+						...(row.decoded_djs === null
+							? {}
+							: { decoded_djs: row.decoded_djs }),
+						...(row.parser_version === null
+							? {}
+							: { parser_version: row.parser_version }),
+						...(row.parser_key === null ? {} : { parser_key: row.parser_key }),
+						...(row.date_source === null
+							? {}
+							: { date_source: row.date_source }),
 						...(row.image_small === null
 							? {}
 							: { image_small: row.image_small }),
