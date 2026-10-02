@@ -7,5 +7,9 @@ export const MixcloudToolbar = ({ query, onQueryChange }: Props) => (
 		onQueryChange={onQueryChange}
 		searchLabel="Search Mixcloud"
 		showViewControls={false}
+		createLabel="Refresh Mixcloud"
+		onCreate={() => {
+			// Button-only review: connect the refresh route in a later chunk.
+		}}
 	/>
 );

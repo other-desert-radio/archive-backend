@@ -313,5 +313,8 @@ text; duration is the stored Mixcloud duration, including for pending rows.
 Search covers all displayed fields; sorting defaults to ID ascending. Timestamps
 use UTC, durations use HH:MM:SS, arrays display comma-separated values, and
 missing values show muted “None.” Unimported records remain visible. There are
-no Create/Edit actions or view toggles. Shared toolbar creation controls and
+no Edit actions or view toggles. An enabled “Refresh Mixcloud” button uses the
+shared toolbar action position and styling beside search. It currently performs
+no action; route integration follows after the button-only review.
+Shared toolbar creation controls and
 table Edit controls are optional; existing resources continue supplying them.

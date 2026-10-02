@@ -169,7 +169,7 @@ describe("Mixcloud table", () => {
 			<MixcloudToolbar query="" onQueryChange={() => {}} />,
 		);
 		expect(toolbar).toContain("Search Mixcloud");
-		expect(toolbar).not.toContain("<button");
+		expect(toolbar).toContain('<button type="button">Refresh Mixcloud</button>');
 	});
 	test("keeps existing Edit controls", () => {
 		const html = renderToStaticMarkup(
