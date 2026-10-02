@@ -13,6 +13,7 @@ import {
 	sortResourceRows,
 } from "../../src/admin-ui/components/shared/resource-views/index.js";
 import {
+	loadMixcloudImportStatus,
 	loadMixcloudImports,
 	type MixcloudImportAdminRow,
 	refreshMixcloud,
@@ -397,4 +398,54 @@ describe("Mixcloud table", () => {
 			),
 		).toContain("No matches");
 	});
+});
+
+test("loads and validates the status endpoint", async () => {
+	expect(
+		await loadMixcloudImportStatus((async (url) => {
+			expect(url).toBe("/api/admin/mixcloud-import/status");
+			return Response.json({ auto_parsed: 0, unparsable: 12 });
+		}) as typeof fetch),
+	).toEqual({ auto_parsed: 0, unparsable: 12 });
+	for (const invalid of [
+		{ auto_parsed: -1, unparsable: 0 },
+		{ auto_parsed: "1", unparsable: 0 },
+		{ auto_parsed: 1.5, unparsable: 0 },
+		{},
+	]) {
+		await expect(
+			loadMixcloudImportStatus((async () =>
+				Response.json(invalid)) as typeof fetch),
+		).rejects.toThrow("Invalid Mixcloud import status");
+	}
+	await expect(
+		loadMixcloudImportStatus(
+			(async () => new Response(null, { status: 500 })) as typeof fetch,
+		),
+	).rejects.toThrow("Unable to load Mixcloud import status");
+});
+test("shows category counts before refresh and marks the selected category", () => {
+	const html = renderToStaticMarkup(
+		<MixcloudToolbar
+			query=""
+			onQueryChange={() => {}}
+			onRefresh={() => {}}
+			isRefreshing={false}
+			refreshFailed={false}
+			status={{ auto_parsed: 0, unparsable: 12 }}
+			category="unparsable"
+			onCategoryChange={() => {}}
+		/>,
+	);
+	expect(html).toContain('aria-pressed="true"');
+	expect(html).toContain("ready for import<span");
+	expect(html).toContain("needs review<span");
+	expect(html).toContain(">0</span>");
+	expect(html).toContain(">12</span>");
+	expect(html.indexOf("ready for import")).toBeLessThan(
+		html.indexOf("needs review"),
+	);
+	expect(html.indexOf("needs review")).toBeLessThan(
+		html.indexOf("Refresh Mixcloud"),
+	);
 });

@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
 import {
+	classifyMixcloudImport,
 	MIXCLOUD_PARSER_VERSION,
 	parseMixcloudEntry,
 } from "../../../utils/index.js";
@@ -9,6 +10,7 @@ import { fetchMixcloud } from "./fetch-mixcloud.js";
 import { persistMixcloud } from "./persist-mixcloud.js";
 import type {
 	MixcloudImportAdminRow,
+	MixcloudImportStatus,
 	RefreshMixcloudResponse,
 } from "./types.js";
 
@@ -68,6 +70,48 @@ export const mixcloudImportRoutes =
 								? "Mixcloud data could not be fetched or validated. No changes were saved. Please try again; if this continues, contact the administrator."
 								: "Mixcloud data was fetched, but could not be saved. No changes were saved. Please contact the administrator.",
 					});
+				}
+			},
+		);
+		app.get<{ Reply: AdminApiReply<MixcloudImportStatus> }>(
+			"/mixcloud-import/status",
+			async (request, reply) => {
+				request.log.info(
+					"[Mixcloud Status] loading -- /api/admin/mixcloud-import/status",
+				);
+				try {
+					const rows = await database
+						.selectFrom("mixcloud_import")
+						.select([
+							"show_id",
+							"derived_title",
+							"derived_date",
+							"decoded_djs",
+							"parser_version",
+							"parser_key",
+							"date_source",
+						])
+						.where("show_id", "is", null)
+						.execute();
+					const status: MixcloudImportStatus = {
+						auto_parsed: 0,
+						unparsable: 0,
+					};
+					for (const row of rows) {
+						const category = classifyMixcloudImport(row);
+						if (category !== undefined) status[category]++;
+					}
+					request.log.info(
+						status,
+						`[Mixcloud Status] loaded -- ${status.auto_parsed} ready, ${status.unparsable} need review`,
+					);
+					return status;
+				} catch (error) {
+					request.log.error(
+						{ err: error },
+						"[Mixcloud Status] failed -- /api/admin/mixcloud-import/status",
+					);
+					return reply.code(500).send({ error: "Internal Server Error" });
 				}
 			},
 		);

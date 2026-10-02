@@ -476,3 +476,83 @@ describe("Mixcloud import list", () => {
 		}
 	});
 });
+
+describe("Mixcloud import status", () => {
+	test("counts only pending rows with complete title-sourced suggestions", async () => {
+		const ready = {
+			...rows[1],
+			derived_title: "Show",
+			derived_date: timestamp,
+			decoded_djs: ["DJ"],
+			parser_version: 1,
+			parser_key: "test",
+			date_source: "title" as const,
+		};
+		const db = database(
+			[
+				ready,
+				{ ...ready, date_source: "created_time" },
+				rows[1],
+				{ ...ready, show_id: 10 },
+			],
+			false,
+		);
+		const app = Fastify();
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject("/mixcloud-import/status");
+			expect(response.statusCode).toBe(200);
+			expect(response.json()).toEqual({ auto_parsed: 1, unparsable: 2 });
+		} finally {
+			await app.close();
+			await db.destroy();
+		}
+	});
+	for (const fail of [false, true]) {
+		test(`handles ${fail ? "database failure" : "empty database"}`, async () => {
+			const db = database([], fail);
+			const app = Fastify();
+			try {
+				await app.register(mixcloudImportRoutes(db));
+				const response = await app.inject("/mixcloud-import/status");
+				expect(response.statusCode).toBe(fail ? 500 : 200);
+				expect(response.json()).toEqual(
+					fail
+						? { error: "Internal Server Error" }
+						: { auto_parsed: 0, unparsable: 0 },
+				);
+			} finally {
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+	for (const role of [undefined, "user", "admin"] as const) {
+		test(`requires admin access for status: ${role ?? "anonymous"}`, async () => {
+			const queries: string[] = [];
+			const db = database([], false, queries);
+			const app = Fastify();
+			try {
+				await app.register(
+					adminRoutes(
+						{
+							api: {
+								getSession: async () => (role ? { user: { role } } : null),
+							},
+						} as never,
+						db,
+						{ username: "", password: "" },
+					),
+				);
+				const response = await app.inject("/api/admin/mixcloud-import/status");
+				expect(response.statusCode).toBe(
+					role === "admin" ? 200 : role === "user" ? 403 : 401,
+				);
+				if (role !== "admin") expect(queries).toHaveLength(0);
+			} finally {
+				await app.close();
+				await db.destroy();
+			}
+		});
+	}
+});

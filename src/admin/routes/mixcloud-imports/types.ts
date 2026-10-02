@@ -92,3 +92,6 @@ export type MixcloudImportAdminRow = {
 };
 /** Temporary response contract for the Mixcloud refresh scaffold. */
 export type RefreshMixcloudResponse = { status: "ok" };
+
+/** Counts of pending source rows by import readiness. */
+export type MixcloudImportStatus = { auto_parsed: number; unparsable: number };
