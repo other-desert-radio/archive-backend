@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import Fastify from "fastify";
 import { Kysely, PostgresDialect } from "kysely";
 import { adminRoutes } from "../../src/admin/admin.js";
@@ -61,7 +61,10 @@ const database = (result: typeof rows, fail = false, queries: string[] = []) =>
 
 describe("Mixcloud import list", () => {
 	for (const role of [undefined, "user", "admin"] as const) {
-		test(`refresh scaffold enforces admin access: ${role ?? "anonymous"}`, async () => {
+		test(`refresh enforces admin access: ${role ?? "anonymous"}`, async () => {
+			const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
+				Response.json({ data: [] }),
+			);
 			const queries: string[] = [];
 			const db = database([], true, queries);
 			const app = Fastify();
@@ -90,12 +93,38 @@ describe("Mixcloud import list", () => {
 						: { error: role === "user" ? "Forbidden" : "Unauthorized" },
 				);
 				expect(queries).toEqual([]);
+				expect(fetchMock).toHaveBeenCalledTimes(role === "admin" ? 1 : 0);
 			} finally {
+				fetchMock.mockRestore();
 				await app.close();
 				await db.destroy();
 			}
 		});
 	}
+
+	test("refresh returns a generic upstream failure without database access", async () => {
+		const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response("offline", { status: 503 }),
+		);
+		const queries: string[] = [];
+		const db = database([], true, queries);
+		const app = Fastify();
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject({
+				method: "POST",
+				url: "/refresh-mixcloud",
+			});
+			expect(response.statusCode).toBe(500);
+			expect(response.json()).toEqual({ error: "Internal Server Error" });
+			expect(fetchMock).toHaveBeenCalledTimes(1);
+			expect(queries).toEqual([]);
+		} finally {
+			fetchMock.mockRestore();
+			await app.close();
+			await db.destroy();
+		}
+	});
 
 	test("returns linked details and preserves unimported records using distinct correlated relationships", async () => {
 		const queries: string[] = [];

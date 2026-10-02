@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
+import { fetchMixcloud } from "./fetch-mixcloud.js";
 import type {
 	MixcloudImportAdminRow,
 	RefreshMixcloudResponse,
@@ -12,14 +13,24 @@ export const mixcloudImportRoutes =
 	async (app) => {
 		app.post<{ Reply: AdminApiReply<RefreshMixcloudResponse> }>(
 			"/refresh-mixcloud",
-			async (request) => {
+			async (request, reply) => {
 				request.log.info(
-					"[Mixcloud Refresh] started -- /api/admin/refresh-mixcloud (scaffold)",
+					"[Mixcloud Refresh] started -- /api/admin/refresh-mixcloud",
 				);
-				request.log.info(
-					"[Mixcloud Refresh] completed -- /api/admin/refresh-mixcloud (scaffold)",
-				);
-				return { status: "ok" };
+				try {
+					const source = await fetchMixcloud();
+					request.log.info(
+						{ count: source.data.length },
+						`[Mixcloud Refresh] completed -- fetched ${source.data.length} cloudcasts into memory`,
+					);
+					return { status: "ok" };
+				} catch (error) {
+					request.log.error(
+						{ err: error },
+						"[Mixcloud Refresh] failed -- /api/admin/refresh-mixcloud",
+					);
+					return reply.code(500).send({ error: "Internal Server Error" });
+				}
 			},
 		);
 		app.get<{ Reply: AdminApiReply<MixcloudImportAdminRow[]> }>(
