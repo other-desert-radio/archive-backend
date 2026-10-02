@@ -320,12 +320,6 @@ if (import.meta.main) {
 			url: entry.url,
 			tags: entry.tags.map((tag) => tag.name),
 		});
-
-		// TODO: populate all fields of a show
-		//  duration
-		//  coallate DJs
-		//  images
-		// TODO: coallate tags
 	}
 
 	// Print the normalized DJ/title listing before the aggregated DJ counts.

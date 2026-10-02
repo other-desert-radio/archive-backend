@@ -312,23 +312,28 @@ barrel and the utils barrel. It accepts the source `key`, `name`, and
 `created_time`, preserves the key verbatim, and returns database-facing nullable
 suggestions with a non-null `parser_version`. `MIXCLOUD_PARSER_VERSION` is
 currently `0` while the pipeline is incomplete. The function tries the ordered
-matchers and returns the first match's title, single raw DJ name, and parser key.
-Unmatched titles return null suggestions. Date suggestions and date source remain
-null until date conversion is implemented; DJ overrides are not applied yet.
-It has no file, network, or database side effects and is not connected to refresh
-or the import script yet. Remaining matchers, normalization, and pipeline version
-`1` follow in separate reviewed chunks.
+matchers and returns the first match's title, single raw DJ name, and parser
+key. Unmatched or excluded titles return `undefined`. Date suggestions and date
+source remain null until date conversion is implemented; DJ overrides are not
+applied yet. It has no file, network, or database side effects and is not
+connected to refresh or the import script yet. Normalization and pipeline
+version `1` follow in separate reviewed chunks.
 `tests/utils/mixcloud-parser.test.ts` checks this contract.
 
-`src/utils/mixcloud-parser/parsers.ts` contains the first matcher copied from
-the diagnostic script: `common-comma-date`, for titles such as
-`Ethan - Side A, April 6, 2020`. Its `ParserFnResult` retains raw `djName`,
-`title`, and optional `date` captures; these are not database-ready suggestions.
-The matcher exposes a stable key independently of its position in the array.
-This key also serves as its diagnostic label; there is no separate parser name.
-The matcher is wired into `parseMixcloudEntry`; the diagnostic script keeps
-its existing matcher until it calls the shared parser. Focused matcher
-coverage is in `tests/utils/mixcloud-title-parsers.test.ts`.
+`src/utils/mixcloud-parser/parsers.ts` contains all fourteen regex matchers,
+known-DJ prefix fallbacks and their comments from the diagnostic script.
+Matching preserves the script's order: specific patterns precede broad
+fallbacks, and excluded names return `undefined` before any matcher runs. The
+excluded-name set lives in `src/utils/mixcloud-parser/shared.ts`. The
+flexible-spacing matcher therefore handles ordinary comma-date titles before the
+narrower `common-comma-date` matcher. Known-DJ prefixes run last and escape
+literal names before constructing regexes. Each matcher uses a stable text key
+as its identifier and diagnostic label; there is no separate parser name.
+`ParserFnResult` retains raw `djName`, `title`, and optional `date` captures.
+The script keeps its existing matchers until it calls the shared parser. Each
+matcher has its own named variable; the `parsers` array lists those variables in
+matching order, with example comments kept beside their definitions. Focused
+matcher coverage is in `tests/utils/mixcloud-title-parsers.test.ts`.
 
 `createdAt` follows the archive table convention and records when the tracking
 row was created. `imported_at` records the successful database import time, not
