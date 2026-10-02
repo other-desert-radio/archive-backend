@@ -8,7 +8,7 @@ export type MixcloudParserInput = Readonly<{
 }>;
 
 /** Database-facing suggestions, including the unchanged source identity. */
-export type MixcloudParserResult = Pick<
+export type ParseEntryResult = Pick<
 	MixcloudImportTable,
 	| "key"
 	| "derived_title"
@@ -17,3 +17,15 @@ export type MixcloudParserResult = Pick<
 	| "parser_key"
 	| "date_source"
 > & { parser_version: number };
+
+/** Raw title captures; DJ normalization and date conversion happen later. */
+export type ParserFnResult = {
+	djName: string;
+	title: string;
+	date?: string;
+};
+
+export type ShowTitleParser = {
+	parse: (name: string) => ParserFnResult | undefined;
+	key: string;
+};
