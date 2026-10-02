@@ -20,6 +20,11 @@ import {
 const linked: MixcloudImportAdminRow = {
 	id: 2,
 	key: "/odr/test/",
+	url: "https://www.mixcloud.com/odr/source-show/",
+	name: "Original cloudcast",
+	created_time: "2026-08-02T09:30:00.000Z",
+	image_small: "https://example.test/small.jpg",
+	image_large: "https://example.test/large.jpg",
 	show_id: 10,
 	imported_at: "2026-09-01T12:00:00.000Z",
 	show_name: "Ambient Hour",
@@ -63,6 +68,12 @@ describe("Mixcloud table", () => {
 	test("searches all displayed fields and formatted values", () => {
 		for (const query of [
 			" ambient ",
+			"source-show",
+			"original cloudcast",
+			"09:30:00 UTC",
+			"2026-08-02T09:30",
+			"small.jpg",
+			"large.jpg",
 			"DJ NINE",
 			"/odr/test/",
 			"12:00:00 UTC",
@@ -85,6 +96,7 @@ describe("Mixcloud table", () => {
 			id: 9,
 			duration: 90,
 			imported_at: "2026-09-02T12:00:00.000Z",
+			created_time: "2026-08-03T09:30:00.000Z",
 		};
 		expect(
 			sortResourceRows([linked, other], mixcloudColumns, "duration", "asc"),
@@ -97,11 +109,35 @@ describe("Mixcloud table", () => {
 				"asc",
 			),
 		).toEqual([pending, linked, other]);
+		for (const column of [
+			"created_time",
+			"url",
+			"name",
+			"image_small",
+			"image_large",
+		] as const) {
+			expect(
+				sortResourceRows([linked, pending], mixcloudColumns, column, "asc"),
+			).toEqual([pending, linked]);
+		}
+		expect(
+			sortResourceRows(
+				[other, linked, pending],
+				mixcloudColumns,
+				"created_time",
+				"asc",
+			),
+		).toEqual([pending, linked, other]);
 	});
-	test("renders exactly nine columns, formatted values, and no actions", () => {
+	test("renders all fourteen columns, formatted values, and no actions", () => {
 		expect(mixcloudColumns.map((c) => c.label)).toEqual([
 			"ID",
 			"Key",
+			"url",
+			"name",
+			"created_time",
+			"image_small",
+			"image_large",
 			"show_id",
 			"imported_at",
 			"show name",
@@ -120,6 +156,11 @@ describe("Mixcloud table", () => {
 		);
 		expect(html).toContain("2026-09-01 12:00:00 UTC");
 		expect(html).toContain("01:00:00");
+		expect(html).toContain("Original cloudcast");
+		expect(html).toContain("2026-08-02 09:30:00 UTC");
+		expect(html).toContain("https://example.test/small.jpg");
+		expect(html).toContain("https://example.test/large.jpg");
+		expect(html).toContain("https://www.mixcloud.com/odr/source-show/");
 		expect(html).toContain("DJ Two, DJ Nine");
 		expect(html).toContain("None");
 		expect(html).not.toContain("Actions");

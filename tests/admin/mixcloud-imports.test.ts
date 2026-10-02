@@ -10,6 +10,11 @@ const rows = [
 	{
 		id: 1,
 		key: "/odr/show/",
+		url: "https://www.mixcloud.com/odr/show/",
+		name: "Source show",
+		created_time: timestamp,
+		image_small: "https://example.test/small.jpg",
+		image_large: "https://example.test/large.jpg",
 		show_id: 10,
 		imported_at: timestamp,
 		show_name: "Show",
@@ -23,6 +28,11 @@ const rows = [
 	{
 		id: 2,
 		key: "/odr/pending/",
+		url: null,
+		name: null,
+		created_time: null,
+		image_small: null,
+		image_large: null,
 		show_id: null,
 		imported_at: null,
 		show_name: null,
@@ -62,6 +72,11 @@ describe("Mixcloud import list", () => {
 				{
 					id: 1,
 					key: "/odr/show/",
+					url: rows[0].url,
+					name: rows[0].name,
+					created_time: timestamp.toISOString(),
+					image_small: rows[0].image_small,
+					image_large: rows[0].image_large,
 					show_id: 10,
 					imported_at: timestamp.toISOString(),
 					show_name: "Show",
@@ -72,12 +87,48 @@ describe("Mixcloud import list", () => {
 				},
 				{ id: 2, key: "/odr/pending/", djs: [], dj_names: [], tags: [] },
 			]);
+			expect(queries[0]).toContain('"mixcloud_import"."duration"');
+			expect(queries[0]).not.toContain('"shows"."duration"');
 			expect(queries[0]).toContain('left join "shows"');
 			expect(queries[0]).toContain('select distinct "djs"."id", "djs"."title"');
 			expect(queries[0]).toContain('select distinct "tag_id"');
 			expect(queries[0]).toContain(
 				'"show_djs"."show_id" = "mixcloud_import"."show_id"',
 			);
+		} finally {
+			await app.close();
+			await db.destroy();
+		}
+	});
+	test("returns source metadata for pending imports", async () => {
+		const db = database([
+			{
+				...rows[0],
+				show_id: null,
+				imported_at: null,
+				show_name: null,
+				linked_djs: [],
+				linked_tags: [],
+			},
+		]);
+		const app = Fastify();
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject("/mixcloud-imports");
+			expect(response.statusCode).toBe(200);
+			expect(response.json()[0]).toEqual({
+				id: 1,
+				key: rows[0].key,
+				url: rows[0].url,
+				name: rows[0].name,
+				created_time: timestamp.toISOString(),
+				duration: 3600,
+				image_small: rows[0].image_small,
+				image_large: rows[0].image_large,
+				djs: [],
+				dj_names: [],
+				tags: [],
+			});
 		} finally {
 			await app.close();
 			await db.destroy();

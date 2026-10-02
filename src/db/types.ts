@@ -18,6 +18,12 @@ export type MixcloudImportTable = {
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	key: string;
+	url: string | null;
+	name: string | null;
+	created_time: Date | null;
+	duration: number | null;
+	image_small: string | null;
+	image_large: string | null;
 	show_id: number | null;
 	imported_at: Date | null;
 };
