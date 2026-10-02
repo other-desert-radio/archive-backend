@@ -54,6 +54,7 @@ export type MixcloudCloudcasts = Pick<MixcloudPage, "data">;
 
 /** JSON contract for the authenticated, read-only Mixcloud import list. */
 export type MixcloudImportAdminRow = {
+	data_changed: boolean;
 	id: number;
 	key: string;
 	url?: string;

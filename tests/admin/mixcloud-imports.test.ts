@@ -9,6 +9,7 @@ const timestamp = new Date("2026-09-01T12:00:00Z");
 const rows = [
 	{
 		id: 1,
+		data_changed: true,
 		key: "/odr/show/",
 		url: "https://www.mixcloud.com/odr/show/",
 		name: "Source show",
@@ -27,6 +28,7 @@ const rows = [
 	},
 	{
 		id: 2,
+		data_changed: false,
 		key: "/odr/pending/",
 		url: null,
 		name: null,
@@ -176,6 +178,7 @@ describe("Mixcloud import list", () => {
 			expect(response.json()).toEqual([
 				{
 					id: 1,
+					data_changed: true,
 					key: "/odr/show/",
 					url: rows[0].url,
 					name: rows[0].name,
@@ -190,7 +193,14 @@ describe("Mixcloud import list", () => {
 					dj_names: ["DJ Two", "DJ Nine"],
 					tags: [3, 5],
 				},
-				{ id: 2, key: "/odr/pending/", djs: [], dj_names: [], tags: [] },
+				{
+					id: 2,
+					data_changed: false,
+					key: "/odr/pending/",
+					djs: [],
+					dj_names: [],
+					tags: [],
+				},
 			]);
 			expect(queries[0]).toContain('"mixcloud_import"."duration"');
 			expect(queries[0]).not.toContain('"shows"."duration"');
@@ -223,6 +233,7 @@ describe("Mixcloud import list", () => {
 			expect(response.statusCode).toBe(200);
 			expect(response.json()[0]).toEqual({
 				id: 1,
+				data_changed: true,
 				key: rows[0].key,
 				url: rows[0].url,
 				name: rows[0].name,

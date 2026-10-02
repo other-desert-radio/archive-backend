@@ -311,17 +311,16 @@ body. It fetches
 follows `paging.next`, combining all source records into `{ data: [...] }` in
 request-local memory. It returns `200 { "status": "ok" }` after all pages
 complete and source metadata is saved, logging start and completion with the
-persisted count. Each page has a
-30-second timeout; failed requests, invalid JSON/page envelopes or cloudcast
-records, or repeated pagination URLs stop the refresh without retries and return
-generic `500` errors after logging the failure. Source records are retained
-unchanged; this chunk validates the cloudcast fields used by the importer,
-including nested tags and small/large picture strings, against the structure in
-`src/res/mixcloud.json`. Unused fields are excluded from validation for
-performance and remain documented as comments in the patterns. It does not parse
-names or write files. The UI button remains disconnected
-until a later review chunk. The shared `RefreshMixcloudResponse` type is
-exported from the Mixcloud imports resource barrel.
+persisted count. Each page has a 30-second timeout; failed requests, invalid
+JSON/page envelopes or cloudcast records, or repeated pagination URLs stop the
+refresh without retries and return generic `500` errors after logging the
+failure. Source records are retained unchanged; this chunk validates the
+cloudcast fields used by the importer, including nested tags and small/large
+picture strings, against the structure in `src/res/mixcloud.json`. Unused fields
+are excluded from validation for performance and remain documented as comments
+in the patterns. It does not parse names or write files. The UI button remains
+disconnected until a later review chunk. The shared `RefreshMixcloudResponse`
+type is exported from the Mixcloud imports resource barrel.
 
 Source validation patterns (`PicturesPattern`, `CloudcastPattern`, and
 `PagePattern`) live in the resource's `types.ts` and are exported alongside
@@ -335,21 +334,21 @@ to a sorted, deduplicated array. Existing IDs, creation timestamps, Show links,
 and import timestamps are preserved; records absent from the fetch are retained.
 Changed source metadata on imported rows sets `data_changed`; tag order and
 duplicate keys alone do not count as changes. Existing true flags remain true,
-including on pending rows. No archive Shows, DJs, or tags are created or changed.
-Database failures roll back the entire refresh and return generic `500` errors.
-Apply migrations through `0021` before refreshing.
+including on pending rows. No archive Shows, DJs, or tags are created or
+changed. Database failures roll back the entire refresh and return generic `500`
+errors. Apply migrations through `0021` before refreshing.
 
 `GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
 plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.
 It returns every tracking record in ID order, including unimported records. Each
-row includes `id`, `key`, `djs` (numeric IDs), `dj_names` (strings aligned with
+row includes `id`, `key`, required boolean `data_changed`, `djs` (numeric IDs), `dj_names` (strings aligned with
 ascending DJ IDs), and `tags` (ascending Show tag IDs). Optional `show_id`,
 `imported_at` (ISO timestamp), and `show_name` are omitted when absent. Source
 metadata includes optional `url`, `name`, `created_time` (ISO timestamp),
 `duration` (seconds), `image_small`, and `image_large` (image URLs), read
 directly from `mixcloud_import`, including for pending records. Duration now
 represents source metadata rather than the linked Show duration. Migration
-`0019` must be applied before using this endpoint. Show/DJ/tag details come from
+`0021` must be applied before using this endpoint. Show/DJ/tag details come from
 linked archive records; missing relationships produce empty arrays. Distinct
 correlated relationship queries avoid duplicate imports or IDs. Failures return
 the generic `500` error.

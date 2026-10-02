@@ -259,14 +259,14 @@ array represents a cloudcast with no source tags. These are source metadata, not
 foreign keys or archive tag IDs.
 
 Migration `0021_add_mixcloud_data_changed` adds `data_changed`, defaulting to
-false for existing and new rows. It flags source changes needing
-review after import: refresh writes set it when relevant source metadata
-changes, unchanged refreshes preserve a set flag, and review clears it. Pending
-imports remain identifiable by their null `show_id`. Refresh upserts source
-metadata by exact key in one transaction, comparing URL, name, creation time,
-duration, image URLs, and tag keys as a set. Missing fetched records are retained.
-Archive records and import links are preserved. Review actions and API/UI flag
-exposure follow separately. No approved-source snapshot or diff history is stored.
+false for existing and new rows. It flags source changes needing review after
+import: refresh writes set it when relevant source metadata changes, unchanged
+refreshes preserve a set flag, and review clears it. Pending imports remain
+identifiable by their null `show_id`. Refresh upserts source metadata by exact
+key in one transaction, comparing URL, name, creation time, duration, image
+URLs, and tag keys as a set. Missing fetched records are retained. Archive
+records and import links are preserved. Review actions and API/UI flag exposure
+follow separately. No approved-source snapshot or diff history is stored.
 Rollback removes only the flag column and preserves tracking records and links.
 
 `createdAt` follows the archive table convention and records when the tracking

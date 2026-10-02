@@ -18,6 +18,7 @@ import {
 } from "../../src/admin-ui/loaders/mixcloud-imports.js";
 
 const linked: MixcloudImportAdminRow = {
+	data_changed: true,
 	id: 2,
 	key: "/odr/test/",
 	url: "https://www.mixcloud.com/odr/source-show/",
@@ -34,6 +35,7 @@ const linked: MixcloudImportAdminRow = {
 	tags: [3, 5],
 };
 const pending: MixcloudImportAdminRow = {
+	data_changed: false,
 	id: 1,
 	key: "/odr/pending/",
 	djs: [],

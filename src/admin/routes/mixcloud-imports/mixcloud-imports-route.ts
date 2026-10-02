@@ -47,6 +47,7 @@ export const mixcloudImportRoutes =
 						.leftJoin("shows", "shows.id", "mixcloud_import.show_id")
 						.select([
 							"mixcloud_import.id",
+							"mixcloud_import.data_changed",
 							"mixcloud_import.key",
 							"mixcloud_import.show_id",
 							"mixcloud_import.imported_at",
@@ -81,6 +82,7 @@ export const mixcloudImportRoutes =
 						.execute();
 					const result: MixcloudImportAdminRow[] = rows.map((row) => ({
 						id: row.id,
+						data_changed: row.data_changed,
 						key: row.key,
 						...(row.url === null ? {} : { url: row.url }),
 						...(row.name === null ? {} : { name: row.name }),
