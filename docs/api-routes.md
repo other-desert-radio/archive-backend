@@ -311,11 +311,13 @@ body. It fetches
 follows `paging.next`, combining all source records into `{ data: [...] }` in
 request-local memory. It returns `200 { "status": "ok" }` after all pages
 complete, logging start and completion with the fetched count. Each page has a
-30-second timeout; failed requests, invalid JSON/page envelopes, or repeated
+30-second timeout; failed requests, invalid JSON/page envelopes or cloudcast records, or repeated
 pagination URLs stop the refresh without retries and return generic `500` errors
 after logging the failure. Source records are retained unchanged; this chunk
-does not validate individual cloudcasts, parse names, write files, or access the
-database. The UI button remains disconnected until a later review chunk. The
+validates cloudcast fields and nested tags, pictures, and user metadata against
+the structure in `src/res/mixcloud.json`. Hosts must be an array; its item shape
+is unspecified because the source contains only empty host arrays. It does not
+parse names, write files, or access the database. The UI button remains disconnected until a later review chunk. The
 shared `RefreshMixcloudResponse` type is exported from the Mixcloud imports
 resource barrel.
 
