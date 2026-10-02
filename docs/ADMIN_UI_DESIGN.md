@@ -307,9 +307,10 @@ The sidebar entry follows Tags and opens `#mixcloud`, with lowercase “mixcloud
 and “import” on two lines. The page heading is “Mixcloud Import.” This read-only
 view uses the shared resource layout, sticky search toolbar, sortable table,
 loading/retry, empty, and no-results states. Its fifteen columns are ID, Key,
-url, name, created_time, image_small, image_large, show_id, imported_at,
-data_changed, show name, djs, dj names, duration, and tags. URL and image URL
-fields display source text; duration is the stored Mixcloud duration, including
+url, name, created_time, image_small, image_large, duration, show_id, imported_at,
+data_changed, show name, djs, dj names, and tags. URL and image URL
+fields display source text; image URLs are clickable and open their image in a
+new tab. Duration is the stored Mixcloud duration, including
 for pending rows. The read-only `data_changed` column displays `true` or
 `false`, participates in search, and sorts false before true in ascending order.
 There are no segmented import/review views yet. Search covers all displayed

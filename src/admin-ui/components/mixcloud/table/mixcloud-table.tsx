@@ -70,14 +70,37 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 	{
 		key: "image_small",
 		label: "image_small",
-		render: (r) => formatMissing(r.image_small),
+		render: (r) =>
+			r.image_small ? (
+				<a href={r.image_small} target="_blank" rel="noopener noreferrer">
+					{r.image_small}
+				</a>
+			) : (
+				formatMissing(r.image_small)
+			),
 		compare: (a, b) => text(a.image_small, b.image_small),
 	},
 	{
 		key: "image_large",
 		label: "image_large",
-		render: (r) => formatMissing(r.image_large),
+		render: (r) =>
+			r.image_large ? (
+				<a href={r.image_large} target="_blank" rel="noopener noreferrer">
+					{r.image_large}
+				</a>
+			) : (
+				formatMissing(r.image_large)
+			),
 		compare: (a, b) => text(a.image_large, b.image_large),
+	},
+	{
+		key: "duration",
+		label: "duration",
+		render: (r) =>
+			formatMissing(
+				r.duration === undefined ? undefined : formatDuration(r.duration),
+			),
+		compare: (a, b) => compareOptionalNumbers(a.duration, b.duration),
 	},
 	{
 		key: "show_id",
@@ -127,15 +150,7 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 			),
 		compare: (a, b) => text(a.dj_names.join(", "), b.dj_names.join(", ")),
 	},
-	{
-		key: "duration",
-		label: "duration",
-		render: (r) =>
-			formatMissing(
-				r.duration === undefined ? undefined : formatDuration(r.duration),
-			),
-		compare: (a, b) => compareOptionalNumbers(a.duration, b.duration),
-	},
+
 	{
 		key: "tags",
 		label: "tags",

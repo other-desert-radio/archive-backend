@@ -198,13 +198,13 @@ describe("Mixcloud table", () => {
 			"created_time",
 			"image_small",
 			"image_large",
+			"duration",
 			"show_id",
 			"imported_at",
 			"data_changed",
 			"show name",
 			"djs",
 			"dj names",
-			"duration",
 			"tags",
 		]);
 		const html = renderToStaticMarkup(
@@ -219,8 +219,13 @@ describe("Mixcloud table", () => {
 		expect(html).toContain("01:00:00");
 		expect(html).toContain("Original cloudcast");
 		expect(html).toContain("2026-08-02 09:30:00 UTC");
-		expect(html).toContain("https://example.test/small.jpg");
-		expect(html).toContain("https://example.test/large.jpg");
+		expect(html).toContain(
+			'<a href="https://example.test/small.jpg" target="_blank" rel="noopener noreferrer">https://example.test/small.jpg</a>',
+		);
+		expect(html).toContain(
+			'<a href="https://example.test/large.jpg" target="_blank" rel="noopener noreferrer">https://example.test/large.jpg</a>',
+		);
+		expect(html.match(/<a /g)).toHaveLength(2);
 		expect(html).toContain("https://www.mixcloud.com/odr/source-show/");
 		expect(html).toContain("DJ Two, DJ Nine");
 		expect(html).toContain("None");
