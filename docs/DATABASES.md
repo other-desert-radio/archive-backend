@@ -306,6 +306,17 @@ these columns and their constraint, retaining source metadata and import links.
 stored suggestions, date-source validation, and rollback using the disposable
 `MIXCLOUD_MIGRATION_TEST_DATABASE_URL`.
 
+The shared parser scaffold is `parseMixcloudEntry` in
+`src/utils/mixcloud-parser/mixcloud-parser.ts`, exported through its folder
+barrel and the utils barrel. It accepts the source `key`, `name`, and
+`created_time`, preserves the key verbatim, and returns database-facing nullable
+suggestions with a non-null `parser_version`. `MIXCLOUD_PARSER_VERSION` is
+currently `0`: the scaffold returns null for all suggestions, even for titles
+the diagnostic script recognizes. It has no file, network, or database side
+effects and is not connected to refresh or the import script yet. Matching,
+normalization, and pipeline version `1` follow in separate reviewed chunks.
+`tests/utils/mixcloud-parser.test.ts` checks this contract.
+
 `createdAt` follows the archive table convention and records when the tracking
 row was created. `imported_at` records the successful database import time, not
 Mixcloud's creation time, the broadcast date, or a parsing run's time. It has no
