@@ -15,23 +15,35 @@ export const mixcloudImportRoutes =
 		app.post<{ Reply: AdminApiReply<RefreshMixcloudResponse> }>(
 			"/refresh-mixcloud",
 			async (request, reply) => {
+				const startedAt = Date.now();
+				let stage: "fetch" | "save" = "fetch";
 				request.log.info(
 					"[Mixcloud Refresh] started -- /api/admin/refresh-mixcloud",
 				);
 				try {
-					const source = await fetchMixcloud();
-					await persistMixcloud(database, source);
+					const source = await fetchMixcloud(fetch, request.log);
+					stage = "save";
 					request.log.info(
 						{ count: source.data.length },
-						`[Mixcloud Refresh] completed -- persisted ${source.data.length} cloudcasts`,
+						`[Mixcloud Refresh] saving started -- ${source.data.length} cloudcasts in one transaction`,
+					);
+					await persistMixcloud(database, source, request.log);
+					request.log.info(
+						{ count: source.data.length, elapsedMs: Date.now() - startedAt },
+						`[Mixcloud Refresh] completed -- committed ${source.data.length} cloudcasts, elapsed: ${Date.now() - startedAt}ms`,
 					);
 					return { status: "ok" };
 				} catch (error) {
 					request.log.error(
-						{ err: error },
-						"[Mixcloud Refresh] failed -- /api/admin/refresh-mixcloud",
+						{ err: error, stage, elapsedMs: Date.now() - startedAt },
+						`[Mixcloud Refresh] failed -- stage: ${stage}, elapsed: ${Date.now() - startedAt}ms, /api/admin/refresh-mixcloud`,
 					);
-					return reply.code(500).send({ error: "Internal Server Error" });
+					return reply.code(500).send({
+						error:
+							stage === "fetch"
+								? "Mixcloud data could not be fetched or validated. No changes were saved. Please try again; if this continues, contact the administrator."
+								: "Mixcloud data was fetched, but could not be saved. No changes were saved. Please contact the administrator.",
+					});
 				}
 			},
 		);

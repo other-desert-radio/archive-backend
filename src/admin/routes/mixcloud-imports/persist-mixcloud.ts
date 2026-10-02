@@ -51,11 +51,29 @@ export const persistMixcloudEntry = async (
 export const persistMixcloud = async (
 	database: TypedDatabase,
 	source: MixcloudCloudcasts,
+	logger?: FastifyBaseLogger,
 ): Promise<void> => {
 	if (source.data.length === 0) return;
 	await database.transaction().execute(async (transaction) => {
+		let processed = 0;
 		for (const entry of source.data) {
-			await persistMixcloudEntry(transaction, entry);
+			try {
+				await persistMixcloudEntry(transaction, entry);
+			} catch (error) {
+				logger?.error(
+					{ err: error, key: entry.key, processed, total: source.data.length },
+					`[Mixcloud Refresh] record save failed -- key: ${entry.key}, processed: ${processed}/${source.data.length}; rolling back refresh`,
+				);
+				throw error;
+			}
+			processed++;
+			if (processed % 100 === 0 || processed === source.data.length)
+				logger?.info(
+					{ processed, total: source.data.length },
+					`[Mixcloud Refresh] saving progress -- ${processed}/${source.data.length} records (transaction not yet committed)`,
+				);
 		}
 	});
 };
+
+import type { FastifyBaseLogger } from "fastify";

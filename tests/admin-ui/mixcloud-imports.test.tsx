@@ -15,6 +15,7 @@ import {
 import {
 	loadMixcloudImports,
 	type MixcloudImportAdminRow,
+	refreshMixcloud,
 } from "../../src/admin-ui/loaders/mixcloud-imports.js";
 
 const linked: MixcloudImportAdminRow = {
@@ -44,6 +45,63 @@ const pending: MixcloudImportAdminRow = {
 };
 const rows = [linked, pending];
 describe("Mixcloud table", () => {
+	test("refresh posts to the route and describes errors for users", async () => {
+		expect(
+			await refreshMixcloud((async (url, options) => {
+				expect(url).toBe("/api/admin/refresh-mixcloud");
+				expect(options).toEqual({ method: "POST" });
+				return Response.json({ status: "ok" });
+			}) as typeof fetch),
+		).toEqual({ status: "ok" });
+		await expect(
+			refreshMixcloud((async () =>
+				Response.json(
+					{ error: "Internal Server Error" },
+					{ status: 500 },
+				)) as typeof fetch),
+		).rejects.toThrow("The server encountered an unexpected error.");
+		await expect(
+			refreshMixcloud((async () =>
+				Response.json(
+					{ error: "Mixcloud is temporarily unavailable. Please try again." },
+					{ status: 502 },
+				)) as typeof fetch),
+		).rejects.toThrow("Mixcloud is temporarily unavailable.");
+		await expect(
+			refreshMixcloud((async () => {
+				throw new Error("fetch failed");
+			}) as typeof fetch),
+		).rejects.toThrow("The browser did not receive a response");
+		await expect(
+			refreshMixcloud((async () => {
+				throw new TypeError(
+					"Request cannot be constructed from a URL that includes credentials",
+				);
+			}) as typeof fetch),
+		).rejects.toThrow("page URL contains login credentials");
+		await expect(
+			refreshMixcloud((async () => new Response("bad JSON")) as typeof fetch),
+		).rejects.toThrow("unreadable refresh response");
+		await expect(
+			refreshMixcloud((async () =>
+				Response.json({ status: "bad" })) as typeof fetch),
+		).rejects.toThrow("unexpected refresh response");
+	});
+	test("refresh toolbar disables its pending action and announces feedback", () => {
+		const html = renderToStaticMarkup(
+			<MixcloudToolbar
+				query=""
+				onQueryChange={() => {}}
+				onRefresh={() => {}}
+				isRefreshing
+				refreshFailed
+				refreshMessage="Unable to refresh Mixcloud."
+			/>,
+		);
+		expect(html).toContain("disabled");
+		expect(html).toContain("Refreshing Mixcloud…");
+		expect(html).toContain('role="alert"');
+	});
 	test("places the lowercase two-line sidebar label below tags", () => {
 		const html = renderToStaticMarkup(
 			<ManagementShell activeResource="mixcloud">content</ManagementShell>,
@@ -171,7 +229,13 @@ describe("Mixcloud table", () => {
 		expect(html).not.toContain("Actions");
 		expect(html).not.toContain(">Edit<");
 		const toolbar = renderToStaticMarkup(
-			<MixcloudToolbar query="" onQueryChange={() => {}} />,
+			<MixcloudToolbar
+				query=""
+				onQueryChange={() => {}}
+				onRefresh={() => {}}
+				isRefreshing={false}
+				refreshFailed={false}
+			/>,
 		);
 		expect(toolbar).toContain("Search Mixcloud");
 		expect(toolbar).toContain(

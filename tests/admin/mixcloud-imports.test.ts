@@ -62,6 +62,59 @@ const database = (result: typeof rows, fail = false, queries: string[] = []) =>
 	});
 
 describe("Mixcloud import list", () => {
+	test("logs fetch pages, save progress, and commit completion", async () => {
+		const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
+			Response.json({
+				data: [
+					{
+						key: "/source/",
+						url: "https://example.test/source",
+						name: "Source",
+						created_time: "2026-09-01T12:00:00Z",
+						updated_time: "2026-09-01T12:00:00Z",
+						play_count: 0,
+						slug: "source",
+						audio_length: 3600,
+						pictures: { small: "small", large: "large" },
+						tags: [],
+					},
+				],
+			}),
+		);
+		const logs: string[] = [];
+		const db = database([]);
+		const app = Fastify({
+			logger: {
+				stream: {
+					write: (line: string) => {
+						logs.push(JSON.parse(line).msg);
+					},
+				},
+			},
+		});
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject({
+				method: "POST",
+				url: "/refresh-mixcloud",
+			});
+			expect(response.statusCode).toBe(200);
+			const messages = logs.join("\n");
+			for (const text of [
+				"fetching page 1",
+				"page 1 response -- status: 200",
+				"page 1 validated -- records: 1",
+				"saving started -- 1 cloudcasts",
+				"saving progress -- 1/1",
+				"completed -- committed 1 cloudcasts",
+			])
+				expect(messages).toContain(text);
+		} finally {
+			fetchMock.mockRestore();
+			await app.close();
+			await db.destroy();
+		}
+	});
 	for (const invalidSource of [false, true]) {
 		test(`refresh fails atomically on ${invalidSource ? "invalid source" : "database failure"}`, async () => {
 			const source = {
@@ -91,7 +144,12 @@ describe("Mixcloud import list", () => {
 					url: "/refresh-mixcloud",
 				});
 				expect(response.statusCode).toBe(500);
-				expect(response.json()).toEqual({ error: "Internal Server Error" });
+				expect(response.json().error).toContain(
+					invalidSource
+						? "could not be fetched or validated"
+						: "could not be saved",
+				);
+				expect(response.json().error).toContain("No changes were saved");
 				expect(queries.length > 0).toBe(!invalidSource);
 			} finally {
 				fetchMock.mockRestore();
@@ -157,7 +215,9 @@ describe("Mixcloud import list", () => {
 				url: "/refresh-mixcloud",
 			});
 			expect(response.statusCode).toBe(500);
-			expect(response.json()).toEqual({ error: "Internal Server Error" });
+			expect(response.json().error).toContain(
+				"could not be fetched or validated",
+			);
 			expect(fetchMock).toHaveBeenCalledTimes(1);
 			expect(queries).toEqual([]);
 		} finally {

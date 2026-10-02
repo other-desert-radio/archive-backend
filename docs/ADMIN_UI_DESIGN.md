@@ -307,17 +307,22 @@ The sidebar entry follows Tags and opens `#mixcloud`, with lowercase “mixcloud
 and “import” on two lines. The page heading is “Mixcloud Import.” This read-only
 view uses the shared resource layout, sticky search toolbar, sortable table,
 loading/retry, empty, and no-results states. Its fifteen columns are ID, Key,
-url, name, created_time, image_small, image_large, show_id, imported_at, data_changed, show
-name, djs, dj names, duration, and tags. URL and image URL fields display source
-text; duration is the stored Mixcloud duration, including for pending rows.
-The read-only `data_changed` column displays `true` or `false`, participates in
-search, and sorts false before true in ascending order. There are no segmented
-import/review views yet.
-Search covers all displayed fields; sorting defaults to ID ascending. Timestamps
-use UTC, durations use HH:MM:SS, arrays display comma-separated values, and
-missing values show muted “None.” Unimported records remain visible. There are
-no Edit actions or view toggles. An enabled “Refresh Mixcloud” button uses the
-shared toolbar action position and styling beside search. It currently performs
-no action; route integration follows after the button-only review. Shared
-toolbar creation controls and table Edit controls are optional; existing
-resources continue supplying them.
+url, name, created_time, image_small, image_large, show_id, imported_at,
+data_changed, show name, djs, dj names, duration, and tags. URL and image URL
+fields display source text; duration is the stored Mixcloud duration, including
+for pending rows. The read-only `data_changed` column displays `true` or
+`false`, participates in search, and sorts false before true in ascending order.
+There are no segmented import/review views yet. Search covers all displayed
+fields; sorting defaults to ID ascending. Timestamps use UTC, durations use
+HH:MM:SS, arrays display comma-separated values, and missing values show muted
+“None.” Unimported records remain visible. There are no Edit actions or view
+toggles. An enabled “Refresh Mixcloud” button uses the shared toolbar action
+position and styling beside search. It calls the refresh route, disables itself
+with “Refreshing Mixcloud…” while refreshing and reloading the table, and
+preserves search and sort. Inline status/error messages appear below the toolbar.
+Refresh failures retain existing rows and allow another button click to retry;
+errors include human-readable server feedback rather than raw internal errors.
+A reload failure after a successful refresh is identified separately.
+Shared toolbar creation
+controls and table Edit controls are optional; existing resources continue
+supplying them.

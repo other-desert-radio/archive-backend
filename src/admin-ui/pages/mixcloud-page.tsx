@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	filterMixcloudImports,
 	type MixcloudSortColumn,
@@ -14,6 +14,7 @@ import {
 import {
 	loadMixcloudImports,
 	type MixcloudImportAdminRow,
+	refreshMixcloud,
 } from "../loaders/mixcloud-imports.js";
 export const MixcloudPage = () => {
 	const [rows, setRows] = useState<MixcloudImportAdminRow[]>([]);
@@ -22,6 +23,42 @@ export const MixcloudPage = () => {
 	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string>();
+	const [isRefreshing, setIsRefreshing] = useState(false);
+	const refreshInFlight = useRef(false);
+	const [refreshMessage, setRefreshMessage] = useState<string>();
+	const [refreshFailed, setRefreshFailed] = useState(false);
+	const onRefreshMixcloud = async () => {
+		if (refreshInFlight.current) return;
+		refreshInFlight.current = true;
+		setIsRefreshing(true);
+		setRefreshMessage(undefined);
+		setRefreshFailed(false);
+		try {
+			await refreshMixcloud();
+		} catch (error) {
+			setRefreshFailed(true);
+			setRefreshMessage(
+				error instanceof Error && error.message
+					? error.message
+					: "Unable to refresh Mixcloud. Check your connection and try again.",
+			);
+			refreshInFlight.current = false;
+			setIsRefreshing(false);
+			return;
+		}
+		try {
+			setRows(await loadMixcloudImports());
+			setRefreshMessage("Mixcloud refreshed.");
+		} catch {
+			setRefreshFailed(true);
+			setRefreshMessage(
+				"Mixcloud refreshed, but the table could not be reloaded. Please try again.",
+			);
+		} finally {
+			refreshInFlight.current = false;
+			setIsRefreshing(false);
+		}
+	};
 	const refresh = useCallback(() => {
 		setIsLoading(true);
 		setError(undefined);
@@ -61,7 +98,16 @@ export const MixcloudPage = () => {
 			emptyMessage="No Mixcloud imports yet."
 			hasNoResults={rows.length > 0 && visible.length === 0}
 			noResultsMessage="No Mixcloud imports match your search."
-			toolbar={<MixcloudToolbar query={query} onQueryChange={setQuery} />}
+			toolbar={
+				<MixcloudToolbar
+					query={query}
+					onQueryChange={setQuery}
+					onRefresh={onRefreshMixcloud}
+					isRefreshing={isRefreshing}
+					refreshMessage={refreshMessage}
+					refreshFailed={refreshFailed}
+				/>
+			}
 		>
 			<MixcloudTable
 				rows={visible}
