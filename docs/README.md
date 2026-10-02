@@ -14,7 +14,10 @@ small feature with documentation and focused verification, then stop for review.
 | TypeScript conventions                                                     | [TYPESCRIPT.md](TYPESCRIPT.md)                         |
 | Admin UI components, styling, interactions, and visual checks              | [ADMIN_UI_DESIGN.md](ADMIN_UI_DESIGN.md)               |
 | API authentication, resource layout, shared types, validation, and logging | [api-routes.md](api-routes.md)                         |
-| Database schema, relationships, migrations, and Mixcloud tracking          | [DATABASES.md](DATABASES.md)                           |
+| Database schema, relationships, and migrations                             | [DATABASES.md](DATABASES.md)                           |
+| Mixcloud tracking, refresh persistence, and future imports                 | [MIXCLOUD_IMPORT.md](MIXCLOUD_IMPORT.md)               |
+| Mixcloud matchers, DJ normalization, and date suggestions                  | [MIXCLOUD_PARSER.md](MIXCLOUD_PARSER.md)               |
+| Static archive JSON and image asset contracts                              | [ARCHIVE_EXPORT.md](ARCHIVE_EXPORT.md)                 |
 | Isolated database and browser integration testing                          | [DATABASE_E2E_TESTING.md](DATABASE_E2E_TESTING.md)     |
 | Human database intent and planned importer behavior                        | [databases_human.md](../human_docs/databases_human.md) |
 
@@ -94,6 +97,23 @@ For UI development, run `scripts/build-container-watch` after database setup. It
 builds the stack, mounts host `dist/admin` into the API container, and starts
 the Vite build watcher. Changes appear after each rebuild. Stop the watcher with
 Ctrl-C; stop containers separately with `docker compose down`.
+
+## Local dummy data
+
+`bun run db:seed:djs` and `bun run db:seed:shows` each insert five standalone
+records without creating relationships or other resources. They do not clear
+existing data; rerunning either command adds another batch.
+
+`bun run db:delete:djs -- --confirm` and `bun run db:delete:shows -- --confirm`
+permanently delete every record of that resource and its cascading relationship
+rows. Show deletion retains Mixcloud tracking rows and clears their import links
+and timestamps.
+
+`bun run db:delete:mixcloud-imports -- --confirm` permanently deletes tracking
+rows while preserving the table and all archive resources and relationships.
+Clearing tracking removes duplicate-import protection; refresh can repopulate
+source rows. All deletion commands use the configured database and require the
+explicit confirmation flag.
 
 ## Authentication and UI verification
 

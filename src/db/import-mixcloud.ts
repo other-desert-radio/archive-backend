@@ -35,9 +35,9 @@ if (import.meta.main) {
 		}
 
 		const djNames = parsed.decoded_djs ?? [];
-		const date = parsed.derived_date?.toISOString() ?? "not extracted yet";
+		const date = parsed.derived_date?.toISOString() ?? "unavailable";
 		console.log(
-			`parsing "${entry.name}",\n | ${gray(`parser: ${parsed.parser_key} (version ${parsed.parser_version})`)}\n | key: ${parsed.key}\n | dj_names: ${djNames.join(", ")}\n | title: ${parsed.derived_title}\n | derived_date: ${date}\n | date_source: ${parsed.date_source ?? "not extracted yet"}\n | url: ${entry.url}\n | tags: ${entry.tags.map((tag) => tag.name).join(", ")}\n\n`,
+			`parsing "${entry.name}",\n | ${gray(`parser: ${parsed.parser_key} (version ${parsed.parser_version})`)}\n | key: ${parsed.key}\n | dj_names: ${djNames.join(", ")}\n | title: ${parsed.derived_title}\n | derived_date: ${date}\n | date_source: ${parsed.date_source ?? "unavailable"}\n | url: ${entry.url}\n | tags: ${entry.tags.map((tag) => tag.name).join(", ")}\n\n`,
 		);
 		collection.push({
 			...parsed,

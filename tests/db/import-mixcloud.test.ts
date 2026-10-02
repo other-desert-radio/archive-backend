@@ -30,10 +30,11 @@ test("diagnostic import uses shared suggestions and reports failures and missing
 		"Failed to parse show name: \"K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't\"",
 	);
 	expect(stdout).toContain(
-		"parser: common-comma-date-with-flexible-spacing (version 0)",
+		"parser: common-comma-date-with-flexible-spacing (version 1)",
 	);
-	expect(stdout).toContain("derived_date: not extracted yet");
-	expect(stdout).toContain("date_source: not extracted yet");
+	expect(stdout).toContain("derived_date: 2020-04-06T00:00:00.000Z");
+	expect(stdout).toContain("date_source: title");
+	expect(stdout).toContain("date_source: created_time");
 	expect(stdout).toContain("dj_names: Caroline, Ethan");
 	expect(stdout).toContain("key: /otherdesertradio/");
 });
