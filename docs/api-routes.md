@@ -356,6 +356,8 @@ row includes `id`, `key`, required boolean `data_changed`, `djs` (numeric IDs),
 `dj_names` (strings aligned with ascending DJ IDs), and `tags` (ascending Show
 tag IDs). Optional `show_id`, `imported_at` (ISO timestamp), and `show_name` are
 omitted when absent. Source metadata includes optional `url`, `name`,
+`mixcloud_tag_keys` (array of source genre key strings, omitted when unknown;
+an empty array means no source tags),
 `created_time` (ISO timestamp), `duration` (seconds), `image_small`, and
 `image_large` (image URLs), read directly from `mixcloud_import`, including for
 pending records. Duration now represents source metadata rather than the linked

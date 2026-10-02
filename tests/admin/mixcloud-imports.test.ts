@@ -10,6 +10,7 @@ const rows = [
 	{
 		id: 1,
 		data_changed: true,
+		mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
 		key: "/odr/show/",
 		url: "https://www.mixcloud.com/odr/show/",
 		name: "Source show",
@@ -29,6 +30,7 @@ const rows = [
 	{
 		id: 2,
 		data_changed: false,
+		mixcloud_tag_keys: null,
 		key: "/odr/pending/",
 		url: null,
 		name: null,
@@ -239,6 +241,7 @@ describe("Mixcloud import list", () => {
 				{
 					id: 1,
 					data_changed: true,
+					mixcloud_tag_keys: rows[0].mixcloud_tag_keys,
 					key: "/odr/show/",
 					url: rows[0].url,
 					name: rows[0].name,
@@ -294,6 +297,7 @@ describe("Mixcloud import list", () => {
 			expect(response.json()[0]).toEqual({
 				id: 1,
 				data_changed: true,
+				mixcloud_tag_keys: rows[0].mixcloud_tag_keys,
 				key: rows[0].key,
 				url: rows[0].url,
 				name: rows[0].name,

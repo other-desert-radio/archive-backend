@@ -19,6 +19,7 @@ import {
 } from "../../src/admin-ui/loaders/mixcloud-imports.js";
 
 const linked: MixcloudImportAdminRow = {
+	mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
 	data_changed: true,
 	id: 2,
 	key: "/odr/test/",
@@ -189,7 +190,7 @@ describe("Mixcloud table", () => {
 			),
 		).toEqual([pending, linked, other]);
 	});
-	test("renders all fifteen columns, formatted values, and no actions", () => {
+	test("renders all sixteen columns, formatted values, and no actions", () => {
 		expect(mixcloudColumns.map((c) => c.label)).toEqual([
 			"ID",
 			"Key",
@@ -198,6 +199,7 @@ describe("Mixcloud table", () => {
 			"created_time",
 			"image_small",
 			"image_large",
+			"mixcloud_tag_keys",
 			"duration",
 			"show_id",
 			"imported_at",
@@ -229,6 +231,7 @@ describe("Mixcloud table", () => {
 		expect(html).toContain("https://www.mixcloud.com/odr/source-show/");
 		expect(html).toContain("DJ Two, DJ Nine");
 		expect(html).toContain("None");
+		expect(html).toContain("/genres/ambient/, /genres/experimental/");
 		expect(html).toContain(">true<");
 		expect(html).toContain(">false<");
 		expect(html).not.toContain("Actions");
@@ -256,6 +259,21 @@ describe("Mixcloud table", () => {
 		expect(
 			sortResourceRows(rows, mixcloudColumns, "data_changed", "desc"),
 		).toEqual([linked, pending]);
+	});
+	test("searches and sorts source tag keys and handles empty arrays", () => {
+		expect(filterMixcloudImports(rows, "/genres/experimental/")).toEqual([
+			linked,
+		]);
+		expect(
+			sortResourceRows(rows, mixcloudColumns, "mixcloud_tag_keys", "asc"),
+		).toEqual([pending, linked]);
+		const column = mixcloudColumns.find((c) => c.key === "mixcloud_tag_keys");
+		if (!column) throw new Error("Missing source tag keys column");
+		expect(
+			renderToStaticMarkup(
+				column.render({ ...pending, mixcloud_tag_keys: [] }),
+			),
+		).toContain("None");
 	});
 	test("keeps existing Edit controls", () => {
 		const html = renderToStaticMarkup(
