@@ -181,12 +181,13 @@ imported_at (null unless imported into an actual show)
 ```
 
 additional columns from the parser:
+
 ```text
-derrived_title | 
-derrived_djs | 
-derrived_date | 
+derrived_title |
+derrived_djs |
+derrived_date |
 date_source |  <-- title | created_time (if it was pulled from the shows title or uses the fallback)
-parser_version | 
+parser_version |
 parser_key |  <--- which parser key matched on this
 ```
 

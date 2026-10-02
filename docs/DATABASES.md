@@ -250,6 +250,12 @@ image_small text null
 image_large text null
 mixcloud_tag_keys text[] null
 data_changed boolean not null default false
+derived_title text null
+derived_date timestamptz null
+decoded_djs text[] null
+parser_version integer null
+parser_key text null
+date_source text null
 show_id     integer null references shows(id) on delete set null
 imported_at timestamptz null
 ```
@@ -282,6 +288,23 @@ Rollback removes only the flag column and preserves tracking records and links.
 pending row saves the new URLs while keeping `data_changed` false; the same
 changes on a Show-linked row set the flag true. It requires the disposable
 `MIXCLOUD_MIGRATION_TEST_DATABASE_URL` described below.
+
+Migration `0022_add_mixcloud_parser_results` adds six nullable columns for the
+current parser suggestions on each source row. `derived_title` is the extracted
+show title; `derived_date` uses the same `timestamptz` type as `shows.date`;
+`decoded_djs` contains extracted DJ names, not archive DJ IDs. `parser_key` is a
+stable text matcher identifier, and `parser_version` versions the whole parsing
+pipeline, including DJ overrides and date normalization. A check constraint
+limits non-null `date_source` to `title` or `created_time`. The latter refers to
+Mixcloud's source timestamp, never the tracking row's local `createdAt`.
+
+Existing and new rows start with null suggestions. This migration does not run
+the parser, backfill data, expose new API/UI fields, or change refresh behavior.
+Parser persistence follows in a separate reviewed chunk. Rollback removes only
+these columns and their constraint, retaining source metadata and import links.
+`tests/db/mixcloud-parser-results-migration.test.ts` verifies nullable defaults,
+stored suggestions, date-source validation, and rollback using the disposable
+`MIXCLOUD_MIGRATION_TEST_DATABASE_URL`.
 
 `createdAt` follows the archive table convention and records when the tracking
 row was created. `imported_at` records the successful database import time, not
