@@ -12,7 +12,10 @@ import { up as addMetadata } from "../../src/db/migrations/0019_add_mixcloud_sou
 import { up as addFlag } from "../../src/db/migrations/0021_add_mixcloud_data_changed.js";
 import { up as addParserResults } from "../../src/db/migrations/0022_add_mixcloud_parser_results.js";
 import type { Database } from "../../src/db/types.js";
-import { parseMixcloudEntry } from "../../src/utils/index.js";
+import {
+	MIXCLOUD_PARSER_VERSION,
+	parseMixcloudEntry,
+} from "../../src/utils/index.js";
 
 const databaseUrl = process.env.MIXCLOUD_MIGRATION_TEST_DATABASE_URL;
 const entry: MixcloudCloudcast = {
@@ -209,6 +212,29 @@ test.skipIf(!databaseUrl)(
 				(await db.selectFrom("shows").select("title").executeTakeFirstOrThrow())
 					.title,
 			).toBe("Approved");
+			for (const name of [
+				"Unstructured show",
+				"K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't",
+			]) {
+				await persistMixcloud(db, { data: [matchedEntry] });
+				await persistMixcloud(db, { data: [{ ...matchedEntry, name }] });
+				expect(await read()).toMatchObject({
+					derived_title: null,
+					derived_date: null,
+					decoded_djs: null,
+					parser_key: null,
+					date_source: null,
+					parser_version: MIXCLOUD_PARSER_VERSION,
+					id: first.id,
+					createdAt: first.createdAt,
+					show_id: showId,
+					imported_at: importedAt,
+				});
+			}
+			await persistMixcloud(db, { data: [matchedEntry] });
+			expect(await read()).toMatchObject(
+				parseMixcloudEntry(matchedEntry) ?? {},
+			);
 		} finally {
 			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(db);
 			await db.destroy();
@@ -219,8 +245,14 @@ test.skipIf(!databaseUrl)(
 for (const [name, source, date] of [
 	["Ethan - Side A, April 6, 2020", "title", "2020-04-06"],
 	["Caroline and Ethan - Show", "created_time", "2026-09-01"],
+	["Unstructured show", null, null],
+	[
+		"K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't",
+		null,
+		null,
+	],
 ] as const) {
-	test(`upserts all parser suggestions with ${source} dates`, async () => {
+	test(`upserts parser suggestions for ${name}`, async () => {
 		const queries: { sql: string; parameters: unknown[] }[] = [];
 		const db = new Kysely<Database>({
 			dialect: new PostgresDialect({
@@ -251,12 +283,20 @@ for (const [name, source, date] of [
 				expect(insert?.sql).toContain(`"${field}"`);
 				expect(insert?.sql).toContain(`"${field}" = "excluded"."${field}"`);
 			}
-			expect(insert?.parameters).toContain(source);
-			expect(insert?.parameters).toContain(1);
-			expect(insert?.parameters).toContainEqual(new Date(`${date}T00:00:00Z`));
-			expect(insert?.parameters).toContainEqual(
-				source === "title" ? ["Ethan"] : ["Caroline", "Ethan"],
-			);
+			expect(insert?.parameters).toContain(MIXCLOUD_PARSER_VERSION);
+			if (source === null) {
+				expect(
+					insert?.parameters.filter((value) => value === null),
+				).toHaveLength(5);
+			} else {
+				expect(insert?.parameters).toContain(source);
+				expect(insert?.parameters).toContainEqual(
+					new Date(`${date}T00:00:00Z`),
+				);
+				expect(insert?.parameters).toContainEqual(
+					source === "title" ? ["Ethan"] : ["Caroline", "Ethan"],
+				);
+			}
 			expect(queries.at(-1)?.sql).toBe("commit");
 		} finally {
 			await db.destroy();

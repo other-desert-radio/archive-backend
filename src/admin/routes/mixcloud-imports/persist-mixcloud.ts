@@ -1,5 +1,6 @@
 import { sql } from "kysely";
 import {
+	MIXCLOUD_PARSER_VERSION,
 	type MixcloudParserResult,
 	parseMixcloudEntry,
 } from "../../../utils/index.js";
@@ -17,7 +18,14 @@ export const persistMixcloudEntry = async (
 		: parseMixcloudEntry(entry);
 	const suggestions =
 		parsed === undefined
-			? {}
+			? {
+					derived_title: null,
+					derived_date: null,
+					decoded_djs: null,
+					parser_version: MIXCLOUD_PARSER_VERSION,
+					parser_key: null,
+					date_source: null,
+				}
 			: {
 					derived_title: parsed.derived_title,
 					derived_date: parsed.derived_date,
@@ -41,16 +49,12 @@ export const persistMixcloudEntry = async (
 		})
 		.onConflict((conflict) =>
 			conflict.column("key").doUpdateSet((eb) => ({
-				...(parsed === undefined
-					? {}
-					: {
-							derived_title: eb.ref("excluded.derived_title"),
-							derived_date: eb.ref("excluded.derived_date"),
-							decoded_djs: eb.ref("excluded.decoded_djs"),
-							parser_version: eb.ref("excluded.parser_version"),
-							parser_key: eb.ref("excluded.parser_key"),
-							date_source: eb.ref("excluded.date_source"),
-						}),
+				derived_title: eb.ref("excluded.derived_title"),
+				derived_date: eb.ref("excluded.derived_date"),
+				decoded_djs: eb.ref("excluded.decoded_djs"),
+				parser_version: eb.ref("excluded.parser_version"),
+				parser_key: eb.ref("excluded.parser_key"),
+				date_source: eb.ref("excluded.date_source"),
 				url: eb.ref("excluded.url"),
 				name: eb.ref("excluded.name"),
 				created_time: eb.ref("excluded.created_time"),

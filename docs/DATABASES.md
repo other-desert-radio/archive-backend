@@ -196,7 +196,8 @@ Successful matches insert or replace `derived_title`, `derived_date`,
 `decoded_djs`, `parser_version`, `parser_key`, and `date_source` in the same
 transaction. Partial successful results retain their nullable fields.
 Parser-only changes do not set `data_changed` or alter approved Shows or import
-links. Unmatched or excluded titles currently leave existing suggestions intact;
-clearing stale results and recording failed-attempt versions follow separately.
-Apply migration `0022` before refresh. Direct `persistMixcloudEntry` callers
-without precomputed results use the shared parser themselves.
+links. Unmatched or excluded titles clear all five suggestion fields to null and
+record the current `parser_version`, distinguishing a failed attempt from a row
+that has never been parsed. The same rules apply on insert and update. Apply
+migration `0022` before refresh. Direct `persistMixcloudEntry` callers without
+precomputed results use the shared parser themselves.

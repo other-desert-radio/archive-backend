@@ -323,10 +323,10 @@ write files. After source validation, it calls `parseMixcloudEntry` for every
 cloudcast and logs matched/unmatched counts and parser version. Successful
 matches save all six parser fields in the source upsert transaction, on both
 insert and refresh. Parser results are reused for persistence. Unmatched or
-excluded titles preserve existing suggestions for now; clearing stale results is
-a separate chunk. The UI button calls this route and reloads the list after
-success while preserving search and sort. Refresh failures appear as
-human-readable feedback below the toolbar; network, unreadable response, and
+excluded titles clear stale suggestion fields and record the current parser
+version, on both insert and refresh. The UI button calls this route and reloads
+the list after success while preserving search and sort. Refresh failures appear
+as human-readable feedback below the toolbar; network, unreadable response, and
 table reload failures are identified separately. The shared
 `RefreshMixcloudResponse` type is exported from the Mixcloud imports resource
 barrel.
