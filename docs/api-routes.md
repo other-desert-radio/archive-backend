@@ -306,17 +306,18 @@ search and sort.
 ## Mixcloud import list
 
 `POST /api/admin/refresh-mixcloud` requires admin authentication and no request
-body. It fetches `https://api.mixcloud.com/otherdesertradio/cloudcasts/?limit=100&offset=0`
-and follows `paging.next`, combining all source records into `{ data: [...] }`
-in request-local memory. It returns `200 { "status": "ok" }` after all pages
+body. It fetches
+`https://api.mixcloud.com/otherdesertradio/cloudcasts/?limit=100&offset=0` and
+follows `paging.next`, combining all source records into `{ data: [...] }` in
+request-local memory. It returns `200 { "status": "ok" }` after all pages
 complete, logging start and completion with the fetched count. Each page has a
 30-second timeout; failed requests, invalid JSON/page envelopes, or repeated
-pagination URLs stop the refresh without retries and return generic `500`
-errors after logging the failure. Source records are retained unchanged; this
-chunk does not validate individual cloudcasts, parse names, write files, or
-access the database. The UI button remains disconnected until a later review
-chunk. The shared `RefreshMixcloudResponse` type is exported from the Mixcloud
-imports resource barrel.
+pagination URLs stop the refresh without retries and return generic `500` errors
+after logging the failure. Source records are retained unchanged; this chunk
+does not validate individual cloudcasts, parse names, write files, or access the
+database. The UI button remains disconnected until a later review chunk. The
+shared `RefreshMixcloudResponse` type is exported from the Mixcloud imports
+resource barrel.
 
 `GET /api/admin/mixcloud-imports` is authenticated and read-only. Its resource
 plugin, response type, and barrel live in `src/admin/routes/mixcloud-imports/`.

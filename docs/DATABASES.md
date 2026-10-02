@@ -243,6 +243,7 @@ duration    integer null
 image_small text null
 image_large text null
 mixcloud_tag_keys text[] null
+data_changed boolean not null default false
 show_id     integer null references shows(id) on delete set null
 imported_at timestamptz null
 ```
@@ -256,6 +257,15 @@ source image URLs. Applying this migration does not run the importer. Migration
 source genre key strings. Existing rows default to null (unknown); an empty
 array represents a cloudcast with no source tags. These are source metadata, not
 foreign keys or archive tag IDs.
+
+Migration `0021_add_mixcloud_data_changed` adds `data_changed`, defaulting to
+false for existing and new rows. It is intended to flag source changes needing
+review after import: future refresh writes set it when relevant source metadata
+changes, unchanged refreshes preserve a set flag, and review clears it. Pending
+imports remain identifiable by their null `show_id`. This chunk adds only the
+column and database type; change detection, review actions, and API/UI exposure
+follow separately. No approved-source snapshot or diff history is stored.
+Rollback removes only the flag column and preserves tracking records and links.
 
 `createdAt` follows the archive table convention and records when the tracking
 row was created. `imported_at` records the successful database import time, not

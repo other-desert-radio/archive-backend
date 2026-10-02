@@ -15,6 +15,7 @@ export type Database = {
 };
 
 export type MixcloudImportTable = {
+	data_changed: Generated<boolean>;
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	key: string;
