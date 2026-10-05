@@ -16,7 +16,6 @@ export const importRows: MixcloudImportAdminRow[] = [
 		image_small: "https://example.test/small",
 		image_large: "https://example.test/large",
 		decoded_djs: [" known dj ", "Missing DJ", "Ambiguous DJ"],
-		mixcloud_tag_keys: ["/genres/ambient/", "/genres/unresolved/"],
 		mixcloud_tags: [
 			{
 				key: "/genres/ambient/",
@@ -47,7 +46,7 @@ export const importRows: MixcloudImportAdminRow[] = [
 		image_small: "https://example.test/second-small",
 		image_large: "https://example.test/second-large",
 		decoded_djs: ["Second DJ"],
-		mixcloud_tag_keys: [],
+		mixcloud_tags: [],
 	},
 ];
 export const fixtureDJs = [

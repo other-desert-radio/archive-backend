@@ -371,32 +371,30 @@ parser_version, parser_key, date_source, image_small, image_large,
 mixcloud_tag_json, duration, show_id, imported_at, data_changed, show name, djs,
 dj names, and tags. URL and image URL fields display source text; image URLs are
 clickable and open their image in a new tab. Duration is the stored Mixcloud
-duration, including for pending rows. `mixcloud_tag_keys` displays
-comma-separated source genre keys, supports search and sorting, and shows muted
-“None” for missing or empty arrays. These keys are separate from the archive tag
-IDs in `tags`; matching them to archive tags comes later. The read-only
-`data_changed` column displays `true` or `false`, participates in search, and
-sorts false before true in ascending order. Readiness controls open pending
-import queues for ready and review categories. Search covers all displayed
-parser fields, including raw ISO and formatted UTC derived dates. Parser dates
-sort chronologically and versions sort numerically; missing values sort first
-ascending. Extracted DJ names display comma-separated, with muted “None” for
-missing or empty arrays; version zero displays as `0`. These suggestions are
-read-only and separate from linked archive Show/DJ values. Refresh populates
-parser suggestions and clears stale results on parse failure. Search covers all
-displayed fields; sorting defaults to ID ascending. Timestamps use UTC,
-durations use HH:MM:SS, arrays display comma-separated values, and missing
-values show muted “None.” Unimported records remain visible. There are no Edit
-import actions or view toggles. Readiness buttons open the pending import queue.
-An enabled “Refresh Mixcloud” button uses the shared toolbar action position and
-styling beside search. It calls the refresh route, disables itself with
-“Refreshing Mixcloud…” while refreshing and reloading the table, and preserves
-search and sort. Inline status/error messages appear below the toolbar. Refresh
-failures retain existing rows and allow another button click to retry; errors
-include human-readable server feedback rather than raw internal errors. A reload
-failure after a successful refresh is identified separately. Shared toolbar
-creation controls and table Edit controls are optional; existing resources
-continue supplying them.
+duration, including for pending rows. `mixcloud_tag_json` displays source
+key/name/URL objects and supports search and sorting. Source keys are separate
+from the archive tag IDs in `tags`. The read-only `data_changed` column displays
+`true` or `false`, participates in search, and sorts false before true in
+ascending order. Readiness controls open pending import queues for ready and
+review categories. Search covers all displayed parser fields, including raw ISO
+and formatted UTC derived dates. Parser dates sort chronologically and versions
+sort numerically; missing values sort first ascending. Extracted DJ names
+display comma-separated, with muted “None” for missing or empty arrays; version
+zero displays as `0`. These suggestions are read-only and separate from linked
+archive Show/DJ values. Refresh populates parser suggestions and clears stale
+results on parse failure. Search covers all displayed fields; sorting defaults
+to ID ascending. Timestamps use UTC, durations use HH:MM:SS, arrays display
+comma-separated values, and missing values show muted “None.” Unimported records
+remain visible. There are no Edit import actions or view toggles. Readiness
+buttons open the pending import queue. An enabled “Refresh Mixcloud” button uses
+the shared toolbar action position and styling beside search. It calls the
+refresh route, disables itself with “Refreshing Mixcloud…” while refreshing and
+reloading the table, and preserves search and sort. Inline status/error messages
+appear below the toolbar. Refresh failures retain existing rows and allow
+another button click to retry; errors include human-readable server feedback
+rather than raw internal errors. A reload failure after a successful refresh is
+identified separately. Shared toolbar creation controls and table Edit controls
+are optional; existing resources continue supplying them.
 
 The user verified and approved the parser-column UI after chunk 3. The automated
 browser verification attempt was interrupted before completion.
@@ -457,8 +455,8 @@ URL.
 Mixcloud imports display a reusable `ToastModal` after a successful save. It
 shows the saved title, date, duration, and DJ/tag counts at the top left,
 outside the queue so it survives the final item closing. Each success resets its
-timer. The white box uses black text, border, and backing shadow, with message
-and right close button in a flex row. It begins fading after four seconds and
+timer. The white box uses black text and a 1px black border, with message and
+right close button in a flex row. It begins fading after four seconds and
 dismisses 250ms later; reduced motion removes the transition. It announces
 status without moving focus, and its close button dismisses immediately. Failed
 saves show no success toast.

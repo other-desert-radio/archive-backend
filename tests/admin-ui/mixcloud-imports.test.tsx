@@ -20,7 +20,6 @@ import {
 } from "../../src/admin-ui/loaders/mixcloud-imports.js";
 
 const linked: MixcloudImportAdminRow = {
-	mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
 	mixcloud_tags: [{ key: "/genres/ambient/", name: "AMBIENT Source" }],
 	data_changed: true,
 	id: 2,
@@ -343,9 +342,7 @@ describe("Mixcloud table", () => {
 		).toEqual([linked, pending]);
 	});
 	test("searches and sorts source tag keys and handles empty arrays", () => {
-		expect(filterMixcloudImports(rows, "/genres/experimental/")).toEqual([
-			linked,
-		]);
+		expect(filterMixcloudImports(rows, "/genres/ambient/")).toEqual([linked]);
 		expect(
 			sortResourceRows(rows, mixcloudColumns, "mixcloud_tags", "asc"),
 		).toEqual([pending, linked]);

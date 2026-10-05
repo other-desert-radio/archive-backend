@@ -33,7 +33,6 @@ export const filterMixcloudImports = (
 			row.djs.join(", "),
 			row.dj_names.join(", "),
 			row.duration,
-			row.mixcloud_tag_keys?.join(", "),
 			row.mixcloud_tags?.map(({ name, key }) => `${name} (${key})`).join(", "),
 			row.duration === undefined ? "" : formatDuration(row.duration),
 			row.tags.join(", "),

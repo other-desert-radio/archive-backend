@@ -99,7 +99,6 @@ test("source section includes exactly the approved labels and renders missing va
 			row={{
 				...row,
 				created_time: "2026-10-01T02:03:04Z",
-				mixcloud_tag_keys: [],
 				parser_key: "hidden-parser",
 				decoded_djs: ["hidden-dj"],
 				imported_at: "hidden-date",

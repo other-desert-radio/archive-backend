@@ -60,9 +60,7 @@ export const ImportShowForm = ({
 		setResolutionError(undefined);
 		Promise.all([
 			loadDJs(),
-			resolveMixcloudTags(
-				row.mixcloud_tags?.map(({ key }) => key) ?? row.mixcloud_tag_keys ?? [],
-			),
+			resolveMixcloudTags(row.mixcloud_tags?.map(({ key }) => key) ?? []),
 		])
 			.then(([loadedDJs, resolvedTags]) => {
 				if (version !== versionRef.current) return;
@@ -87,12 +85,7 @@ export const ImportShowForm = ({
 			.finally(() => {
 				if (version === versionRef.current) setIsResolving(false);
 			});
-	}, [
-		row.mixcloud_tags,
-		row.mixcloud_tag_keys,
-		row.decoded_djs,
-		addOpeningRelationships,
-	]);
+	}, [row.mixcloud_tags, row.decoded_djs, addOpeningRelationships]);
 	useEffect(() => {
 		initialize();
 		return () => {

@@ -143,7 +143,6 @@ export const mixcloudImportRoutes =
 							"mixcloud_import.imported_at",
 							"shows.title as show_name",
 							"mixcloud_import.duration",
-							"mixcloud_import.mixcloud_tag_keys",
 							"mixcloud_import.mixcloud_tags",
 							"mixcloud_import.url",
 							"mixcloud_import.name",
@@ -183,9 +182,6 @@ export const mixcloudImportRoutes =
 						id: row.id,
 						decoded_djs_exist: row.decoded_djs_exist,
 						data_changed: row.data_changed,
-						...(row.mixcloud_tag_keys === null
-							? {}
-							: { mixcloud_tag_keys: row.mixcloud_tag_keys }),
 						...(row.mixcloud_tags == null
 							? {}
 							: { mixcloud_tags: row.mixcloud_tags }),

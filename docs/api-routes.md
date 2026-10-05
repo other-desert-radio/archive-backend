@@ -379,23 +379,23 @@ row includes `id`, `key`, required boolean `data_changed`, `djs` (numeric IDs),
 `dj_names` (strings aligned with ascending DJ IDs), and `tags` (ascending Show
 tag IDs). Optional `show_id`, `imported_at` (ISO timestamp), and `show_name` are
 omitted when absent. Source metadata includes optional `url`, `name`,
-`mixcloud_tag_keys` (array of source genre key strings, omitted when unknown; an
-empty array means no source tags), `created_time` (ISO timestamp), `duration`
-(seconds), `image_small`, and `image_large` (image URLs), read directly from
-`mixcloud_import`, including for pending records. Duration now represents source
-metadata rather than the linked Show duration. Optional parser suggestions are
-`derived_title` (string), `derived_date` (ISO timestamp), `decoded_djs`
-(extracted DJ name strings, not archive IDs), `parser_version` (integer),
-`parser_key` (stable text matcher identifier), and `date_source` (`title` or
-`created_time`). Null parser fields are omitted independently, preserving
-partial results; non-null empty DJ arrays and parser version zero are included.
-Suggestions come directly from the source row, independently of linked Show/DJ
-details. Refresh populates suggestions for successful matches. Parser-only
-changes do not set `data_changed`, and no archive records are modified.
-Migration `0022` must be applied before using this endpoint. Show/DJ/tag details
-come from linked archive records; missing relationships produce empty arrays.
-Distinct correlated relationship queries avoid duplicate imports or IDs.
-Failures return the generic `500` error.
+`mixcloud_tags` (array of source `{key, name, url}` objects, omitted when
+unknown; an empty array means no source tags), `created_time` (ISO timestamp),
+`duration` (seconds), `image_small`, and `image_large` (image URLs), read
+directly from `mixcloud_import`, including for pending records. Duration now
+represents source metadata rather than the linked Show duration. Optional parser
+suggestions are `derived_title` (string), `derived_date` (ISO timestamp),
+`decoded_djs` (extracted DJ name strings, not archive IDs), `parser_version`
+(integer), `parser_key` (stable text matcher identifier), and `date_source`
+(`title` or `created_time`). Null parser fields are omitted independently,
+preserving partial results; non-null empty DJ arrays and parser version zero are
+included. Suggestions come directly from the source row, independently of linked
+Show/DJ details. Refresh populates suggestions for successful matches.
+Parser-only changes do not set `data_changed`, and no archive records are
+modified. Migration `0022` must be applied before using this endpoint.
+Show/DJ/tag details come from linked archive records; missing relationships
+produce empty arrays. Distinct correlated relationship queries avoid duplicate
+imports or IDs. Failures return the generic `500` error.
 
 ### Mixcloud readiness counts
 
@@ -433,18 +433,18 @@ source tracking. Refresh stores sorted, deduplicated `{ key, name, url }`
 objects while preserving original names and capitalization. The authenticated
 import-list response includes optional `mixcloud_tags`; null means source names
 have not yet been fetched. Existing rows require refresh after applying the
-reviewed migration. New source-name changes mark linked imports changed;
-initially filling missing names does not. Database tag names take precedence for
-matching keys in the import form; otherwise selected new source tags use
-create-tag with their key and URL without lowercasing. No archive tags are
-modified by this migration or source refresh.
+reviewed migration. Source key, name, and URL changes mark linked imports
+changed, including refreshing incomplete legacy JSON. Database tag names take
+precedence for matching keys in the import form; otherwise selected new source
+tags use create-tag with their key and URL without lowercasing. No archive tags
+are modified by this migration or source refresh.
 
 Source tag JSON now retains `{key, name, url}` on refresh. Older JSON without
 URLs remains readable and gains URLs on the next refresh. The import modal
-resolves keys from this JSON, falling back to legacy keys only for older rows.
-On Save, selected new source tags go through `POST /api/admin/create-tag` with
-`title`, `mixcloud_key`, and `mixcloud_url` before Show creation. Removed source
-tags are excluded; manually added titles retain normal Show tag creation.
-Missing URLs on selected new source tags require a refresh. Tag creation and
-Show creation are separate requests: a failed Show save can leave an unassigned
-tag, which is reused on retry.
+resolves keys from this JSON. Migration `0026` removes the legacy keys column
+and API field. On Save, selected new source tags go through
+`POST /api/admin/create-tag` with `title`, `mixcloud_key`, and `mixcloud_url`
+before Show creation. Removed source tags are excluded; manually added titles
+retain normal Show tag creation. Missing URLs on selected new source tags
+require a refresh. Tag creation and Show creation are separate requests: a
+failed Show save can leave an unassigned tag, which is reused on retry.

@@ -30,7 +30,7 @@ created_time timestamptz null
 duration    integer null
 image_small text null
 image_large text null
-mixcloud_tag_keys text[] null
+mixcloud_tags jsonb null
 data_changed boolean not null default false
 derived_title text null
 derived_date timestamptz null
@@ -213,3 +213,23 @@ When the importer is implemented in a later feature, verify reruns and
 concurrent runs create only one show per key, and simulate a failure after show
 creation to verify transaction rollback. Verify that a soft-delete update leaves
 tracking unchanged once the show's soft-delete representation exists.
+
+## Consolidated source tags
+
+Apply migration `0026_drop_mixcloud_tag_keys` before running the updated API. It
+preserves existing `mixcloud_tags` names and URLs, appends any legacy keys
+missing from JSON, then drops `mixcloud_tag_keys`. Legacy keys without known
+names become `{key, name: ""}`; a Mixcloud refresh fills their names and URLs
+before onboarding. Unknown metadata remains null; a known empty array becomes
+`[]`. No genre names or URLs are invented, and archive tags, import links, and
+review flags are preserved. Rollback reconstructs sorted, distinct key arrays
+from JSON, retaining the JSON column and its metadata.
+
+Refresh writes and change detection now use tag JSON alone, including key, name,
+and URL changes. Refresh normalizes source tag order and duplicate keys, so
+reordering or repeating fetched tags does not mark linked imports changed. The
+list API and import modal use only `mixcloud_tags`; the UI labels it
+`mixcloud_tag_json`. Migration tests use the explicit disposable
+`MIXCLOUD_MIGRATION_TEST_DATABASE_URL` and cover unknown/empty metadata,
+legacy-only and partial JSON, full metadata preservation, links, rollback, and
+continued uniqueness of archive genre keys.
