@@ -1,4 +1,8 @@
 import { splitCommaSeparated } from "../../../../../utils/index.js";
+import {
+	findAutocompleteMatches,
+	getAutocompleteCompletion,
+} from "../autocomplete/index.js";
 
 export type SelectedTag = {
 	title: string;
@@ -38,20 +42,11 @@ export const findTagMatches = (
 	const query = normalize(draft);
 	if (query === "") return [];
 	const selectedKeys = new Set(selected.map(normalize));
-	return tags
-		.filter(
-			(tag) =>
-				!selectedKeys.has(normalize(tag.title)) &&
-				normalize(tag.title).includes(query),
-		)
-		.sort((first, second) => {
-			const firstPrefix = normalize(first.title).startsWith(query);
-			const secondPrefix = normalize(second.title).startsWith(query);
-			if (firstPrefix !== secondPrefix) return firstPrefix ? -1 : 1;
-			return first.title.localeCompare(second.title, undefined, {
-				sensitivity: "base",
-			});
-		});
+	return findAutocompleteMatches(
+		draft,
+		tags.filter((tag) => !selectedKeys.has(normalize(tag.title))),
+		(tag) => tag.title,
+	);
 };
 
 /** Returns the untyped suffix only when a match is a true prefix completion. */
@@ -59,9 +54,7 @@ export const getTagCompletion = (
 	draft: string,
 	match: TagsInputOption | undefined,
 ): string | undefined => {
-	if (match === undefined || draft === "") return undefined;
-	if (!normalize(match.title).startsWith(normalize(draft))) return undefined;
-	return match.title.slice(draft.length);
+	return getAutocompleteCompletion(draft, match?.title);
 };
 
 /** Preserve metadata on the first selected tag when deduplicating titles. */

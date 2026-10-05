@@ -238,3 +238,17 @@
 		margin: 0 0 16px;
 	}
 }
+
+.stableHeight {
+	height: calc(100vh - 5rem);
+}
+@media (max-width: 450px) {
+	.stableHeight {
+		height: calc(100vh - 3.0625rem);
+	}
+}
+@media (max-width: 1050px) {
+	.withNavigation .stableHeight {
+		height: calc(100vh - 9.5rem);
+	}
+}

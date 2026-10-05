@@ -420,8 +420,9 @@ shows a brief message dialog. The buttons use dialog-launch semantics rather
 than toggles.
 
 Remaining count includes current and skipped pending rows. Save decreases it;
-Skip and the arrow advance without writes or count changes. Skipped rows return
-when reopening. Both actions guard dirty edits using the shared confirmation.
+Next Show advances without writes or count changes. Skipped rows return when
+reopening. Cancel closes the import session without importing or advancing.
+Cancel and navigation guard dirty edits using the shared confirmation.
 Successful 201 and already-imported 200 responses advance, and the last session
 item closes automatically. Closing restores focus to the launching category
 button after the background becomes interactive. The resource view is inert
@@ -487,8 +488,23 @@ titles; import Save passes selected new source objects to create-tag.
 
 The shared DJ picker places selected names in square chips inside the search
 field, with a separate right-hand x button for each removal. Display names omit
-record IDs. Focusing or typing in the field opens a scrolling dropdown of
-searchable DJ checkboxes; Browse DJs toggles it without typing. Leaving the
-control closes it, and Escape from search closes the dropdown before dismissing
-the modal. The Mixcloud source name value is bold for easier comparison with the
-editable title.
+record IDs. Focusing or typing in the field opens a scrolling dropdown of DJ
+options. There is no dropdown arrow. The search has a 12px gap from the chips,
+gray inline completion, and the same Tab-completion helper as tags. Clicking
+anywhere on an option row selects it while keeping search focused; selected DJs
+are excluded from suggestions. Arrow keys navigate, Enter selects, and Tab
+accepts a prefix completion. Tags and DJs share matching, completion, and option
+pointer handling through `shared/modal/autocomplete`. Leaving the control closes
+it, and Escape from search closes the dropdown before dismissing the modal. The
+Mixcloud source name value is bold for easier comparison with the editable
+title.
+
+DJ chips preserve selection order, including after options reload or a DJ is
+removed and selected again. Tags and DJs share `useChipBackspace`: with an empty
+search, the first Backspace outlines the last selected chip; the second removes
+it. Typing, choosing an option, or removing a chip clears the armed state.
+
+The import form opts into `OnboardingModal`'s `fillAvailableHeight` sizing. Its
+panel uses the available viewport height so adding or removing relationship
+chips never resizes or recenters the modal; growing content scrolls within the
+panel.

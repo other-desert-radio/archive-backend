@@ -181,13 +181,13 @@ test("resolved opening selections are clean and item changes reset fields, helpe
 	await expect(
 		page.getByRole("button", { name: "Save", exact: true }),
 	).toBeEnabled();
-	await page.getByRole("searchbox", { name: "Search DJs" }).fill("No matches");
+	await page.getByRole("combobox", { name: "Search DJs" }).fill("No matches");
 	await page.getByRole("button", { name: "Next Show" }).click();
 	await expect(page.getByRole("alertdialog")).toHaveCount(0);
 	await expect(page.getByLabel("title", { exact: true })).toHaveValue(
 		"Second source",
 	);
-	await expect(page.getByRole("searchbox", { name: "Search DJs" })).toHaveValue(
+	await expect(page.getByRole("combobox", { name: "Search DJs" })).toHaveValue(
 		"",
 	);
 	await expect(page.getByLabel("date", { exact: true })).toHaveValue("");
@@ -221,7 +221,7 @@ test("resolution failure disables Save and Retry preserves metadata edits", asyn
 	await expect(page.getByLabel("title", { exact: true })).toHaveValue(
 		"Edited while loading",
 	);
-	await page.getByRole("button", { name: "Skip", exact: true }).click();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(page.getByRole("alertdialog")).toBeVisible();
 });
 
@@ -315,10 +315,10 @@ for (const width of [1280, 390, 320])
 			page.getByRole("button", { name: "Save", exact: true }),
 		).toBeEnabled();
 		await page
-			.getByRole("button", { name: "Skip", exact: true })
+			.getByRole("button", { name: "Cancel", exact: true })
 			.scrollIntoViewIfNeeded();
 		await expect(
-			page.getByRole("button", { name: "Skip", exact: true }),
+			page.getByRole("button", { name: "Cancel", exact: true }),
 		).toBeVisible();
 		const dialog = page.getByRole("dialog");
 		expect(
@@ -446,19 +446,19 @@ test("failed tag creation preserves metadata for retry and prevents Show creatio
 
 test("DJ chips share a searchable dropdown field", async ({ page }) => {
 	await page.getByRole("button", { name: "Open import" }).click();
-	const search = page.getByRole("searchbox", { name: "Search DJs" });
+	const search = page.getByRole("combobox", { name: "Search DJs" });
 	await expect(
 		page.getByRole("button", { name: "Remove Known DJ", exact: true }),
 	).toBeVisible();
-	await expect(page.getByRole("checkbox")).toHaveCount(0);
+	await expect(page.getByRole("option")).toHaveCount(0);
 	await search.fill("Second");
-	const option = page.getByRole("checkbox", { name: "Second DJ", exact: true });
-	await option.check();
+	const option = page.getByRole("option", { name: "Second DJ", exact: true });
+	await option.click();
 	await expect(
 		page.getByRole("button", { name: "Remove Second DJ", exact: true }),
 	).toHaveText("x");
 	await search.press("Escape");
-	await expect(page.getByRole("checkbox")).toHaveCount(0);
+	await expect(page.getByRole("option")).toHaveCount(0);
 	await expect(page.getByRole("dialog")).toBeVisible();
 	await page
 		.getByRole("button", { name: "Remove Second DJ", exact: true })
@@ -467,9 +467,113 @@ test("DJ chips share a searchable dropdown field", async ({ page }) => {
 		page.getByRole("button", { name: "Remove Second DJ", exact: true }),
 	).toHaveCount(0);
 	await page.getByLabel("title", { exact: true }).click();
-	await expect(page.getByRole("checkbox")).toHaveCount(0);
-	await page.getByRole("button", { name: "Browse DJs" }).click();
+	await expect(page.getByRole("option")).toHaveCount(0);
+	await search.focus();
 	await expect(
-		page.getByRole("checkbox", { name: "Second DJ", exact: true }),
+		page.getByRole("option", { name: "Second DJ", exact: true }),
 	).toBeVisible();
 });
+
+test("DJ completion accepts Tab and whole option rows retain focus", async ({
+	page,
+}) => {
+	await page.getByRole("button", { name: "Open import" }).click();
+	const search = page.getByRole("combobox", { name: "Search DJs" });
+	await search.fill("Sec");
+	await expect(page.getByText("ond DJ", { exact: true })).toHaveCSS(
+		"color",
+		"rgb(156, 152, 152)",
+	);
+	await search.press("Tab");
+	await expect(
+		page.getByRole("button", { name: "Remove Second DJ", exact: true }),
+	).toBeVisible();
+	await expect(search).toHaveValue("");
+	await expect(search).toBeFocused();
+	await page
+		.getByRole("button", { name: "Remove Second DJ", exact: true })
+		.click();
+	await search.fill("Second");
+	const option = page.getByRole("option", { name: "Second DJ", exact: true });
+	await option.click({ position: { x: 200, y: 10 } });
+	await expect(
+		page.getByRole("button", { name: "Remove Second DJ", exact: true }),
+	).toBeVisible();
+	await expect(search).toBeFocused();
+	await expect(page.getByRole("button", { name: "Browse DJs" })).toHaveCount(0);
+});
+
+test("DJ chips retain selection order and share two-step Backspace with tags", async ({
+	page,
+}) => {
+	await page.getByRole("button", { name: "Open import" }).click();
+	const search = page.getByRole("combobox", { name: "Search DJs" });
+	const djs = page.getByRole("group", { name: "DJs selection" });
+	await search.fill("Second");
+	await page.getByRole("option", { name: "Second DJ", exact: true }).click();
+	await djs
+		.getByRole("button", { name: "Remove Known DJ", exact: true })
+		.click();
+	await search.fill("Known");
+	await page.getByRole("option", { name: "Known DJ", exact: true }).click();
+	expect(
+		await djs
+			.getByRole("button")
+			.evaluateAll((buttons) =>
+				buttons.map((button) => button.getAttribute("aria-label")),
+			),
+	).toEqual(["Remove Second DJ", "Remove Known DJ"]);
+	const lastDJ = djs
+		.getByRole("button", { name: "Remove Known DJ", exact: true })
+		.locator("..");
+	await search.press("Backspace");
+	await expect(lastDJ).toHaveCSS("outline-style", "solid");
+	await expect(djs.getByRole("button")).toHaveCount(2);
+	await search.fill("x");
+	await expect(lastDJ).toHaveCSS("outline-style", "none");
+	await search.fill("");
+	await search.press("Backspace");
+	await expect(djs.getByRole("button")).toHaveCount(2);
+	await search.press("Backspace");
+	await expect(djs.getByRole("button")).toHaveCount(1);
+	await expect(
+		djs.getByRole("button", { name: "Remove Second DJ", exact: true }),
+	).toBeVisible();
+	const tags = page.getByRole("combobox", { name: "tags", exact: true });
+	const lastTag = page
+		.getByRole("button", { name: "Remove New Genre", exact: true })
+		.locator("..");
+	await tags.focus();
+	await tags.press("Backspace");
+	await expect(lastTag).toHaveCSS("outline-style", "solid");
+	await expect(lastTag).toBeVisible();
+	await tags.press("Backspace");
+	await expect(lastTag).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "Remove Ambient", exact: true }),
+	).toBeVisible();
+});
+
+for (const width of [1280, 390])
+	test(`import panel bounds stay fixed when DJ chips wrap at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 1400 });
+		await page.getByRole("button", { name: "Open import" }).click();
+		const search = page.getByRole("combobox", { name: "Search DJs" });
+		await expect(
+			page.getByRole("button", { name: "Save", exact: true }),
+		).toBeEnabled();
+		const panel = page
+			.getByRole("heading", { name: "Import Show", exact: true })
+			.locator("../..");
+		const before = await panel.boundingBox();
+		for (const name of ["Second", "Ambiguous"]) {
+			await search.fill(name);
+			await page.getByRole("option").first().click();
+		}
+		await search.press("Backspace");
+		expect(await panel.boundingBox()).toEqual(before);
+		await search.press("Backspace");
+		expect(await panel.boundingBox()).toEqual(before);
+	});

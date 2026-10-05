@@ -173,7 +173,7 @@ test("both launchers queue all pending category rows in ID order regardless of s
 	await expect(sourceId(page)).toHaveText("Source 4");
 	await page.getByRole("button", { name: "Next Show" }).click();
 	await expect(sourceId(page)).toHaveText("Source 6");
-	await page.getByRole("button", { name: "Skip", exact: true }).click();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(page.getByRole("dialog")).toBeHidden();
 	await expect(
 		page.getByRole("button", { name: /^needs review/ }),
@@ -181,15 +181,34 @@ test("both launchers queue all pending category rows in ID order regardless of s
 	expect(state.posts).toBe(0);
 });
 
-test("Skip preserves counts, skipped rows return on reopen, and final Skip closes", async ({
+test("Cancel closes the session without advancing or importing", async ({
 	page,
 }) => {
 	await launch(page);
 	await expect(save(page)).toBeEnabled();
-	await page.getByRole("button", { name: "Skip", exact: true }).click();
+	await expect(
+		page.getByRole("button", { name: "Skip", exact: true }),
+	).toHaveCount(0);
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.getByRole("dialog")).toBeHidden();
+	await expect(
+		page.getByRole("button", { name: /^ready for import/ }),
+	).toBeFocused();
+	await launch(page);
+	await expect(sourceId(page)).toHaveText("Source 2");
+	await expect(page.getByText("2 remaining", { exact: true })).toBeVisible();
+	expect(state.posts).toBe(0);
+});
+
+test("Next preserves counts, skipped rows return on reopen, and Cancel closes", async ({
+	page,
+}) => {
+	await launch(page);
+	await expect(save(page)).toBeEnabled();
+	await page.getByRole("button", { name: "Next Show", exact: true }).click();
 	await expect(sourceId(page)).toHaveText("Source 9");
 	await expect(page.getByText("2 remaining", { exact: true })).toBeVisible();
-	await page.getByRole("button", { name: "Skip", exact: true }).click();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(page.getByRole("dialog")).toBeHidden();
 	await expect(
 		page.getByRole("button", { name: /^ready for import/ }),
@@ -233,12 +252,12 @@ for (const repeated of [false, true])
 		).toBeFocused();
 	});
 
-test("dirty Skip and arrow require confirmation; reverting clears dirty state", async ({
+test("dirty Cancel and arrow require confirmation; reverting clears dirty state", async ({
 	page,
 }) => {
 	await launch(page);
 	await expect(save(page)).toBeEnabled();
-	for (const action of ["Skip", "Next Show"]) {
+	for (const action of ["Cancel", "Next Show"]) {
 		await page.getByLabel("title", { exact: true }).fill("Draft");
 		const button = page.getByRole("button", { name: action, exact: true });
 		await button.click();
@@ -255,7 +274,7 @@ test("dirty Skip and arrow require confirmation; reverting clears dirty state", 
 	await expect(sourceId(page)).toHaveText("Source 9");
 	await page.getByLabel("title", { exact: true }).fill("Changed");
 	await page.getByLabel("title", { exact: true }).fill("Ready 9");
-	await page.getByRole("button", { name: "Skip", exact: true }).click();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(page.getByRole("dialog")).toBeHidden();
 	expect(state.posts).toBe(0);
 });
@@ -270,7 +289,7 @@ test("pending Save blocks duplicates, navigation, dismissal, and background refr
 	await page.getByLabel("title", { exact: true }).fill("Retained draft");
 	await save(page).click();
 	await expect.poll(() => Boolean(state.release)).toBe(true);
-	for (const name of ["Saving…", "Skip", "Next Show", "Close"])
+	for (const name of ["Saving…", "Cancel", "Next Show", "Close"])
 		await expect(
 			page.getByRole("button", { name, exact: true }),
 		).toBeDisabled();
@@ -349,10 +368,10 @@ for (const width of [390, 320])
 		await launch(page);
 		await expect(save(page)).toBeEnabled();
 		await page
-			.getByRole("button", { name: "Skip", exact: true })
+			.getByRole("button", { name: "Cancel", exact: true })
 			.scrollIntoViewIfNeeded();
 		await expect(
-			page.getByRole("button", { name: "Skip", exact: true }),
+			page.getByRole("button", { name: "Cancel", exact: true }),
 		).toBeVisible();
 		const next = page.getByRole("button", { name: "Next Show" });
 		await next.focus();

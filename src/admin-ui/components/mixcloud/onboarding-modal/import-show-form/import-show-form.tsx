@@ -129,6 +129,7 @@ export const ImportShowForm = ({
 		resolutionError === undefined;
 	return (
 		<OnboardingModal
+			fillAvailableHeight
 			isOpen
 			title="Import Show"
 			submitLabel="Save"
@@ -137,7 +138,6 @@ export const ImportShowForm = ({
 			onClose={onClose}
 			hasUnsavedChanges={hasUnsavedChanges}
 			headerContent={<span>{remainingCount} remaining</span>}
-			secondaryAction={{ label: "Skip", onClick: onSkip }}
 			previousNavigationAction={{
 				label: "Previous Show",
 				onClick: onPrevious ?? (() => {}),

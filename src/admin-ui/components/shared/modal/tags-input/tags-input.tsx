@@ -8,6 +8,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { AutocompleteOption, useChipBackspace } from "../autocomplete/index.js";
 import fieldStyles from "../labeled-form-control/labeled-form-control.module.css";
 import styles from "./tags-input.module.css";
 import type { SelectedTag, TagsInputOption } from "./tags-input-utils.js";
@@ -48,7 +49,11 @@ export const TagsInput = ({
 	const [isFocused, setIsFocused] = useState(false);
 	const [activeIndex, setActiveIndex] = useState<number>();
 	const [isComposing, setIsComposing] = useState(false);
-	const [backspaceArmedTag, setBackspaceArmedTag] = useState<SelectedTag>();
+	const { armedChip, resetBackspace, handleBackspace } = useChipBackspace(
+		value.tags.map((tag) => tag.title),
+		value.draft,
+		() => onChange({ tags: value.tags.slice(0, -1), draft: "" }),
+	);
 	const listId = useId();
 	const matches = useMemo(
 		() =>
@@ -80,7 +85,7 @@ export const TagsInput = ({
 		const tags = commitSelectedTagDraft(value.tags, draft);
 		onChange({ tags, draft: "" });
 		setActiveIndex(undefined);
-		setBackspaceArmedTag(undefined);
+		resetBackspace();
 	};
 	const select = (option: TagsInputOption) => {
 		onChange({
@@ -99,33 +104,21 @@ export const TagsInput = ({
 			draft: "",
 		});
 		setActiveIndex(undefined);
-		setBackspaceArmedTag(undefined);
+		resetBackspace();
 		inputRef.current?.focus();
 	};
 	const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (isComposing) return;
-		if (event.key === "Backspace" && value.draft === "") {
-			const lastTag = value.tags.at(-1);
-			if (lastTag === undefined) return;
-			event.preventDefault();
-			if (backspaceArmedTag === lastTag) {
-				onChange({
-					tags: value.tags.slice(0, -1),
-					draft: "",
-				});
-				setBackspaceArmedTag(undefined);
-			} else setBackspaceArmedTag(lastTag);
-			return;
-		}
+		if (handleBackspace(event)) return;
 		if (event.key === "ArrowDown" && matches.length > 0) {
 			event.preventDefault();
-			setBackspaceArmedTag(undefined);
+			resetBackspace();
 			setActiveIndex((current) => ((current ?? -1) + 1) % matches.length);
 			return;
 		}
 		if (event.key === "ArrowUp" && matches.length > 0) {
 			event.preventDefault();
-			setBackspaceArmedTag(undefined);
+			resetBackspace();
 			setActiveIndex(
 				(current) => ((current ?? 0) - 1 + matches.length) % matches.length,
 			);
@@ -183,7 +176,7 @@ export const TagsInput = ({
 										option === undefined && canIdentifyUnknownTags
 											? styles.unknown
 											: ""
-									} ${backspaceArmedTag === tag ? styles.armed : ""}`}
+									} ${armedChip === tag.title ? styles.armed : ""}`}
 									{...(option === undefined
 										? {}
 										: { style: { background: option.color } })}
@@ -198,7 +191,7 @@ export const TagsInput = ({
 												tags: value.tags.filter((selected) => selected !== tag),
 												draft: value.draft,
 											});
-											setBackspaceArmedTag(undefined);
+											resetBackspace();
 											inputRef.current?.focus();
 										}}
 									>
@@ -233,7 +226,7 @@ export const TagsInput = ({
 										});
 									else onChange({ tags: value.tags, draft: nextDraft });
 									setActiveIndex(undefined);
-									setBackspaceArmedTag(undefined);
+									resetBackspace();
 								}}
 								onFocus={() => setIsFocused(true)}
 								onBlur={commitOnBlur}
@@ -261,15 +254,12 @@ export const TagsInput = ({
 							aria-label="Matching tags"
 						>
 							{matches.map((option, index) => (
-								<button
+								<AutocompleteOption
 									key={option.id}
 									id={`${listId}-${index}`}
-									type="button"
-									role="option"
-									aria-selected={index === activeIndex}
+									selected={index === activeIndex}
 									className={`${styles.option} ${index === activeIndex ? styles.optionActive : ""}`}
-									onMouseDown={(event) => event.preventDefault()}
-									onClick={() => select(option)}
+									onSelect={() => select(option)}
 								>
 									<span
 										className={styles.optionTag}
@@ -277,7 +267,7 @@ export const TagsInput = ({
 									>
 										{option.title}
 									</span>
-								</button>
+								</AutocompleteOption>
 							))}
 						</div>
 					)}

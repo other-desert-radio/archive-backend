@@ -12,6 +12,13 @@
 	border: 1px solid #000;
 }
 .option {
+	width: 100%;
+	border: 0;
+	background: #fff;
+	color: #000;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
 	display: flex;
 	gap: 0.5rem;
 	padding: 0.5rem;
@@ -67,7 +74,7 @@
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 5px;
+	gap: 12px;
 	min-height: var(--modal-control-height);
 	padding: 6px 12px;
 	border: 1px solid #000;
@@ -75,19 +82,6 @@
 }
 .box:focus-within {
 	box-shadow: inset 0 0 0 1px #000;
-}
-.box > input {
-	flex: 1 1 10rem;
-	width: 100%;
-	min-width: 0;
-	padding: 0;
-	border: 0;
-	font: inherit;
-	background: transparent;
-}
-.box > input:focus {
-	outline: 0;
-	box-shadow: none;
 }
 .chip {
 	display: inline-flex;
@@ -115,7 +109,55 @@
 	width: 100%;
 	background: #fff;
 }
-.option:has(input:focus-visible),
+.optionActive,
 .option:hover {
 	background: #eee;
+}
+
+.draftWrap {
+	position: relative;
+	flex: 1 0 10rem;
+	height: 1.5em;
+	min-width: 10rem;
+}
+.input,
+.preview {
+	box-sizing: border-box;
+	width: 100%;
+	height: 1.5em;
+	padding: 0 0.25rem;
+	border: 0;
+	font: inherit;
+	line-height: 1.5;
+	white-space: pre;
+}
+.input {
+	position: relative;
+	z-index: 1;
+	min-width: 0;
+	color: transparent;
+	background: transparent;
+	caret-color: #000;
+}
+.preview {
+	pointer-events: none;
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+}
+.preview > span {
+	display: block;
+}
+.completion {
+	color: #9c9898;
+}
+
+.input:focus {
+	outline: 0;
+	box-shadow: none;
+}
+
+.armed {
+	outline: 1px solid #000;
+	outline-offset: 1px;
 }

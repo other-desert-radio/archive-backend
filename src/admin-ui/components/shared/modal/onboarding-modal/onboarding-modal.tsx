@@ -18,6 +18,8 @@ type ModalAction = {
 
 type OnboardingModalProps = {
 	isOpen: boolean;
+	/** Keep the panel bounds stable as multi-value fields wrap. */
+	fillAvailableHeight?: boolean;
 	isCovered?: boolean;
 	hasUnsavedChanges?: boolean;
 	title: string;
@@ -39,6 +41,7 @@ type OnboardingModalProps = {
 /** Provides the common accessible shell and submission lifecycle for onboarding forms. */
 export const OnboardingModal = ({
 	isOpen,
+	fillAvailableHeight = false,
 	isCovered = false,
 	hasUnsavedChanges = false,
 	title,
@@ -155,7 +158,9 @@ export const OnboardingModal = ({
 					aria-labelledby="onboarding-modal-title"
 					inert={isCovered || isConfirming || undefined}
 				>
-					<div className={styles.panel}>
+					<div
+						className={`${styles.panel} ${fillAvailableHeight ? styles.stableHeight : ""}`}
+					>
 						<div className={styles.header}>
 							<h2 id="onboarding-modal-title">{title}</h2>
 							<div className={styles.headerActions}>

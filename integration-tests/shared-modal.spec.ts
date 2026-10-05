@@ -128,8 +128,8 @@ for (const width of [1280, 390, 320])
 		await page.setViewportSize({ width, height: 844 });
 		await page.getByRole("button", { name: "Open fixture" }).click();
 		await expect(
-			page.getByRole("searchbox", { name: "Search DJs" }),
-		).toHaveAccessibleDescription("Unmatched DJs: Unrecognized source name");
+			page.getByRole("combobox", { name: "Search DJs" }),
+		).toHaveAccessibleDescription(/Unmatched DJs: Unrecognized source name/);
 		await expect(
 			page.getByRole("combobox", { name: "tags" }),
 		).toHaveAccessibleDescription(/Unresolved keys:/);
