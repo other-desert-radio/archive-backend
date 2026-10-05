@@ -6,6 +6,8 @@ const payload = {
 	title: "Changed Show",
 	date: "2024-02-29",
 	duration: 3661,
+	image_small: "https://example.test/small.jpg",
+	image_large: "https://example.test/large.jpg",
 	url: "https://example.test/show",
 	djs: [1],
 	tags: [],

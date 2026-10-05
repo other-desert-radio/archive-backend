@@ -1,5 +1,4 @@
 import { isMatching, P } from "ts-pattern";
-import { undefinedOrEmpty } from "../../../utils/index.js";
 import type { CreateShowRequest } from "./types.js";
 
 export type NormalizedCreateShowRequest = {
@@ -8,7 +7,8 @@ export type NormalizedCreateShowRequest = {
 	duration: number;
 	url: string;
 	djs: number[];
-	image: string | null;
+	image_small: string;
+	image_large: string;
 	tags: string[];
 };
 
@@ -42,7 +42,8 @@ export const normalizeCreateShowRequest = (
 	const title = request.title.trim();
 	const date = parseCalendarDate(request.date);
 	const url = request.url.trim();
-	const image = request.image?.trim();
+	const image_small = request.image_small.trim();
+	const image_large = request.image_large.trim();
 	const djs = [...new Set(request.djs)];
 	const tags = request.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [];
 	if (
@@ -54,7 +55,8 @@ export const normalizeCreateShowRequest = (
 		!isHttpUrl(url) ||
 		djs.length === 0 ||
 		djs.some((id) => !Number.isSafeInteger(id) || id < 1) ||
-		(image !== undefined && image !== "" && !isHttpUrl(image))
+		!isHttpUrl(image_small) ||
+		!isHttpUrl(image_large)
 	) {
 		throw new Error("Validation error");
 	}
@@ -64,7 +66,8 @@ export const normalizeCreateShowRequest = (
 		duration: request.duration,
 		url,
 		djs,
-		image: undefinedOrEmpty(image) ? null : image,
+		image_small,
+		image_large,
 		tags,
 	};
 };

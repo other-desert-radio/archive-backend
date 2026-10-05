@@ -7,13 +7,14 @@ const validRequest = {
 	duration: 3600,
 	url: " https://example.com/show ",
 	djs: [2, 2, 1],
+	image_small: " https://example.com/small.jpg ",
+	image_large: " https://example.com/large.jpg ",
 };
 
 describe("normalizeCreateShowRequest", () => {
 	test("normalizes a date-only request at midnight UTC", () => {
 		const normalized = normalizeCreateShowRequest({
 			...validRequest,
-			image: " ",
 			tags: [" Ambient ", "", "ambient", "Dance"],
 		});
 		expect(normalized).toMatchObject({
@@ -21,7 +22,8 @@ describe("normalizeCreateShowRequest", () => {
 			date: new Date("2024-02-29T00:00:00.000Z"),
 			url: "https://example.com/show",
 			djs: [2, 1],
-			image: null,
+			image_small: "https://example.com/small.jpg",
+			image_large: "https://example.com/large.jpg",
 			tags: ["Ambient", "ambient", "Dance"],
 		});
 	});
@@ -32,7 +34,14 @@ describe("normalizeCreateShowRequest", () => {
 			{ ...validRequest, date: "2024-02-29T00:00:00Z" },
 			{ ...validRequest, date: "2023-02-29" },
 			{ ...validRequest, url: "ftp://example.com/show" },
-			{ ...validRequest, image: "relative-image.jpg" },
+			{ ...validRequest, image_small: "" },
+			{ ...validRequest, image_small: " " },
+			{ ...validRequest, image_small: "relative-image.jpg" },
+			{ ...validRequest, image_small: "ftp://example.test/image" },
+			{ ...validRequest, image_large: "" },
+			{ ...validRequest, image_large: " " },
+			{ ...validRequest, image_large: "relative-image.jpg" },
+			{ ...validRequest, image_large: "ftp://example.test/image" },
 			{ ...validRequest, duration: 0 },
 			{ ...validRequest, duration: 2_147_483_648 },
 			{ ...validRequest, djs: [] },

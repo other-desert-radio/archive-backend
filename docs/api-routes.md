@@ -135,27 +135,29 @@ format, alongside its identity, metadata, and relationship IDs. Its admin-only
 `tags` array, which also includes tags inherited through linked shows.
 
 `GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
-ISO JSON date format. The public Show transformer remains unchanged; `date` is a
-broadcast calendar date stored at midnight UTC and returned as an ISO timestamp
-for compatibility.
+ISO JSON date format, plus required `image_small` and `image_large` URLs. The
+public Show transformer remains unchanged; `date` is a broadcast calendar date
+stored at midnight UTC and returned as an ISO timestamp for compatibility.
 
 `POST /api/admin/create-show` accepts JSON with required `title`, strict
 `YYYY-MM-DD` `date`, positive whole-second `duration`, absolute HTTP(S) `url`,
-and one or more existing DJ IDs in `djs`. Optional `image` must be an absolute
-HTTP(S) URL; optional `tags` are titles. The route trims text, validates real
-calendar dates and URLs, deduplicates DJ IDs and tag titles, and stores the date
-at midnight UTC. It creates the Show, relationships, and any missing unreviewed
-tags in one transaction, returning `201` with the same admin Show shape as the
-list response.
+one or more existing DJ IDs in `djs`, and required absolute HTTP(S)
+`image_small` and `image_large` URLs. Optional `tags` are titles. The route
+trims text, validates real calendar dates and URLs, deduplicates DJ IDs and tag
+titles, and stores the date at midnight UTC. It creates the Show, relationships,
+and any missing unreviewed tags in one transaction, returning `201` with the
+same admin Show shape as the list response.
 
 `POST /api/admin/modify-show` accepts the same JSON fields as Show creation plus
 required positive safe-integer `id`. Creation and editing share validation and
 transactional persistence. Editing replaces all editable metadata, DJ links, and
-Show tags while retaining `id` and `createdAt`. Omitted or blank `image` clears
-the stored URL; omitted or empty `tags` clears Show tag assignments. At least
-one existing DJ remains required. Unlinked DJs and tags are preserved; missing
-tag titles are created through the shared tag service. Success returns `200`
-with the admin Show shape; an unknown Show returns
+Show tags while retaining `id` and `createdAt`. Both image URLs are required on
+every save; omitted, blank, relative, and non-HTTP(S) image URLs return `400`.
+The legacy `image` column mirrors `image_large` for existing public consumers.
+Omitted or empty `tags` clears Show tag assignments. At least one existing DJ
+remains required. Unlinked DJs and tags are preserved; missing tag titles are
+created through the shared tag service. Success returns `200` with the admin
+Show shape, including both image URLs; an unknown Show returns
 `404 { "error": "Not Found" }`. Invalid fields or missing selected DJs return
 `400`, and unexpected failures roll back all writes and return `500`.
 

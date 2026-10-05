@@ -61,6 +61,8 @@ export type ShowsTable = {
 	date: Date;
 	duration: number;
 	image: string | null;
+	image_small: string;
+	image_large: string;
 	url: string;
 };
 

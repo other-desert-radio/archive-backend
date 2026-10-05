@@ -5,6 +5,8 @@ const request = {
 	title: "Night",
 	date: "2026-02-03",
 	duration: 60,
+	image_small: "https://example.test/small.jpg",
+	image_large: "https://example.test/large.jpg",
 	url: "https://example.com/show",
 	djs: [2],
 };

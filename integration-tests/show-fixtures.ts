@@ -10,6 +10,8 @@ export type Show = {
 	date: string;
 	duration: number;
 	image?: string;
+	image_small: string;
+	image_large: string;
 	url: string;
 	djs: number[];
 	tags: number[];
@@ -35,7 +37,8 @@ export const showRequest = (show: Show) => ({
 	duration: show.duration,
 	url: show.url,
 	djs: show.djs,
-	...(show.image === undefined ? {} : { image: show.image }),
+	image_small: show.image_small,
+	image_large: show.image_large,
 });
 
 export const test = djTest.extend<{ show: Show }>({
@@ -47,7 +50,8 @@ export const test = djTest.extend<{ show: Show }>({
 				date: "2024-02-29",
 				duration: 3661,
 				url: "https://example.test/show",
-				image: "https://example.test/original.jpg",
+				image_small: "https://example.test/original-small.jpg",
+				image_large: "https://example.test/original.jpg",
 				djs: [dj.id],
 				tags: [title],
 			},

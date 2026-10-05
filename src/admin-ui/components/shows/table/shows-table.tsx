@@ -1,7 +1,6 @@
 import type { ShowsAdminRow } from "../../../loaders/shows.js";
 import {
 	formatDuration,
-	formatMissing,
 	formatRelationshipIDs,
 	formatUTCDate,
 	formatUTCDateTime,
@@ -68,10 +67,16 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			compare: (a, b) => a.duration - b.duration,
 		},
 		{
-			key: "image",
-			label: "image",
-			render: (show) => formatMissing(show.image),
-			compare: (a, b) => compareText(a.image, b.image),
+			key: "image_small",
+			label: "image_small",
+			render: (show) => formatURL(show.image_small),
+			compare: (a, b) => compareText(a.image_small, b.image_small),
+		},
+		{
+			key: "image_large",
+			label: "image_large",
+			render: (show) => formatURL(show.image_large),
+			compare: (a, b) => compareText(a.image_large, b.image_large),
 		},
 		{
 			key: "djs",
