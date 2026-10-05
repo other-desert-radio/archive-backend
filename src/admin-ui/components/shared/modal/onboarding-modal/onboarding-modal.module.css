@@ -95,6 +95,9 @@
 	stroke: currentColor;
 	stroke-width: 2;
 }
+.previousNavigation svg {
+	transform: scaleX(-1);
+}
 .close:enabled:hover {
 	background: #efefef;
 }
@@ -182,6 +185,13 @@
 	background: #fff;
 }
 
+.navigation:disabled {
+	color: #999;
+	border-color: #ccc;
+	background: #efefef;
+	cursor: default;
+}
+
 .navigation:enabled:hover {
 	background: #efefef;
 }
@@ -211,4 +221,20 @@
 
 .secondary {
 	min-height: var(--modal-control-height);
+}
+
+.previousNavigation {
+	left: -72px;
+	right: auto;
+}
+@media (max-width: 1050px) {
+	.withNavigation {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		column-gap: 16px;
+	}
+	.navigation {
+		margin: 0 0 16px;
+	}
 }

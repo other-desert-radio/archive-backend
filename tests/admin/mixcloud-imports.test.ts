@@ -26,6 +26,7 @@ const rows = [
 	{
 		...emptyParserFields,
 		id: 1,
+		decoded_djs_exist: true,
 		data_changed: true,
 		mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
 		mixcloud_tags: [{ key: "/genres/experimental/", name: "ExPeRiMeNtAl" }],
@@ -48,6 +49,7 @@ const rows = [
 	{
 		...emptyParserFields,
 		id: 2,
+		decoded_djs_exist: true,
 		data_changed: false,
 		mixcloud_tag_keys: null,
 		mixcloud_tags: null,
@@ -104,6 +106,7 @@ describe("Mixcloud import list", () => {
 				expect(response.json()).toEqual([
 					{
 						id: 2,
+						decoded_djs_exist: true,
 						data_changed: false,
 						key: "/odr/pending/",
 						djs: [],
@@ -139,6 +142,7 @@ describe("Mixcloud import list", () => {
 			expect(response.json()).toEqual([
 				{
 					id: 2,
+					decoded_djs_exist: true,
 					data_changed: false,
 					key: "/odr/pending/",
 					djs: [],
@@ -331,6 +335,7 @@ describe("Mixcloud import list", () => {
 			expect(response.json()).toEqual([
 				{
 					id: 1,
+					decoded_djs_exist: true,
 					data_changed: true,
 					mixcloud_tag_keys: rows[0].mixcloud_tag_keys,
 					mixcloud_tags: rows[0].mixcloud_tags,
@@ -350,6 +355,7 @@ describe("Mixcloud import list", () => {
 				},
 				{
 					id: 2,
+					decoded_djs_exist: true,
 					data_changed: false,
 					key: "/odr/pending/",
 					djs: [],
@@ -388,6 +394,7 @@ describe("Mixcloud import list", () => {
 			expect(response.statusCode).toBe(200);
 			expect(response.json()[0]).toEqual({
 				id: 1,
+				decoded_djs_exist: true,
 				data_changed: true,
 				mixcloud_tag_keys: rows[0].mixcloud_tag_keys,
 				mixcloud_tags: rows[0].mixcloud_tags,
@@ -492,21 +499,28 @@ describe("Mixcloud import status", () => {
 			parser_key: "test",
 			date_source: "title" as const,
 		};
+		const queries: string[] = [];
 		const db = database(
 			[
 				ready,
+				{ ...ready, decoded_djs_exist: false },
 				{ ...ready, date_source: "created_time" },
 				rows[1],
 				{ ...ready, show_id: 10 },
 			],
 			false,
+			queries,
 		);
 		const app = Fastify();
 		try {
 			await app.register(mixcloudImportRoutes(db));
 			const response = await app.inject("/mixcloud-import/status");
 			expect(response.statusCode).toBe(200);
-			expect(response.json()).toEqual({ auto_parsed: 1, unparsable: 2 });
+			expect(response.json()).toEqual({ auto_parsed: 1, unparsable: 3 });
+			expect(queries[0]).toContain("unnest(mixcloud_import.decoded_djs)");
+			expect(queries[0]).toContain(
+				"lower(trim(djs.title)) = lower(trim(parsed.name))",
+			);
 		} finally {
 			await app.close();
 			await db.destroy();

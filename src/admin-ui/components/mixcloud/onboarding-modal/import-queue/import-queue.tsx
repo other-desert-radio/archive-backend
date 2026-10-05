@@ -10,7 +10,7 @@ type Props = {
 	onImported: (rowId: number, show: ShowsAdminRow) => void;
 };
 
-/** Visits each session item once; Skip leaves the underlying tracking row pending. */
+/** Navigates pending session items; Skip leaves the tracking row pending. */
 export const MixcloudImportQueue = ({
 	items,
 	remainingCount,
@@ -18,11 +18,22 @@ export const MixcloudImportQueue = ({
 	onImported,
 }: Props) => {
 	const [index, setIndex] = useState(0);
+	const [importedIds, setImportedIds] = useState<number[]>([]);
+	const previousIndex = items.reduce(
+		(previous, item, itemIndex) =>
+			itemIndex < index && !importedIds.includes(item.id)
+				? itemIndex
+				: previous,
+		-1,
+	);
 	const row = items[index];
 	if (row === undefined) return null;
 	const advance = () => {
-		if (index + 1 >= items.length) onClose();
-		else setIndex(index + 1);
+		const nextIndex = items.findIndex(
+			(item, itemIndex) => itemIndex > index && !importedIds.includes(item.id),
+		);
+		if (nextIndex === -1) onClose();
+		else setIndex(nextIndex);
 	};
 	return (
 		<ImportShowModal
@@ -30,7 +41,11 @@ export const MixcloudImportQueue = ({
 			remainingCount={remainingCount}
 			onClose={onClose}
 			onSkip={advance}
+			onPrevious={
+				previousIndex === -1 ? undefined : () => setIndex(previousIndex)
+			}
 			onImported={(show) => {
+				setImportedIds((ids) => [...ids, row.id]);
 				onImported(row.id, show);
 				advance();
 			}}

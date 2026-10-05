@@ -25,6 +25,7 @@ export type ImportShowFormProps = {
 	remainingCount: number;
 	onClose: () => void;
 	onSkip: () => void;
+	onPrevious?: (() => void) | undefined;
 	onImported: (show: ShowsAdminRow) => void;
 };
 
@@ -33,6 +34,7 @@ export const ImportShowForm = ({
 	remainingCount,
 	onClose,
 	onSkip,
+	onPrevious,
 	onImported,
 }: ImportShowFormProps) => {
 	const { fields, setFields, hasUnsavedChanges, addOpeningRelationships } =
@@ -131,6 +133,11 @@ export const ImportShowForm = ({
 			hasUnsavedChanges={hasUnsavedChanges}
 			headerContent={<span>{remainingCount} remaining</span>}
 			secondaryAction={{ label: "Skip", onClick: onSkip }}
+			previousNavigationAction={{
+				label: "Previous Show",
+				onClick: onPrevious ?? (() => {}),
+				disabled: onPrevious === undefined,
+			}}
 			navigationAction={{ label: "Next Show", onClick: onSkip }}
 			isSubmitDisabled={!canSave}
 			onSubmit={async () => {

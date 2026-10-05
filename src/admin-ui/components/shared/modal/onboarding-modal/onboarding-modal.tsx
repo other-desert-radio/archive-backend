@@ -29,6 +29,7 @@ type OnboardingModalProps = {
 	actionHelper?: string;
 	headerContent?: ReactNode;
 	navigationAction?: ModalAction;
+	previousNavigationAction?: ModalAction;
 	secondaryAction?: ModalAction;
 	/** Replaces automatic closure after a successful submit; owns any follow-up errors. */
 	onSubmitted?: () => void;
@@ -49,6 +50,7 @@ export const OnboardingModal = ({
 	actionHelper,
 	headerContent,
 	navigationAction,
+	previousNavigationAction,
 	secondaryAction,
 	onSubmitted,
 	isSubmitDisabled = false,
@@ -214,6 +216,27 @@ export const OnboardingModal = ({
 							</button>
 						</form>
 					</div>
+					{previousNavigationAction !== undefined && (
+						<button
+							type="button"
+							className={`${styles.navigation} ${styles.previousNavigation}`}
+							aria-label={previousNavigationAction.label}
+							data-modal-dismiss
+							disabled={
+								isSubmitting || isCovered || previousNavigationAction.disabled
+							}
+							onClick={() => requestAction(previousNavigationAction.onClick)}
+						>
+							<svg
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
+								<path d="M4 12h16M13 5l7 7-7 7" />
+							</svg>
+						</button>
+					)}
 					{navigationAction !== undefined && (
 						<button
 							type="button"

@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { sql } from "kysely";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
 import {
 	classifyMixcloudImport,
@@ -13,6 +14,14 @@ import type {
 	MixcloudImportStatus,
 	RefreshMixcloudResponse,
 } from "./types.js";
+
+/** Every extracted DJ name must have an exact, case-insensitive archive match. */
+const decodedDjsExist = sql<boolean>`NOT EXISTS (
+ SELECT 1 FROM unnest(mixcloud_import.decoded_djs) AS parsed(name)
+ WHERE NOT EXISTS (
+  SELECT 1 FROM djs WHERE lower(trim(djs.title)) = lower(trim(parsed.name))
+ )
+)`.as("decoded_djs_exist");
 
 /** Registers authenticated Mixcloud import list and refresh API routes. */
 export const mixcloudImportRoutes =
@@ -91,6 +100,7 @@ export const mixcloudImportRoutes =
 							"parser_key",
 							"date_source",
 						])
+						.select(decodedDjsExist)
 						.where("show_id", "is", null)
 						.execute();
 					const status: MixcloudImportStatus = {
@@ -166,10 +176,12 @@ export const mixcloudImportRoutes =
 									.orderBy("tag_id"),
 							).as("linked_tags"),
 						])
+						.select(decodedDjsExist)
 						.orderBy("mixcloud_import.id")
 						.execute();
 					const result: MixcloudImportAdminRow[] = rows.map((row) => ({
 						id: row.id,
+						decoded_djs_exist: row.decoded_djs_exist,
 						data_changed: row.data_changed,
 						...(row.mixcloud_tag_keys === null
 							? {}

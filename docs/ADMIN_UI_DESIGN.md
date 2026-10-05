@@ -144,11 +144,12 @@ remain stable, while edit controls use the `edit-show` prefix.
 ### Optional form navigation and helpers
 
 `OnboardingModal` accepts optional `headerContent`, `secondaryAction`,
-`navigationAction`, and `onSubmitted`. Header content sits beside Close and
-wraps on narrow screens. A secondary action replaces Cancel using its borderless
-style and a 42px minimum target. Navigation renders an accessible arrow beside
-the panel on wide desktops and below the scrolling panel on smaller viewports;
-it remains inside the dialog focus boundary.
+`navigationAction`, `previousNavigationAction`, and `onSubmitted`. Header
+content sits beside Close and wraps on narrow screens. A secondary action
+replaces Cancel using its borderless style and a 42px minimum target. Navigation
+renders an accessible arrow beside the panel on wide desktops and below the
+scrolling panel on smaller viewports; it remains inside the dialog focus
+boundary.
 
 Both optional actions use the same dirty-change confirmation as dismissal. Keep
 editing restores focus to the initiating action; Discard runs that action.
@@ -462,3 +463,10 @@ The Mixcloud database table includes `mixcloud_tag_json` beside
 `mixcloud_tags` API field. Names preserve source case. The column participates
 in shared search and sorting; absent source tag data displays None, and an empty
 array displays `[]`.
+
+Mixcloud import navigation includes a mirrored Previous Show arrow to the left
+of the panel, matching Next Show. On smaller screens the arrows sit together
+below the scrolling panel. Previous is disabled when no earlier pending session
+item exists and uses a gray arrow, border, and background while disabled;
+imported items are excluded in both directions. Back navigation uses the same
+dirty-change confirmation and submission lock as Next.

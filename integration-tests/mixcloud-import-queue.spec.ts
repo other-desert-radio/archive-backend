@@ -457,3 +457,28 @@ test("source tag JSON is visible immediately beside tag keys in the database tab
 		"ascending",
 	);
 });
+
+test("previous arrow revisits skipped items and protects edits", async ({
+	page,
+}) => {
+	await launch(page);
+	const previous = page.getByRole("button", { name: "Previous Show" });
+	await expect(previous).toBeDisabled();
+	await page.getByRole("button", { name: "Next Show" }).click();
+	await expect(sourceId(page)).toHaveText("Source 9");
+	await expect(save(page)).toBeEnabled();
+	await page.getByLabel("title", { exact: true }).fill("Draft");
+	await previous.click();
+	await expect(page.getByRole("alertdialog")).toBeVisible();
+	await page.getByRole("button", { name: "Keep editing" }).click();
+	await expect(previous).toBeFocused();
+	await previous.click();
+	await page.getByRole("button", { name: "Discard changes" }).click();
+	await expect(sourceId(page)).toHaveText("Source 2");
+	await expect(previous).toBeDisabled();
+	await expect(save(page)).toBeEnabled();
+	await save(page).click();
+	await expect(sourceId(page)).toHaveText("Source 9");
+	await expect(previous).toBeDisabled();
+	expect(state.posts).toBe(1);
+});
