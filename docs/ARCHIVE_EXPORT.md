@@ -49,8 +49,9 @@ The exporter writes stored DJ WebP variants to
 cards use `assets/djs/{id}_small.webp`; DJ details use
 `assets/djs/{id}_large.webp`. Export never processes images or writes to the
 database. It must never export the private `/api/admin/djs/{id}/image` URL. Show
-image values in DJ detail documents are the stored image URLs until show-image
-asset storage is added.
+image values in all exported Show documents use the stored `image_large` URL
+through the existing JSON `image` field. Migration `0024` removes the legacy
+database `image` column.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must

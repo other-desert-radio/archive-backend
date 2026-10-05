@@ -168,7 +168,7 @@ export const buildArchiveDocuments = ({
 					title: show.title,
 					date: show.date,
 					duration: show.duration,
-					...(show.image === null ? {} : { image: show.image }),
+					image: show.image_large,
 					tagIds: tagIdsByShow.get(show.id) ?? [],
 					url: show.url,
 				}),
@@ -209,7 +209,7 @@ export const buildArchiveDocuments = ({
 		title: show.title,
 		date: show.date,
 		duration: show.duration,
-		...(show.image === null ? {} : { image: show.image }),
+		image: show.image_large,
 		djs: (djIdsByShow.get(show.id) ?? []).flatMap((djId) => {
 			const dj = djsById.get(djId);
 			if (dj === undefined) {

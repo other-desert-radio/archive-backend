@@ -3,6 +3,7 @@ import { isMatching } from "ts-pattern";
 import { transformShows } from "../../../json-transformers/index.js";
 import { clientDescription } from "../../logging.js";
 import type { AdminApiReply, TypedDatabase } from "../types.js";
+import { importShow } from "./import-show.js";
 import { normalizeCreateShowRequest } from "./normalize-create-show-request.js";
 import { saveShow } from "./save-show.js";
 import {
@@ -30,7 +31,6 @@ export const showRoutes =
 								"title",
 								"date",
 								"duration",
-								"image",
 								"image_small",
 								"image_large",
 								"url",
@@ -87,6 +87,28 @@ export const showRoutes =
 			}
 			try {
 				const normalized = normalizeCreateShowRequest(request.body);
+				if (request.body.mixcloud_import_id !== undefined) {
+					const importId = request.body.mixcloud_import_id;
+					request.log.info(
+						`[Show Import] started -- tracking row: ${importId}`,
+					);
+					const result = await importShow(database, normalized, importId);
+					if (result === undefined) {
+						request.log.warn(
+							`[Show Import] rejected -- tracking row ${importId} not found`,
+						);
+						return reply.code(404).send({ error: "Not Found" });
+					}
+					request.log.info(
+						{
+							importId,
+							showId: result.show.id,
+							client: clientDescription(request),
+						},
+						`[Show Import] ${result.created ? "created" : "already imported"} -- tracking row: ${importId}, Show: ${result.show.id}`,
+					);
+					return reply.code(result.created ? 201 : 200).send(result.show);
+				}
 				const created = await saveShow(database, normalized);
 				if (created === undefined) throw new Error("Show creation failed");
 				request.log.info(

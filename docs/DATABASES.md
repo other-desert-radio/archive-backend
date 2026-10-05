@@ -86,7 +86,6 @@ createdAt   timestamptz not null
 title       text not null
 date        timestamptz
 duration    integer       -- seconds
-image       text
 image_large text not null -- image URL
 image_small text not null -- image URL
 url         text          -- audio source URL
@@ -101,9 +100,11 @@ then enforces `NOT NULL`. Existing `NULL` images must be filled before applying
 it; otherwise the migration fails and the migrator rolls back the transaction.
 Rollback drops only the new columns and preserves `image`. There are no defaults
 or URL-format constraints. Show create/edit routes and dummy seeds supply both
-columns. Apply migration `0023` before running the updated application. Saves
-also mirror `image_large` into the legacy `image` column for public export and
-grid-card compatibility.
+columns. Migration `0024_drop_show_image` then removes the legacy `image`
+column. Apply migrations through `0024` before running the updated application.
+Public JSON retains its `image` field by reading `image_large`. Rolling back
+`0024` restores `image` from the current large URL; distinct legacy values are
+not recoverable.
 
 ### `tags`
 

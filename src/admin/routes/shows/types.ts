@@ -8,7 +8,7 @@ export type AdminShowsJSON = ShowsJSON & {
 	image_large: string;
 };
 
-export const CreateShowRequestPattern = {
+const ShowFieldsPattern = {
 	title: P.string,
 	date: P.string,
 	duration: P.number,
@@ -18,11 +18,17 @@ export const CreateShowRequestPattern = {
 	image_large: P.string,
 	tags: P.optional(P.array(P.string)),
 } as const;
+export const CreateShowRequestPattern = {
+	...ShowFieldsPattern,
+	mixcloud_import_id: P.optional(
+		P.number.int().between(1, Number.MAX_SAFE_INTEGER),
+	),
+} as const;
 export type CreateShowRequest = P.infer<typeof CreateShowRequestPattern>;
 
 /** Editing replaces the same fields as creation, retaining identity and createdAt. */
 export const ModifyShowRequestPattern = {
-	...CreateShowRequestPattern,
+	...ShowFieldsPattern,
 	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
 } as const;
 export type ModifyShowRequest = P.infer<typeof ModifyShowRequestPattern>;

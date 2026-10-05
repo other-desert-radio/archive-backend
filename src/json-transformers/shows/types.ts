@@ -17,7 +17,7 @@ export type ShowsJSON = {
 };
 
 export type TransformShowsParams = {
-	shows: Array<Omit<Selectable<ShowsTable>, "image_small" | "image_large">>;
+	shows: Array<Omit<Selectable<ShowsTable>, "image_small">>;
 	showDJs: Array<Pick<Selectable<ShowDJsTable>, "dj_id" | "show_id">>;
 	showTags: Array<Pick<Selectable<ShowTagsTable>, "show_id" | "tag_id">>;
 };

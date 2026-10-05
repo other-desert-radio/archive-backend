@@ -148,18 +148,29 @@ titles, and stores the date at midnight UTC. It creates the Show, relationships,
 and any missing unreviewed tags in one transaction, returning `201` with the
 same admin Show shape as the list response.
 
+Creation also accepts optional positive safe-integer `mixcloud_import_id`. After
+validating submitted metadata, an import locks that tracking row with
+`FOR UPDATE`. A pending row creates the Show, links, and missing tags and sets
+`show_id`/`imported_at` together while clearing `data_changed`, all in one
+transaction. Submitted URL and image URLs are persisted without source-row
+replacement; both images remain required. Unknown tracking IDs return `404`. An
+already imported row returns `200` with the current admin Show and performs no
+writes, preserving the import timestamp. Concurrent requests serialize to one
+creation. Unexpected failures roll back every write and return generic `500`.
+The optional ID is request context, not a Show column.
+
 `POST /api/admin/modify-show` accepts the same JSON fields as Show creation plus
 required positive safe-integer `id`. Creation and editing share validation and
 transactional persistence. Editing replaces all editable metadata, DJ links, and
 Show tags while retaining `id` and `createdAt`. Both image URLs are required on
 every save; omitted, blank, relative, and non-HTTP(S) image URLs return `400`.
-The legacy `image` column mirrors `image_large` for existing public consumers.
-Omitted or empty `tags` clears Show tag assignments. At least one existing DJ
-remains required. Unlinked DJs and tags are preserved; missing tag titles are
-created through the shared tag service. Success returns `200` with the admin
-Show shape, including both image URLs; an unknown Show returns
-`404 { "error": "Not Found" }`. Invalid fields or missing selected DJs return
-`400`, and unexpected failures roll back all writes and return `500`.
+The public JSON `image` field maps to `image_large`; migration `0024` removes
+the legacy database column. Omitted or empty `tags` clears Show tag assignments.
+At least one existing DJ remains required. Unlinked DJs and tags are preserved;
+missing tag titles are created through the shared tag service. Success returns
+`200` with the admin Show shape, including both image URLs; an unknown Show
+returns `404 { "error": "Not Found" }`. Invalid fields or missing selected DJs
+return `400`, and unexpected failures roll back all writes and return `500`.
 
 Tag creation accepts `{ title: string }`, optionally with `color`,
 `mixcloud_key`, and `mixcloud_url`, for `create-tag`, and an array of those

@@ -54,7 +54,7 @@ describe("archive export documents", () => {
 					title: "Newer Show",
 					date: new Date("2026-02-01T00:00:00.000Z"),
 					duration: 3600,
-					image: "https://example.com/show.jpg",
+					image_large: "https://example.com/show.jpg",
 					url: "https://example.com/audio",
 				},
 			] as never,

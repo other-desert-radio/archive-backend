@@ -17,17 +17,26 @@ Checkpoint 1 implements resolution only; no import or UI workflow is enabled.
 
 ### Handoff status
 
-Checkpoint 1 is complete and reviewed, including the resolver naming/readability
-refinement. The route, shared types, loader, tests, and API documentation are in
-place. Start with checkpoint 2 after inspecting the image branch dependency. Do
-not repeat the Figma read or implement later checkpoints before review.
+Checkpoints 1 and 2 are complete. Checkpoint 2 awaits review; start checkpoint 3
+only after review. Do not repeat the Figma read.
 
-Verification: 33 focused tests passed, repository lint passed, and the admin
-build passed. TypeScript checking was blocked by the missing local
-`src/res/mixcloud.json` imported by the diagnostic script. The resolver-only
-refinement subsequently passed all four focused route tests and Biome checks. No
-UI behavior changed in checkpoint 1, so browser acceptance remains required for
-the later UI checkpoints.
+Checkpoint 2 extends Show creation with optional `mixcloud_import_id`, locks the
+tracking row, and commits Show metadata, relationships, tags, and import markers
+in one transaction. Repeats return the existing Show without writes. Disposable
+PostgreSQL coverage checks concurrent requests and rollback after a forced
+tracking-update failure, plus metadata/image mapping and validation.
+
+The merged image dependency differs from the original nullable assumption:
+migration `0023` and the ordinary Show API require both image URLs. Imports keep
+that contract; absent images return `400`. Migration `0024` removes the legacy
+Show `image` column; JSON compatibility maps `image` from `image_large`. The
+repeat-request test rejects all attempted writes using database triggers.
+
+Verification: 38 focused tests passed (including real PostgreSQL import and
+column-removal/rollback tests), TypeScript, repository lint, and admin build
+passed. Lint reports the existing oversized `src/res/mixcloud.json` warning. No
+UI behavior changed, so browser acceptance remains required for the later UI
+checkpoints.
 
 ## Design reference and reuse
 
@@ -155,10 +164,10 @@ relationship remains in the existing `mixcloud_import.show_id` column. Extending
 creation lets Show creation and tracking updates commit or roll back together;
 do not create first and link with a separate request/transaction.
 
-Depend on nullable Show image_small/image_large text columns. Coordinate with
-the image branch's final request types and existing image-field compatibility;
-do not independently redesign ordinary Show image handling or add its migration.
-No image downloads are required.
+Depend on the merged required Show image_small/image_large text columns.
+Coordinate with the image branch's final request types and existing image-field
+compatibility; do not independently redesign ordinary Show image handling or add
+its migration. No image downloads are required.
 
 Reuse Show normalization, existing-DJ validation, tag creation, and persistence.
 For import requests, lock the tracking row with FOR UPDATE and recheck show_id
@@ -216,9 +225,9 @@ Mock browser mutations when database persistence is not under test.
 - Tag resolution: legacy compatibility, canonical matches, missing/ambiguous
   keys, exact matching, duplicates, empty arrays, malformed/combined bodies,
   authentication, database failures, and loader errors.
-- Persistence: submitted metadata, exact URL/image mapping, absent images,
-  relationships, missing-tag creation, paired import markers, cleared flag,
-  repeat/concurrent requests producing one Show, and rollback after forced
+- Persistence: submitted metadata, exact URL/image mapping, absent-image
+  rejection, relationships, missing-tag creation, paired import markers, cleared
+  flag, repeat/concurrent requests producing one Show, and rollback after forced
   post-creation failure.
 - Browser integration: both categories, ID order despite search/sort, imported
   row exclusion, count semantics, skipped rows returning on reopen, final close,
