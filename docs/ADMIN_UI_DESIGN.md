@@ -479,5 +479,8 @@ imported items are excluded in both directions. Back navigation uses the same
 dirty-change confirmation and submission lock as Next.
 
 The import source panel also shows `mixcloud_tag_json`; the duplicate keys
-column is removed from the database table. Selected titles remain in the shared
-tag input; the import form retains source metadata for create-tag on Save.
+column is removed from the database table. Selected tags in the shared input
+carry `title` and optional `mixcloud_key` / `mixcloud_url`. Chip removal removes
+the full object, while draft commits create title-only objects and preserve
+metadata on existing selections. DJ and Show requests convert selections to
+titles; import Save passes selected new source objects to create-tag.

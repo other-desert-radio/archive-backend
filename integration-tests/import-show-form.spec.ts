@@ -368,3 +368,78 @@ test("unresolved source keys reuse matching tag names and colors, and only new n
 	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
 	expect(payload?.tags).toEqual(["Ambient", "MiXeD Genre"]);
 });
+
+test("removing a source chip excludes its metadata from tag creation", async ({
+	page,
+}) => {
+	const createdTags: unknown[] = [];
+	let showPayload: { tags: string[] } | undefined;
+	await page.route("**/api/admin/create-tag", (route) => {
+		createdTags.push(route.request().postDataJSON());
+		return route.fulfill({ status: 201, json: { id: 101 } });
+	});
+	await page.route("**/api/admin/create-show", (route) => {
+		showPayload = route.request().postDataJSON();
+		return route.fulfill({
+			status: 201,
+			json: { id: 99, title: "Suggested title" },
+		});
+	});
+	await page.getByRole("button", { name: "Open import" }).click();
+	await expect(
+		page.getByRole("button", { name: "Save", exact: true }),
+	).toBeEnabled();
+	await page
+		.getByRole("button", { name: "Remove New Genre", exact: true })
+		.click();
+	await page
+		.getByRole("combobox", { name: "tags", exact: true })
+		.fill("Manual");
+	await page.getByRole("button", { name: "Save", exact: true }).click();
+	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
+	expect(createdTags).toEqual([]);
+	expect(showPayload?.tags).toEqual(["Ambient", "Manual"]);
+});
+
+test("failed tag creation preserves metadata for retry and prevents Show creation", async ({
+	page,
+}) => {
+	const createdTags: unknown[] = [];
+	let fail = true;
+	let shows = 0;
+	await page.route("**/api/admin/create-tag", (route) => {
+		createdTags.push(route.request().postDataJSON());
+		return route.fulfill(
+			fail
+				? { status: 500, json: { error: "Tag save failed" } }
+				: { status: 201, json: { id: 101 } },
+		);
+	});
+	await page.route("**/api/admin/create-show", (route) => {
+		shows++;
+		return route.fulfill({
+			status: 201,
+			json: { id: 99, title: "Suggested title" },
+		});
+	});
+	await page.getByRole("button", { name: "Open import" }).click();
+	const save = page.getByRole("button", { name: "Save", exact: true });
+	await expect(save).toBeEnabled();
+	await save.click();
+	await expect(page.getByText(/Tag save failed/)).toBeVisible();
+	expect(shows).toBe(0);
+	await expect(
+		page.getByRole("button", { name: "Remove New Genre", exact: true }),
+	).toBeVisible();
+	fail = false;
+	await save.click();
+	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
+	expect(createdTags).toEqual(
+		Array(2).fill({
+			title: "New Genre",
+			mixcloud_key: "/genres/unresolved/",
+			mixcloud_url: "https://www.mixcloud.com/genres/unresolved/",
+		}),
+	);
+	expect(shows).toBe(1);
+});

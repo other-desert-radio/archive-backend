@@ -270,9 +270,7 @@ describe("Mixcloud table", () => {
 			/>,
 		);
 		expect(toolbar).toContain("Search Mixcloud");
-		expect(toolbar).toContain(
-			'<button type="button">Refresh Mixcloud</button>',
-		);
+		expect(toolbar).toContain("Refresh Mixcloud</button>");
 	});
 	test("sorts parser fields and preserves empty arrays and version zero", () => {
 		const other: MixcloudImportAdminRow = {

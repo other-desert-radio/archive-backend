@@ -5,7 +5,7 @@ import {
 	buildImportTagRequests,
 	initialImportValues,
 	resolveImportDJs,
-	resolveImportTagTitles,
+	resolveImportTags,
 } from "../../src/admin-ui/components/mixcloud/onboarding-modal/import-show-form/import-show-utils.js";
 import { buildShowFormRequest } from "../../src/admin-ui/components/shows/index.js";
 import type { MixcloudImportAdminRow } from "../../src/admin-ui/loaders/mixcloud-imports.js";
@@ -71,7 +71,7 @@ test("shared Show payload builder retains image variants, selected DJs and tag d
 		buildShowFormRequest({
 			...initialImportValues(row),
 			selected: [1],
-			tags: ["Ambient"],
+			tags: [{ title: "Ambient" }],
 			tagDraft: "New",
 		}),
 	).toMatchObject({
@@ -138,7 +138,7 @@ test("source URL links permit HTTP(S) and leave unsafe URLs as text", () => {
 });
 
 test("database names override source names and new tags retain exact source casing in payloads", () => {
-	const tags = resolveImportTagTitles(
+	const tags = resolveImportTags(
 		["DATABASE Tag"],
 		["/genres/ambient/", "/genres/new-genre/"],
 		[{ title: "Ambient" }],
@@ -147,42 +147,63 @@ test("database names override source names and new tags retain exact source casi
 			{ key: "/genres/new-genre/", name: "MiXeD Genre" },
 		],
 	);
-	expect(tags).toEqual(["DATABASE Tag", "Ambient", "MiXeD Genre"]);
+	expect(tags).toEqual([
+		{ title: "DATABASE Tag" },
+		{ title: "Ambient" },
+		{ title: "MiXeD Genre", mixcloud_key: "/genres/new-genre/" },
+	]);
 	expect(
 		buildShowFormRequest({ ...initialImportValues(row), selected: [1], tags })
 			.tags,
 	).toEqual(["DATABASE Tag", "Ambient", "MiXeD Genre"]);
-	expect(() => resolveImportTagTitles([], ["/genres/unknown/"], [])).toThrow(
+	expect(() => resolveImportTags([], ["/genres/unknown/"], [])).toThrow(
 		"Source tag names are missing",
 	);
 });
 
 test("new selected source tags carry keys and URLs into tag creation", () => {
-	const source = [
-		{
-			key: "/genres/new/",
-			name: "MiXeD",
-			url: "https://www.mixcloud.com/genres/new/",
-		},
-		{ key: "/genres/removed/", name: "Removed" },
-	];
+	const selected = {
+		title: "MiXeD",
+		mixcloud_key: "/genres/new/",
+		mixcloud_url: "https://www.mixcloud.com/genres/new/",
+	};
 	expect(
 		buildImportTagRequests(
-			["MiXeD", "Ambient", "Manual"],
+			[selected, { title: "Ambient" }, { title: "Manual" }],
 			[{ title: "Ambient" }],
-			source,
+		),
+	).toEqual([selected]);
+	expect(buildImportTagRequests([selected], [{ title: "MIXED" }])).toEqual([]);
+	expect(buildImportTagRequests([], [])).toEqual([]);
+	expect(() =>
+		buildImportTagRequests(
+			[{ title: "Old", mixcloud_key: "/genres/old/" }],
+			[],
+		),
+	).toThrow("Source tag URLs are missing");
+});
+
+test("resolved new source tags retain metadata while archive matches use canonical names", () => {
+	expect(
+		resolveImportTags(
+			[],
+			["/new/", "/existing/"],
+			[{ title: "Existing" }],
+			[
+				{ key: "/new/", name: "NEW", url: "https://www.mixcloud.com/new/" },
+				{
+					key: "/existing/",
+					name: "EXISTING",
+					url: "https://www.mixcloud.com/existing/",
+				},
+			],
 		),
 	).toEqual([
 		{
-			title: "MiXeD",
-			mixcloud_key: source[0]!.key,
-			mixcloud_url: source[0]!.url,
+			title: "NEW",
+			mixcloud_key: "/new/",
+			mixcloud_url: "https://www.mixcloud.com/new/",
 		},
+		{ title: "Existing" },
 	]);
-	expect(
-		buildImportTagRequests(["mixed"], [{ title: "MIXED" }], source),
-	).toEqual([]);
-	expect(() => buildImportTagRequests(["Removed"], [], source)).toThrow(
-		"Source tag URLs are missing",
-	);
 });

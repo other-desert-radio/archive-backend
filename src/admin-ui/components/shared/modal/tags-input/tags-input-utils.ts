@@ -1,8 +1,13 @@
 import { splitCommaSeparated } from "../../../../../utils/index.js";
 
-export type TagsInputOption = {
-	id: number;
+export type SelectedTag = {
 	title: string;
+	mixcloud_key?: string;
+	mixcloud_url?: string;
+};
+
+export type TagsInputOption = SelectedTag & {
+	id: number;
 	color: string;
 };
 
@@ -58,3 +63,24 @@ export const getTagCompletion = (
 	if (!normalize(match.title).startsWith(normalize(draft))) return undefined;
 	return match.title.slice(draft.length);
 };
+
+/** Preserve metadata on the first selected tag when deduplicating titles. */
+export const uniqueSelectedTags = (tags: SelectedTag[]): SelectedTag[] => {
+	const seen = new Set<string>();
+	return tags.flatMap((tag) => {
+		const title = tag.title.trim();
+		const key = normalize(title);
+		if (!key || seen.has(key)) return [];
+		seen.add(key);
+		return [{ ...tag, title }];
+	});
+};
+
+export const commitSelectedTagDraft = (
+	tags: SelectedTag[],
+	draft: string,
+): SelectedTag[] =>
+	uniqueSelectedTags([
+		...tags,
+		...splitCommaSeparated(draft).map((title) => ({ title })),
+	]);

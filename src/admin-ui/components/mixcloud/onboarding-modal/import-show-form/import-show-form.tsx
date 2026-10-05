@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createTag } from "../../../../loaders/create-tag.js";
 import { createShow } from "../../../../loaders/create-show.js";
+import { createTag } from "../../../../loaders/create-tag.js";
 import { loadDJs } from "../../../../loaders/djs.js";
 import type { MixcloudImportAdminRow } from "../../../../loaders/mixcloud-imports.js";
 import type { ShowsAdminRow } from "../../../../loaders/shows.js";
@@ -19,7 +19,7 @@ import {
 	buildImportTagRequests,
 	initialImportValues,
 	resolveImportDJs,
-	resolveImportTagTitles,
+	resolveImportTags,
 } from "./import-show-utils.js";
 
 export type ImportShowFormProps = {
@@ -71,7 +71,7 @@ export const ImportShowForm = ({
 				setUnmatchedDJs(resolvedDJs.unmatched);
 				addOpeningRelationships({
 					selected: resolvedDJs.selected,
-					tags: resolvedTags.valid.map(({ tag }) => tag.title),
+					tags: resolvedTags.valid.map(({ tag }) => ({ title: tag.title })),
 				});
 				setPendingTags({
 					valid: resolvedTags.valid.map(({ tag }) => tag.title),
@@ -103,7 +103,7 @@ export const ImportShowForm = ({
 		if (!pendingTags || isTagsLoading || tagsError !== undefined) return;
 		try {
 			addOpeningRelationships({
-				tags: resolveImportTagTitles(
+				tags: resolveImportTags(
 					pendingTags.valid,
 					pendingTags.invalid,
 					tagOptions,
@@ -158,11 +158,7 @@ export const ImportShowForm = ({
 						"Source suggestions must finish loading before saving.",
 					);
 				const request = buildShowFormRequest(fields);
-				const tagRequests = buildImportTagRequests(
-					request.tags ?? [],
-					tagOptions,
-					row.mixcloud_tags,
-				);
+				const tagRequests = buildImportTagRequests(fields.tags, tagOptions);
 				for (const tagRequest of tagRequests) await createTag(tagRequest);
 				savedRef.current = await createShow({
 					...request,

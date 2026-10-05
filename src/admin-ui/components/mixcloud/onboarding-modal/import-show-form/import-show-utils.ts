@@ -1,4 +1,8 @@
 import type { MixcloudImportAdminRow } from "../../../../loaders/mixcloud-imports.js";
+import {
+	type SelectedTag,
+	uniqueSelectedTags,
+} from "../../../shared/modal/index.js";
 import type { ShowFormValues } from "../../../shows/index.js";
 
 /** Source metadata initializes the complete Show payload without adding image inputs. */
@@ -39,15 +43,16 @@ export const resolveImportDJs = (
 };
 
 /** Database names take precedence; new titles preserve the source name exactly. */
-export const resolveImportTagTitles = (
+export const resolveImportTags = (
 	validTitles: string[],
 	invalidKeys: string[],
 	options: { title: string }[],
-	sourceTags: { key: string; name: string }[] = [],
+	sourceTags: { key: string; name: string; url?: string }[] = [],
 ) => {
-	const namesByKey = new Map(sourceTags.map(({ key, name }) => [key, name]));
+	const tagsByKey = new Map(sourceTags.map((tag) => [tag.key, tag]));
 	const newTitles = invalidKeys.map((key) => {
-		const name = namesByKey.get(key);
+		const source = tagsByKey.get(key);
+		const name = source?.name;
 		if (!name?.trim())
 			throw new Error(
 				"Source tag names are missing. Refresh Mixcloud before importing this Show.",
@@ -55,38 +60,44 @@ export const resolveImportTagTitles = (
 		const match = options.find(
 			(option) => option.title.toLocaleLowerCase() === name.toLocaleLowerCase(),
 		);
-		return match?.title ?? name;
+		return match
+			? { title: match.title }
+			: {
+					title: name,
+					mixcloud_key: key,
+					...(source?.url === undefined ? {} : { mixcloud_url: source.url }),
+				};
 	});
-	const seen = new Set<string>();
-	return [...validTitles, ...newTitles].filter((title) => {
-		const comparison = title.toLocaleLowerCase();
-		if (seen.has(comparison)) return false;
-		seen.add(comparison);
-		return true;
-	});
+	return uniqueSelectedTags([
+		...validTitles.map((title) => ({ title })),
+		...newTitles,
+	]);
 };
 
 /** Only selected source tags absent from the archive need explicit onboarding. */
 export const buildImportTagRequests = (
-	titles: string[],
+	tags: SelectedTag[],
 	options: { title: string }[],
-	sourceTags: { key: string; name: string; url?: string }[] = [],
 ) =>
-	titles.flatMap((title) => {
-		const comparison = title.trim().toLocaleLowerCase();
+	tags.flatMap((tag) => {
 		if (
+			!tag.mixcloud_key ||
 			options.some(
-				(option) => option.title.trim().toLocaleLowerCase() === comparison,
+				(option) =>
+					option.title.trim().toLocaleLowerCase() ===
+					tag.title.trim().toLocaleLowerCase(),
 			)
 		)
 			return [];
-		const source = sourceTags.find(
-			(tag) => tag.name.trim().toLocaleLowerCase() === comparison,
-		);
-		if (!source) return [];
-		if (!source.url?.trim())
+		if (!tag.mixcloud_url?.trim())
 			throw new Error(
 				"Source tag URLs are missing. Refresh Mixcloud before importing this Show.",
 			);
-		return [{ title, mixcloud_key: source.key, mixcloud_url: source.url }];
+		return [
+			{
+				title: tag.title,
+				mixcloud_key: tag.mixcloud_key,
+				mixcloud_url: tag.mixcloud_url,
+			},
+		];
 	});

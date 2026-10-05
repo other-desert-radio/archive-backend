@@ -10,17 +10,17 @@ import {
 } from "react";
 import fieldStyles from "../labeled-form-control/labeled-form-control.module.css";
 import styles from "./tags-input.module.css";
-import type { TagsInputOption } from "./tags-input-utils.js";
+import type { SelectedTag, TagsInputOption } from "./tags-input-utils.js";
 import {
-	commitTagDraft,
+	commitSelectedTagDraft,
 	findTagMatches,
 	getTagCompletion,
-	uniqueTagTitles,
+	uniqueSelectedTags,
 } from "./tags-input-utils.js";
 
 export type { TagsInputOption } from "./tags-input-utils.js";
 
-export type TagsInputValue = { tags: string[]; draft: string };
+export type TagsInputValue = { tags: SelectedTag[]; draft: string };
 type TagsInputProps = {
 	id: string;
 	value: TagsInputValue;
@@ -48,10 +48,15 @@ export const TagsInput = ({
 	const [isFocused, setIsFocused] = useState(false);
 	const [activeIndex, setActiveIndex] = useState<number>();
 	const [isComposing, setIsComposing] = useState(false);
-	const [backspaceArmedTag, setBackspaceArmedTag] = useState<string>();
+	const [backspaceArmedTag, setBackspaceArmedTag] = useState<SelectedTag>();
 	const listId = useId();
 	const matches = useMemo(
-		() => findTagMatches(value.draft, options, value.tags),
+		() =>
+			findTagMatches(
+				value.draft,
+				options,
+				value.tags.map(({ title }) => title),
+			),
 		[options, value.draft, value.tags],
 	);
 	const activeMatch = matches[activeIndex ?? 0];
@@ -64,7 +69,7 @@ export const TagsInput = ({
 		[options],
 	);
 	const unknownTags = value.tags.filter(
-		(tag) => !selectedByTitle.has(tag.toLocaleLowerCase()),
+		(tag) => !selectedByTitle.has(tag.title.toLocaleLowerCase()),
 	);
 	const canIdentifyUnknownTags = !isLoading && error === undefined;
 	const isOpen = isFocused && value.draft.trim() !== "" && matches.length > 0;
@@ -72,14 +77,25 @@ export const TagsInput = ({
 		if ((activeIndex ?? 0) >= matches.length) setActiveIndex(undefined);
 	}, [activeIndex, matches.length]);
 	const commit = (draft = value.draft) => {
-		const tags = commitTagDraft(value.tags, draft);
+		const tags = commitSelectedTagDraft(value.tags, draft);
 		onChange({ tags, draft: "" });
 		setActiveIndex(undefined);
 		setBackspaceArmedTag(undefined);
 	};
 	const select = (option: TagsInputOption) => {
 		onChange({
-			tags: uniqueTagTitles([...value.tags, option.title]),
+			tags: uniqueSelectedTags([
+				...value.tags,
+				{
+					title: option.title,
+					...(option.mixcloud_key === undefined
+						? {}
+						: { mixcloud_key: option.mixcloud_key }),
+					...(option.mixcloud_url === undefined
+						? {}
+						: { mixcloud_url: option.mixcloud_url }),
+				},
+			]),
 			draft: "",
 		});
 		setActiveIndex(undefined);
@@ -159,10 +175,10 @@ export const TagsInput = ({
 				<div className={styles.inputGroup}>
 					<div className={styles.box}>
 						{value.tags.map((tag) => {
-							const option = selectedByTitle.get(tag.toLocaleLowerCase());
+							const option = selectedByTitle.get(tag.title.toLocaleLowerCase());
 							return (
 								<span
-									key={tag.toLocaleLowerCase()}
+									key={tag.title.toLocaleLowerCase()}
 									className={`${styles.chip} ${
 										option === undefined && canIdentifyUnknownTags
 											? styles.unknown
@@ -172,11 +188,11 @@ export const TagsInput = ({
 										? {}
 										: { style: { background: option.color } })}
 								>
-									{tag}
+									{tag.title}
 									<button
 										type="button"
 										className={styles.remove}
-										aria-label={`Remove ${tag}`}
+										aria-label={`Remove ${tag.title}`}
 										onClick={() => {
 											onChange({
 												tags: value.tags.filter((selected) => selected !== tag),
@@ -212,7 +228,7 @@ export const TagsInput = ({
 									const nextDraft = event.target.value;
 									if (nextDraft.includes(","))
 										onChange({
-											tags: commitTagDraft(value.tags, nextDraft),
+											tags: commitSelectedTagDraft(value.tags, nextDraft),
 											draft: "",
 										});
 									else onChange({ tags: value.tags, draft: nextDraft });
@@ -275,7 +291,7 @@ export const TagsInput = ({
 						: isLoading
 							? "Loading existing tags…"
 							: canIdentifyUnknownTags && unknownTags.length > 0
-								? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
+								? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag.title}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
 								: "Type to search. Press Tab to accept the gray completion."}
 					{error !== undefined && onRetry !== undefined && (
 						<button type="button" onClick={onRetry}>

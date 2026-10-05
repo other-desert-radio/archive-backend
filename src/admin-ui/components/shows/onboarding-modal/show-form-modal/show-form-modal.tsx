@@ -62,7 +62,7 @@ export const ShowFormModal = ({
 			return;
 		const resolved = tagOptions.filter((tag) => pendingTagIds.includes(tag.id));
 		if (resolved.length === 0) return;
-		const titles = resolved.map((tag) => tag.title);
+		const titles = resolved.map((tag) => ({ title: tag.title }));
 		addOpeningRelationships({ tags: titles });
 		setPendingTagIds((current) =>
 			current.filter((id) => !resolved.some((tag) => tag.id === id)),

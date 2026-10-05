@@ -1,5 +1,9 @@
 import { useCallback, useRef, useState } from "react";
-import { hasFormChanges } from "../../../shared/modal/index.js";
+import {
+	hasFormChanges,
+	type SelectedTag,
+	uniqueSelectedTags,
+} from "../../../shared/modal/index.js";
 import { buildCreateShowRequest } from "../onboard-show-modal/onboard-show-utils.js";
 
 export type ShowFormValues = {
@@ -8,7 +12,7 @@ export type ShowFormValues = {
 	duration: string;
 	image_small: string;
 	image_large: string;
-	tags: string[];
+	tags: SelectedTag[];
 	tagDraft: string;
 	url: string;
 	selected: number[];
@@ -19,10 +23,13 @@ export const useShowFormState = (initialValues: ShowFormValues) => {
 	const baseline = useRef(initialValues);
 	const [fields, setFields] = useState(initialValues);
 	const addOpeningRelationships = useCallback(
-		(relationships: { tags?: string[]; selected?: number[] }) => {
+		(relationships: { tags?: SelectedTag[]; selected?: number[] }) => {
 			const append = (values: ShowFormValues): ShowFormValues => ({
 				...values,
-				tags: [...new Set([...values.tags, ...(relationships.tags ?? [])])],
+				tags: uniqueSelectedTags([
+					...values.tags,
+					...(relationships.tags ?? []),
+				]),
 				selected: [
 					...new Set([...values.selected, ...(relationships.selected ?? [])]),
 				],
@@ -36,7 +43,13 @@ export const useShowFormState = (initialValues: ShowFormValues) => {
 		addOpeningRelationships,
 		fields,
 		setFields,
-		hasUnsavedChanges: hasFormChanges(fields, baseline.current),
+		hasUnsavedChanges: hasFormChanges(
+			{ ...fields, tags: fields.tags.map(({ title }) => title) },
+			{
+				...baseline.current,
+				tags: baseline.current.tags.map(({ title }) => title),
+			},
+		),
 	};
 };
 
@@ -46,7 +59,7 @@ export const buildShowFormRequest = (fields: ShowFormValues) => {
 	if (fields.title.trim() === "") throw new Error("Title is required.");
 	return buildCreateShowRequest({
 		...fields,
-		tags: [...fields.tags, fields.tagDraft].join(","),
+		tags: [...fields.tags.map(({ title }) => title), fields.tagDraft].join(","),
 		djs: fields.selected,
 	});
 };
