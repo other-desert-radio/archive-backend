@@ -134,7 +134,7 @@ test.beforeEach(async ({ page }) => {
 const sourceId = (page: import("@playwright/test").Page) =>
 	page
 		.locator("dl > div")
-		.filter({ has: page.locator("dt", { hasText: /^id$/ }) })
+		.filter({ has: page.locator("dt", { hasText: /^name$/ }) })
 		.locator("dd");
 const launch = (
 	page: import("@playwright/test").Page,
@@ -398,4 +398,34 @@ test("an older post-import reload cannot overwrite a later committed import", as
 	await expect(
 		page.getByRole("dialog", { name: "No pending imports" }),
 	).toBeVisible();
+});
+
+test("success toast shows saved metadata, resets for the next save, fades and dismisses", async ({
+	page,
+}) => {
+	await page.clock.install();
+	await launch(page);
+	await expect(save(page)).toBeEnabled();
+	await save(page).click();
+	const toast = page
+		.getByRole("status")
+		.filter({ hasText: "Successfully created show:" });
+	await expect(toast).toContainText("Ready 2");
+	await expect(toast).toContainText("2026-10-01 · 3661 seconds · 1 DJ · 1 tag");
+	await page.clock.fastForward(3000);
+	await expect(save(page)).toBeEnabled();
+	await save(page).click();
+	await expect(toast).toContainText("Ready 9");
+	await page.clock.fastForward(3999);
+	await expect(toast.locator("..")).toHaveCSS("opacity", "1");
+	await page.clock.fastForward(251);
+	await expect(toast).toHaveCount(0);
+});
+
+test("success toast close button dismisses immediately", async ({ page }) => {
+	await launch(page);
+	await expect(save(page)).toBeEnabled();
+	await save(page).click();
+	await page.getByRole("button", { name: "Dismiss notification" }).click();
+	await expect(page.getByText(/Successfully created show:/)).toHaveCount(0);
 });

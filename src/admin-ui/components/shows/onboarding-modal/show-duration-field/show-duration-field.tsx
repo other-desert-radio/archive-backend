@@ -9,6 +9,14 @@ type Props = {
 };
 export const ShowDurationField = ({ fields, setFields, idPrefix }: Props) => {
 	const { duration } = fields;
+	const seconds = Number(duration);
+	const helper =
+		duration.trim() !== "" &&
+		Number.isInteger(seconds) &&
+		seconds > 0 &&
+		seconds <= 2_147_483_647
+			? `${Math.floor(seconds / 3600)} hours, ${Math.floor((seconds % 3600) / 60)} minutes, ${seconds % 60} seconds`
+			: undefined;
 	return (
 		<LabeledFormControl
 			id={`${idPrefix}-duration`}
@@ -20,6 +28,7 @@ export const ShowDurationField = ({ fields, setFields, idPrefix }: Props) => {
 			step={1}
 			value={duration}
 			onChange={(duration) => setFields({ ...fields, duration })}
+			{...(helper === undefined ? {} : { helper })}
 			required
 		/>
 	);

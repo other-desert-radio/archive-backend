@@ -13,10 +13,17 @@ export const MixcloudSourceData = ({
 	row: MixcloudImportAdminRow;
 }) => {
 	const values = [
-		["id", row.id],
 		["name", formatMissing(row.name)],
-		["url", formatMissing(row.url)],
-		["key", row.key],
+		[
+			"url",
+			row.url && /^https?:\/\//i.test(row.url) ? (
+				<a key="source-url" href={row.url} target="_blank" rel="noreferrer">
+					{row.url}
+				</a>
+			) : (
+				formatMissing(row.url)
+			),
+		],
 		[
 			"created_time",
 			formatMissing(
@@ -39,7 +46,6 @@ export const MixcloudSourceData = ({
 					: undefined,
 			),
 		],
-		["show_id", formatMissing(row.show_id)],
 	] as const;
 	return (
 		<section

@@ -146,10 +146,10 @@ ownership.
 
 ### MIXCLOUD DATA contents
 
-Display only these read-only fields, in order: id, name, url, key, created_time,
-duration, mixcloud_tag_keys, show_id. Label source name as name. Use UTC
-timestamps, existing duration/array formatters, and muted “None” for missing
-values. Allow the dashed section to grow with content.
+Display only these read-only fields, in order: name, url, created_time,
+duration, mixcloud_tag_keys. Label source name as name. Use UTC timestamps,
+existing duration/array formatters, and muted “None” for missing values. Allow
+the dashed section to grow with content.
 
 Do not display image_small, image_large, derived_title, derived_date,
 decoded_djs, parser_version, parser_key, data_changed, imported_at, show_name,
@@ -176,17 +176,19 @@ response. Alternative request: `{ mixcloud_keys: string[] }`. Response:
 Match exact stored keys without trimming or case folding. Deduplicate input keys
 in first-occurrence order. Missing or ambiguous matches are invalid. Reject
 combined variants. Define runtime patterns and inferred shared types beside the
-route. Prepopulate canonical titles in existing colored chips. Show unresolved
-keys beneath the tags control; do not derive names or automatically create tags
-from unresolved keys. Manually entered unknown titles retain tag creation.
+route. Prepopulate canonical titles in existing colored chips. Add unresolved
+keys as selected tag titles using the existing unknown-tag red chips and
+creation caption. They are removable and are automatically created on Save
+through ordinary Show creation, like manually entered unknown titles.
 
 The import form calls the existing loader's `resolveMixcloudTags` with the row's
-keys, sets selected titles from `valid.map(({ tag }) => tag.title)`, and retains
-`invalid` keys for helper text. `TagsInput` uses its normally loaded tag options
-to render canonical titles as colored chips; reuse its search, completion,
-removal, and draft behavior. Add optional helper content within the existing
-control rather than build a separate tag UI. Resolved opening selections belong
-to the initial baseline and must not count as unsaved edits.
+keys, sets selected titles from `valid.map(({ tag }) => tag.title)`, and adds
+`invalid` keys to the same opening selection. `TagsInput` uses its normally
+loaded tag options to render canonical titles as colored chips; reuse its
+search, completion, removal, and draft behavior. Add optional helper content
+within the existing control rather than build a separate tag UI. Resolved
+opening selections belong to the initial baseline and must not count as unsaved
+edits.
 
 ### Reuse Show creation
 

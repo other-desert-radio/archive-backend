@@ -37,7 +37,6 @@ export const ImportShowForm = ({
 		useTagOptions(true);
 	const [djs, setDJs] = useState<{ id: number; title: string }[]>([]);
 	const [unmatchedDJs, setUnmatchedDJs] = useState<string[]>([]);
-	const [invalidKeys, setInvalidKeys] = useState<string[]>([]);
 	const [isResolving, setIsResolving] = useState(true);
 	const [initialized, setInitialized] = useState(false);
 	const [resolutionError, setResolutionError] = useState<string>();
@@ -53,10 +52,12 @@ export const ImportShowForm = ({
 				const resolvedDJs = resolveImportDJs(row.decoded_djs ?? [], loadedDJs);
 				setDJs(loadedDJs);
 				setUnmatchedDJs(resolvedDJs.unmatched);
-				setInvalidKeys(resolvedTags.invalid);
 				addOpeningRelationships({
 					selected: resolvedDJs.selected,
-					tags: resolvedTags.valid.map(({ tag }) => tag.title),
+					tags: [
+						...resolvedTags.valid.map(({ tag }) => tag.title),
+						...resolvedTags.invalid,
+					],
 				});
 				setInitialized(true);
 			})
@@ -142,11 +143,6 @@ export const ImportShowForm = ({
 				djHelper={
 					unmatchedDJs.length > 0
 						? `Unmatched DJs: ${unmatchedDJs.join(", ")}`
-						: undefined
-				}
-				tagHelper={
-					invalidKeys.length > 0
-						? `Unresolved Mixcloud keys: ${invalidKeys.join(", ")}`
 						: undefined
 				}
 			/>

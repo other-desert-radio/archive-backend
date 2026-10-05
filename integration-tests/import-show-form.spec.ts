@@ -82,7 +82,9 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		page.getByText("Unmatched DJs: Missing DJ, Ambiguous DJ"),
 	).toBeVisible();
 	await expect(
-		page.getByText("Unresolved Mixcloud keys: /genres/unresolved/"),
+		page.getByText(
+			"The tag “/genres/unresolved/” does not exist elsewhere. It will be created after submit.",
+		),
 	).toBeVisible();
 	await expect(
 		page.getByRole("button", { name: "Remove Ambient", exact: true }),
@@ -92,16 +94,29 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 			.getByRole("button", { name: "Remove Ambient", exact: true })
 			.locator(".."),
 	).toHaveCSS("background-color", "rgb(170, 187, 204)");
+	const unknownChip = page
+		.getByRole("button", { name: "Remove /genres/unresolved/", exact: true })
+		.locator("..");
+	await expect(unknownChip).toHaveCSS("color", "rgb(255, 0, 0)");
+	await expect(unknownChip).toHaveCSS("border-color", "rgb(255, 0, 0)");
+	await expect(
+		page.getByText("1 hours, 1 minutes, 1 seconds", { exact: true }),
+	).toHaveCSS("color", "rgb(85, 85, 85)");
+	await page.getByLabel("duration (seconds)").fill("62");
+	await expect(
+		page.getByText("0 hours, 1 minutes, 2 seconds", { exact: true }),
+	).toBeVisible();
+	await page.getByLabel("duration (seconds)").fill("3661");
 	await expect(page.locator("dl dt")).toHaveText([
-		"id",
 		"name",
 		"url",
-		"key",
 		"created_time",
 		"duration",
 		"mixcloud_tag_keys",
-		"show_id",
 	]);
+	await expect(
+		page.getByRole("region", { name: "MIXCLOUD DATA" }).getByRole("link"),
+	).toHaveAttribute("href", /^https:\/\/www.mixcloud.com\//);
 	await expect(
 		page.locator(
 			'input[name="image_small"], input[name="image_large"], input[name="url"]',
@@ -118,7 +133,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		date: "2026-10-01",
 		duration: 3661,
 		djs: [1],
-		tags: ["Ambient", "New Tag"],
+		tags: ["Ambient", "/genres/unresolved/", "New Tag"],
 		image_small: "https://example.test/small",
 		image_large: "https://example.test/large",
 	});

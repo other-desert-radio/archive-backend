@@ -9,7 +9,7 @@ import {
 	mixcloudColumns,
 	pendingMixcloudImports,
 } from "../components/mixcloud/index.js";
-import { MessageModal } from "../components/shared/modal/index.js";
+import { MessageModal, ToastModal } from "../components/shared/modal/index.js";
 import {
 	ResourceView,
 	type SortDirection,
@@ -30,6 +30,11 @@ type ImportSession = {
 };
 
 export const MixcloudPage = () => {
+	const [success, setSuccess] = useState<{
+		event: number;
+		show: ShowsAdminRow;
+	}>();
+	const successEvent = useRef(0);
 	const [rows, setRows] = useState<MixcloudImportAdminRow[]>([]);
 	const [status, setStatus] = useState<MixcloudImportStatus>();
 	const [session, setSession] = useState<ImportSession>();
@@ -165,6 +170,7 @@ export const MixcloudPage = () => {
 		[],
 	);
 	const onImported = (rowId: number, show: ShowsAdminRow) => {
+		setSuccess({ event: ++successEvent.current, show });
 		// Commit is already confirmed. Keep local tracking correct even if reload fails.
 		setRows((current) =>
 			current.map((row) =>
@@ -261,6 +267,23 @@ export const MixcloudPage = () => {
 					</p>
 				)}
 			</div>
+			{success !== undefined && (
+				<ToastModal
+					key={success.event}
+					onDismiss={() => setSuccess(undefined)}
+					message={
+						<>
+							<strong>Successfully created show: {success.show.title}</strong>
+							<br />
+							{success.show.date.slice(0, 10)} · {success.show.duration} seconds
+							· {success.show.djs.length} DJ
+							{success.show.djs.length === 1 ? "" : "s"} ·{" "}
+							{success.show.tags.length} tag
+							{success.show.tags.length === 1 ? "" : "s"}
+						</>
+					}
+				/>
+			)}
 			{session !== undefined && (
 				<MixcloudImportQueue
 					items={session.items}

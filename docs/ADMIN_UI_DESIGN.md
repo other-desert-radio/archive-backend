@@ -174,14 +174,16 @@ date, DJs, tags, duration. Source URL and image variants enter the complete
 create-show payload without extra editable controls. Missing required images
 produce the existing validation feedback.
 
-The dashed MIXCLOUD DATA section displays only id, name, url, key, created_time,
-duration, mixcloud_tag_keys, and show_id. Its height follows content, timestamps
-use UTC, and missing/empty values show muted None. Desktop labels reserve room
-for the longest field name; phone labels stack and long URLs wrap.
+The dashed MIXCLOUD DATA section displays only name, url, created_time,
+duration, and mixcloud_tag_keys. Its height follows content, timestamps use UTC,
+and missing/empty values show muted None. Desktop labels reserve room for the
+longest field name; phone labels stack and long URLs wrap.
 
 Initial resolution selects unique exact DJ names ignoring case and surrounding
-whitespace, and canonical tag titles from source keys. Unmatched names and keys
-appear in the existing controls' helpers. Opening selections update the baseline
+whitespace, and canonical tag titles from source keys. Unmatched DJ names appear
+in the selector helper. Unresolved keys are selected as tag titles with the
+existing red unknown-tag chips and creation caption; Save automatically creates
+them through ordinary Show creation. Opening selections update the baseline
 without resetting typed metadata or tag drafts. Save waits for both resolution
 and tag options; Retry preserves edits. Source changes remount the keyed form,
 resetting selectors, errors, helpers, and baseline while ignoring stale
@@ -245,7 +247,10 @@ converting it into chips could move the button during the click.
 
 Show duration is one required positive-integer seconds input (`min=1`, `step=1`,
 maximum 2,147,483,647). Send seconds directly through the existing API contract.
-Do not reintroduce separate hours/minutes/seconds inputs.
+A live gray helper breaks valid seconds down into hours, minutes, and seconds,
+using `LabeledFormControl` helper styling across Show forms. Empty or invalid
+values omit the breakdown. Do not reintroduce separate hours/minutes/seconds
+inputs.
 
 ## Design ideas and review boundaries
 
@@ -434,3 +439,17 @@ table replaces the legacy image column with clickable `image_small` and
 `image_large` columns, each searchable and independently sortable. Grid cards
 continue using the legacy image value, which saves synchronize with the large
 URL.
+
+### Import success toast
+
+Mixcloud imports display a reusable `ToastModal` after a successful save. It
+shows the saved title, date, duration, and DJ/tag counts at the top left,
+outside the queue so it survives the final item closing. Each success resets its
+timer. The white box uses black text, border, and backing shadow, with message
+and right close button in a flex row. It begins fading after four seconds and
+dismisses 250ms later; reduced motion removes the transition. It announces
+status without moving focus, and its close button dismisses immediately. Failed
+saves show no success toast.
+
+The source section omits id, key, and show_id. HTTP(S) source URLs are clickable
+and open in a new tab; missing URLs keep the existing None feedback.

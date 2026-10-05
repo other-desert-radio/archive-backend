@@ -106,16 +106,7 @@ test("source section includes exactly the approved labels and renders missing va
 	);
 	expect(
 		[...markup.matchAll(/<dt>(.*?)<\/dt>/g)].map((match) => match[1]),
-	).toEqual([
-		"id",
-		"name",
-		"url",
-		"key",
-		"created_time",
-		"duration",
-		"mixcloud_tag_keys",
-		"show_id",
-	]);
+	).toEqual(["name", "url", "created_time", "duration", "mixcloud_tag_keys"]);
 	expect(markup).toContain("2026-10-01 02:03:04 UTC");
 	expect(markup).toContain("01:01:01");
 	expect(markup).toContain("None");
@@ -126,6 +117,20 @@ test("source section includes exactly the approved labels and renders missing va
 		"hidden-parser",
 		"hidden-dj",
 		"hidden-date",
+		"<dt>id</dt>",
+		"<dt>key</dt>",
+		"<dt>show_id</dt>",
 	])
 		expect(markup).not.toContain(hidden);
+});
+
+test("source URL links permit HTTP(S) and leave unsafe URLs as text", () => {
+	expect(renderToStaticMarkup(<MixcloudSourceData row={row} />)).toContain(
+		'href="https://example.test/source"',
+	);
+	expect(
+		renderToStaticMarkup(
+			<MixcloudSourceData row={{ ...row, url: "javascript:alert(1)" }} />,
+		),
+	).not.toContain("<a");
 });
