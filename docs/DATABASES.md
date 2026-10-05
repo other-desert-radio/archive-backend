@@ -87,12 +87,23 @@ title       text not null
 date        timestamptz
 duration    integer       -- seconds
 image       text
+image_large text not null -- image URL
+image_small text not null -- image URL
 url         text          -- audio source URL
 ```
 
 `duration` is measured in whole seconds. `date` represents a broadcast calendar
 day and is stored explicitly at midnight UTC, so its timestamp remains
 unambiguous without a local-time interpretation.
+
+Migration `0023_add_show_image_urls` copies `image` into both new URL columns,
+then enforces `NOT NULL`. Existing `NULL` images must be filled before applying
+it; otherwise the migration fails and the migrator rolls back the transaction.
+Rollback drops only the new columns and preserves `image`. There are no defaults
+or URL-format constraints. Show create/edit routes and dummy seeds supply both
+columns. Apply migration `0023` before running the updated application. Saves
+also mirror `image_large` into the legacy `image` column for public export and
+grid-card compatibility.
 
 ### `tags`
 

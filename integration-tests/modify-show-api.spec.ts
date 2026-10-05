@@ -17,7 +17,8 @@ test("replaces Show fields and links in PostgreSQL while preserving identity and
 			date: "2025-01-02",
 			duration: 7201,
 			url: "https://example.test/edited",
-			image: "https://example.test/edited.jpg",
+			image_small: "https://example.test/edited-small.jpg",
+			image_large: "https://example.test/edited.jpg",
 			djs: [replacementDJ.id, replacementDJ.id],
 			tags: [show.title.toLowerCase(), newTag, newTag.toLowerCase()],
 		},
@@ -31,7 +32,8 @@ test("replaces Show fields and links in PostgreSQL while preserving identity and
 		date: "2025-01-02T00:00:00.000Z",
 		duration: 7201,
 		url: "https://example.test/edited",
-		image: "https://example.test/edited.jpg",
+		image_small: "https://example.test/edited-small.jpg",
+		image_large: "https://example.test/edited.jpg",
 		djs: [replacementDJ.id],
 	});
 	expect(saved.tags).toHaveLength(2);
@@ -41,11 +43,12 @@ test("replaces Show fields and links in PostgreSQL while preserving identity and
 	expect((await loadDJ(request, replacementDJ.id)).shows).toContain(show.id);
 
 	const cleared = await request.post("/api/admin/modify-show", {
-		data: { ...showRequest(saved), image: "", tags: [] },
+		data: { ...showRequest(saved), tags: [] },
 	});
 	expect(cleared.status()).toBe(200);
 	const reloaded = await loadShow(request, show.id);
-	expect(reloaded.image).toBeUndefined();
+	expect(reloaded.image_small).toBe(saved.image_small);
+	expect(reloaded.image_large).toBe(saved.image_large);
 	expect(reloaded.tags).toEqual([]);
 	const tags = await request.get("/api/admin/tags");
 	expect(tags.ok()).toBeTruthy();
@@ -65,7 +68,16 @@ test("rejects invalid edits and missing records without changing persisted Show 
 		{ date: "2024-02-30" },
 		{ duration: 0 },
 		{ url: "relative" },
-		{ image: "relative" },
+		{ image_small: undefined },
+		{ image_small: null },
+		{ image_small: "" },
+		{ image_small: "relative" },
+		{ image_small: "ftp://example.test/image" },
+		{ image_large: undefined },
+		{ image_large: null },
+		{ image_large: "" },
+		{ image_large: "relative" },
+		{ image_large: "ftp://example.test/image" },
 		{ djs: [] },
 		{ djs: [2147483647] },
 		{ id: 0 },

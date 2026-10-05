@@ -10,6 +10,8 @@ describe("shows admin data loader", () => {
 				title: "Show One",
 				date: "2026-01-01T00:00:00.000Z",
 				duration: 3600,
+				image_small: "https://example.com/small.jpg",
+				image_large: "https://example.com/large.jpg",
 				djs: [2],
 				tags: [3],
 				url: "https://example.com/show-one",

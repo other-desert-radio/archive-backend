@@ -20,7 +20,8 @@ for (const [field, value] of [
 	["title", "Changed title"],
 	["date", "2025-01-02"],
 	["duration", "7201"],
-	["image", "https://example.test/replacement.jpg"],
+	["image_small", "https://example.test/replacement-small.jpg"],
+	["image_large", "https://example.test/replacement.jpg"],
 	["url", "https://example.test/replacement"],
 ] as const) {
 	test(`edits ${field} and persists through reload and reopening`, async ({
@@ -31,7 +32,7 @@ for (const [field, value] of [
 		await openShowEditor(page, show.id);
 		await expect(page.locator("#edit-show-date")).toHaveValue("2024-02-29");
 		await expect(page.locator("#edit-show-duration")).toHaveValue("3661");
-		await page.locator(`#edit-show-${field}`).fill(value);
+		await page.locator(`#edit-show-${field.replaceAll("_", "-")}`).fill(value);
 		await saveShow(page);
 		const expected = {
 			...show,
@@ -42,15 +43,18 @@ for (const [field, value] of [
 						? Number(value)
 						: value,
 		};
+		if (field === "image_large") expected.image = value;
 		expect(await loadShow(request, show.id)).toEqual(expected);
 		await page.reload();
 		await expect(showRow(page, show.id)).toBeVisible();
 		await openShowEditor(page, show.id);
-		await expect(page.locator(`#edit-show-${field}`)).toHaveValue(value);
+		await expect(
+			page.locator(`#edit-show-${field.replaceAll("_", "-")}`),
+		).toHaveValue(value);
 	});
 }
 
-test("opens from grid and clears or adds an image URL", async ({
+test("opens from grid and requires both image URLs while retaining drafts", async ({
 	page,
 	request,
 	show,
@@ -59,19 +63,26 @@ test("opens from grid and clears or adds an image URL", async ({
 	await page
 		.getByRole("button", { name: `Edit ${show.title}`, exact: true })
 		.click();
-	await expect(page.getByRole("dialog", { name: "Edit Show" })).toBeVisible();
-	await page.locator("#edit-show-image").fill("");
+	for (const size of ["small", "large"]) {
+		const input = page.locator(`#edit-show-image-${size}`);
+		await expect(input).toHaveValue(
+			show[`image_${size}` as "image_small" | "image_large"],
+		);
+		await input.fill("");
+		await page.getByRole("button", { name: "Save", exact: true }).click();
+		expect(
+			await input.evaluate(
+				(input: HTMLInputElement) => input.validity.valueMissing,
+			),
+		).toBe(true);
+		expect(await loadShow(request, show.id)).toEqual(show);
+		await input.fill(`https://example.test/changed-${size}.jpg`);
+	}
 	await saveShow(page);
-	expect((await loadShow(request, show.id)).image).toBeUndefined();
-	await page
-		.getByRole("button", { name: `Edit ${show.title}`, exact: true })
-		.click();
-	await expect(page.locator("#edit-show-image")).toHaveValue("");
-	await page.locator("#edit-show-image").fill("https://example.test/added.jpg");
-	await saveShow(page);
-	expect((await loadShow(request, show.id)).image).toBe(
-		"https://example.test/added.jpg",
-	);
+	const saved = await loadShow(request, show.id);
+	expect(saved.image_small).toBe("https://example.test/changed-small.jpg");
+	expect(saved.image_large).toBe("https://example.test/changed-large.jpg");
+	expect(saved.image).toBe(saved.image_large);
 });
 
 test("replaces DJ links, persists inverse links, and requires a DJ", async ({
@@ -173,7 +184,10 @@ for (const [field, value] of [
 	["duration", "2147483648"],
 	["date", ""],
 	["url", "relative"],
-	["image", "relative"],
+	["image-small", "relative"],
+	["image-large", "relative"],
+	["image-small", ""],
+	["image-large", ""],
 ] as const) {
 	test(`rejects invalid ${field}: ${JSON.stringify(value)}`, async ({
 		page,
@@ -181,7 +195,7 @@ for (const [field, value] of [
 		show,
 	}) => {
 		const form = await openShowEditor(page, show.id);
-		await page.locator(`#edit-show-${field}`).fill(value);
+		await page.locator(`#edit-show-${field.replaceAll("_", "-")}`).fill(value);
 		await form.getByRole("button", { name: "Save", exact: true }).click();
 		await expect(form).toBeVisible();
 		expect(await loadShow(request, show.id)).toEqual(show);

@@ -31,6 +31,8 @@ export const showRoutes =
 								"date",
 								"duration",
 								"image",
+								"image_small",
+								"image_large",
 								"url",
 							])
 							.orderBy("id")
@@ -49,17 +51,20 @@ export const showRoutes =
 							.execute(),
 					]);
 
-					const createdAtByShowId = new Map(
-						shows.map((show) => [show.id, show.createdAt]),
-					);
+					const rowsByShowId = new Map(shows.map((show) => [show.id, show]));
 					return transformShows({ shows, showDJs, showTags }).map((show) => {
-						const createdAt = createdAtByShowId.get(show.id);
-						if (createdAt === undefined) {
+						const row = rowsByShowId.get(show.id);
+						if (row === undefined) {
 							throw new Error(
 								`Show ${show.id} is missing its creation timestamp`,
 							);
 						}
-						return { ...show, createdAt };
+						return {
+							...show,
+							createdAt: row.createdAt,
+							image_small: row.image_small,
+							image_large: row.image_large,
+						};
 					});
 				} catch (error) {
 					request.log.error(error, "Unable to load shows");

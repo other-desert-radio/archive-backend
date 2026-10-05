@@ -359,3 +359,14 @@ Verified with `agent-browser` against an isolated local PostgreSQL schema: one
 ready row, two review rows, and an imported row excluded from counts. Both
 category filters, toggle-off, search with unchanged counts, and desktop/ 390px
 phone screenshots passed acceptance checks.
+
+### Show image URL variants
+
+Show create/edit modals require separate “small image URL” and “large image URL”
+HTTP(S) fields, using the shared labeled controls and responsive form layout.
+Editing prefills both stored URLs; each participates in draft comparison and
+failed-save retention. Empty or invalid image URLs prevent submission. The Shows
+table replaces the legacy image column with clickable `image_small` and
+`image_large` columns, each searchable and independently sortable. Grid cards
+continue using the legacy image value, which saves synchronize with the large
+URL.
