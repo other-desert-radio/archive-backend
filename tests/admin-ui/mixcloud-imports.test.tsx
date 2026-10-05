@@ -424,7 +424,7 @@ test("loads and validates the status endpoint", async () => {
 		),
 	).rejects.toThrow("Unable to load Mixcloud import status");
 });
-test("shows category counts before refresh and marks the selected category", () => {
+test("shows nonzero category counts and dialog launchers before refresh", () => {
 	const html = renderToStaticMarkup(
 		<MixcloudToolbar
 			query=""
@@ -433,14 +433,13 @@ test("shows category counts before refresh and marks the selected category", () 
 			isRefreshing={false}
 			refreshFailed={false}
 			status={{ auto_parsed: 0, unparsable: 12 }}
-			category="unparsable"
-			onCategoryChange={() => {}}
+			onOpenImport={() => {}}
 		/>,
 	);
-	expect(html).toContain('aria-pressed="true"');
-	expect(html).toContain("ready for import<span");
+	expect(html).toContain('aria-haspopup="dialog"');
+	expect(html).toContain("ready for import</button>");
 	expect(html).toContain("needs review<span");
-	expect(html).toContain(">0</span>");
+	expect(html).not.toContain(">0</span>");
 	expect(html).toContain(">12</span>");
 	expect(html.indexOf("ready for import")).toBeLessThan(
 		html.indexOf("needs review"),

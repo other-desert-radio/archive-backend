@@ -87,6 +87,11 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	await expect(
 		page.getByRole("button", { name: "Remove Ambient", exact: true }),
 	).toBeVisible();
+	await expect(
+		page
+			.getByRole("button", { name: "Remove Ambient", exact: true })
+			.locator(".."),
+	).toHaveCSS("background-color", "rgb(170, 187, 204)");
 	await expect(page.locator("dl dt")).toHaveText([
 		"id",
 		"name",

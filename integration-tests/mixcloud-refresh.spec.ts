@@ -75,8 +75,10 @@ test("refresh preserves table state, blocks duplicate clicks, and surfaces failu
 	await page
 		.getByRole("button", { name: "Refresh Mixcloud", exact: true })
 		.click();
-	await expect(page.getByRole("alert")).toContainText(
-		"Mixcloud refreshed, but the table could not be reloaded.",
+	await expect(
+		page.getByRole("alert").filter({ hasText: "Mixcloud refreshed, but" }),
+	).toContainText(
+		"Mixcloud refreshed, but the table or status counts could not be reloaded.",
 	);
 	await expect(page.locator("tbody tr")).toHaveCount(2);
 	await expect(

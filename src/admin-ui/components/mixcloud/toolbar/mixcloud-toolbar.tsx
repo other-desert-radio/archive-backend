@@ -11,8 +11,8 @@ type Props = {
 	refreshMessage?: string | undefined;
 	refreshFailed: boolean;
 	status?: MixcloudImportStatus | undefined;
-	category?: MixcloudImportCategory | undefined;
-	onCategoryChange?: (category: MixcloudImportCategory) => void;
+	isImportOpen?: boolean;
+	onOpenImport?: (category: MixcloudImportCategory) => void;
 	statusError?: string | undefined;
 	onRetryStatus?: () => void;
 };
@@ -24,8 +24,8 @@ export const MixcloudToolbar = ({
 	refreshMessage,
 	refreshFailed,
 	status,
-	category,
-	onCategoryChange,
+	isImportOpen = false,
+	onOpenImport,
 	statusError,
 	onRetryStatus,
 }: Props) => (
@@ -37,7 +37,7 @@ export const MixcloudToolbar = ({
 			showViewControls={false}
 			createLabel={isRefreshing ? "Refreshing Mixcloud…" : "Refresh Mixcloud"}
 			onCreate={onRefresh}
-			createDisabled={isRefreshing}
+			createDisabled={isRefreshing || isImportOpen}
 			actionsBeforeCreate={(
 				[
 					["auto_parsed", "ready for import"],
@@ -48,9 +48,9 @@ export const MixcloudToolbar = ({
 					key={value}
 					type="button"
 					className={styles.category}
-					aria-pressed={category === value}
-					disabled={!status || isRefreshing}
-					onClick={() => onCategoryChange?.(value)}
+					aria-haspopup="dialog"
+					disabled={!status || isRefreshing || isImportOpen}
+					onClick={() => onOpenImport?.(value)}
 				>
 					{label}
 					{status && status[value] > 0 && (

@@ -166,6 +166,31 @@ The test-only shared-modal fixture exercises these extensions before the import
 form is wired. It bundles the real components and is intercepted by Playwright;
 no fixture route is registered in the application.
 
+### Single-show Mixcloud import form
+
+`ImportShowModal` reuses shared Show title/date, relationship, and duration
+controls and `useShowFormState`/`buildShowFormRequest`. Editable order is title,
+date, DJs, tags, duration. Source URL and image variants enter the complete
+create-show payload without extra editable controls. Missing required images
+produce the existing validation feedback.
+
+The dashed MIXCLOUD DATA section displays only id, name, url, key, created_time,
+duration, mixcloud_tag_keys, and show_id. Its height follows content, timestamps
+use UTC, and missing/empty values show muted None. Desktop labels reserve room
+for the longest field name; phone labels stack and long URLs wrap.
+
+Initial resolution selects unique exact DJ names ignoring case and surrounding
+whitespace, and canonical tag titles from source keys. Unmatched names and keys
+appear in the existing controls' helpers. Opening selections update the baseline
+without resetting typed metadata or tag drafts. Save waits for both resolution
+and tag options; Retry preserves edits. Source changes remount the keyed form,
+resetting selectors, errors, helpers, and baseline while ignoring stale
+requests.
+
+The form calls the ordinary creation loader with `mixcloud_import_id` and
+reports successful 201 or already-imported 200 results to its caller. Category
+launchers open the corresponding pending queue.
+
 ### Message modal contract
 
 Supply `title`, `message`, `primaryAction`, and `onDismiss`. Each action
@@ -342,10 +367,10 @@ comma-separated source genre keys, supports search and sorting, and shows muted
 “None” for missing or empty arrays. These keys are separate from the archive tag
 IDs in `tags`; matching them to archive tags comes later. The read-only
 `data_changed` column displays `true` or `false`, participates in search, and
-sorts false before true in ascending order. Readiness controls filter pending
-rows into ready and review categories. Search covers all displayed parser
-fields, including raw ISO and formatted UTC derived dates. Parser dates sort
-chronologically and versions sort numerically; missing values sort first
+sorts false before true in ascending order. Readiness controls open pending
+import queues for ready and review categories. Search covers all displayed
+parser fields, including raw ISO and formatted UTC derived dates. Parser dates
+sort chronologically and versions sort numerically; missing values sort first
 ascending. Extracted DJ names display comma-separated, with muted “None” for
 missing or empty arrays; version zero displays as `0`. These suggestions are
 read-only and separate from linked archive Show/DJ values. Refresh populates
@@ -353,8 +378,8 @@ parser suggestions and clears stale results on parse failure. Search covers all
 displayed fields; sorting defaults to ID ascending. Timestamps use UTC,
 durations use HH:MM:SS, arrays display comma-separated values, and missing
 values show muted “None.” Unimported records remain visible. There are no Edit
-import actions or view toggles. Readiness buttons filter the pending queue. An
-enabled “Refresh Mixcloud” button uses the shared toolbar action position and
+import actions or view toggles. Readiness buttons open the pending import queue.
+An enabled “Refresh Mixcloud” button uses the shared toolbar action position and
 styling beside search. It calls the refresh route, disables itself with
 “Refreshing Mixcloud…” while refreshing and reloading the table, and preserves
 search and sort. Inline status/error messages appear below the toolbar. Refresh
@@ -373,17 +398,31 @@ The Mixcloud toolbar places “ready for import” and “needs review” immedi
 before “Refresh Mixcloud”. Nonzero counts appear in red square badges with a 1px
 black outline and white text, aligned to the right. Zero counts show no badge.
 Counts load from `/api/admin/mixcloud-import/status` on page load and after
-refresh. Loading hides badges and disables the controls; status failures show
-retry feedback. Clicking a category filters pending rows; clicking it again
-restores all rows. Search and sorting combine with that filter, while counts
-describe the whole pending queue. Dates derived from `created_time` require
-review. The shared toolbar exposes `actionsBeforeCreate` for these
-resource-specific controls and wraps actions on narrow screens.
+refresh or import. Loading hides badges and disables the controls; status
+failures show retry feedback. Each category button opens Import Show with all
+pending category rows in ascending ID order, independent of table search and
+sort. Imported rows are excluded. A category with no pending rows shows a brief
+message dialog. The buttons use dialog-launch semantics rather than toggles.
 
-Verified with `agent-browser` against an isolated local PostgreSQL schema: one
-ready row, two review rows, and an imported row excluded from counts. Both
-category filters, toggle-off, search with unchanged counts, and desktop/ 390px
-phone screenshots passed acceptance checks.
+Remaining count includes current and skipped pending rows. Save decreases it;
+Skip and the arrow advance without writes or count changes. Skipped rows return
+when reopening. Both actions guard dirty edits using the shared confirmation.
+Successful 201 and already-imported 200 responses advance, and the last session
+item closes automatically. Closing restores focus to the launching category
+button after the background becomes interactive. The resource view is inert
+while a dialog is open, and Refresh Mixcloud is disabled.
+
+After Save, local tracking and counts update before list/status reloads. Reload
+failures appear separately with Reload import list, preserving the committed
+import and advancing the queue. Obsolete overlapping reload responses are
+ignored. Table search and sort are retained throughout.
+
+`integration-tests/mixcloud-import-queue.spec.ts` mocks API reads and mutations
+and covers both categories, order, exclusions, count semantics, skipped-row
+reopening, empty/final closure, dirty dismissal/navigation, focus,
+pending/failure and retry behavior, post-commit reload failure, overlapping
+reloads, and phone action reachability. The user is performing visual acceptance
+for this chunk.
 
 ### Show image URL variants
 

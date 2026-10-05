@@ -17,16 +17,45 @@ Checkpoint 1 implements resolution only; no import or UI workflow is enabled.
 
 ### Handoff status
 
-Checkpoints 1 and 2 are complete and reviewed. Checkpoint 3 adds shared modal
-header content, guarded secondary/navigation actions, successful-submit
-callback, and accessible DJ/tag helpers. The import form and category button
-wiring are still pending; current category buttons continue filtering until
-checkpoint 5. Do not repeat the Figma read.
+Checkpoints 1–4 are complete and reviewed. Checkpoint 5 wires the category
+launchers and is ready for user review. The standalone `ImportShowModal` shares
+Show fields, state, validation, tag loading, and the modal shell with ordinary
+create/edit forms. It renders the approved source section, initializes
+suggestions and source URLs, selects unique DJ matches and canonical tags, and
+reports unmatched names/keys. Resolution and tag-option failures offer Retry,
+preserving edits; obsolete responses are ignored after source replacement or
+closure.
 
-Next: checkpoint 4 builds the single-row import form with source data and
-initial resolution. Checkpoint 5 then makes both category buttons open import
-queues, independent of table search/sort, with counts, Skip, and next
-navigation.
+Checkpoint 4 verification: 14 focused unit tests and 16 browser tests passed
+(nine import-form tests and seven existing modal regressions). The three
+responsive form cases passed again after widening source labels. TypeScript,
+lint, formatting, and admin build passed; lint retains the existing oversized
+Mixcloud JSON warning. Authenticated `agent-browser` acceptance used a test-only
+local fixture with mocked API reads/writes at 1280px, 390px, and 320px,
+including scrolling, helpers, dirty navigation, discard, and Save. Screenshots
+include `/tmp/import-show-desktop.png`, `/tmp/import-show-desktop-fields.png`,
+`/tmp/import-show-390-fields.png`, `/tmp/import-show-320.png`,
+`/tmp/import-show-320-fields.png`, and `/tmp/import-show-discard-320.png`. No
+archive records were written by browser validation.
+
+Checkpoint 5 replaces category filtering with ascending-ID import queues over
+all pending category rows. Skip/arrow preserve counts and leave no writes;
+skipped rows return on reopening. Save and already-imported responses advance
+and reduce counts, with automatic closure after the final item. Search/sort
+remain intact and focus returns to the launcher. Background refresh is disabled
+while dialogs are open. Committed imports update local tracking before
+reloading; reload failures have separate retry feedback, and stale reloads are
+ignored.
+
+Checkpoint 5 verification: 15 focused unit tests and 19 browser tests passed,
+including both queues, count/refresh regressions, final-save focus restoration,
+and overlapping reload protection. TypeScript, lint, formatting, admin build,
+and diff checks passed. Lint retains the existing oversized Mixcloud JSON
+warning. The local stack is rebuilt for review at `/admin/#mixcloud`.
+
+The user will perform visual acceptance for checkpoint 5, explicitly replacing
+the agent-browser check for this chunk. Automated queue and regression checks
+still apply. Do not repeat the Figma read.
 
 Checkpoint 2 extends Show creation with optional `mixcloud_import_id`, locks the
 tracking row, and commits Show metadata, relationships, tags, and import markers
