@@ -15,6 +15,20 @@ not implement every checkpoint in one pass.
 
 Checkpoint 1 implements resolution only; no import or UI workflow is enabled.
 
+### Handoff status
+
+Checkpoint 1 is complete and reviewed, including the resolver naming/readability
+refinement. The route, shared types, loader, tests, and API documentation are in
+place. Start with checkpoint 2 after inspecting the image branch dependency. Do
+not repeat the Figma read or implement later checkpoints before review.
+
+Verification: 33 focused tests passed, repository lint passed, and the admin
+build passed. TypeScript checking was blocked by the missing local
+`src/res/mixcloud.json` imported by the diagnostic script. The resolver-only
+refinement subsequently passed all four focused route tests and Biome checks. No
+UI behavior changed in checkpoint 1, so browser acceptance remains required for
+the later UI checkpoints.
+
 ## Design reference and reuse
 
 Reference:
@@ -120,6 +134,14 @@ route. Prepopulate canonical titles in existing colored chips. Show unresolved
 keys beneath the tags control; do not derive names or automatically create tags
 from unresolved keys. Manually entered unknown titles retain tag creation.
 
+The import form calls the existing loader's `resolveMixcloudTags` with the row's
+keys, sets selected titles from `valid.map(({ tag }) => tag.title)`, and retains
+`invalid` keys for helper text. `TagsInput` uses its normally loaded tag options
+to render canonical titles as colored chips; reuse its search, completion,
+removal, and draft behavior. Add optional helper content within the existing
+control rather than build a separate tag UI. Resolved opening selections belong
+to the initial baseline and must not count as unsaved edits.
+
 ### Reuse Show creation
 
 Do not add a separate import endpoint. Extend POST `/api/admin/create-show` with
@@ -127,6 +149,11 @@ optional positive safe-integer `mixcloud_import_id`. Submit the complete
 ordinary create-show payload, including URL and image_small/image_large once the
 other branch's migration/API changes land. Validate and persist submitted
 values; do not silently replace them from the source row.
+
+`mixcloud_import_id` is request context only, NOT a new column on `shows`. The
+relationship remains in the existing `mixcloud_import.show_id` column. Extending
+creation lets Show creation and tracking updates commit or roll back together;
+do not create first and link with a separate request/transaction.
 
 Depend on nullable Show image_small/image_large text columns. Coordinate with
 the image branch's final request types and existing image-field compatibility;
