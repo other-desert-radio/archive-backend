@@ -17,8 +17,16 @@ Checkpoint 1 implements resolution only; no import or UI workflow is enabled.
 
 ### Handoff status
 
-Checkpoints 1 and 2 are complete. Checkpoint 2 awaits review; start checkpoint 3
-only after review. Do not repeat the Figma read.
+Checkpoints 1 and 2 are complete and reviewed. Checkpoint 3 adds shared modal
+header content, guarded secondary/navigation actions, successful-submit
+callback, and accessible DJ/tag helpers. The import form and category button
+wiring are still pending; current category buttons continue filtering until
+checkpoint 5. Do not repeat the Figma read.
+
+Next: checkpoint 4 builds the single-row import form with source data and
+initial resolution. Checkpoint 5 then makes both category buttons open import
+queues, independent of table search/sort, with counts, Skip, and next
+navigation.
 
 Checkpoint 2 extends Show creation with optional `mixcloud_import_id`, locks the
 tracking row, and commits Show metadata, relationships, tags, and import markers

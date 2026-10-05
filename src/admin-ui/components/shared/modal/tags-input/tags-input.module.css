@@ -164,3 +164,11 @@
 		grid-column: auto;
 	}
 }
+
+.extraHelper {
+	margin: 0;
+	color: #555;
+	font-size: var(--modal-helper-size);
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}

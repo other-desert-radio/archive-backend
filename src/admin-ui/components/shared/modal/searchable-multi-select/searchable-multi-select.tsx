@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import styles from "./searchable-multi-select.module.css";
 
 export type SearchableMultiSelectOption = {
@@ -15,6 +15,7 @@ type SearchableMultiSelectProps = {
 	isLoading?: boolean;
 	error?: string;
 	onRetry?: () => void;
+	helper?: ReactNode;
 };
 /** A keyboard-accessible, searchable checkbox list for related records. */
 export const SearchableMultiSelect = ({
@@ -26,6 +27,7 @@ export const SearchableMultiSelect = ({
 	isLoading = false,
 	error,
 	onRetry,
+	helper,
 }: SearchableMultiSelectProps) => {
 	const [query, setQuery] = useState("");
 	const selectedOptions = useMemo(
@@ -49,7 +51,7 @@ export const SearchableMultiSelect = ({
 	return (
 		<div className={styles.field}>
 			<label htmlFor={id}>{label}</label>
-			<div className={styles.control}>
+			<div className={`${styles.control} ${helper ? styles.withHelper : ""}`}>
 				{selectedOptions.length > 0 && (
 					<ul className={styles.selected} aria-label={`Selected ${label}`}>
 						{selectedOptions.map((option) => (
@@ -85,6 +87,7 @@ export const SearchableMultiSelect = ({
 							onChange={(event) => setQuery(event.target.value)}
 							placeholder="Search DJs"
 							aria-label={`Search ${label}`}
+							aria-describedby={helper ? `${id}-help` : undefined}
 						/>
 						<div className={styles.options}>
 							{visibleOptions.length === 0 ? (
@@ -97,6 +100,7 @@ export const SearchableMultiSelect = ({
 										<input
 											type="checkbox"
 											checked={selectedIds.includes(option.id)}
+											aria-describedby={helper ? `${id}-help` : undefined}
 											onChange={() => toggle(option.id)}
 										/>
 										{option.label}
@@ -105,6 +109,11 @@ export const SearchableMultiSelect = ({
 							)}
 						</div>
 					</>
+				)}
+				{helper && (
+					<div id={`${id}-help`} className={styles.helper}>
+						{helper}
+					</div>
 				)}
 			</div>
 		</div>

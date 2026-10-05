@@ -141,6 +141,31 @@ resetting metadata edits or drafts. Failed saves retain values; successful saves
 close directly and refresh Shows, DJs, and tags. Existing Show creation IDs
 remain stable, while edit controls use the `edit-show` prefix.
 
+### Optional form navigation and helpers
+
+`OnboardingModal` accepts optional `headerContent`, `secondaryAction`,
+`navigationAction`, and `onSubmitted`. Header content sits beside Close and
+wraps on narrow screens. A secondary action replaces Cancel using its borderless
+style and a 42px minimum target. Navigation renders an accessible arrow beside
+the panel on wide desktops and below the scrolling panel on smaller viewports;
+it remains inside the dialog focus boundary.
+
+Both optional actions use the same dirty-change confirmation as dismissal. Keep
+editing restores focus to the initiating action; Discard runs that action.
+Submission disables navigation, secondary actions, and dismissal. `onSubmitted`
+replaces automatic closure after a successful mutation so a caller can advance;
+the caller owns follow-up reload errors after the committed save. Existing
+callers still close automatically.
+
+`SearchableMultiSelect` and `TagsInput` accept optional `helper` content below
+the control, with 12px text, wrapping, and accessible descriptions. Additional
+tag guidance preserves the existing search/loading/unknown-tag helper. DJ search
+spacing stays unchanged when no optional helper is supplied.
+
+The test-only shared-modal fixture exercises these extensions before the import
+form is wired. It bundles the real components and is intercepted by Playwright;
+no fixture route is registered in the application.
+
 ### Message modal contract
 
 Supply `title`, `message`, `primaryAction`, and `onDismiss`. Each action

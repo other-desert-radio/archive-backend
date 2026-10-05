@@ -1,6 +1,7 @@
 import {
 	type FocusEvent,
 	type KeyboardEvent,
+	type ReactNode,
 	useEffect,
 	useId,
 	useMemo,
@@ -28,6 +29,7 @@ type TagsInputProps = {
 	isLoading?: boolean;
 	error?: string;
 	onRetry?: () => void;
+	helper?: ReactNode;
 };
 
 /** A Figma-aligned tag combobox with colored chips and inline completion. */
@@ -39,6 +41,7 @@ export const TagsInput = ({
 	isLoading = false,
 	error,
 	onRetry,
+	helper,
 }: TagsInputProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [scrollLeft, setScrollLeft] = useState(0);
@@ -230,7 +233,7 @@ export const TagsInput = ({
 										? undefined
 										: `${listId}-${activeIndex}`
 								}
-								aria-describedby={`${id}-help`}
+								aria-describedby={`${id}-help${helper ? ` ${id}-extra-help` : ""}`}
 							/>
 						</div>
 					</div>
@@ -280,6 +283,11 @@ export const TagsInput = ({
 						</button>
 					)}
 				</p>
+				{helper && (
+					<div id={`${id}-extra-help`} className={styles.extraHelper}>
+						{helper}
+					</div>
+				)}
 			</div>
 		</div>
 	);

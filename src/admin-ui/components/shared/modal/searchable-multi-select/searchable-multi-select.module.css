@@ -69,3 +69,15 @@
 		padding-top: 0;
 	}
 }
+
+.helper {
+	margin: 0;
+	font-size: var(--modal-helper-size);
+	line-height: 1.5;
+	color: #555;
+	overflow-wrap: anywhere;
+}
+
+.withHelper {
+	gap: 8px;
+}
