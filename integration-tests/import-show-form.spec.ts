@@ -95,8 +95,8 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	);
 	await expect(page.getByLabel("duration (seconds)")).toHaveValue("3661");
 	await expect(
-		page.getByRole("checkbox", { name: "Known DJ (#1)" }),
-	).toBeChecked();
+		page.getByRole("button", { name: "Remove Known DJ", exact: true }),
+	).toBeVisible();
 	await expect(
 		page.getByText("Unmatched DJs: Missing DJ, Ambiguous DJ"),
 	).toBeVisible();
@@ -272,8 +272,8 @@ test("late source responses after replacement cannot change the next item", asyn
 	);
 	release?.();
 	await expect(
-		page.getByRole("checkbox", { name: "Second DJ (#4)" }),
-	).toBeChecked();
+		page.getByRole("button", { name: "Remove Second DJ", exact: true }),
+	).toBeVisible();
 	await expect(
 		page.getByRole("button", { name: "Remove Ambient" }),
 	).toHaveCount(0);
@@ -442,4 +442,34 @@ test("failed tag creation preserves metadata for retry and prevents Show creatio
 		}),
 	);
 	expect(shows).toBe(1);
+});
+
+test("DJ chips share a searchable dropdown field", async ({ page }) => {
+	await page.getByRole("button", { name: "Open import" }).click();
+	const search = page.getByRole("searchbox", { name: "Search DJs" });
+	await expect(
+		page.getByRole("button", { name: "Remove Known DJ", exact: true }),
+	).toBeVisible();
+	await expect(page.getByRole("checkbox")).toHaveCount(0);
+	await search.fill("Second");
+	const option = page.getByRole("checkbox", { name: "Second DJ", exact: true });
+	await option.check();
+	await expect(
+		page.getByRole("button", { name: "Remove Second DJ", exact: true }),
+	).toHaveText("x");
+	await search.press("Escape");
+	await expect(page.getByRole("checkbox")).toHaveCount(0);
+	await expect(page.getByRole("dialog")).toBeVisible();
+	await page
+		.getByRole("button", { name: "Remove Second DJ", exact: true })
+		.click();
+	await expect(
+		page.getByRole("button", { name: "Remove Second DJ", exact: true }),
+	).toHaveCount(0);
+	await page.getByLabel("title", { exact: true }).click();
+	await expect(page.getByRole("checkbox")).toHaveCount(0);
+	await page.getByRole("button", { name: "Browse DJs" }).click();
+	await expect(
+		page.getByRole("checkbox", { name: "Second DJ", exact: true }),
+	).toBeVisible();
 });

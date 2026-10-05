@@ -216,6 +216,15 @@ tracking unchanged once the show's soft-delete representation exists.
 
 ## Consolidated source tags
 
+Migration `0027_require_mixcloud_tag_urls` requires every stored source tag to
+have a string `url`, matching fetch validation. Refresh legacy data before
+applying it: missing, JSON-null, or non-string URLs cause migration validation
+to fail without rewriting data. The whole `mixcloud_tags` column remains
+nullable for unknown metadata, and empty arrays remain valid. Rollback removes
+only the URL constraint. Database and list-response types require tag URLs.
+`tests/db/mixcloud-tag-urls-migration.test.ts` covers validation, existing-data
+failure, preservation, and rollback using the disposable test database.
+
 Apply migration `0026_drop_mixcloud_tag_keys` before running the updated API. It
 preserves existing `mixcloud_tags` names and URLs, appends any legacy keys
 missing from JSON, then drops `mixcloud_tag_keys`. Legacy keys without known

@@ -482,3 +482,13 @@ carry `title` and optional `mixcloud_key` / `mixcloud_url`. Chip removal removes
 the full object, while draft commits create title-only objects and preserve
 metadata on existing selections. DJ and Show requests convert selections to
 titles; import Save passes selected new source objects to create-tag.
+
+### DJ relationship picker
+
+The shared DJ picker places selected names in square chips inside the search
+field, with a separate right-hand x button for each removal. Display names omit
+record IDs. Focusing or typing in the field opens a scrolling dropdown of
+searchable DJ checkboxes; Browse DJs toggles it without typing. Leaving the
+control closes it, and Escape from search closes the dropdown before dismissing
+the modal. The Mixcloud source name value is bold for easier comparison with the
+editable title.

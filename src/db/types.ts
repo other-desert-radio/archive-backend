@@ -20,9 +20,9 @@ export type MixcloudImportTable = {
 	createdAt: Generated<Date>;
 	key: string;
 	mixcloud_tags: ColumnType<
-		{ key: string; name: string; url?: string }[] | null,
+		{ key: string; name: string; url: string }[] | null,
 		string | null | undefined,
-		{ key: string; name: string; url?: string }[] | string | null
+		{ key: string; name: string; url: string }[] | string | null
 	>;
 	url: string | null;
 	name: string | null;

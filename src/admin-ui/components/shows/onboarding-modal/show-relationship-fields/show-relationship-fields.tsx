@@ -39,7 +39,7 @@ export const ShowRelationshipFields = ({
 	const { tags, tagDraft, selected } = fields;
 	const djOptions = djs.map((dj) => ({
 		id: dj.id,
-		label: `${dj.title} (#${dj.id})`,
+		label: dj.title,
 		searchText: `${dj.title} ${dj.id}`,
 	}));
 	return (

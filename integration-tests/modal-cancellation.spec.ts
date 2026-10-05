@@ -80,10 +80,12 @@ test("Show selections and failed submissions retain unsaved changes", async ({
 	await page.goto("/admin/#shows");
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
 	const form = page.getByRole("dialog", { name: "Onboard Show" });
+	await form.getByRole("searchbox", { name: "Search DJs" }).focus();
 	const checkbox = form.getByRole("checkbox").first();
 	await checkbox.check();
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();
 	await page.getByRole("button", { name: "Keep editing" }).click();
+	await form.getByRole("searchbox", { name: "Search DJs" }).focus();
 	await expect(checkbox).toBeChecked();
 	await checkbox.uncheck();
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -314,6 +316,7 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	await page.locator("#show-url").fill("https://example.com/show");
 	await page.locator("#show-image-small").fill("https://example.com/small.jpg");
 	await page.locator("#show-image-large").fill("https://example.com/large.jpg");
+	await form.getByRole("searchbox", { name: "Search DJs" }).focus();
 	await form.getByRole("checkbox").first().check();
 	for (const value of ["", "0", "-1", "1.5", "2147483648"]) {
 		await duration.fill(value);

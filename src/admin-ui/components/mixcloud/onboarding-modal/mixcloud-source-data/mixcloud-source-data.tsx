@@ -57,7 +57,7 @@ export const MixcloudSourceData = ({
 				{values.map(([label, value]) => (
 					<div key={label}>
 						<dt>{label}</dt>
-						<dd>{value}</dd>
+						<dd>{label === "name" ? <strong>{value}</strong> : value}</dd>
 					</div>
 				))}
 			</dl>
