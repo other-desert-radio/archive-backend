@@ -82,6 +82,17 @@ test.beforeEach(async ({ page }) => {
 	await page.route("**/api/admin/djs", (route) =>
 		route.fulfill({ json: fixtureDJs }),
 	);
+	await page.route("**/api/admin/create-tag", (route) =>
+		route.fulfill({
+			status: 201,
+			json: {
+				id: 101,
+				color: "#aabbcc",
+				reviewed: false,
+				...route.request().postDataJSON(),
+			},
+		}),
+	);
 	await page.route("**/api/admin/tags", (route) =>
 		route.fulfill({ json: fixtureTags }),
 	);
@@ -430,20 +441,22 @@ test("success toast close button dismisses immediately", async ({ page }) => {
 	await expect(page.getByText(/Successfully created show:/)).toHaveCount(0);
 });
 
-test("source tag JSON is visible immediately beside tag keys in the database table", async ({
+test("source tag JSON replaces tag keys in the database table", async ({
 	page,
 }) => {
 	const headers = page.getByRole("columnheader");
 	const labels = await headers.allTextContents();
 	const keysIndex = labels.findIndex((label) =>
-		label.startsWith("mixcloud_tag_keys"),
+		label.startsWith("mixcloud_tag_json"),
 	);
 	expect(keysIndex).toBeGreaterThanOrEqual(0);
-	expect(labels[keysIndex + 1]).toMatch(/^mixcloud_tag_json/);
+	expect(labels.some((label) => label.startsWith("mixcloud_tag_keys"))).toBe(
+		false,
+	);
 	const row = page
 		.locator("tbody tr")
 		.filter({ has: page.getByRole("cell", { name: "Source 2", exact: true }) });
-	const jsonCell = row.getByRole("cell").nth(keysIndex + 1);
+	const jsonCell = row.getByRole("cell").nth(keysIndex);
 	await expect(jsonCell).toHaveText(
 		JSON.stringify(importRows[0]?.mixcloud_tags),
 	);
@@ -452,7 +465,7 @@ test("source tag JSON is visible immediately beside tag keys in the database tab
 		.fill("MiXeD Genre");
 	await expect(row).toBeVisible();
 	await page.getByRole("button", { name: /^mixcloud_tag_json/ }).click();
-	await expect(headers.nth(keysIndex + 1)).toHaveAttribute(
+	await expect(headers.nth(keysIndex)).toHaveAttribute(
 		"aria-sort",
 		"ascending",
 	);

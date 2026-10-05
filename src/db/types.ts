@@ -21,9 +21,9 @@ export type MixcloudImportTable = {
 	key: string;
 	mixcloud_tag_keys: string[] | null;
 	mixcloud_tags: ColumnType<
-		{ key: string; name: string }[] | null,
+		{ key: string; name: string; url?: string }[] | null,
 		string | null | undefined,
-		{ key: string; name: string }[] | string | null
+		{ key: string; name: string; url?: string }[] | string | null
 	>;
 	url: string | null;
 	name: string | null;

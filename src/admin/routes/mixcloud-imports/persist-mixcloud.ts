@@ -36,7 +36,7 @@ export const persistMixcloudEntry = async (
 				};
 	const sourceTags = [
 		...new Map(
-			entry.tags.map(({ key, name }) => [key, { key, name }]),
+			entry.tags.map(({ key, name, url }) => [key, { key, name, url }]),
 		).values(),
 	].sort((a, b) => a.key.localeCompare(b.key));
 	await database

@@ -430,12 +430,22 @@ creates or modifies no tags. See the
 ### Original Mixcloud tag names
 
 Migration `0025_add_mixcloud_source_tags` adds nullable `mixcloud_tags` JSONB to
-source tracking. Refresh stores sorted, deduplicated `{ key, name }` pairs while
-preserving original names and capitalization. The authenticated import-list
-response includes optional `mixcloud_tags`; null means source names have not yet
-been fetched. Existing rows require refresh after applying the reviewed
-migration. New source-name changes mark linked imports changed; initially
-filling missing names does not. Database tag names take precedence for matching
-keys in the import form; otherwise source names enter ordinary Show tag creation
-without lowercasing. No archive tags are modified by this migration or source
-refresh.
+source tracking. Refresh stores sorted, deduplicated `{ key, name, url }`
+objects while preserving original names and capitalization. The authenticated
+import-list response includes optional `mixcloud_tags`; null means source names
+have not yet been fetched. Existing rows require refresh after applying the
+reviewed migration. New source-name changes mark linked imports changed;
+initially filling missing names does not. Database tag names take precedence for
+matching keys in the import form; otherwise selected new source tags use
+create-tag with their key and URL without lowercasing. No archive tags are
+modified by this migration or source refresh.
+
+Source tag JSON now retains `{key, name, url}` on refresh. Older JSON without
+URLs remains readable and gains URLs on the next refresh. The import modal
+resolves keys from this JSON, falling back to legacy keys only for older rows.
+On Save, selected new source tags go through `POST /api/admin/create-tag` with
+`title`, `mixcloud_key`, and `mixcloud_url` before Show creation. Removed source
+tags are excluded; manually added titles retain normal Show tag creation.
+Missing URLs on selected new source tags require a refresh. Tag creation and
+Show creation are separate requests: a failed Show save can leave an unassigned
+tag, which is reused on retry.

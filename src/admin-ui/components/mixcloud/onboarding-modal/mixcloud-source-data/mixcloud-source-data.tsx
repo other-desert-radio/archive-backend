@@ -39,10 +39,10 @@ export const MixcloudSourceData = ({
 			),
 		],
 		[
-			"mixcloud_tag_keys",
+			"mixcloud_tag_json",
 			formatMissing(
-				row.mixcloud_tag_keys?.length
-					? row.mixcloud_tag_keys.join(", ")
+				row.mixcloud_tags?.length
+					? JSON.stringify(row.mixcloud_tags)
 					: undefined,
 			),
 		],

@@ -65,3 +65,28 @@ export const resolveImportTagTitles = (
 		return true;
 	});
 };
+
+/** Only selected source tags absent from the archive need explicit onboarding. */
+export const buildImportTagRequests = (
+	titles: string[],
+	options: { title: string }[],
+	sourceTags: { key: string; name: string; url?: string }[] = [],
+) =>
+	titles.flatMap((title) => {
+		const comparison = title.trim().toLocaleLowerCase();
+		if (
+			options.some(
+				(option) => option.title.trim().toLocaleLowerCase() === comparison,
+			)
+		)
+			return [];
+		const source = sourceTags.find(
+			(tag) => tag.name.trim().toLocaleLowerCase() === comparison,
+		);
+		if (!source) return [];
+		if (!source.url?.trim())
+			throw new Error(
+				"Source tag URLs are missing. Refresh Mixcloud before importing this Show.",
+			);
+		return [{ title, mixcloud_key: source.key, mixcloud_url: source.url }];
+	});

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MixcloudSourceData } from "../../src/admin-ui/components/mixcloud/index.js";
 import {
+	buildImportTagRequests,
 	initialImportValues,
 	resolveImportDJs,
 	resolveImportTagTitles,
@@ -107,7 +108,7 @@ test("source section includes exactly the approved labels and renders missing va
 	);
 	expect(
 		[...markup.matchAll(/<dt>(.*?)<\/dt>/g)].map((match) => match[1]),
-	).toEqual(["name", "url", "created_time", "duration", "mixcloud_tag_keys"]);
+	).toEqual(["name", "url", "created_time", "duration", "mixcloud_tag_json"]);
 	expect(markup).toContain("2026-10-01 02:03:04 UTC");
 	expect(markup).toContain("01:01:01");
 	expect(markup).toContain("None");
@@ -153,5 +154,35 @@ test("database names override source names and new tags retain exact source casi
 	).toEqual(["DATABASE Tag", "Ambient", "MiXeD Genre"]);
 	expect(() => resolveImportTagTitles([], ["/genres/unknown/"], [])).toThrow(
 		"Source tag names are missing",
+	);
+});
+
+test("new selected source tags carry keys and URLs into tag creation", () => {
+	const source = [
+		{
+			key: "/genres/new/",
+			name: "MiXeD",
+			url: "https://www.mixcloud.com/genres/new/",
+		},
+		{ key: "/genres/removed/", name: "Removed" },
+	];
+	expect(
+		buildImportTagRequests(
+			["MiXeD", "Ambient", "Manual"],
+			[{ title: "Ambient" }],
+			source,
+		),
+	).toEqual([
+		{
+			title: "MiXeD",
+			mixcloud_key: source[0]!.key,
+			mixcloud_url: source[0]!.url,
+		},
+	]);
+	expect(
+		buildImportTagRequests(["mixed"], [{ title: "MIXED" }], source),
+	).toEqual([]);
+	expect(() => buildImportTagRequests(["Removed"], [], source)).toThrow(
+		"Source tag URLs are missing",
 	);
 });

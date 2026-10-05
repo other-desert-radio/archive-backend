@@ -222,9 +222,19 @@ agreed design, API reuse, tests, and mandatory review stops.
 ### Source tag names for onboarding
 
 Migration `0025_add_mixcloud_source_tags` retains original source tag names and
-keys together in nullable `mixcloud_tags` JSONB. Refresh fills this column;
-existing rows start null and require a refresh after the migration is reviewed
-and applied. The import list exposes these pairs so new tags preserve Mixcloud's
-spelling and case instead of deriving titles from genre URL slugs. Matching
-archive keys continue to use database tag names and colors. No migration changes
-existing archive tags or assignments.
+keys and URLs together in nullable `mixcloud_tags` JSONB. Refresh fills this
+column; existing rows start null and require a refresh after the migration is
+reviewed and applied. The import list exposes these objects so new tags preserve
+Mixcloud's spelling and case instead of deriving titles from genre URL slugs.
+Matching archive keys continue to use database tag names and colors. No
+migration changes existing archive tags or assignments.
+
+Source tag JSON now retains `{key, name, url}` on refresh. Older JSON without
+URLs remains readable and gains URLs on the next refresh. The import modal
+resolves keys from this JSON, falling back to legacy keys only for older rows.
+On Save, selected new source tags go through `POST /api/admin/create-tag` with
+`title`, `mixcloud_key`, and `mixcloud_url` before Show creation. Removed source
+tags are excluded; manually added titles retain normal Show tag creation.
+Missing URLs on selected new source tags require a refresh. Tag creation and
+Show creation are separate requests: a failed Show save can leave an unassigned
+tag, which is reused on retry.

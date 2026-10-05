@@ -176,7 +176,7 @@ create-show payload without extra editable controls. Missing required images
 produce the existing validation feedback.
 
 The dashed MIXCLOUD DATA section displays only name, url, created_time,
-duration, and mixcloud_tag_keys. Its height follows content, timestamps use UTC,
+duration, and mixcloud_tag_json. Its height follows content, timestamps use UTC,
 and missing/empty values show muted None. Desktop labels reserve room for the
 longest field name; phone labels stack and long URLs wrap.
 
@@ -368,7 +368,7 @@ view uses the shared resource layout, sticky search toolbar, sortable table,
 loading/retry, empty, and no-results states. Its twenty-two columns are ID, Key,
 url, name, created_time, derived_title, derived_date, decoded_djs,
 parser_version, parser_key, date_source, image_small, image_large,
-mixcloud_tag_keys, duration, show_id, imported_at, data_changed, show name, djs,
+mixcloud_tag_json, duration, show_id, imported_at, data_changed, show name, djs,
 dj names, and tags. URL and image URL fields display source text; image URLs are
 clickable and open their image in a new tab. Duration is the stored Mixcloud
 duration, including for pending rows. `mixcloud_tag_keys` displays
@@ -404,14 +404,22 @@ browser verification attempt was interrupted before completion.
 ### Mixcloud readiness controls
 
 The Mixcloud toolbar places “ready for import” and “needs review” immediately
-before “Refresh Mixcloud”. Nonzero counts appear in red square badges with a 1px
-black outline and white text, aligned to the right. Zero counts show no badge.
-Counts load from `/api/admin/mixcloud-import/status` on page load and after
-refresh or import. Loading hides badges and disables the controls; status
-failures show retry feedback. Each category button opens Import Show with all
-pending category rows in ascending ID order, independent of table search and
-sort. Imported rows are excluded. A category with no pending rows shows a brief
-message dialog. The buttons use dialog-launch semantics rather than toggles.
+before “Refresh Mixcloud”. Nonzero counts appear in square badges: green for
+“ready for import” and red for “needs review”, with a 1px black outline and
+white text, aligned to the right. Zero counts show no badge. Hovering “needs
+review” shows a native tooltip explaining that these shows could not be
+automatically parsed or their DJs have not been onboarded yet. “ready for
+import” has a native tooltip explaining that parsing and DJ onboarding are
+complete and the shows are ready to review and import. “Refresh Mixcloud” has a
+native tooltip explaining that it fetches the latest shows and updates their
+import status. The shared toolbar accepts an optional `createTitle` for this
+action tooltip. Counts load from `/api/admin/mixcloud-import/status` on page
+load and after refresh or import. Loading hides badges and disables the
+controls; status failures show retry feedback. Each category button opens Import
+Show with all pending category rows in ascending ID order, independent of table
+search and sort. Imported rows are excluded. A category with no pending rows
+shows a brief message dialog. The buttons use dialog-launch semantics rather
+than toggles.
 
 Remaining count includes current and skipped pending rows. Save decreases it;
 Skip and the arrow advance without writes or count changes. Skipped rows return
@@ -458,11 +466,10 @@ saves show no success toast.
 The source section omits id, key, and show_id. HTTP(S) source URLs are clickable
 and open in a new tab; missing URLs keep the existing None feedback.
 
-The Mixcloud database table includes `mixcloud_tag_json` beside
-`mixcloud_tag_keys`, displaying the original key/name JSON from the
-`mixcloud_tags` API field. Names preserve source case. The column participates
-in shared search and sorting; absent source tag data displays None, and an empty
-array displays `[]`.
+The Mixcloud database table uses one `mixcloud_tag_json` column, displaying the
+original key/name/URL JSON from the `mixcloud_tags` API field. Names preserve
+source case. The column participates in shared search and sorting; absent source
+tag data displays None, and an empty array displays `[]`.
 
 Mixcloud import navigation includes a mirrored Previous Show arrow to the left
 of the panel, matching Next Show. On smaller screens the arrows sit together
@@ -470,3 +477,7 @@ below the scrolling panel. Previous is disabled when no earlier pending session
 item exists and uses a gray arrow, border, and background while disabled;
 imported items are excluded in both directions. Back navigation uses the same
 dirty-change confirmation and submission lock as Next.
+
+The import source panel also shows `mixcloud_tag_json`; the duplicate keys
+column is removed from the database table. Selected titles remain in the shared
+tag input; the import form retains source metadata for create-tag on Save.

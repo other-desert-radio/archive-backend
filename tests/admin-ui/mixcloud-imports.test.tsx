@@ -204,7 +204,7 @@ describe("Mixcloud table", () => {
 			),
 		).toEqual([pending, linked, other]);
 	});
-	test("renders all twenty-three columns, formatted values, and no actions", () => {
+	test("renders all twenty-two columns, formatted values, and no actions", () => {
 		expect(mixcloudColumns.map((c) => c.label)).toEqual([
 			"ID",
 			"Key",
@@ -219,7 +219,6 @@ describe("Mixcloud table", () => {
 			"date_source",
 			"image_small",
 			"image_large",
-			"mixcloud_tag_keys",
 			"mixcloud_tag_json",
 			"duration",
 			"show_id",
@@ -256,7 +255,7 @@ describe("Mixcloud table", () => {
 		expect(html).toContain("https://www.mixcloud.com/odr/source-show/");
 		expect(html).toContain("DJ Two, DJ Nine");
 		expect(html).toContain("None");
-		expect(html).toContain("/genres/ambient/, /genres/experimental/");
+		expect(html).toContain("AMBIENT Source");
 		expect(html).toContain(">true<");
 		expect(html).toContain(">false<");
 		expect(html).not.toContain("Actions");
@@ -350,13 +349,13 @@ describe("Mixcloud table", () => {
 			linked,
 		]);
 		expect(
-			sortResourceRows(rows, mixcloudColumns, "mixcloud_tag_keys", "asc"),
+			sortResourceRows(rows, mixcloudColumns, "mixcloud_tags", "asc"),
 		).toEqual([pending, linked]);
-		const column = mixcloudColumns.find((c) => c.key === "mixcloud_tag_keys");
+		const column = mixcloudColumns.find((c) => c.key === "mixcloud_tags");
 		if (!column) throw new Error("Missing source tag keys column");
 		expect(
 			renderToStaticMarkup(
-				column.render({ ...pending, mixcloud_tag_keys: [] }),
+				column.render({ ...pending, mixcloud_tags: undefined }),
 			),
 		).toContain("None");
 	});

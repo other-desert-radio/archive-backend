@@ -43,6 +43,17 @@ test.beforeEach(async ({ page }) => {
 	await page.route("**/api/admin/djs", (route) =>
 		route.fulfill({ json: fixtureDJs }),
 	);
+	await page.route("**/api/admin/create-tag", (route) =>
+		route.fulfill({
+			status: 201,
+			json: {
+				id: 101,
+				color: "#aabbcc",
+				reviewed: false,
+				...route.request().postDataJSON(),
+			},
+		}),
+	);
 	await page.route("**/api/admin/tags", (route) =>
 		route.fulfill({ json: fixtureTags }),
 	);
@@ -60,6 +71,14 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	page,
 }) => {
 	let payload: Record<string, unknown> | undefined;
+	const tagPayloads: unknown[] = [];
+	await page.route("**/api/admin/create-tag", (route) => {
+		tagPayloads.push(route.request().postDataJSON());
+		return route.fulfill({
+			status: 201,
+			json: { id: 101, title: "New Genre", color: "#aabbcc", reviewed: false },
+		});
+	});
 	await page.route("**/api/admin/create-show", async (route) => {
 		payload = route.request().postDataJSON();
 		await route.fulfill({ status: 201, json: { id: 99, ...payload } });
@@ -118,7 +137,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		"url",
 		"created_time",
 		"duration",
-		"mixcloud_tag_keys",
+		"mixcloud_tag_json",
 	]);
 	await expect(
 		page.getByRole("region", { name: "MIXCLOUD DATA" }).getByRole("link"),
@@ -133,6 +152,13 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		.fill("New Tag");
 	await page.getByRole("button", { name: "Save", exact: true }).click();
 	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
+	expect(tagPayloads).toEqual([
+		{
+			title: "New Genre",
+			mixcloud_key: "/genres/unresolved/",
+			mixcloud_url: "https://www.mixcloud.com/genres/unresolved/",
+		},
+	]);
 	expect(payload).toMatchObject({
 		mixcloud_import_id: 7,
 		title: "Suggested title",

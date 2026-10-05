@@ -88,7 +88,7 @@ export type MixcloudImportAdminRow = {
 	djs: number[];
 	dj_names: string[];
 	mixcloud_tag_keys?: string[];
-	mixcloud_tags?: { key: string; name: string }[];
+	mixcloud_tags?: { key: string; name: string; url?: string }[];
 	duration?: number;
 	tags: number[];
 };

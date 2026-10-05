@@ -144,18 +144,6 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 		compare: (a, b) => text(a.image_large, b.image_large),
 	},
 	{
-		key: "mixcloud_tag_keys",
-		label: "mixcloud_tag_keys",
-		render: (r) =>
-			formatMissing(
-				r.mixcloud_tag_keys?.length
-					? r.mixcloud_tag_keys.join(", ")
-					: undefined,
-			),
-		compare: (a, b) =>
-			text(a.mixcloud_tag_keys?.join(", "), b.mixcloud_tag_keys?.join(", ")),
-	},
-	{
 		key: "mixcloud_tags",
 		label: "mixcloud_tag_json",
 		render: (r) =>

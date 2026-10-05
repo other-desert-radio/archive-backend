@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createTag } from "../../../../loaders/create-tag.js";
 import { createShow } from "../../../../loaders/create-show.js";
 import { loadDJs } from "../../../../loaders/djs.js";
 import type { MixcloudImportAdminRow } from "../../../../loaders/mixcloud-imports.js";
@@ -15,6 +16,7 @@ import {
 import { MixcloudSourceData } from "../mixcloud-source-data/index.js";
 import styles from "./import-show-form.module.css";
 import {
+	buildImportTagRequests,
 	initialImportValues,
 	resolveImportDJs,
 	resolveImportTagTitles,
@@ -56,7 +58,12 @@ export const ImportShowForm = ({
 		const version = ++versionRef.current;
 		setIsResolving(true);
 		setResolutionError(undefined);
-		Promise.all([loadDJs(), resolveMixcloudTags(row.mixcloud_tag_keys ?? [])])
+		Promise.all([
+			loadDJs(),
+			resolveMixcloudTags(
+				row.mixcloud_tags?.map(({ key }) => key) ?? row.mixcloud_tag_keys ?? [],
+			),
+		])
 			.then(([loadedDJs, resolvedTags]) => {
 				if (version !== versionRef.current) return;
 				const resolvedDJs = resolveImportDJs(row.decoded_djs ?? [], loadedDJs);
@@ -80,7 +87,12 @@ export const ImportShowForm = ({
 			.finally(() => {
 				if (version === versionRef.current) setIsResolving(false);
 			});
-	}, [row.mixcloud_tag_keys, row.decoded_djs, addOpeningRelationships]);
+	}, [
+		row.mixcloud_tags,
+		row.mixcloud_tag_keys,
+		row.decoded_djs,
+		addOpeningRelationships,
+	]);
 	useEffect(() => {
 		initialize();
 		return () => {
@@ -145,8 +157,15 @@ export const ImportShowForm = ({
 					throw new Error(
 						"Source suggestions must finish loading before saving.",
 					);
+				const request = buildShowFormRequest(fields);
+				const tagRequests = buildImportTagRequests(
+					request.tags ?? [],
+					tagOptions,
+					row.mixcloud_tags,
+				);
+				for (const tagRequest of tagRequests) await createTag(tagRequest);
 				savedRef.current = await createShow({
-					...buildShowFormRequest(fields),
+					...request,
 					mixcloud_import_id: row.id,
 				});
 			}}
