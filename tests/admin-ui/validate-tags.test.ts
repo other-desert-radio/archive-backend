@@ -37,3 +37,30 @@ describe("validateTags loader", () => {
 		).rejects.toThrow("Unable to validate tags");
 	});
 });
+
+test("resolves Mixcloud keys using the alternative request contract", async () => {
+	const { resolveMixcloudTags } = await import(
+		"../../src/admin-ui/loaders/validate-tags.js"
+	);
+	const expected = {
+		valid: [
+			{ key: "/ambient/", tag: { id: 1, title: "Ambient", color: "#aabbcc" } },
+		],
+		invalid: ["/missing/"],
+	};
+	const result = await resolveMixcloudTags(
+		["/ambient/", "/missing/"],
+		async (url, init) => {
+			expect(url).toBe("/api/admin/validate-tags");
+			expect(init?.method).toBe("POST");
+			expect(JSON.parse(init?.body as string)).toEqual({
+				mixcloud_keys: ["/ambient/", "/missing/"],
+			});
+			return Response.json(expected);
+		},
+	);
+	expect(result).toEqual(expected);
+	await expect(
+		resolveMixcloudTags([], async () => new Response(null, { status: 500 })),
+	).rejects.toThrow("Unable to resolve Mixcloud tags");
+});

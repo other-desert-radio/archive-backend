@@ -60,3 +60,14 @@ export const ModifyTagRequestPattern = P.union(
 	ModifyTagReviewRequestPattern,
 );
 export type ModifyTagRequest = P.infer<typeof ModifyTagRequestPattern>;
+
+/** Existing title validation and Mixcloud key resolution share one endpoint. */
+export const ValidateTagsRequestPattern = P.union(
+	{ tags: P.array(P.string), mixcloud_keys: P.optional(undefined) },
+	{ mixcloud_keys: P.array(P.string), tags: P.optional(undefined) },
+);
+export type ValidateTagsRequest = P.infer<typeof ValidateTagsRequestPattern>;
+export type ResolveMixcloudTagsResponse = {
+	valid: { key: string; tag: { id: number; title: string; color: string } }[];
+	invalid: string[];
+};

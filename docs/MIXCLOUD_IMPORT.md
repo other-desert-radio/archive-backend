@@ -213,3 +213,8 @@ When the importer is implemented in a later feature, verify reruns and
 concurrent runs create only one show per key, and simulate a failure after show
 creation to verify transaction rollback. Verify that a soft-delete update leaves
 tracking unchanged once the show's soft-delete representation exists.
+
+## Modal implementation checkpoints
+
+See the [Mixcloud import modal plan](MIXCLOUD_IMPORT_MODAL_PLAN.md) for the
+agreed design, API reuse, tests, and mandatory review stops.

@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { isMatching, match, P } from "ts-pattern";
+import { isMatching, match } from "ts-pattern";
 import type { TagsJSON } from "../../../json-transformers/index.js";
 import { transformTags } from "../../../json-transformers/index.js";
 import { isDatabaseId } from "../../../utils/index.js";
@@ -14,6 +14,7 @@ import {
 	normalizeModifyTagRequest,
 	TagEditValidationError,
 } from "./normalize-modify-tag-request.js";
+import { resolveMixcloudTags } from "./resolve-mixcloud-tags.js";
 import { type CreatedTag, createTag, createTags } from "./tag-service.js";
 import {
 	type CreateTagRequest,
@@ -25,7 +26,10 @@ import {
 	type RemoveTagRequest,
 	RemoveTagRequestPattern,
 	type RemoveTagResponse,
+	type ResolveMixcloudTagsResponse,
 	type TagDeleteImpact,
+	type ValidateTagsRequest,
+	ValidateTagsRequestPattern,
 } from "./types.js";
 
 /** Registers authenticated Tags API routes. */
@@ -59,16 +63,31 @@ export const tagRoutes =
 		);
 
 		app.post<{
-			Body: { tags: string[] };
-			Reply: AdminApiReply<ValidateTagsResult>;
+			Body: ValidateTagsRequest;
+			Reply: AdminApiReply<ValidateTagsResult | ResolveMixcloudTagsResponse>;
 		}>("/validate-tags", async (request, reply) => {
 			try {
-				if (!isMatching({ tags: P.array(P.string) }, request.body)) {
+				if (!isMatching(ValidateTagsRequestPattern, request.body as unknown)) {
+					request.log.warn("[Tag Validation] rejected -- invalid request body");
 					return reply.code(400).send({
 						error: "invalid request body, expected array of strings",
 					});
 				}
 
+				if (request.body.mixcloud_keys !== undefined) {
+					request.log.info(
+						"[Mixcloud Tag Resolution] started -- /api/admin/validate-tags",
+					);
+					const tags = await database
+						.selectFrom("tags")
+						.select(["id", "title", "color", "mixcloud_key"])
+						.execute();
+					const result = resolveMixcloudTags(request.body.mixcloud_keys, tags);
+					request.log.info(
+						`[Mixcloud Tag Resolution] completed -- ${result.valid.length} matched, ${result.invalid.length} unresolved`,
+					);
+					return result;
+				}
 				const { tags } = request.body;
 				const existingTags = await database
 					.selectFrom("tags")
@@ -80,7 +99,10 @@ export const tagRoutes =
 					existingTags: existingTags.map((tag) => tag.title),
 				});
 			} catch (error) {
-				request.log.error(error, "Unable to validate tags");
+				request.log.error(
+					{ err: error },
+					"[Tag Validation] failed -- /api/admin/validate-tags",
+				);
 				return reply.code(500).send({ error: "Internal Server Error" });
 			}
 		});

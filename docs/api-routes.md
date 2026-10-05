@@ -395,3 +395,17 @@ already imported rows and do not depend on table search. Empty queues return
 zero counts; database failures return
 `500 { "error": "Internal Server Error" }`. The shared `classifyMixcloudImport`
 utility keeps API counts and UI filters consistent.
+
+## Mixcloud tag key resolution
+
+Authenticated `POST /api/admin/validate-tags` preserves the existing
+`{ tags: string[] }` title-validation request and response. Its alternative
+request is `{ mixcloud_keys: string[] }`, returning
+`{ valid: [{ key, tag: { id, title, color } }], invalid: string[] }`. Keys match
+stored `mixcloud_key` values exactly, without trimming or case folding. Repeated
+keys are deduplicated in first-occurrence order. Missing keys and keys assigned
+to multiple archive tags are invalid. Empty arrays return empty results.
+Combining both request variants or supplying non-string keys returns `400`;
+authentication and generic database-error handling are unchanged. This operation
+creates or modifies no tags. See the
+[import modal plan](MIXCLOUD_IMPORT_MODAL_PLAN.md) for subsequent checkpoints.
