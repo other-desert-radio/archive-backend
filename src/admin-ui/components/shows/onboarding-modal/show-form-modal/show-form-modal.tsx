@@ -1,28 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-	hasFormChanges,
 	LabeledFormControl,
 	OnboardingModal,
-	SearchableMultiSelect,
-	TagsInput,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
+import type { CreateShowForm } from "../onboard-show-modal/onboard-show-utils.js";
+import { ShowDurationField } from "../show-duration-field/index.js";
 import {
-	buildCreateShowRequest,
-	type CreateShowForm,
-} from "../onboard-show-modal/onboard-show-utils.js";
+	buildShowFormRequest,
+	type ShowFormValues,
+	useShowFormState,
+} from "../show-form-state/index.js";
+import { ShowRelationshipFields } from "../show-relationship-fields/index.js";
+import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 
-export type ShowFormValues = {
-	title: string;
-	date: string;
-	duration: string;
-	image_small: string;
-	image_large: string;
-	tags: string[];
-	tagDraft: string;
-	url: string;
-	selected: number[];
-};
+export type { ShowFormValues } from "../show-form-state/index.js";
+
 export type ShowFormOptions = {
 	djs: { id: number; title: string }[];
 	isDJsLoading: boolean;
@@ -55,8 +48,8 @@ export const ShowFormModal = ({
 	onClose,
 	onSubmit,
 }: Props) => {
-	const baseline = useRef(initialValues);
-	const [fields, setFields] = useState(initialValues);
+	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
+		useShowFormState(initialValues);
 	const [pendingTagIds, setPendingTagIds] = useState(unresolvedTagIds);
 	const { tagOptions, isTagsLoading, tagsError, loadTagOptions } =
 		useTagOptions(true);
@@ -70,63 +63,34 @@ export const ShowFormModal = ({
 		const resolved = tagOptions.filter((tag) => pendingTagIds.includes(tag.id));
 		if (resolved.length === 0) return;
 		const titles = resolved.map((tag) => tag.title);
-		baseline.current = {
-			...baseline.current,
-			tags: [...baseline.current.tags, ...titles],
-		};
-		setFields((current) => ({
-			...current,
-			tags: [...current.tags, ...titles],
-		}));
+		addOpeningRelationships({ tags: titles });
 		setPendingTagIds((current) =>
 			current.filter((id) => !resolved.some((tag) => tag.id === id)),
 		);
-	}, [pendingTagIds, tagOptions, isTagsLoading, tagsError]);
+	}, [
+		pendingTagIds,
+		tagOptions,
+		isTagsLoading,
+		tagsError,
+		addOpeningRelationships,
+	]);
 	const tagError =
 		tagsError ??
 		(pendingTagIds.length > 0 && !isTagsLoading
 			? "Some assigned tags could not be loaded. Retry before saving."
 			: undefined);
-	const {
-		title,
-		date,
-		duration,
-		image_small,
-		image_large,
-		tags,
-		tagDraft,
-		url,
-		selected,
-	} = fields;
-	const djOptions = djs.map((dj) => ({
-		id: dj.id,
-		label: `${dj.title} (#${dj.id})`,
-		searchText: `${dj.title} ${dj.id}`,
-	}));
+	const { image_small, image_large, url } = fields;
 	const submit = async () => {
 		if (pendingTagIds.length > 0)
 			throw new Error("Assigned tags must finish loading before saving.");
 		if (isDJsLoading || djsError !== undefined)
 			throw new Error("DJs must finish loading before submitting.");
-		if (selected.length === 0) throw new Error("Select at least one DJ.");
-		if (title.trim() === "") throw new Error("Title is required.");
-		await onSubmit(
-			buildCreateShowRequest({
-				title,
-				date,
-				duration,
-				image_small,
-				image_large,
-				tags: [...tags, tagDraft].join(","),
-				url,
-				djs: selected,
-			}),
-		);
+		await onSubmit(buildShowFormRequest(fields));
 	};
 	return (
 		<OnboardingModal
 			isOpen
-			hasUnsavedChanges={hasFormChanges(fields, baseline.current)}
+			hasUnsavedChanges={hasUnsavedChanges}
 			title={modalTitle}
 			onClose={onClose}
 			onSubmit={submit}
@@ -135,34 +99,15 @@ export const ShowFormModal = ({
 			{...(submitLabel === undefined ? {} : { submitLabel })}
 			{...(submittingLabel === undefined ? {} : { submittingLabel })}
 		>
-			<LabeledFormControl
-				id={`${idPrefix}-title`}
-				name="title"
-				label="title"
-				value={title}
-				onChange={(title) => setFields({ ...fields, title })}
-				required
+			<ShowTitleDateFields
+				fields={fields}
+				setFields={setFields}
+				idPrefix={idPrefix}
 			/>
-			<LabeledFormControl
-				id={`${idPrefix}-date`}
-				name="date"
-				label="date"
-				type="date"
-				value={date}
-				onChange={(date) => setFields({ ...fields, date })}
-				required
-			/>
-			<LabeledFormControl
-				id={`${idPrefix}-duration`}
-				name="duration"
-				label="duration (seconds)"
-				type="number"
-				min={1}
-				max={2_147_483_647}
-				step={1}
-				value={duration}
-				onChange={(duration) => setFields({ ...fields, duration })}
-				required
+			<ShowDurationField
+				fields={fields}
+				setFields={setFields}
+				idPrefix={idPrefix}
 			/>
 			<LabeledFormControl
 				id={`${idPrefix}-image-small`}
@@ -182,26 +127,18 @@ export const ShowFormModal = ({
 				onChange={(image_large) => setFields({ ...fields, image_large })}
 				required
 			/>
-			<SearchableMultiSelect
-				id={`${idPrefix}-djs`}
-				label="DJs"
-				options={djOptions}
-				selectedIds={selected}
-				onChange={(selected) => setFields({ ...fields, selected })}
-				isLoading={isDJsLoading}
-				{...(djsError === undefined ? {} : { error: djsError })}
-				onRetry={onRetryDJs}
-			/>
-			<TagsInput
-				id={`${idPrefix}-tags`}
-				value={{ tags, draft: tagDraft }}
-				onChange={(value) =>
-					setFields({ ...fields, tags: value.tags, tagDraft: value.draft })
-				}
-				options={tagOptions}
-				isLoading={isTagsLoading}
-				{...(tagError === undefined ? {} : { error: tagError })}
-				onRetry={loadTagOptions}
+			<ShowRelationshipFields
+				fields={fields}
+				setFields={setFields}
+				idPrefix={idPrefix}
+				djs={djs}
+				isDJsLoading={isDJsLoading}
+				djsError={djsError}
+				onRetryDJs={onRetryDJs}
+				tagOptions={tagOptions}
+				isTagsLoading={isTagsLoading}
+				tagError={tagError}
+				loadTagOptions={loadTagOptions}
 			/>
 			<LabeledFormControl
 				id={`${idPrefix}-url`}

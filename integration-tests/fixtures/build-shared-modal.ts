@@ -5,7 +5,9 @@ import react from "@vitejs/plugin-react";
 import { build } from "vite";
 
 /** Bundles real shared components for interaction tests without adding an app route. */
-export const buildSharedModalFixture = async () => {
+export const buildSharedModalFixture = async (
+	entry = "integration-tests/fixtures/shared-modal.tsx",
+) => {
 	const directory = await mkdtemp(
 		path.join(tmpdir(), "archive-modal-fixture-"),
 	);
@@ -18,7 +20,7 @@ export const buildSharedModalFixture = async () => {
 			emptyOutDir: true,
 			cssCodeSplit: false,
 			rollupOptions: {
-				input: path.resolve("integration-tests/fixtures/shared-modal.tsx"),
+				input: path.resolve(entry),
 			},
 		},
 	});

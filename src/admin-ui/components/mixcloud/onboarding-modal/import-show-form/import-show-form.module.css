@@ -1,0 +1,12 @@
+.status {
+	grid-column: 1 / -1;
+	font-size: var(--modal-helper-size);
+	overflow-wrap: anywhere;
+}
+.status button {
+	display: block;
+	margin-top: 8px;
+	min-height: var(--modal-control-height);
+	border-radius: 0;
+	font: inherit;
+}
