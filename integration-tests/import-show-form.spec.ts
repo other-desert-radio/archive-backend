@@ -82,8 +82,14 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		page.getByText("Unmatched DJs: Missing DJ, Ambiguous DJ"),
 	).toBeVisible();
 	await expect(
+		page.getByText("Unmatched DJs: Missing DJ, Ambiguous DJ"),
+	).toHaveCSS("font-weight", "700");
+	await expect(
+		page.getByText("you'll need to onboard this DJ separately first"),
+	).toBeVisible();
+	await expect(
 		page.getByText(
-			"The tag “/genres/unresolved/” does not exist elsewhere. It will be created after submit.",
+			"The tag “New Genre” does not exist elsewhere. It will be created after submit.",
 		),
 	).toBeVisible();
 	await expect(
@@ -95,7 +101,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 			.locator(".."),
 	).toHaveCSS("background-color", "rgb(170, 187, 204)");
 	const unknownChip = page
-		.getByRole("button", { name: "Remove /genres/unresolved/", exact: true })
+		.getByRole("button", { name: "Remove New Genre", exact: true })
 		.locator("..");
 	await expect(unknownChip).toHaveCSS("color", "rgb(255, 0, 0)");
 	await expect(unknownChip).toHaveCSS("border-color", "rgb(255, 0, 0)");
@@ -133,7 +139,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		date: "2026-10-01",
 		duration: 3661,
 		djs: [1],
-		tags: ["Ambient", "/genres/unresolved/", "New Tag"],
+		tags: ["Ambient", "New Genre", "New Tag"],
 		image_small: "https://example.test/small",
 		image_large: "https://example.test/large",
 	});
@@ -301,3 +307,38 @@ for (const width of [1280, 390, 320])
 			page.getByRole("button", { name: "Open import" }),
 		).toBeFocused();
 	});
+
+test("unresolved source keys reuse matching tag names and colors, and only new names are created", async ({
+	page,
+}) => {
+	await page.route("**/api/admin/validate-tags", (route) =>
+		route.fulfill({
+			json: { valid: [], invalid: ["/genres/ambient/", "/genres/new-genre/"] },
+		}),
+	);
+	let payload: { tags: string[] } | undefined;
+	await page.route("**/api/admin/create-show", (route) => {
+		payload = route.request().postDataJSON();
+		return route.fulfill({
+			status: 201,
+			json: { id: 99, title: "Suggested title" },
+		});
+	});
+	await page.getByRole("button", { name: "Open import" }).click();
+	await expect(
+		page.getByRole("button", { name: "Save", exact: true }),
+	).toBeEnabled();
+	await expect(
+		page
+			.getByRole("button", { name: "Remove Ambient", exact: true })
+			.locator(".."),
+	).toHaveCSS("background-color", "rgb(170, 187, 204)");
+	await expect(
+		page
+			.getByRole("button", { name: "Remove MiXeD Genre", exact: true })
+			.locator(".."),
+	).toHaveCSS("color", "rgb(255, 0, 0)");
+	await page.getByRole("button", { name: "Save", exact: true }).click();
+	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
+	expect(payload?.tags).toEqual(["Ambient", "MiXeD Genre"]);
+});

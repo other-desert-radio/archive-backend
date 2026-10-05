@@ -181,13 +181,16 @@ longest field name; phone labels stack and long URLs wrap.
 
 Initial resolution selects unique exact DJ names ignoring case and surrounding
 whitespace, and canonical tag titles from source keys. Unmatched DJ names appear
-in the selector helper. Unresolved keys are selected as tag titles with the
-existing red unknown-tag chips and creation caption; Save automatically creates
-them through ordinary Show creation. Opening selections update the baseline
-without resetting typed metadata or tag drafts. Save waits for both resolution
-and tag options; Retry preserves edits. Source changes remount the keyed form,
-resetting selectors, errors, helpers, and baseline while ignoring stale
-requests.
+in the selector helper. Matched Mixcloud keys use the database tag title exactly
+and its colored chip. Unresolved keys use their original `mixcloud_tags` source
+names without lowercasing or slug conversion; existing title matches reuse the
+canonical name and color. Remaining new names use the existing red unknown-tag
+chips and creation caption, and Save creates them through ordinary Show
+creation. Missing source names block Save with refresh guidance rather than
+creating tags from keys. Opening selections update the baseline without
+resetting typed metadata or tag drafts. Save waits for both resolution and tag
+options; Retry preserves edits. Source changes remount the keyed form, resetting
+selectors, errors, helpers, and baseline while ignoring stale requests.
 
 The form calls the ordinary creation loader with `mixcloud_import_id` and
 reports successful 201 or already-imported 200 results to its caller. Category
@@ -453,3 +456,9 @@ saves show no success toast.
 
 The source section omits id, key, and show_id. HTTP(S) source URLs are clickable
 and open in a new tab; missing URLs keep the existing None feedback.
+
+The Mixcloud database table includes `mixcloud_tag_json` beside
+`mixcloud_tag_keys`, displaying the original key/name JSON from the
+`mixcloud_tags` API field. Names preserve source case. The column participates
+in shared search and sorting; absent source tag data displays None, and an empty
+array displays `[]`.

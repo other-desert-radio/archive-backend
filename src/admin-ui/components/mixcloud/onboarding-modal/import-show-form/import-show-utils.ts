@@ -37,3 +37,31 @@ export const resolveImportDJs = (
 	}
 	return { selected: [...selected], unmatched: [...unmatched] };
 };
+
+/** Database names take precedence; new titles preserve the source name exactly. */
+export const resolveImportTagTitles = (
+	validTitles: string[],
+	invalidKeys: string[],
+	options: { title: string }[],
+	sourceTags: { key: string; name: string }[] = [],
+) => {
+	const namesByKey = new Map(sourceTags.map(({ key, name }) => [key, name]));
+	const newTitles = invalidKeys.map((key) => {
+		const name = namesByKey.get(key);
+		if (!name?.trim())
+			throw new Error(
+				"Source tag names are missing. Refresh Mixcloud before importing this Show.",
+			);
+		const match = options.find(
+			(option) => option.title.toLocaleLowerCase() === name.toLocaleLowerCase(),
+		);
+		return match?.title ?? name;
+	});
+	const seen = new Set<string>();
+	return [...validTitles, ...newTitles].filter((title) => {
+		const comparison = title.toLocaleLowerCase();
+		if (seen.has(comparison)) return false;
+		seen.add(comparison);
+		return true;
+	});
+};

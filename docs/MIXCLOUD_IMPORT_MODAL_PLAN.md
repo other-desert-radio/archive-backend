@@ -176,19 +176,15 @@ response. Alternative request: `{ mixcloud_keys: string[] }`. Response:
 Match exact stored keys without trimming or case folding. Deduplicate input keys
 in first-occurrence order. Missing or ambiguous matches are invalid. Reject
 combined variants. Define runtime patterns and inferred shared types beside the
-route. Prepopulate canonical titles in existing colored chips. Add unresolved
-keys as selected tag titles using the existing unknown-tag red chips and
-creation caption. They are removable and are automatically created on Save
-through ordinary Show creation, like manually entered unknown titles.
-
-The import form calls the existing loader's `resolveMixcloudTags` with the row's
-keys, sets selected titles from `valid.map(({ tag }) => tag.title)`, and adds
-`invalid` keys to the same opening selection. `TagsInput` uses its normally
-loaded tag options to render canonical titles as colored chips; reuse its
-search, completion, removal, and draft behavior. Add optional helper content
-within the existing control rather than build a separate tag UI. Resolved
-opening selections belong to the initial baseline and must not count as unsaved
-edits.
+route. Prepopulate database titles and colors for matched keys; database
+spelling takes precedence. For unresolved keys, use their exact original names
+from `mixcloud_tags`, matching existing titles through the ordinary tag options.
+Unknown names use shared red chips and the same creation caption, are removable,
+and are created by ordinary Show creation. Never use raw keys or lowercase slug
+names as new titles. Missing names require source refresh before saving. Opening
+suggestions update the clean baseline without resetting edits or drafts.
+Migration `0025` preserves key/name pairs in source metadata; apply it after
+review and refresh Mixcloud to populate names on existing tracking rows.
 
 ### Reuse Show creation
 

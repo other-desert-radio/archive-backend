@@ -149,19 +149,19 @@ test("both launchers queue all pending category rows in ID order regardless of s
 	await page.getByRole("textbox", { name: "Search Mixcloud" }).fill("Ready 9");
 	await page.getByRole("button", { name: /^ID / }).click();
 	await launch(page);
-	await expect(sourceId(page)).toHaveText("2");
+	await expect(sourceId(page)).toHaveText("Source 2");
 	await expect(page.getByText("2 remaining", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "Next Show" }).click();
-	await expect(sourceId(page)).toHaveText("9");
+	await expect(sourceId(page)).toHaveText("Source 9");
 	await page.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(
 		page.getByRole("textbox", { name: "Search Mixcloud" }),
 	).toHaveValue("Ready 9");
 	await expect(page.locator("tbody tr")).toHaveCount(1);
 	await launch(page, "needs review");
-	await expect(sourceId(page)).toHaveText("4");
+	await expect(sourceId(page)).toHaveText("Source 4");
 	await page.getByRole("button", { name: "Next Show" }).click();
-	await expect(sourceId(page)).toHaveText("6");
+	await expect(sourceId(page)).toHaveText("Source 6");
 	await page.getByRole("button", { name: "Skip", exact: true }).click();
 	await expect(page.getByRole("dialog")).toBeHidden();
 	await expect(
@@ -176,7 +176,7 @@ test("Skip preserves counts, skipped rows return on reopen, and final Skip close
 	await launch(page);
 	await expect(save(page)).toBeEnabled();
 	await page.getByRole("button", { name: "Skip", exact: true }).click();
-	await expect(sourceId(page)).toHaveText("9");
+	await expect(sourceId(page)).toHaveText("Source 9");
 	await expect(page.getByText("2 remaining", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "Skip", exact: true }).click();
 	await expect(page.getByRole("dialog")).toBeHidden();
@@ -184,7 +184,7 @@ test("Skip preserves counts, skipped rows return on reopen, and final Skip close
 		page.getByRole("button", { name: /^ready for import/ }),
 	).toBeFocused();
 	await launch(page);
-	await expect(sourceId(page)).toHaveText("2");
+	await expect(sourceId(page)).toHaveText("Source 2");
 	expect(state.posts).toBe(0);
 	expect(state.listReads).toBe(1);
 });
@@ -198,7 +198,7 @@ for (const repeated of [false, true])
 		await launch(page);
 		await expect(save(page)).toBeEnabled();
 		await save(page).click();
-		await expect(sourceId(page)).toHaveText("9");
+		await expect(sourceId(page)).toHaveText("Source 9");
 		await expect(page.getByText("1 remaining", { exact: true })).toBeVisible();
 		await expect(save(page)).toBeEnabled();
 		await save(page).click();
@@ -237,11 +237,11 @@ test("dirty Skip and arrow require confirmation; reverting clears dirty state", 
 		).toBeFocused();
 		await page.keyboard.press("Escape");
 		await expect(button).toBeFocused();
-		await expect(sourceId(page)).toHaveText("2");
+		await expect(sourceId(page)).toHaveText("Source 2");
 	}
 	await page.getByRole("button", { name: "Next Show" }).click();
 	await page.getByRole("button", { name: "Discard changes" }).click();
-	await expect(sourceId(page)).toHaveText("9");
+	await expect(sourceId(page)).toHaveText("Source 9");
 	await page.getByLabel("title", { exact: true }).fill("Changed");
 	await page.getByLabel("title", { exact: true }).fill("Ready 9");
 	await page.getByRole("button", { name: "Skip", exact: true }).click();
@@ -264,7 +264,7 @@ test("pending Save blocks duplicates, navigation, dismissal, and background refr
 			page.getByRole("button", { name, exact: true }),
 		).toBeDisabled();
 	await page.keyboard.press("Escape");
-	await expect(sourceId(page)).toHaveText("2");
+	await expect(sourceId(page)).toHaveText("Source 2");
 	await expect(
 		page.locator("button").filter({ hasText: /^Refresh Mixcloud$/ }),
 	).toBeDisabled();
@@ -283,7 +283,7 @@ test("pending Save blocks duplicates, navigation, dismissal, and background refr
 	state.hold = false;
 	state.failSave = false;
 	await save(page).click();
-	await expect(sourceId(page)).toHaveText("9");
+	await expect(sourceId(page)).toHaveText("Source 9");
 	expect(state.posts).toBe(2);
 });
 
@@ -294,13 +294,13 @@ test("a committed Save advances despite reload failure and retains local trackin
 	await expect(save(page)).toBeEnabled();
 	state.failReload = true;
 	await save(page).click();
-	await expect(sourceId(page)).toHaveText("9");
+	await expect(sourceId(page)).toHaveText("Source 9");
 	await expect(page.getByText("1 remaining", { exact: true })).toBeVisible();
 	await expect(page.getByRole("dialog").getByRole("alert")).toHaveCount(0);
 	await page.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(page.getByRole("alert")).toContainText("Show imported, but");
 	await launch(page);
-	await expect(sourceId(page)).toHaveText("9");
+	await expect(sourceId(page)).toHaveText("Source 9");
 	await page.getByRole("button", { name: "Close", exact: true }).click();
 	state.failReload = false;
 	await page.getByRole("button", { name: "Reload import list" }).click();
@@ -371,7 +371,7 @@ test("an older post-import reload cannot overwrite a later committed import", as
 	await launch(page);
 	await expect(save(page)).toBeEnabled();
 	await save(page).click();
-	await expect(sourceId(page)).toHaveText("9");
+	await expect(sourceId(page)).toHaveText("Source 9");
 	await expect.poll(() => Boolean(releaseOlder)).toBe(true);
 	await expect(save(page)).toBeEnabled();
 	await save(page).click();
@@ -428,4 +428,32 @@ test("success toast close button dismisses immediately", async ({ page }) => {
 	await save(page).click();
 	await page.getByRole("button", { name: "Dismiss notification" }).click();
 	await expect(page.getByText(/Successfully created show:/)).toHaveCount(0);
+});
+
+test("source tag JSON is visible immediately beside tag keys in the database table", async ({
+	page,
+}) => {
+	const headers = page.getByRole("columnheader");
+	const labels = await headers.allTextContents();
+	const keysIndex = labels.findIndex((label) =>
+		label.startsWith("mixcloud_tag_keys"),
+	);
+	expect(keysIndex).toBeGreaterThanOrEqual(0);
+	expect(labels[keysIndex + 1]).toMatch(/^mixcloud_tag_json/);
+	const row = page
+		.locator("tbody tr")
+		.filter({ has: page.getByRole("cell", { name: "Source 2", exact: true }) });
+	const jsonCell = row.getByRole("cell").nth(keysIndex + 1);
+	await expect(jsonCell).toHaveText(
+		JSON.stringify(importRows[0]?.mixcloud_tags),
+	);
+	await page
+		.getByRole("textbox", { name: "Search Mixcloud" })
+		.fill("MiXeD Genre");
+	await expect(row).toBeVisible();
+	await page.getByRole("button", { name: /^mixcloud_tag_json/ }).click();
+	await expect(headers.nth(keysIndex + 1)).toHaveAttribute(
+		"aria-sort",
+		"ascending",
+	);
 });

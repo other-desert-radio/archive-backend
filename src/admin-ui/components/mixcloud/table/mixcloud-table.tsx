@@ -156,6 +156,21 @@ export const mixcloudColumns: ResourceTableColumn<Row, MixcloudSortColumn>[] = [
 			text(a.mixcloud_tag_keys?.join(", "), b.mixcloud_tag_keys?.join(", ")),
 	},
 	{
+		key: "mixcloud_tags",
+		label: "mixcloud_tag_json",
+		render: (r) =>
+			formatMissing(
+				r.mixcloud_tags === undefined
+					? undefined
+					: JSON.stringify(r.mixcloud_tags),
+			),
+		compare: (a, b) =>
+			text(
+				a.mixcloud_tags?.map(({ name, key }) => `${name} (${key})`).join(", "),
+				b.mixcloud_tags?.map(({ name, key }) => `${name} (${key})`).join(", "),
+			),
+	},
+	{
 		key: "duration",
 		label: "duration",
 		render: (r) =>

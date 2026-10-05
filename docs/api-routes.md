@@ -422,3 +422,16 @@ Combining both request variants or supplying non-string keys returns `400`;
 authentication and generic database-error handling are unchanged. This operation
 creates or modifies no tags. See the
 [import modal plan](MIXCLOUD_IMPORT_MODAL_PLAN.md) for subsequent checkpoints.
+
+### Original Mixcloud tag names
+
+Migration `0025_add_mixcloud_source_tags` adds nullable `mixcloud_tags` JSONB to
+source tracking. Refresh stores sorted, deduplicated `{ key, name }` pairs while
+preserving original names and capitalization. The authenticated import-list
+response includes optional `mixcloud_tags`; null means source names have not yet
+been fetched. Existing rows require refresh after applying the reviewed
+migration. New source-name changes mark linked imports changed; initially
+filling missing names does not. Database tag names take precedence for matching
+keys in the import form; otherwise source names enter ordinary Show tag creation
+without lowercasing. No archive tags are modified by this migration or source
+refresh.

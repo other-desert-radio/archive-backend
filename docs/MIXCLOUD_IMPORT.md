@@ -218,3 +218,13 @@ tracking unchanged once the show's soft-delete representation exists.
 
 See the [Mixcloud import modal plan](MIXCLOUD_IMPORT_MODAL_PLAN.md) for the
 agreed design, API reuse, tests, and mandatory review stops.
+
+### Source tag names for onboarding
+
+Migration `0025_add_mixcloud_source_tags` retains original source tag names and
+keys together in nullable `mixcloud_tags` JSONB. Refresh fills this column;
+existing rows start null and require a refresh after the migration is reviewed
+and applied. The import list exposes these pairs so new tags preserve Mixcloud's
+spelling and case instead of deriving titles from genre URL slugs. Matching
+archive keys continue to use database tag names and colors. No migration changes
+existing archive tags or assignments.

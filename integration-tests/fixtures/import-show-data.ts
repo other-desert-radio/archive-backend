@@ -17,6 +17,11 @@ export const importRows: MixcloudImportAdminRow[] = [
 		image_large: "https://example.test/large",
 		decoded_djs: [" known dj ", "Missing DJ", "Ambiguous DJ"],
 		mixcloud_tag_keys: ["/genres/ambient/", "/genres/unresolved/"],
+		mixcloud_tags: [
+			{ key: "/genres/ambient/", name: "AMBIENT" },
+			{ key: "/genres/unresolved/", name: "New Genre" },
+			{ key: "/genres/new-genre/", name: "MiXeD Genre" },
+		],
 	},
 	{
 		id: 8,

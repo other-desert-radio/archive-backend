@@ -14,7 +14,11 @@ import {
 } from "../../../shows/index.js";
 import { MixcloudSourceData } from "../mixcloud-source-data/index.js";
 import styles from "./import-show-form.module.css";
-import { initialImportValues, resolveImportDJs } from "./import-show-utils.js";
+import {
+	initialImportValues,
+	resolveImportDJs,
+	resolveImportTagTitles,
+} from "./import-show-utils.js";
 
 export type ImportShowFormProps = {
 	row: MixcloudImportAdminRow;
@@ -38,6 +42,10 @@ export const ImportShowForm = ({
 	const [djs, setDJs] = useState<{ id: number; title: string }[]>([]);
 	const [unmatchedDJs, setUnmatchedDJs] = useState<string[]>([]);
 	const [isResolving, setIsResolving] = useState(true);
+	const [pendingTags, setPendingTags] = useState<{
+		valid: string[];
+		invalid: string[];
+	}>();
 	const [initialized, setInitialized] = useState(false);
 	const [resolutionError, setResolutionError] = useState<string>();
 	const versionRef = useRef(0);
@@ -54,12 +62,12 @@ export const ImportShowForm = ({
 				setUnmatchedDJs(resolvedDJs.unmatched);
 				addOpeningRelationships({
 					selected: resolvedDJs.selected,
-					tags: [
-						...resolvedTags.valid.map(({ tag }) => tag.title),
-						...resolvedTags.invalid,
-					],
+					tags: resolvedTags.valid.map(({ tag }) => tag.title),
 				});
-				setInitialized(true);
+				setPendingTags({
+					valid: resolvedTags.valid.map(({ tag }) => tag.title),
+					invalid: resolvedTags.invalid,
+				});
 			})
 			.catch(() => {
 				if (version === versionRef.current)
@@ -77,6 +85,35 @@ export const ImportShowForm = ({
 			versionRef.current += 1;
 		};
 	}, [initialize]);
+	useEffect(() => {
+		if (!pendingTags || isTagsLoading || tagsError !== undefined) return;
+		try {
+			addOpeningRelationships({
+				tags: resolveImportTagTitles(
+					pendingTags.valid,
+					pendingTags.invalid,
+					tagOptions,
+					row.mixcloud_tags,
+				),
+			});
+			setPendingTags(undefined);
+			setInitialized(true);
+		} catch (error) {
+			setResolutionError(
+				error instanceof Error
+					? error.message
+					: "Unable to read source tag names.",
+			);
+		}
+	}, [
+		pendingTags,
+		isTagsLoading,
+		tagsError,
+		tagOptions,
+		row.mixcloud_tags,
+		addOpeningRelationships,
+	]);
+
 	const canSave =
 		initialized &&
 		!isResolving &&
@@ -141,9 +178,13 @@ export const ImportShowForm = ({
 				tagError={tagsError}
 				loadTagOptions={loadTagOptions}
 				djHelper={
-					unmatchedDJs.length > 0
-						? `Unmatched DJs: ${unmatchedDJs.join(", ")}`
-						: undefined
+					unmatchedDJs.length > 0 ? (
+						<>
+							<strong>Unmatched DJs: {unmatchedDJs.join(", ")}</strong>
+							<br />
+							you'll need to onboard this DJ separately first
+						</>
+					) : undefined
 				}
 			/>
 			<ShowDurationField

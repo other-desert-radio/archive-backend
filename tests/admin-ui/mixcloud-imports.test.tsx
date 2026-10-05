@@ -21,6 +21,7 @@ import {
 
 const linked: MixcloudImportAdminRow = {
 	mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
+	mixcloud_tags: [{ key: "/genres/ambient/", name: "AMBIENT Source" }],
 	data_changed: true,
 	id: 2,
 	key: "/odr/test/",
@@ -203,7 +204,7 @@ describe("Mixcloud table", () => {
 			),
 		).toEqual([pending, linked, other]);
 	});
-	test("renders all twenty-two columns, formatted values, and no actions", () => {
+	test("renders all twenty-three columns, formatted values, and no actions", () => {
 		expect(mixcloudColumns.map((c) => c.label)).toEqual([
 			"ID",
 			"Key",
@@ -219,6 +220,7 @@ describe("Mixcloud table", () => {
 			"image_small",
 			"image_large",
 			"mixcloud_tag_keys",
+			"mixcloud_tag_json",
 			"duration",
 			"show_id",
 			"imported_at",
@@ -447,4 +449,19 @@ test("shows nonzero category counts and dialog launchers before refresh", () => 
 	expect(html.indexOf("needs review")).toBeLessThan(
 		html.indexOf("Refresh Mixcloud"),
 	);
+});
+
+test("source tag names and keys display, search, and sort with missing data first", () => {
+	expect(filterMixcloudImports(rows, "AMBIENT Source")).toEqual([linked]);
+	const column = mixcloudColumns.find(
+		(column) => column.key === "mixcloud_tags",
+	);
+	if (!column) throw new Error("Missing source tag column");
+	expect(renderToStaticMarkup(column.render(linked))).toContain(
+		"AMBIENT Source",
+	);
+	expect(renderToStaticMarkup(column.render(pending))).toContain("None");
+	expect(
+		sortResourceRows(rows, mixcloudColumns, "mixcloud_tags", "asc"),
+	).toEqual([pending, linked]);
 });

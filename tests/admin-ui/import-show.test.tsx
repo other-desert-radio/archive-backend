@@ -4,6 +4,7 @@ import { MixcloudSourceData } from "../../src/admin-ui/components/mixcloud/index
 import {
 	initialImportValues,
 	resolveImportDJs,
+	resolveImportTagTitles,
 } from "../../src/admin-ui/components/mixcloud/onboarding-modal/import-show-form/import-show-utils.js";
 import { buildShowFormRequest } from "../../src/admin-ui/components/shows/index.js";
 import type { MixcloudImportAdminRow } from "../../src/admin-ui/loaders/mixcloud-imports.js";
@@ -133,4 +134,24 @@ test("source URL links permit HTTP(S) and leave unsafe URLs as text", () => {
 			<MixcloudSourceData row={{ ...row, url: "javascript:alert(1)" }} />,
 		),
 	).not.toContain("<a");
+});
+
+test("database names override source names and new tags retain exact source casing in payloads", () => {
+	const tags = resolveImportTagTitles(
+		["DATABASE Tag"],
+		["/genres/ambient/", "/genres/new-genre/"],
+		[{ title: "Ambient" }],
+		[
+			{ key: "/genres/ambient/", name: "AMBIENT" },
+			{ key: "/genres/new-genre/", name: "MiXeD Genre" },
+		],
+	);
+	expect(tags).toEqual(["DATABASE Tag", "Ambient", "MiXeD Genre"]);
+	expect(
+		buildShowFormRequest({ ...initialImportValues(row), selected: [1], tags })
+			.tags,
+	).toEqual(["DATABASE Tag", "Ambient", "MiXeD Genre"]);
+	expect(() => resolveImportTagTitles([], ["/genres/unknown/"], [])).toThrow(
+		"Source tag names are missing",
+	);
 });
