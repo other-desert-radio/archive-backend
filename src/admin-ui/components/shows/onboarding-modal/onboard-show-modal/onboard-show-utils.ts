@@ -8,7 +8,8 @@ export const buildCreateShowRequest = (fields: {
 	title: string;
 	date: string;
 	duration: string;
-	image: string;
+	image_small: string;
+	image_large: string;
 	tags: string;
 	url: string;
 	djs: number[];
@@ -16,7 +17,20 @@ export const buildCreateShowRequest = (fields: {
 	const duration = Number(fields.duration);
 	if (!isMatching(P.number.int().between(1, 2_147_483_647), duration))
 		throw new Error("Duration must be a positive whole number of seconds.");
-	const image = fields.image.trim();
+	const image_small = fields.image_small.trim();
+	const image_large = fields.image_large.trim();
+	for (const [label, value] of [
+		["Small", image_small],
+		["Large", image_large],
+	] as const) {
+		try {
+			const url = new URL(value);
+			if (url.protocol !== "http:" && url.protocol !== "https:")
+				throw new Error();
+		} catch {
+			throw new Error(`${label} image must be an absolute HTTP(S) URL.`);
+		}
+	}
 	const tags = splitCommaSeparated(fields.tags);
 	return {
 		title: fields.title.trim(),
@@ -24,7 +38,8 @@ export const buildCreateShowRequest = (fields: {
 		duration,
 		url: fields.url.trim(),
 		djs: fields.djs,
-		...(image === "" ? {} : { image }),
+		image_small,
+		image_large,
 		...(tags.length === 0 ? {} : { tags }),
 	};
 };

@@ -75,6 +75,8 @@ const test = base.extend<{ tag: Tag; linked: { dj: number; show: number } }>({
 		const dj = await djResponse.json();
 		const showResponse = await request.post("/api/admin/create-show", {
 			data: {
+				image_small: "https://example.test/small.jpg",
+				image_large: "https://example.test/large.jpg",
 				title: `Tag Show ${randomUUID()}`,
 				date: "2026-09-01",
 				duration: 3600,

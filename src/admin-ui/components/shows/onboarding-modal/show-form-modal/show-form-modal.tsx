@@ -16,7 +16,8 @@ export type ShowFormValues = {
 	title: string;
 	date: string;
 	duration: string;
-	image: string;
+	image_small: string;
+	image_large: string;
 	tags: string[];
 	tagDraft: string;
 	url: string;
@@ -86,8 +87,17 @@ export const ShowFormModal = ({
 		(pendingTagIds.length > 0 && !isTagsLoading
 			? "Some assigned tags could not be loaded. Retry before saving."
 			: undefined);
-	const { title, date, duration, image, tags, tagDraft, url, selected } =
-		fields;
+	const {
+		title,
+		date,
+		duration,
+		image_small,
+		image_large,
+		tags,
+		tagDraft,
+		url,
+		selected,
+	} = fields;
 	const djOptions = djs.map((dj) => ({
 		id: dj.id,
 		label: `${dj.title} (#${dj.id})`,
@@ -105,7 +115,8 @@ export const ShowFormModal = ({
 				title,
 				date,
 				duration,
-				image,
+				image_small,
+				image_large,
 				tags: [...tags, tagDraft].join(","),
 				url,
 				djs: selected,
@@ -154,12 +165,22 @@ export const ShowFormModal = ({
 				required
 			/>
 			<LabeledFormControl
-				id={`${idPrefix}-image`}
-				name="image"
-				label="image URL"
+				id={`${idPrefix}-image-small`}
+				name="image_small"
+				label="small image URL"
 				type="url"
-				value={image}
-				onChange={(image) => setFields({ ...fields, image })}
+				value={image_small}
+				onChange={(image_small) => setFields({ ...fields, image_small })}
+				required
+			/>
+			<LabeledFormControl
+				id={`${idPrefix}-image-large`}
+				name="image_large"
+				label="large image URL"
+				type="url"
+				value={image_large}
+				onChange={(image_large) => setFields({ ...fields, image_large })}
+				required
 			/>
 			<SearchableMultiSelect
 				id={`${idPrefix}-djs`}

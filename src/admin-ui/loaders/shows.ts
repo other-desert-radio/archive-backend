@@ -1,7 +1,7 @@
-import type { ShowsJSON } from "../../json-transformers/index.js";
+import type { AdminShowsJSON } from "../../admin/routes/shows/index.js";
 
 /** Browser representation of the admin-only Show list response. */
-export type ShowsAdminRow = Omit<ShowsJSON, "date"> & {
+export type ShowsAdminRow = Omit<AdminShowsJSON, "date" | "createdAt"> & {
 	createdAt: string;
 	date: string;
 };

@@ -93,6 +93,8 @@ test("Show selections and failed submissions retain unsaved changes", async ({
 	await page.locator("#show-date").fill("2026-09-29");
 	await page.locator("#show-duration").fill("3600");
 	await page.locator("#show-url").fill("https://example.com/show");
+	await page.locator("#show-image-small").fill("https://example.com/small.jpg");
+	await page.locator("#show-image-large").fill("https://example.com/large.jpg");
 	await form.getByRole("button", { name: "Submit", exact: true }).click();
 	await expect(form.getByRole("alert")).toContainText("Select at least one DJ");
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();
@@ -284,7 +286,14 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 test("Show duration accepts whole seconds and sends them without conversion", async ({
 	page,
 }) => {
-	let payload: { duration: number; tags: string[] } | undefined;
+	let payload:
+		| {
+				duration: number;
+				tags: string[];
+				image_small: string;
+				image_large: string;
+		  }
+		| undefined;
 	await page.route("**/api/admin/create-show", async (route) => {
 		payload = route.request().postDataJSON();
 		await route.fulfill({
@@ -303,6 +312,8 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	await page.locator("#show-title").fill("Duration test");
 	await page.locator("#show-date").fill("2026-09-29");
 	await page.locator("#show-url").fill("https://example.com/show");
+	await page.locator("#show-image-small").fill("https://example.com/small.jpg");
+	await page.locator("#show-image-large").fill("https://example.com/large.jpg");
 	await form.getByRole("checkbox").first().check();
 	for (const value of ["", "0", "-1", "1.5", "2147483648"]) {
 		await duration.fill(value);
@@ -319,6 +330,8 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	await form.getByRole("button", { name: "Submit", exact: true }).click();
 	await expect.poll(() => payload?.duration).toBe(3723);
 	expect(payload?.tags).toContain("new-duration-tag");
+	expect(payload?.image_small).toBe("https://example.com/small.jpg");
+	expect(payload?.image_large).toBe("https://example.com/large.jpg");
 	await expect(form.getByRole("alert")).toBeVisible();
 	await expect(duration).toHaveValue("3723");
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();

@@ -155,7 +155,8 @@ describe("Show creation persistence", () => {
 			title: " Night ",
 			date: "2024-02-29",
 			duration: 3661,
-			image: " https://example.com/art.jpg ",
+			image_small: " https://example.com/small.jpg ",
+			image_large: " https://example.com/art.jpg ",
 			url: "https://example.com/show",
 			djs: [2, 1, 2],
 			tags: ["Ambient", "ambient"],
@@ -168,9 +169,16 @@ describe("Show creation persistence", () => {
 			date: "2024-02-29T00:00:00.000Z",
 			duration: 3661,
 			image: "https://example.com/art.jpg",
+			image_small: "https://example.com/small.jpg",
+			image_large: "https://example.com/art.jpg",
 			url: "https://example.com/show",
 			djs: [1, 2],
 			tags: [1],
+		});
+		expect(state.shows[0]).toMatchObject({
+			image_small: response.json().image_small,
+			image_large: response.json().image_large,
+			image: response.json().image_large,
 		});
 		expect(state.showDJs).toEqual([
 			{ show_id: 1, dj_id: 2 },
@@ -186,6 +194,8 @@ describe("Show creation persistence", () => {
 			(
 				await createShow(missing.database, {
 					title: "Night",
+					image_small: "https://example.com/small.jpg",
+					image_large: "https://example.com/large.jpg",
 					date: "2024-01-01",
 					duration: 1,
 					url: "https://example.com/show",
@@ -196,6 +206,8 @@ describe("Show creation persistence", () => {
 		const failed = buildDatabase("show_djs");
 		const response = await createShow(failed.database, {
 			title: "Night",
+			image_small: "https://example.com/small.jpg",
+			image_large: "https://example.com/large.jpg",
 			date: "2024-01-01",
 			duration: 1,
 			url: "https://example.com/show",
@@ -216,6 +228,8 @@ describe("Show creation persistence", () => {
 
 const editPayload = {
 	id: 1,
+	image_small: "https://example.com/small.jpg",
+	image_large: "https://example.com/large.jpg",
 	title: " Changed ",
 	date: "2024-02-29",
 	duration: 3661,
@@ -274,7 +288,8 @@ describe("Show editing persistence", () => {
 		const { database, state } = editingDatabase();
 		const response = await modifyShow(database, {
 			...editPayload,
-			image: " https://example.com/new.jpg ",
+			image_small: " https://example.com/new-small.jpg ",
+			image_large: " https://example.com/new.jpg ",
 			tags: ["ambient", "New", "new"],
 		});
 		expect(response.statusCode, response.body).toBe(200);
@@ -285,9 +300,16 @@ describe("Show editing persistence", () => {
 			date: "2024-02-29T00:00:00.000Z",
 			duration: 3661,
 			image: "https://example.com/new.jpg",
+			image_small: "https://example.com/new-small.jpg",
+			image_large: "https://example.com/new.jpg",
 			url: "https://example.com/changed",
 			djs: [2],
 			tags: [1, 20],
+		});
+		expect(state.shows[0]).toMatchObject({
+			image_small: response.json().image_small,
+			image_large: response.json().image_large,
+			image: response.json().image_large,
 		});
 		expect(state.showDJs).toEqual([
 			{ show_id: 99, dj_id: 1 },
@@ -308,17 +330,18 @@ describe("Show editing persistence", () => {
 		expect(state.tags[1]?.reviewed).toBe(false);
 		expect(state.djs).toEqual([{ id: 1 }, { id: 2 }]);
 	});
-	test("clears omitted or empty images and tags", async () => {
-		for (const optional of [{}, { image: " ", tags: [] }]) {
+	test("clears omitted or empty tags while preserving required images", async () => {
+		for (const optional of [{}, { tags: [] }]) {
 			const { database, state } = editingDatabase();
 			const response = await modifyShow(database, {
 				...editPayload,
 				...optional,
 			});
 			expect(response.statusCode).toBe(200);
-			expect(response.json().image).toBeUndefined();
+			expect(response.json().image_large).toBe(editPayload.image_large);
+			expect(response.json().image_small).toBe(editPayload.image_small);
 			expect(response.json().tags).toEqual([]);
-			expect(state.shows[0]?.image).toBeNull();
+			expect(state.shows[0]?.image).toBe(editPayload.image_large);
 			expect(state.showTags).toEqual([{ show_id: 99, tag_id: 20 }]);
 			expect(state.tags).toHaveLength(1);
 		}
@@ -334,7 +357,18 @@ describe("Show editing persistence", () => {
 			{ date: "2024-02-30" },
 			{ date: "2023-02-29" },
 			{ url: "ftp://example.com/show" },
-			{ image: "relative.jpg" },
+			{ image_small: undefined },
+			{ image_small: null },
+			{ image_small: "" },
+			{ image_small: " " },
+			{ image_small: "relative.jpg" },
+			{ image_small: "ftp://example.test/image" },
+			{ image_large: undefined },
+			{ image_large: null },
+			{ image_large: "" },
+			{ image_large: " " },
+			{ image_large: "relative.jpg" },
+			{ image_large: "ftp://example.test/image" },
 			{ duration: 0 },
 			{ duration: 1.5 },
 			{ duration: 2147483648 },
@@ -390,4 +424,32 @@ describe("Show editing persistence", () => {
 			expect(response.statusCode).toBe(status);
 		}
 	});
+});
+
+test("creation rejects missing or invalid image variants before writing", async () => {
+	const payload = {
+		title: "Show",
+		date: "2026-01-01",
+		duration: 60,
+		url: "https://example.test/show",
+		djs: [1],
+		image_small: "https://example.test/small",
+		image_large: "https://example.test/large",
+	};
+	for (const key of ["image_small", "image_large"])
+		for (const value of [
+			undefined,
+			null,
+			"",
+			" ",
+			"relative.jpg",
+			"ftp://example.test/image",
+		]) {
+			const { database, state } = buildDatabase();
+			const before = structuredClone(state);
+			expect(
+				(await createShow(database, { ...payload, [key]: value })).statusCode,
+			).toBe(400);
+			expect(state).toEqual(before);
+		}
 });

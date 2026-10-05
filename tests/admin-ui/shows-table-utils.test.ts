@@ -13,7 +13,8 @@ const shows = [
 		title: "Zulu Broadcast",
 		date: "2026-01-02T00:00:00.000Z",
 		duration: 90061,
-		image: "https://example.com/zulu.jpg",
+		image_small: "https://example.com/zulu-small.jpg",
+		image_large: "https://example.com/alpha-large.jpg",
 		djs: [4],
 		tags: [7],
 		url: "https://example.com/zulu",
@@ -27,6 +28,8 @@ const shows = [
 		djs: [],
 		tags: [],
 		url: "legacy-show-url",
+		image_small: "https://example.com/alpha-small.jpg",
+		image_large: "https://example.com/zulu-large.jpg",
 	},
 ];
 
@@ -38,7 +41,8 @@ describe("Show table helpers", () => {
 			"title",
 			"date",
 			"duration",
-			"image",
+			"image_small",
+			"image_large",
 			"DJs",
 			"tags",
 			"URL",
@@ -73,4 +77,26 @@ describe("Show table helpers", () => {
 		]);
 		expect(shows.map((show) => show.id)).toEqual([2, 1]);
 	});
+});
+
+test("searches, links, and sorts both image URLs independently", () => {
+	const show = shows[0];
+	if (show === undefined) throw new Error("Missing fixture");
+	for (const key of ["image_small", "image_large"] as const) {
+		expect(filterShows(shows, show[key], new Map(), new Map())).toEqual([
+			shows[0],
+		]);
+		const column = showColumns.find((column) => column.key === key);
+		if (column === undefined) throw new Error("Missing column");
+		expect(column.render(show).props).toMatchObject({
+			href: show[key],
+			target: "_blank",
+		});
+	}
+	expect(sortShows(shows, "image_small", "asc").map((show) => show.id)).toEqual(
+		[1, 2],
+	);
+	expect(sortShows(shows, "image_large", "asc").map((show) => show.id)).toEqual(
+		[2, 1],
+	);
 });

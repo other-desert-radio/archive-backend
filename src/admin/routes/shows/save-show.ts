@@ -22,7 +22,9 @@ export const saveShow = async (
 			title: normalized.title,
 			date: normalized.date,
 			duration: normalized.duration,
-			image: normalized.image,
+			image: normalized.image_large,
+			image_small: normalized.image_small,
+			image_large: normalized.image_large,
 			url: normalized.url,
 		};
 		const show =
@@ -80,7 +82,9 @@ export const saveShow = async (
 			title: normalized.title,
 			date: normalized.date,
 			duration: normalized.duration,
-			...(normalized.image === null ? {} : { image: normalized.image }),
+			image: normalized.image_large,
+			image_small: normalized.image_small,
+			image_large: normalized.image_large,
 			url: normalized.url,
 			djs: [...normalized.djs].sort((a, b) => a - b),
 			tags: tags.map((tag) => tag.id).sort((a, b) => a - b),

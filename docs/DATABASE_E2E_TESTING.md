@@ -78,6 +78,8 @@ curl --silent --show-error --user admin:admin \
     "date":"2026-09-24",
     "duration":3661,
     "url":"https://example.test/show",
+    "image_small":"https://example.test/small.jpg",
+    "image_large":"https://example.test/large.jpg",
     "djs":[1],
     "tags":["E2E Tag"]
   }' \
@@ -233,3 +235,14 @@ and retry, obsolete responses after closure, pending-request protection, failed
 deletion and retry, retained search/sort, and long-list action reachability at
 390px and 320px. Real database deletion and cascade coverage remains in the
 separate `remove-tag-api.spec.ts` suite.
+
+### Show image URL coverage
+
+`integration-tests/modify-show-api.spec.ts` verifies both URLs persist and
+reload independently and invalid or missing image fields leave the Show
+unchanged. `integration-tests/edit-show.spec.ts` covers prefilling, editing each
+variant, required-field rejection, draft retention, reload/reopening, and
+390px/320px layouts. The shared creation modal regression supplies both required
+URLs. `tests/db/show-image-urls-migration.test.ts` uses an explicit disposable
+`SHOW_MIGRATION_TEST_DATABASE_URL` to check backfill, null rejection, atomic
+failure, and rollback; otherwise it skips.

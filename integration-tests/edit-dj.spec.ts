@@ -76,6 +76,8 @@ test("displays every column and preserves linked shows and inherited tags", asyn
 	const inheritedTitle = `Inherited ${dj.title}`;
 	const response = await request.post("/api/admin/create-show", {
 		data: {
+			image_small: "https://example.test/small.jpg",
+			image_large: "https://example.test/large.jpg",
 			title: `Show ${dj.title}`,
 			date: "2026-09-24",
 			duration: 3600,

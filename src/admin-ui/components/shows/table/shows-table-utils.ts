@@ -14,7 +14,8 @@ export type ShowSortColumn =
 	| "title"
 	| "date"
 	| "duration"
-	| "image"
+	| "image_small"
+	| "image_large"
 	| "djs"
 	| "tags"
 	| "url";
@@ -31,7 +32,8 @@ export const getShowSearchValue = (
 		show.title,
 		formatUTCDate(show.date),
 		formatDuration(show.duration),
-		show.image,
+		show.image_small,
+		show.image_large,
 		show.url,
 		...show.djs,
 		...show.djs.map((id) => djTitlesById.get(id)),
