@@ -23,14 +23,25 @@ import {
 } from "./import-show-utils.js";
 
 export type ImportShowFormProps = {
+	/** Source record for this form instance; remount the form when its ID changes. */
 	row: MixcloudImportAdminRow;
+	/** Pending queue count, including the current Show and skipped Shows. */
 	remainingCount: number;
+	/** Ends the import session after the modal's unsaved-change guard. */
 	onClose: () => void;
+	/** Advances without importing the current Show. */
 	onSkip: () => void;
+	/** Returns to an earlier pending Show; omission disables Previous. */
 	onPrevious?: (() => void) | undefined;
+	/** Receives the saved or already-imported Show after successful submission. */
 	onImported: (show: ShowsAdminRow) => void;
 };
 
+/**
+ * Reviews one Mixcloud source record using the shared Show fields and modal shell.
+ * Source relationships join the opening-value baseline as they resolve, while
+ * the caller owns queue navigation and post-import updates.
+ */
 export const ImportShowForm = ({
 	row,
 	remainingCount,
@@ -52,7 +63,9 @@ export const ImportShowForm = ({
 	}>();
 	const [initialized, setInitialized] = useState(false);
 	const [resolutionError, setResolutionError] = useState<string>();
+	// Retries and effect cleanup invalidate responses from earlier resolution runs.
 	const versionRef = useRef(0);
+	// Bridge the async mutation to the modal's separate committed-success callback.
 	const savedRef = useRef<ShowsAdminRow | undefined>(undefined);
 	const initialize = useCallback(() => {
 		const version = ++versionRef.current;
@@ -93,6 +106,7 @@ export const ImportShowForm = ({
 		};
 	}, [initialize]);
 	useEffect(() => {
+		// Resolve unknown source keys by name only after the archive tag options load.
 		if (!pendingTags || isTagsLoading || tagsError !== undefined) return;
 		try {
 			addOpeningRelationships({
@@ -121,6 +135,7 @@ export const ImportShowForm = ({
 		addOpeningRelationships,
 	]);
 
+	// Partial or failed source resolution must not silently omit suggested relationships.
 	const canSave =
 		initialized &&
 		!isResolving &&
@@ -151,6 +166,7 @@ export const ImportShowForm = ({
 					);
 				const request = buildShowFormRequest(fields);
 				const tagRequests = buildImportTagRequests(fields.tags, tagOptions);
+				// These tag writes precede Show creation and can persist if a later write fails.
 				for (const tagRequest of tagRequests) await createTag(tagRequest);
 				savedRef.current = await createShow({
 					...request,
