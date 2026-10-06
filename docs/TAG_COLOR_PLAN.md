@@ -35,8 +35,9 @@ Implement this as one narrowly scoped backend change:
 
 1. Replace the full-range random hex generation in the shared tag service with
    random HSL values within the approved ranges and a small HSL-to-hex
-   conversion. Keep helpers private to the Tags route directory and avoid a new
-   dependency.
+   conversion. Use the shared `randomPastelColor` helper in
+   `src/utils/random-pastel-color.ts`, exported through the utils barrel,
+   without a new dependency.
 2. Preserve the existing creation, deduplication, reuse, and review logic.
 3. Extend `tests/admin/tags-service.test.ts` with focused regression coverage.
 4. Update the current behavior descriptions in `docs/api-routes.md` and
