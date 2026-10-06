@@ -454,11 +454,14 @@ URL.
 ### Import success toast
 
 Mixcloud imports display a reusable `ToastModal` after a successful save. It
-shows the saved title, date, duration, and DJ/tag counts at the top left,
-outside the queue so it survives the final item closing. Each success resets its
-timer. The white box uses black text and a 1px black border, with message and
-right close button in a flex row. It begins fading after four seconds and
-dismisses 250ms later; reduced motion removes the transition. It announces
+shows “Successfully added show.”, the saved show title and comma-separated DJ
+names, and saved colored tag chips at the top left. A vertical flex column uses
+an 8px gap between the heading, show details, and tags. The toast sits outside
+the queue so it survives the final item closing. Each success resets its timer.
+The white box uses black text and a 1px black border, with message and right
+close button in a flex row. It begins fading after four seconds and dismisses
+250ms later. Hovering pauses the timer and keeps the toast visible; leaving
+resumes the remaining time. Reduced motion removes the transition. It announces
 status without moving focus, and its close button dismisses immediately. Failed
 saves show no success toast.
 

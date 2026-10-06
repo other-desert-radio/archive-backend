@@ -14,7 +14,10 @@ import {
 	ResourceView,
 	type SortDirection,
 	sortResourceRows,
+	Tag,
+	TagsContainer,
 } from "../components/shared/resource-views/index.js";
+import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import {
 	loadMixcloudImportStatus,
 	loadMixcloudImports,
@@ -23,6 +26,9 @@ import {
 	refreshMixcloud,
 } from "../loaders/mixcloud-imports.js";
 import type { ShowsAdminRow } from "../loaders/shows.js";
+import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
+
+import styles from "./mixcloud-page.module.css";
 
 type ImportSession = {
 	category: MixcloudImportCategory;
@@ -35,6 +41,18 @@ export const MixcloudPage = () => {
 		show: ShowsAdminRow;
 	}>();
 	const successEvent = useRef(0);
+	const [djs, setDJs] = useState<DJsAdminRow[]>([]);
+	const [tags, setTags] = useState<TagsAdminRow[]>([]);
+	const refreshSuccessLookups = useCallback(() => {
+		// Refresh tags after saving so newly created tags use their saved colors.
+		void loadDJs()
+			.then(setDJs)
+			.catch(() => {});
+		void loadTags()
+			.then(setTags)
+			.catch(() => {});
+	}, []);
+	useEffect(refreshSuccessLookups, [refreshSuccessLookups]);
 	const [rows, setRows] = useState<MixcloudImportAdminRow[]>([]);
 	const [status, setStatus] = useState<MixcloudImportStatus>();
 	const [session, setSession] = useState<ImportSession>();
@@ -171,6 +189,7 @@ export const MixcloudPage = () => {
 	);
 	const onImported = (rowId: number, show: ShowsAdminRow) => {
 		setSuccess({ event: ++successEvent.current, show });
+		refreshSuccessLookups();
 		// Commit is already confirmed. Keep local tracking correct even if reload fails.
 		setRows((current) =>
 			current.map((row) =>
@@ -223,7 +242,7 @@ export const MixcloudPage = () => {
 				aria-hidden={isImportOpen || undefined}
 			>
 				<ResourceView
-					title="Mixcloud Import"
+					title="MIXCLOUD IMPORT"
 					isLoading={isLoading}
 					error={error}
 					onRetry={refresh}
@@ -272,15 +291,33 @@ export const MixcloudPage = () => {
 					key={success.event}
 					onDismiss={() => setSuccess(undefined)}
 					message={
-						<>
-							<strong>Successfully created show: {success.show.title}</strong>
-							<br />
-							{success.show.date.slice(0, 10)} · {success.show.duration} seconds
-							· {success.show.djs.length} DJ
-							{success.show.djs.length === 1 ? "" : "s"} ·{" "}
-							{success.show.tags.length} tag
-							{success.show.tags.length === 1 ? "" : "s"}
-						</>
+						<div className={styles.success}>
+							<strong>Successfully added show.</strong>
+							<div>
+								<div>{success.show.title}</div>
+								<div>
+									{success.show.djs
+										.map(
+											(id) =>
+												djs.find((dj) => dj.id === id)?.title ?? `DJ #${id}`,
+										)
+										.join(", ")}
+								</div>
+							</div>
+							<TagsContainer label={`${success.show.title} tags`}>
+								{success.show.tags.map((id) => {
+									const tag = tags.find((item) => item.id === id);
+									return (
+										<Tag
+											key={id}
+											{...(tag === undefined ? {} : { color: tag.color })}
+										>
+											{tag?.title ?? `Tag #${id}`}
+										</Tag>
+									);
+								})}
+							</TagsContainer>
+						</div>
 					}
 				/>
 			)}

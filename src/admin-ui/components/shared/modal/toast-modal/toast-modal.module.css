@@ -40,7 +40,6 @@
 }
 .fading {
 	opacity: 0;
-	pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
 	.toast {

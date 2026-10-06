@@ -439,9 +439,13 @@ test("success toast shows saved metadata, resets for the next save, fades and di
 	await save(page).click();
 	const toast = page
 		.getByRole("status")
-		.filter({ hasText: "Successfully created show:" });
+		.filter({ hasText: "Successfully added show." });
 	await expect(toast).toContainText("Ready 2");
-	await expect(toast).toContainText("2026-10-01 · 3661 seconds · 1 DJ · 1 tag");
+	await expect(toast).toContainText("Known DJ");
+	await expect(toast).not.toContainText("seconds");
+	const chip = toast.getByRole("listitem");
+	await expect(chip).toHaveText(fixtureTags[0].title);
+	await expect(chip).toHaveCSS("background-color", "rgb(170, 187, 204)");
 	await page.clock.fastForward(3000);
 	await expect(save(page)).toBeEnabled();
 	await save(page).click();
@@ -452,12 +456,34 @@ test("success toast shows saved metadata, resets for the next save, fades and di
 	await expect(toast).toHaveCount(0);
 });
 
+test("success toast pauses while hovered and resumes after leaving", async ({
+	page,
+}) => {
+	await page.clock.install();
+	await launch(page);
+	await expect(save(page)).toBeEnabled();
+	await save(page).click();
+	const toast = page
+		.getByRole("status")
+		.filter({ hasText: "Successfully added show." });
+	await page.clock.fastForward(3000);
+	await toast.hover();
+	await page.clock.fastForward(10000);
+	await expect(toast).toBeVisible();
+	await expect(toast.locator("..")).toHaveCSS("opacity", "1");
+	await page.mouse.move(0, 0);
+	await page.clock.fastForward(999);
+	await expect(toast.locator("..")).toHaveCSS("opacity", "1");
+	await page.clock.fastForward(251);
+	await expect(toast).toHaveCount(0);
+});
+
 test("success toast close button dismisses immediately", async ({ page }) => {
 	await launch(page);
 	await expect(save(page)).toBeEnabled();
 	await save(page).click();
 	await page.getByRole("button", { name: "Dismiss notification" }).click();
-	await expect(page.getByText(/Successfully created show:/)).toHaveCount(0);
+	await expect(page.getByText(/Successfully added show./)).toHaveCount(0);
 });
 
 test("source tag JSON replaces tag keys in the database table", async ({
