@@ -32,7 +32,8 @@ type ArchiveShow = {
 	title: string;
 	date: Date;
 	duration: number;
-	image?: string;
+	image_small: string;
+	image_large: string;
 	tagIds: number[];
 	url: string;
 };
@@ -40,7 +41,8 @@ type ArchiveShow = {
 type ArchiveShowDJ = {
 	id: number;
 	title: string;
-	image?: string;
+	image_small?: string;
+	image_large?: string;
 };
 
 export type ArchiveShowIndex = ArchiveShow & {
@@ -50,7 +52,8 @@ export type ArchiveShowIndex = ArchiveShow & {
 export type ArchiveDJBrief = {
 	id: number;
 	title: string;
-	image?: string;
+	image_small?: string;
+	image_large?: string;
 	tagIds: number[];
 };
 
@@ -140,6 +143,13 @@ export const buildArchiveDocuments = ({
 			`assets/djs/${image.id}_${image.variant}.webp`,
 		]),
 	);
+	const imageVariantsForDJ = (id: number) => {
+		const image_small = imagePaths.get(`${id}-small`);
+		const image_large = imagePaths.get(`${id}-large`);
+		return image_small === undefined || image_large === undefined
+			? {}
+			: { image_small, image_large };
+	};
 	const showsById = new Map(shows.map((show) => [show.id, show]));
 	const djsById = new Map(djs.map((dj) => [dj.id, dj]));
 	const showIdsByDJ = groupIds(showDJs, "dj_id", "show_id");
@@ -168,7 +178,8 @@ export const buildArchiveDocuments = ({
 					title: show.title,
 					date: show.date,
 					duration: show.duration,
-					image: show.image_large,
+					image_small: show.image_small,
+					image_large: show.image_large,
 					tagIds: tagIdsByShow.get(show.id) ?? [],
 					url: show.url,
 				}),
@@ -178,20 +189,18 @@ export const buildArchiveDocuments = ({
 	});
 
 	const djsBrief = djsWithTags.map(({ dj, tagIds }) => {
-		const image = imagePaths.get(`${dj.id}-small`);
 		return {
 			id: dj.id,
 			title: dj.title,
-			...(image === undefined ? {} : { image }),
+			...imageVariantsForDJ(dj.id),
 			tagIds,
 		};
 	});
 	const archiveDJs = djsWithTags.map(({ dj, tagIds, shows: djShows }) => {
-		const image = imagePaths.get(`${dj.id}-large`);
 		return {
 			id: dj.id,
 			title: dj.title,
-			...(image === undefined ? {} : { image }),
+			...imageVariantsForDJ(dj.id),
 			bio: sanitizeArchiveHtml(dj.bio),
 			...(dj.socials === null
 				? {}
@@ -209,18 +218,18 @@ export const buildArchiveDocuments = ({
 		title: show.title,
 		date: show.date,
 		duration: show.duration,
-		image: show.image_large,
+		image_small: show.image_small,
+		image_large: show.image_large,
 		djs: (djIdsByShow.get(show.id) ?? []).flatMap((djId) => {
 			const dj = djsById.get(djId);
 			if (dj === undefined) {
 				return [];
 			}
-			const image = imagePaths.get(`${dj.id}-small`);
 			return [
 				{
 					id: dj.id,
 					title: dj.title,
-					...(image === undefined ? {} : { image }),
+					...imageVariantsForDJ(dj.id),
 				},
 			];
 		}),

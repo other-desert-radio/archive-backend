@@ -54,6 +54,7 @@ describe("archive export documents", () => {
 					title: "Newer Show",
 					date: new Date("2026-02-01T00:00:00.000Z"),
 					duration: 3600,
+					image_small: "https://example.com/show-small.jpg",
 					image_large: "https://example.com/show.jpg",
 					url: "https://example.com/audio",
 				},
@@ -86,7 +87,8 @@ describe("archive export documents", () => {
 			{
 				id: 1,
 				title: "DJ One",
-				image: "assets/djs/1_small.webp",
+				image_small: "assets/djs/1_small.webp",
+				image_large: "assets/djs/1_large.webp",
 				tagIds: [2, 4],
 			},
 			{ id: 2, title: "DJ Two", tagIds: [] },
@@ -94,7 +96,8 @@ describe("archive export documents", () => {
 		expect(documents.djs[0]).toEqual({
 			id: 1,
 			title: "DJ One",
-			image: "assets/djs/1_large.webp",
+			image_small: "assets/djs/1_small.webp",
+			image_large: "assets/djs/1_large.webp",
 			bio: "<p>Bio</p>",
 			socials: "<strong>@dj-one</strong>bad",
 			showTitle: "Late Night",
@@ -105,25 +108,30 @@ describe("archive export documents", () => {
 					title: "Newer Show",
 					date: new Date("2026-02-01T00:00:00.000Z"),
 					duration: 3600,
-					image: "https://example.com/show.jpg",
+					image_small: "https://example.com/show-small.jpg",
+					image_large: "https://example.com/show.jpg",
 					tagIds: [2, 4],
 					url: "https://example.com/audio",
 				},
 			],
 			tagIds: [2, 4],
 		});
+		expect(documents.djs[1]).not.toHaveProperty("image_small");
+		expect(documents.djs[1]).not.toHaveProperty("image_large");
 		expect(documents.shows).toEqual([
 			{
 				id: 10,
 				title: "Newer Show",
 				date: new Date("2026-02-01T00:00:00.000Z"),
 				duration: 3600,
-				image: "https://example.com/show.jpg",
+				image_small: "https://example.com/show-small.jpg",
+				image_large: "https://example.com/show.jpg",
 				djs: [
 					{
 						id: 1,
 						title: "DJ One",
-						image: "assets/djs/1_small.webp",
+						image_small: "assets/djs/1_small.webp",
+						image_large: "assets/djs/1_large.webp",
 					},
 				],
 				tagIds: [2, 4],
@@ -202,6 +210,8 @@ describe("archive export writer", () => {
 					{
 						id: 10,
 						title: "Show One",
+						image_small: "https://example.com/small.jpg",
+						image_large: "https://example.com/large.jpg",
 						date: new Date("2026-01-01T00:00:00.000Z"),
 						duration: 3600,
 						djs: [{ id: 1, title: "DJ One" }],
@@ -236,6 +246,8 @@ describe("archive export writer", () => {
 			{
 				id: 10,
 				title: "Show One",
+				image_small: "https://example.com/small.jpg",
+				image_large: "https://example.com/large.jpg",
 				date: "2026-01-01T00:00:00.000Z",
 				duration: 3600,
 				djs: [{ id: 1, title: "DJ One" }],

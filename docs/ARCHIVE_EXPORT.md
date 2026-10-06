@@ -42,16 +42,19 @@ For a DJ, `tagIds` is the distinct union of:
 The DJ detail document embeds the associated shows. Each embedded show includes
 its own `tagIds`. The top-level `shows.json` lists shows by descending date then
 ID, includes each show's `tagIds`, and embeds compact related DJ cards with
-`id`, `title`, and an optional static image path.
+`id`, `title`, and optional static `image_small` and `image_large` paths.
 
 The exporter writes stored DJ WebP variants to
 `public/assets/djs/{id}_small.webp` and `{id}_large.webp`. DJ indexes and Show
-cards use `assets/djs/{id}_small.webp`; DJ details use
-`assets/djs/{id}_large.webp`. Export never processes images or writes to the
-database. It must never export the private `/api/admin/djs/{id}/image` URL. Show
-image values in all exported Show documents use the stored `image_large` URL
-through the existing JSON `image` field. Migration `0024` removes the legacy
-database `image` column.
+cards expose both variants through `image_small` and `image_large`, pointing to
+`assets/djs/{id}_small.webp` and `assets/djs/{id}_large.webp` respectively. DJ
+details use the same fields. Both fields are omitted for DJs without images.
+Exported DJ objects do not include the legacy `image` field. Export never
+processes images or writes to the database. It must never export the private
+`/api/admin/djs/{id}/image` URL. All exported Show documents, including
+`shows.json` and shows embedded in DJ details, expose the stored URLs through
+`image_small` and `image_large` and omit the legacy JSON `image` field.
+Migration `0024` removes the legacy database `image` column.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must
