@@ -1,7 +1,7 @@
 import type { Kysely, Selectable, Transaction } from "kysely";
 import { isMatching, P } from "ts-pattern";
 import type { Database, TagsTable } from "../../../db/types.js";
-import { undefinedOrEmpty } from "../../../utils/index.js";
+import { generateTagColor, undefinedOrEmpty } from "../../../utils/index.js";
 
 type TagDatabase = Kysely<Database> | Transaction<Database>;
 
@@ -21,11 +21,6 @@ export type CreatedTag = Omit<TagRow, "mixcloud_key" | "mixcloud_url"> & {
 	mixcloud_key?: string;
 	mixcloud_url?: string;
 };
-
-const randomTagColor = (): string =>
-	`#${Math.floor(Math.random() * 0xffffff)
-		.toString(16)
-		.padStart(6, "0")}`;
 
 const toCreatedTag = (tag: TagRow): CreatedTag => ({
 	id: tag.id,
@@ -64,7 +59,7 @@ export const createTag = async (
 	const { color, reviewed } = ((inputColor: string | undefined) => {
 		if (undefinedOrEmpty(inputColor)) {
 			return {
-				color: randomTagColor(),
+				color: generateTagColor(),
 				reviewed: false,
 			};
 		} else {
@@ -98,7 +93,7 @@ export const createTag = async (
 		.insertInto("tags")
 		.values({
 			title,
-			color: color ?? randomTagColor(),
+			color: color ?? generateTagColor(),
 			reviewed,
 			mixcloud_key: undefinedOrEmpty(normalized.mixcloud_key)
 				? null

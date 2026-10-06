@@ -1,3 +1,4 @@
+export * from "./generate-tag-color.js";
 export * from "./is-database-id.js";
 export * from "./logger.js";
 export * from "./mixcloud-import-status.js";
