@@ -15,7 +15,14 @@ export const ShowDurationField = ({ fields, setFields, idPrefix }: Props) => {
 		Number.isInteger(seconds) &&
 		seconds > 0 &&
 		seconds <= 2_147_483_647
-			? `${Math.floor(seconds / 3600)} hours, ${Math.floor((seconds % 3600) / 60)} minutes, ${seconds % 60} seconds`
+			? [
+					[Math.floor(seconds / 3600), "hours"],
+					[Math.floor((seconds % 3600) / 60), "minutes"],
+					[seconds % 60, "seconds"],
+				]
+					.filter(([value]) => value !== 0)
+					.map(([value, unit]) => `${value} ${unit}`)
+					.join(", ")
 			: undefined;
 	return (
 		<LabeledFormControl

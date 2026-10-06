@@ -129,8 +129,18 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	).toHaveCSS("color", "rgb(85, 85, 85)");
 	await page.getByLabel("duration (seconds)").fill("62");
 	await expect(
-		page.getByText("0 hours, 1 minutes, 2 seconds", { exact: true }),
+		page.getByText("1 minutes, 2 seconds", { exact: true }),
 	).toBeVisible();
+	for (const [seconds, breakdown] of [
+		["3604", "1 hours, 4 seconds"],
+		["3660", "1 hours, 1 minutes"],
+		["3600", "1 hours"],
+		["60", "1 minutes"],
+		["4", "4 seconds"],
+	]) {
+		await page.getByLabel("duration (seconds)").fill(seconds);
+		await expect(page.getByText(breakdown, { exact: true })).toBeVisible();
+	}
 	await page.getByLabel("duration (seconds)").fill("3661");
 	await expect(page.locator("dl dt")).toHaveText([
 		"name",
@@ -555,25 +565,47 @@ test("DJ chips retain selection order and share two-step Backspace with tags", a
 });
 
 for (const width of [1280, 390])
-	test(`import panel bounds stay fixed when DJ chips wrap at ${width}px`, async ({
-		page,
-	}) => {
-		await page.setViewportSize({ width, height: 1400 });
+	test(`import panel follows content at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 1800 });
 		await page.getByRole("button", { name: "Open import" }).click();
-		const search = page.getByRole("combobox", { name: "Search DJs" });
 		await expect(
 			page.getByRole("button", { name: "Save", exact: true }),
 		).toBeEnabled();
 		const panel = page
 			.getByRole("heading", { name: "Import Show", exact: true })
 			.locator("../..");
-		const before = await panel.boundingBox();
-		for (const name of ["Second", "Ambiguous"]) {
-			await search.fill(name);
-			await page.getByRole("option").first().click();
-		}
-		await search.press("Backspace");
-		expect(await panel.boundingBox()).toEqual(before);
-		await search.press("Backspace");
-		expect(await panel.boundingBox()).toEqual(before);
+		const bounds = await panel.boundingBox();
+		expect(bounds?.height).toBeLessThan(1600);
+		await expect(
+			page.getByRole("button", { name: "Cancel", exact: true }),
+		).toBeVisible();
 	});
+
+test("empty DJ warning is limited to import and clears after selection", async ({
+	page,
+}) => {
+	await page.getByRole("button", { name: "Open create" }).click();
+	const search = page.getByRole("combobox", { name: "Search DJs" });
+	await expect(search).not.toHaveAttribute("aria-invalid", "true");
+	await expect(page.locator('label[for="show-djs"]')).toHaveCSS(
+		"color",
+		"rgb(0, 0, 0)",
+	);
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await page.getByRole("button", { name: "Open import" }).click();
+	await page
+		.getByRole("button", { name: "Remove Known DJ", exact: true })
+		.click();
+	await expect(search).toHaveAttribute("aria-invalid", "true");
+	await expect(page.locator('label[for="import-show-djs"]')).toHaveCSS(
+		"color",
+		"rgb(255, 0, 0)",
+	);
+	await search.fill("Known");
+	await page.getByRole("option", { name: "Known DJ", exact: true }).click();
+	await expect(search).not.toHaveAttribute("aria-invalid", "true");
+	await expect(page.locator('label[for="import-show-djs"]')).toHaveCSS(
+		"color",
+		"rgb(0, 0, 0)",
+	);
+});

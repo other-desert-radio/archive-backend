@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ImportShowModal } from "../../src/admin-ui/components/mixcloud/index.js";
-import { importRows } from "./import-show-data.js";
+import { OnboardShowModal } from "../../src/admin-ui/components/shows/index.js";
+import { fixtureDJs, importRows } from "./import-show-data.js";
 import "../../src/admin-ui/styles.css";
 
 const Fixture = () => {
+	const [createOpen, setCreateOpen] = useState(false);
 	const [open, setOpen] = useState(false);
 	const [index, setIndex] = useState(0);
 	const [saved, setSaved] = useState("");
@@ -23,6 +25,17 @@ const Fixture = () => {
 			<button type="button" onClick={() => setIndex(1)}>
 				Replace source
 			</button>
+			<button type="button" onClick={() => setCreateOpen(true)}>
+				Open create
+			</button>
+			<OnboardShowModal
+				isOpen={createOpen}
+				djs={fixtureDJs}
+				isDJsLoading={false}
+				onRetryDJs={() => {}}
+				onClose={() => setCreateOpen(false)}
+				onSubmit={async () => {}}
+			/>
 			<output aria-label="Imported Show">{saved}</output>
 			{open && row && (
 				<ImportShowModal

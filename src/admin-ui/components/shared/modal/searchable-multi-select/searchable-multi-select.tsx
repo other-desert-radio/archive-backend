@@ -22,6 +22,7 @@ type SearchableMultiSelectProps = {
 	error?: string;
 	onRetry?: () => void;
 	helper?: ReactNode;
+	highlightEmptySelection?: boolean;
 };
 /** A searchable relationship combobox with removable chips and inline completion. */
 export const SearchableMultiSelect = ({
@@ -34,8 +35,10 @@ export const SearchableMultiSelect = ({
 	error,
 	onRetry,
 	helper,
+	highlightEmptySelection = false,
 }: SearchableMultiSelectProps) => {
-	const isMissingSelection = !isLoading && selectedIds.length === 0;
+	const isMissingSelection =
+		highlightEmptySelection && !isLoading && selectedIds.length === 0;
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [isOpen, setIsOpen] = useState(false);
 	const [activeIndex, setActiveIndex] = useState<number>();

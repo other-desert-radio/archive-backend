@@ -129,7 +129,6 @@ export const ImportShowForm = ({
 		resolutionError === undefined;
 	return (
 		<OnboardingModal
-			fillAvailableHeight
 			isOpen
 			title="Import Show"
 			submitLabel="Save"
@@ -182,6 +181,7 @@ export const ImportShowForm = ({
 				idPrefix="import-show"
 			/>
 			<ShowRelationshipFields
+				highlightEmptyDJs
 				fields={fields}
 				setFields={setFields}
 				idPrefix="import-show"

@@ -19,6 +19,7 @@ type Props = {
 	tagError?: string | undefined;
 	loadTagOptions: () => void;
 	djHelper?: ReactNode;
+	highlightEmptyDJs?: boolean;
 	tagHelper?: ReactNode;
 };
 export const ShowRelationshipFields = ({
@@ -34,6 +35,7 @@ export const ShowRelationshipFields = ({
 	tagError,
 	loadTagOptions,
 	djHelper,
+	highlightEmptyDJs = false,
 	tagHelper,
 }: Props) => {
 	const { tags, tagDraft, selected } = fields;
@@ -48,6 +50,7 @@ export const ShowRelationshipFields = ({
 				id={`${idPrefix}-djs`}
 				label="DJs"
 				helper={djHelper}
+				highlightEmptySelection={highlightEmptyDJs}
 				options={djOptions}
 				selectedIds={selected}
 				onChange={(selected) => setFields({ ...fields, selected })}

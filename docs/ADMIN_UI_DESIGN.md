@@ -252,9 +252,9 @@ converting it into chips could move the button during the click.
 Show duration is one required positive-integer seconds input (`min=1`, `step=1`,
 maximum 2,147,483,647). Send seconds directly through the existing API contract.
 A live gray helper breaks valid seconds down into hours, minutes, and seconds,
-using `LabeledFormControl` helper styling across Show forms. Empty or invalid
-values omit the breakdown. Do not reintroduce separate hours/minutes/seconds
-inputs.
+omitting any zero-valued unit and using `LabeledFormControl` helper styling
+across Show forms, including Mixcloud import. Empty or invalid values omit the
+breakdown. Do not reintroduce separate hours/minutes/seconds inputs.
 
 ## Design ideas and review boundaries
 
@@ -489,9 +489,10 @@ titles; import Save passes selected new source objects to create-tag.
 
 ### DJ relationship picker
 
-An empty DJ selection makes the DJ label, search text, and selector border red,
-with `aria-invalid` on the search input. Selecting a DJ restores normal styling;
-loading does not show the empty-selection warning.
+Only the Mixcloud import form opts into empty DJ feedback. An empty DJ selection
+makes the DJ label, search text, and selector border red, with `aria-invalid` on
+the search input. Selecting a DJ restores normal styling; loading does not show
+the empty-selection warning.
 
 The shared DJ picker places selected names in square chips inside the search
 field, with a separate right-hand x button for each removal. Display names omit
@@ -511,7 +512,6 @@ removed and selected again. Tags and DJs share `useChipBackspace`: with an empty
 search, the first Backspace outlines the last selected chip; the second removes
 it. Typing, choosing an option, or removing a chip clears the armed state.
 
-The import form opts into `OnboardingModal`'s `fillAvailableHeight` sizing. Its
-panel uses the available viewport height so adding or removing relationship
-chips never resizes or recenters the modal; growing content scrolls within the
-panel.
+The import form uses the shared content-sized modal panel, matching other forms.
+Its height follows content up to the viewport limit, with longer forms scrolling
+inside the panel. Ordinary Show create/edit forms keep empty DJ fields neutral.
