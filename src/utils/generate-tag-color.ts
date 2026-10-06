@@ -1,8 +1,8 @@
-/** Generates a lowercase hex color with hue 0–360°, saturation 45–65%, and lightness 78–86%. */
-export const randomPastelColor = (): string => {
+/** Generates lowercase hex with hue 0–360°, saturation 84–96%, and lightness 62–77%. */
+export const generateTagColor = (): string => {
 	const hue = Math.random() * 360;
-	const saturation = 0.45 + Math.random() * 0.2;
-	const lightness = 0.78 + Math.random() * 0.08;
+	const saturation = 0.84 + Math.random() * 0.12;
+	const lightness = 0.62 + Math.random() * 0.15;
 	const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
 	const secondary = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
 	const offset = lightness - chroma / 2;

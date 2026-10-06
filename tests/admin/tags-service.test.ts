@@ -61,18 +61,11 @@ const measureColor = (color: string) => {
 	const minimum = Math.min(...rgb);
 	const lightness = (maximum + minimum) / 2;
 	const saturation = (maximum - minimum) / (1 - Math.abs(2 * lightness - 1));
-	const linear = rgb.map((channel) =>
-		channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-	);
-	const luminance =
-		(linear[0] ?? 0) * 0.2126 +
-		(linear[1] ?? 0) * 0.7152 +
-		(linear[2] ?? 0) * 0.0722;
-	return { saturation, lightness, contrast: (luminance + 0.05) / 0.05 };
+	return { saturation, lightness };
 };
 
 describe("tag service", () => {
-	test("automatic colors cover hue sectors and pastel boundaries with readable black text", async () => {
+	test("automatic colors cover hue sectors and approved color boundaries", async () => {
 		const random = spyOn(Math, "random");
 		for (let hue = 0; hue <= 360; hue += 15) {
 			for (const saturation of [0, 1 - Number.EPSILON]) {
@@ -83,18 +76,17 @@ describe("tag service", () => {
 						.mockReturnValueOnce(saturation)
 						.mockReturnValueOnce(lightness);
 					const { database } = buildDatabase();
-					const tag = await createTag(database, { title: "Pastel" });
+					const tag = await createTag(database, { title: "Generated" });
 					expect(tag.color).toMatch(/^#[0-9a-f]{6}$/);
 					expect(tag.reviewed).toBe(false);
 					const measured = measureColor(tag.color);
-					// RGB rounding permits 1.5 percentage points of saturation error.
-					expect(measured.saturation).toBeGreaterThanOrEqual(0.435);
-					expect(measured.saturation).toBeLessThanOrEqual(0.665);
+					// RGB rounding permits 1 percentage point of saturation error.
+					expect(measured.saturation).toBeGreaterThanOrEqual(0.83);
+					expect(measured.saturation).toBeLessThanOrEqual(0.97);
 					expect(
-						Math.abs(measured.saturation - (0.45 + saturation * 0.2)),
-					).toBeLessThanOrEqual(0.015);
-					expect(measured.lightness).toBeCloseTo(0.78 + lightness * 0.08, 2);
-					expect(measured.contrast).toBeGreaterThanOrEqual(7);
+						Math.abs(measured.saturation - (0.84 + saturation * 0.12)),
+					).toBeLessThanOrEqual(0.01);
+					expect(measured.lightness).toBeCloseTo(0.62 + lightness * 0.15, 2);
 				}
 			}
 		}
@@ -110,16 +102,17 @@ describe("tag service", () => {
 				.mockReturnValueOnce(0)
 				.mockReturnValueOnce(0);
 			colors.push(
-				(await createTag(buildDatabase().database, { title: "Pastel" })).color,
+				(await createTag(buildDatabase().database, { title: "Generated" }))
+					.color,
 			);
 		}
 		expect(colors).toEqual([
-			"#e0aeae",
-			"#e0e0ae",
-			"#aee0ae",
-			"#aee0e0",
-			"#aeaee0",
-			"#e0aee0",
+			"#ef4d4d",
+			"#efef4d",
+			"#4def4d",
+			"#4defef",
+			"#4d4def",
+			"#ef4def",
 		]);
 	});
 
@@ -142,7 +135,6 @@ describe("tag service", () => {
 		expect(tags).toHaveLength(2);
 		for (const tag of tags) {
 			expect(tag.reviewed).toBe(false);
-			expect(measureColor(tag.color).contrast).toBeGreaterThanOrEqual(7);
 		}
 	});
 

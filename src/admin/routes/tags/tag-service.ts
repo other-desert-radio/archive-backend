@@ -1,7 +1,7 @@
 import type { Kysely, Selectable, Transaction } from "kysely";
 import { isMatching, P } from "ts-pattern";
 import type { Database, TagsTable } from "../../../db/types.js";
-import { randomPastelColor, undefinedOrEmpty } from "../../../utils/index.js";
+import { generateTagColor, undefinedOrEmpty } from "../../../utils/index.js";
 
 type TagDatabase = Kysely<Database> | Transaction<Database>;
 
@@ -35,7 +35,7 @@ const toCreatedTag = (tag: TagRow): CreatedTag => ({
  * Creates or reuses one tag within the supplied database context.
  *
  * Explicit colors mark the tag reviewed. Automatically colored tags are
- * unreviewed and receive a random pastel six-digit hexadecimal color.
+ * unreviewed and receive a random six-digit hexadecimal color.
  *
  * @param database - A database or transaction context.
  * @param input - The tag title and optional display color or Mixcloud metadata.
@@ -59,7 +59,7 @@ export const createTag = async (
 	const { color, reviewed } = ((inputColor: string | undefined) => {
 		if (undefinedOrEmpty(inputColor)) {
 			return {
-				color: randomPastelColor(),
+				color: generateTagColor(),
 				reviewed: false,
 			};
 		} else {
@@ -93,7 +93,7 @@ export const createTag = async (
 		.insertInto("tags")
 		.values({
 			title,
-			color: color ?? randomPastelColor(),
+			color: color ?? generateTagColor(),
 			reviewed,
 			mixcloud_key: undefinedOrEmpty(normalized.mixcloud_key)
 				? null

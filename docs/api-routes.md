@@ -177,10 +177,10 @@ Tag creation accepts `{ title: string }`, optionally with `color`,
 objects for `create-tags`. Tag titles and optional Mixcloud metadata are trimmed
 before persistence; tag titles are reused case-insensitively. A color must match
 `/^#[0-9a-fA-F]{6}$/`; omitted colors receive a lowercase six-digit hexadecimal
-pastel color (hue 0–360°, saturation 45–65%, lightness 78–86%) and
-`reviewed: false`, while explicit colors receive `reviewed: true`. The DJ route
-uses the shared tag service from the Tags module inside its own transaction
-rather than calling a Fastify route handler directly.
+color (hue 0–360°, saturation 84–96%, lightness 62–77%) and `reviewed: false`,
+while explicit colors receive `reviewed: true`. The DJ route uses the shared tag
+service from the Tags module inside its own transaction rather than calling a
+Fastify route handler directly.
 
 `GET /api/admin/tags` includes optional `mixcloud_key` and `mixcloud_url` fields
 when a tag is associated with a Mixcloud genre; absent database values are
