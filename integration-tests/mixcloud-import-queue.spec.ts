@@ -540,3 +540,31 @@ test("previous arrow revisits skipped items and protects edits", async ({
 	await expect(previous).toBeDisabled();
 	expect(state.posts).toBe(1);
 });
+
+test("empty DJ selection highlights label and box until a DJ is selected", async ({
+	page,
+}) => {
+	await launch(page);
+	await expect(save(page)).toBeEnabled();
+	await page
+		.getByRole("button", { name: "Remove Known DJ", exact: true })
+		.click();
+	const input = page.getByRole("combobox", { name: "Search DJs" });
+	const label = page.locator(
+		'label[for="' + (await input.getAttribute("id")) + '"]',
+	);
+	await expect(input).toHaveAttribute("aria-invalid", "true");
+	await expect(label).toHaveCSS("color", "rgb(255, 44, 44)");
+	await expect(input.locator("../..")).toHaveCSS(
+		"border-color",
+		"rgb(255, 44, 44)",
+	);
+	await input.fill("Known");
+	await page.getByRole("option", { name: "Known DJ", exact: true }).click();
+	await expect(input).not.toHaveAttribute("aria-invalid", "true");
+	await expect(label).toHaveCSS("color", "rgb(0, 0, 0)");
+	await expect(input.locator("../..")).toHaveCSS(
+		"border-color",
+		"rgb(0, 0, 0)",
+	);
+});

@@ -489,6 +489,10 @@ titles; import Save passes selected new source objects to create-tag.
 
 ### DJ relationship picker
 
+An empty DJ selection makes the DJ label, search text, and selector border red,
+with `aria-invalid` on the search input. Selecting a DJ restores normal styling;
+loading does not show the empty-selection warning.
+
 The shared DJ picker places selected names in square chips inside the search
 field, with a separate right-hand x button for each removal. Display names omit
 record IDs. Focusing or typing in the field opens a scrolling dropdown of DJ

@@ -161,3 +161,18 @@
 	outline: 1px solid #000;
 	outline-offset: 1px;
 }
+
+.missing > label,
+.missing .preview,
+.missing .input::placeholder {
+	color: #ff2c2c;
+}
+.missing .box {
+	border-color: #ff2c2c;
+}
+.missing .box:focus-within {
+	box-shadow: inset 0 0 0 1px #ff2c2c;
+}
+.missing .input {
+	caret-color: #ff2c2c;
+}

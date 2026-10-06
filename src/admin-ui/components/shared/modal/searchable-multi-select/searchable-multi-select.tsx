@@ -35,6 +35,7 @@ export const SearchableMultiSelect = ({
 	onRetry,
 	helper,
 }: SearchableMultiSelectProps) => {
+	const isMissingSelection = !isLoading && selectedIds.length === 0;
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [isOpen, setIsOpen] = useState(false);
 	const [activeIndex, setActiveIndex] = useState<number>();
@@ -80,7 +81,9 @@ export const SearchableMultiSelect = ({
 				: [...selectedIds, optionId],
 		);
 	return (
-		<div className={styles.field}>
+		<div
+			className={`${styles.field} ${isMissingSelection ? styles.missing : ""}`}
+		>
 			<label htmlFor={id}>{label}</label>
 			<div className={`${styles.control} ${helper ? styles.withHelper : ""}`}>
 				{isLoading ? (
@@ -145,6 +148,7 @@ export const SearchableMultiSelect = ({
 									value={query}
 									role="combobox"
 									aria-autocomplete="both"
+									aria-invalid={isMissingSelection || undefined}
 									aria-expanded={isOpen}
 									aria-controls={isOpen ? `${id}-options` : undefined}
 									aria-activedescendant={

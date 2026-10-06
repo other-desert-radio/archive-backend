@@ -174,6 +174,10 @@ formatting: stage the remaining changes, or stash the unstaged changes before
 retrying. Biome and Markdown rules live in `biome.json` and
 `.markdownlint-cli2.yaml`.
 
+Markdown lint permits multiple top-level headings (MD025), fenced code blocks
+without a language (MD040), and files without a single trailing newline (MD047),
+including generated Playwright error contexts.
+
 Playwright files are separate from the Bun suite. The integration runner uses
 `compose.integration.yml` with project name `archive-backend-integration`, then
 removes its containers and test volume. For manual verification, follow the
