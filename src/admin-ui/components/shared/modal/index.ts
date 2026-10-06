@@ -5,4 +5,5 @@ export * from "./onboarding-modal/index.js";
 export * from "./searchable-multi-select/index.js";
 export * from "./tag-options/index.js";
 export * from "./tags-input/index.js";
+export * from "./toast-modal/index.js";
 export * from "./unsaved-changes/index.js";

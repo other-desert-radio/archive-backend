@@ -11,8 +11,8 @@ type Props = {
 	refreshMessage?: string | undefined;
 	refreshFailed: boolean;
 	status?: MixcloudImportStatus | undefined;
-	category?: MixcloudImportCategory | undefined;
-	onCategoryChange?: (category: MixcloudImportCategory) => void;
+	isImportOpen?: boolean;
+	onOpenImport?: (category: MixcloudImportCategory) => void;
 	statusError?: string | undefined;
 	onRetryStatus?: () => void;
 };
@@ -24,8 +24,8 @@ export const MixcloudToolbar = ({
 	refreshMessage,
 	refreshFailed,
 	status,
-	category,
-	onCategoryChange,
+	isImportOpen = false,
+	onOpenImport,
 	statusError,
 	onRetryStatus,
 }: Props) => (
@@ -36,8 +36,9 @@ export const MixcloudToolbar = ({
 			searchLabel="Search Mixcloud"
 			showViewControls={false}
 			createLabel={isRefreshing ? "Refreshing Mixcloud…" : "Refresh Mixcloud"}
+			createTitle="Fetch the latest shows from Mixcloud and update their import status."
 			onCreate={onRefresh}
-			createDisabled={isRefreshing}
+			createDisabled={isRefreshing || isImportOpen}
 			actionsBeforeCreate={(
 				[
 					["auto_parsed", "ready for import"],
@@ -48,13 +49,22 @@ export const MixcloudToolbar = ({
 					key={value}
 					type="button"
 					className={styles.category}
-					aria-pressed={category === value}
-					disabled={!status || isRefreshing}
-					onClick={() => onCategoryChange?.(value)}
+					title={
+						value === "unparsable"
+							? "These shows couldn't be automatically parsed, or their DJs haven't been onboarded to the platform yet."
+							: "These shows were automatically parsed and their DJs are onboarded. They're ready to review and import."
+					}
+					aria-haspopup="dialog"
+					disabled={!status || isRefreshing || isImportOpen}
+					onClick={() => onOpenImport?.(value)}
 				>
 					{label}
 					{status && status[value] > 0 && (
-						<span className={styles.count}>{status[value]}</span>
+						<span
+							className={`${styles.count} ${value === "auto_parsed" ? styles.readyCount : ""}`}
+						>
+							{status[value]}
+						</span>
 					)}
 				</button>
 			))}

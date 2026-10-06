@@ -11,6 +11,7 @@ type ResourceToolbarProps = {
 	showViewControls?: boolean;
 	searchLabel: string;
 	createLabel?: string;
+	createTitle?: string;
 	onCreate?: () => void;
 	createDisabled?: boolean;
 	actionsBeforeCreate?: ReactNode;
@@ -27,6 +28,7 @@ export const ResourceToolbar = ({
 	showViewControls = true,
 	searchLabel,
 	createLabel,
+	createTitle,
 	onCreate,
 	createDisabled = false,
 	actionsBeforeCreate,
@@ -93,6 +95,7 @@ export const ResourceToolbar = ({
 						<button
 							type="button"
 							className={styles.add}
+							title={createTitle}
 							onClick={onCreate}
 							disabled={createDisabled}
 						>

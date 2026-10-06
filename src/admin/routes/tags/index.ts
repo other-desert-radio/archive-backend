@@ -9,7 +9,9 @@ export type {
 	ModifyTagReviewRequest,
 	RemoveTagRequest,
 	RemoveTagResponse,
+	ResolveMixcloudTagsResponse,
 	TagDeleteImpact,
+	ValidateTagsRequest,
 } from "./types.js";
 export {
 	CreateTagRequestPattern,
@@ -18,4 +20,5 @@ export {
 	ModifyTagRequestPattern,
 	ModifyTagReviewRequestPattern,
 	RemoveTagRequestPattern,
+	ValidateTagsRequestPattern,
 } from "./types.js";

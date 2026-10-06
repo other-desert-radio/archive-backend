@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { transformShows } from "../../src/json-transformers/index.js";
 
 describe("show JSON transformer", () => {
-	test("includes related DJs and tags and omits null images", () => {
+	test("includes related DJs and tags and maps the large image URL", () => {
 		expect(
 			transformShows({
 				shows: [
@@ -11,7 +11,7 @@ describe("show JSON transformer", () => {
 						title: "Show One",
 						date: new Date("2026-01-01"),
 						duration: 3600,
-						image: null,
+						image_large: "show-one.jpg",
 						url: "https://example.com/show-one",
 					},
 					{
@@ -19,7 +19,7 @@ describe("show JSON transformer", () => {
 						title: "Show Two",
 						date: new Date("2026-01-02"),
 						duration: 1800,
-						image: "show-two.jpg",
+						image_large: "show-two.jpg",
 						url: "https://example.com/show-two",
 					},
 				],
@@ -38,6 +38,7 @@ describe("show JSON transformer", () => {
 				title: "Show One",
 				date: new Date("2026-01-01"),
 				duration: 3600,
+				image: "show-one.jpg",
 				url: "https://example.com/show-one",
 				djs: [2, 1],
 				tags: [20, 21],

@@ -32,7 +32,7 @@ export const EditShowModal = ({ show, tags, onSubmit, ...props }: Props) => {
 				tagDraft: "",
 				tags: show.tags.flatMap((id) => {
 					const title = tagsById.get(id);
-					return title === undefined ? [] : [title];
+					return title === undefined ? [] : [{ title }];
 				}),
 			}}
 			unresolvedTagIds={show.tags.filter((id) => !tagsById.has(id))}

@@ -67,7 +67,7 @@ export const TagsPage = () => {
 		<>
 			<div ref={viewRef} inert={deletingTag !== undefined}>
 				<ResourceView
-					title="Tags"
+					title="TAGS"
 					isLoading={isLoading}
 					error={error}
 					onRetry={refreshTags}

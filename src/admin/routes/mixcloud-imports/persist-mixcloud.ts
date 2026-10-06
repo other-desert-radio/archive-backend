@@ -34,6 +34,11 @@ export const persistMixcloudEntry = async (
 					parser_key: parsed.parser_key,
 					date_source: parsed.date_source,
 				};
+	const sourceTags = [
+		...new Map(
+			entry.tags.map(({ key, name, url }) => [key, { key, name, url }]),
+		).values(),
+	].sort((a, b) => a.key.localeCompare(b.key));
 	await database
 		.insertInto("mixcloud_import")
 		.values({
@@ -45,7 +50,7 @@ export const persistMixcloudEntry = async (
 			duration: entry.audio_length,
 			image_small: entry.pictures.large,
 			image_large: entry.pictures["1024wx1024h"],
-			mixcloud_tag_keys: [...new Set(entry.tags.map((tag) => tag.key))].sort(),
+			mixcloud_tags: JSON.stringify(sourceTags),
 		})
 		.onConflict((conflict) =>
 			conflict.column("key").doUpdateSet((eb) => ({
@@ -61,7 +66,7 @@ export const persistMixcloudEntry = async (
 				duration: eb.ref("excluded.duration"),
 				image_small: eb.ref("excluded.image_small"),
 				image_large: eb.ref("excluded.image_large"),
-				mixcloud_tag_keys: eb.ref("excluded.mixcloud_tag_keys"),
+				mixcloud_tags: eb.ref("excluded.mixcloud_tags"),
 				// Compare against the current row atomically; never clear a pending review.
 				data_changed: sql<boolean>`mixcloud_import.data_changed OR (
 					mixcloud_import.show_id IS NOT NULL AND (
@@ -71,9 +76,7 @@ export const persistMixcloudEntry = async (
 						IS DISTINCT FROM
 						ROW(excluded.url, excluded.name, excluded.created_time,
 							excluded.duration, excluded.image_small, excluded.image_large)
-						OR ARRAY(SELECT DISTINCT tag_key FROM unnest(mixcloud_import.mixcloud_tag_keys) AS tag_key ORDER BY tag_key)
-							IS DISTINCT FROM excluded.mixcloud_tag_keys
-						OR mixcloud_import.mixcloud_tag_keys IS NULL
+						OR mixcloud_import.mixcloud_tags IS DISTINCT FROM excluded.mixcloud_tags
 					)
 				)`,
 			})),

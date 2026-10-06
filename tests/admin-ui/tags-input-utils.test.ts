@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
+	commitSelectedTagDraft,
 	commitTagDraft,
 	findTagMatches,
 	getTagCompletion,
+	uniqueSelectedTags,
 	uniqueTagTitles,
 } from "../../src/admin-ui/components/shared/modal/index.js";
 
@@ -37,4 +39,17 @@ describe("tag input helpers", () => {
 			"House",
 		]);
 	});
+});
+
+test("tag draft commits and deduplication retain selected metadata", () => {
+	const source = {
+		title: "Ambient",
+		mixcloud_key: "/genres/ambient/",
+		mixcloud_url: "https://www.mixcloud.com/genres/ambient/",
+	};
+	expect(commitSelectedTagDraft([source], "ambient, New")).toEqual([
+		source,
+		{ title: "New" },
+	]);
+	expect(uniqueSelectedTags([source, { title: "AMBIENT" }])).toEqual([source]);
 });

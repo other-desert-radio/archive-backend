@@ -175,7 +175,7 @@ every mixcloud show has a `key`. we use that to create this table:
 id |
 key (from mixcloud) |
 url | name | created_time | duration | image_small | image_large |
-mixcloud_tag_keys (array of strings) |
+mixcloud_tags (JSON array of key/name/url objects) |
 show_id (null unless imported into an actual show) |
 imported_at (null unless imported into an actual show)
 ```
@@ -192,9 +192,10 @@ parser_key |  <--- which parser key matched on this
 ```
 
 - key is UNIQUE
-- `mixcloud_tag_keys` stores Mixcloud genre keys as a nullable text array, for
-  example `["/genres/house/", "/genres/ambient/"]`. Null means unknown; an empty
-  array means no source tags. It contains source keys, not archive tag IDs.
+- `mixcloud_tags` stores Mixcloud genre keys, names, and URLs as nullable JSON,
+  for example `["/genres/house/", "/genres/ambient/"]`. Null means unknown; an
+  empty array means no source tags. It contains source keys, not archive tag
+  IDs.
 - `tags.mixcloud_key` is unique for non-null values; multiple tags may have no
   Mixcloud key. Matching uses exact text. Migration `0020_add_mixcloud_tag_keys`
   adds the array and uniqueness constraint. Existing duplicate tag keys must be
@@ -208,3 +209,7 @@ parser_key |  <--- which parser key matched on this
 deletion stratergy: Action Effect Delete an import row -> Show stays untouched
 Soft-delete a show -> Import row stays unchanged Hard-delete a show -> Import
 row remains; show_id and imported_at become null
+
+Migration `0026_drop_mixcloud_tag_keys` removes the legacy source key array
+after preserving missing keys in JSON. Missing names and URLs require refresh;
+rollback reconstructs distinct keys from JSON.

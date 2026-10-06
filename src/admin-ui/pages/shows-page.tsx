@@ -128,7 +128,7 @@ export const ShowsPage = () => {
 	return (
 		<>
 			<ResourceView
-				title="Shows"
+				title="SHOWS"
 				isLoading={isLoading}
 				error={error}
 				onRetry={refreshShows}

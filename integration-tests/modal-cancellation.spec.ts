@@ -80,12 +80,19 @@ test("Show selections and failed submissions retain unsaved changes", async ({
 	await page.goto("/admin/#shows");
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
 	const form = page.getByRole("dialog", { name: "Onboard Show" });
-	const checkbox = form.getByRole("checkbox").first();
-	await checkbox.check();
+	await form.getByRole("combobox", { name: "Search DJs" }).focus();
+	const option = form.getByRole("option").first();
+	const djName = await option.innerText();
+	await option.click();
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();
 	await page.getByRole("button", { name: "Keep editing" }).click();
-	await expect(checkbox).toBeChecked();
-	await checkbox.uncheck();
+	await form.getByRole("combobox", { name: "Search DJs" }).focus();
+	await expect(
+		form.getByRole("button", { name: `Remove ${djName}`, exact: true }),
+	).toBeVisible();
+	await form
+		.getByRole("button", { name: `Remove ${djName}`, exact: true })
+		.click();
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(form).toBeHidden();
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
@@ -240,9 +247,9 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 		});
 		await expect(form).toBeFocused();
 		await expect(
-			page.getByText(
-				"Type to search. Press Tab to accept the gray completion.",
-			),
+			form
+				.getByText("Type to search. Press Tab to accept the gray completion.")
+				.first(),
 		).toBeVisible();
 		const input = form.getByRole("combobox", { name: "tags", exact: true });
 		await input.fill("Regression");
@@ -314,7 +321,8 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	await page.locator("#show-url").fill("https://example.com/show");
 	await page.locator("#show-image-small").fill("https://example.com/small.jpg");
 	await page.locator("#show-image-large").fill("https://example.com/large.jpg");
-	await form.getByRole("checkbox").first().check();
+	await form.getByRole("combobox", { name: "Search DJs" }).focus();
+	await form.getByRole("option").first().click();
 	for (const value of ["", "0", "-1", "1.5", "2147483648"]) {
 		await duration.fill(value);
 		await form.getByRole("button", { name: "Submit", exact: true }).click();

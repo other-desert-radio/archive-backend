@@ -178,7 +178,6 @@ describe("Show creation persistence", () => {
 		expect(state.shows[0]).toMatchObject({
 			image_small: response.json().image_small,
 			image_large: response.json().image_large,
-			image: response.json().image_large,
 		});
 		expect(state.showDJs).toEqual([
 			{ show_id: 1, dj_id: 2 },
@@ -309,7 +308,6 @@ describe("Show editing persistence", () => {
 		expect(state.shows[0]).toMatchObject({
 			image_small: response.json().image_small,
 			image_large: response.json().image_large,
-			image: response.json().image_large,
 		});
 		expect(state.showDJs).toEqual([
 			{ show_id: 99, dj_id: 1 },
@@ -341,7 +339,7 @@ describe("Show editing persistence", () => {
 			expect(response.json().image_large).toBe(editPayload.image_large);
 			expect(response.json().image_small).toBe(editPayload.image_small);
 			expect(response.json().tags).toEqual([]);
-			expect(state.shows[0]?.image).toBe(editPayload.image_large);
+			expect(state.shows[0]?.image_large).toBe(editPayload.image_large);
 			expect(state.showTags).toEqual([{ show_id: 99, tag_id: 20 }]);
 			expect(state.tags).toHaveLength(1);
 		}
@@ -452,4 +450,34 @@ test("creation rejects missing or invalid image variants before writing", async 
 			).toBe(400);
 			expect(state).toEqual(before);
 		}
+});
+
+test("import requests require an authenticated admin before database access", async () => {
+	for (const [user, status] of [
+		[undefined, 401],
+		[{ id: "reader", role: "user" }, 403],
+	] as const) {
+		const app = Fastify({ logger: false });
+		await app.register(
+			adminRoutes(
+				{
+					api: {
+						getSession: async () => (user === undefined ? null : { user }),
+					},
+				} as never,
+				{} as never,
+				{ username: "", password: "" },
+			),
+		);
+		try {
+			const response = await app.inject({
+				method: "POST",
+				url: "/api/admin/create-show",
+				payload: { mixcloud_import_id: 1 },
+			});
+			expect(response.statusCode).toBe(status);
+		} finally {
+			await app.close();
+		}
+	}
 });

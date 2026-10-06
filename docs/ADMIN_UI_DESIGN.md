@@ -141,6 +141,63 @@ resetting metadata edits or drafts. Failed saves retain values; successful saves
 close directly and refresh Shows, DJs, and tags. Existing Show creation IDs
 remain stable, while edit controls use the `edit-show` prefix.
 
+### Optional form navigation and helpers
+
+`OnboardingModal` accepts optional `headerContent`, `secondaryAction`,
+`navigationAction`, `previousNavigationAction`, and `onSubmitted`. Header
+content sits beside Close and wraps on narrow screens. A secondary action
+replaces Cancel using its borderless style and a 42px minimum target. Navigation
+renders an accessible arrow beside the panel on wide desktops and below the
+scrolling panel on smaller viewports; it remains inside the dialog focus
+boundary.
+
+Both optional actions use the same dirty-change confirmation as dismissal. Keep
+editing restores focus to the initiating action; Discard runs that action.
+Submission disables navigation, secondary actions, and dismissal. `onSubmitted`
+replaces automatic closure after a successful mutation so a caller can advance;
+the caller owns follow-up reload errors after the committed save. Existing
+callers still close automatically.
+
+`SearchableMultiSelect` and `TagsInput` accept optional `helper` content below
+the control, with 12px text, wrapping, and accessible descriptions. Additional
+tag guidance preserves the existing search/loading/unknown-tag helper. DJ search
+spacing stays unchanged when no optional helper is supplied.
+
+The test-only shared-modal fixture exercises these extensions before the import
+form is wired. It bundles the real components and is intercepted by Playwright;
+no fixture route is registered in the application.
+
+### Single-show Mixcloud import form
+
+`ImportShowModal` reuses shared Show title/date, relationship, and duration
+controls and `useShowFormState`/`buildShowFormRequest`. Editable order is title,
+date, DJs, tags, duration. Source URL and image variants enter the complete
+create-show payload without extra editable controls. Missing required images
+produce the existing validation feedback.
+
+The dashed MIXCLOUD DATA section displays only name, url, created_time,
+duration, and mixcloud_tag_json. Its height follows content, timestamps use UTC,
+and missing/empty values show muted None. Desktop labels reserve room for the
+longest field name; phone labels stack and long URLs wrap.
+
+Initial resolution selects unique exact DJ names ignoring case and surrounding
+whitespace, and canonical tag titles from source keys. Unmatched DJ names appear
+in the selector helper. Matched Mixcloud keys use the database tag title exactly
+and its colored chip. Unresolved keys use their original `mixcloud_tags` source
+names without lowercasing or slug conversion; existing title matches reuse the
+canonical name and color. Remaining new names use the existing red unknown-tag
+chips and creation caption, and Save creates them through ordinary Show
+creation. Missing source names block Save with refresh guidance rather than
+creating tags from keys. Opening selections update the baseline without
+resetting typed metadata or tag drafts. Save waits for both resolution and tag
+options; Retry preserves edits. Source changes remount the keyed form, resetting
+selectors, errors, helpers, and baseline while ignoring stale requests.
+
+The submit button reads “Import”, changing to “Importing…” while submitting. The
+form calls the ordinary creation loader with `mixcloud_import_id` and reports
+successful 201 or already-imported 200 results to its caller. Category launchers
+open the corresponding pending queue.
+
 ### Message modal contract
 
 Supply `title`, `message`, `primaryAction`, and `onDismiss`. Each action
@@ -195,7 +252,10 @@ converting it into chips could move the button during the click.
 
 Show duration is one required positive-integer seconds input (`min=1`, `step=1`,
 maximum 2,147,483,647). Send seconds directly through the existing API contract.
-Do not reintroduce separate hours/minutes/seconds inputs.
+A live gray helper breaks valid seconds down into hours, minutes, and seconds,
+omitting any zero-valued unit and using `LabeledFormControl` helper styling
+across Show forms, including Mixcloud import. Empty or invalid values omit the
+breakdown. Do not reintroduce separate hours/minutes/seconds inputs.
 
 ## Design ideas and review boundaries
 
@@ -309,35 +369,33 @@ view uses the shared resource layout, sticky search toolbar, sortable table,
 loading/retry, empty, and no-results states. Its twenty-two columns are ID, Key,
 url, name, created_time, derived_title, derived_date, decoded_djs,
 parser_version, parser_key, date_source, image_small, image_large,
-mixcloud_tag_keys, duration, show_id, imported_at, data_changed, show name, djs,
+mixcloud_tag_json, duration, show_id, imported_at, data_changed, show name, djs,
 dj names, and tags. URL and image URL fields display source text; image URLs are
 clickable and open their image in a new tab. Duration is the stored Mixcloud
-duration, including for pending rows. `mixcloud_tag_keys` displays
-comma-separated source genre keys, supports search and sorting, and shows muted
-“None” for missing or empty arrays. These keys are separate from the archive tag
-IDs in `tags`; matching them to archive tags comes later. The read-only
-`data_changed` column displays `true` or `false`, participates in search, and
-sorts false before true in ascending order. Readiness controls filter pending
-rows into ready and review categories. Search covers all displayed parser
-fields, including raw ISO and formatted UTC derived dates. Parser dates sort
-chronologically and versions sort numerically; missing values sort first
-ascending. Extracted DJ names display comma-separated, with muted “None” for
-missing or empty arrays; version zero displays as `0`. These suggestions are
-read-only and separate from linked archive Show/DJ values. Refresh populates
-parser suggestions and clears stale results on parse failure. Search covers all
-displayed fields; sorting defaults to ID ascending. Timestamps use UTC,
-durations use HH:MM:SS, arrays display comma-separated values, and missing
-values show muted “None.” Unimported records remain visible. There are no Edit
-import actions or view toggles. Readiness buttons filter the pending queue. An
-enabled “Refresh Mixcloud” button uses the shared toolbar action position and
-styling beside search. It calls the refresh route, disables itself with
-“Refreshing Mixcloud…” while refreshing and reloading the table, and preserves
-search and sort. Inline status/error messages appear below the toolbar. Refresh
-failures retain existing rows and allow another button click to retry; errors
-include human-readable server feedback rather than raw internal errors. A reload
-failure after a successful refresh is identified separately. Shared toolbar
-creation controls and table Edit controls are optional; existing resources
-continue supplying them.
+duration, including for pending rows. `mixcloud_tag_json` displays source
+key/name/URL objects and supports search and sorting. Source keys are separate
+from the archive tag IDs in `tags`. The read-only `data_changed` column displays
+`true` or `false`, participates in search, and sorts false before true in
+ascending order. Readiness controls open pending import queues for ready and
+review categories. Search covers all displayed parser fields, including raw ISO
+and formatted UTC derived dates. Parser dates sort chronologically and versions
+sort numerically; missing values sort first ascending. Extracted DJ names
+display comma-separated, with muted “None” for missing or empty arrays; version
+zero displays as `0`. These suggestions are read-only and separate from linked
+archive Show/DJ values. Refresh populates parser suggestions and clears stale
+results on parse failure. Search covers all displayed fields; sorting defaults
+to ID ascending. Timestamps use UTC, durations use HH:MM:SS, arrays display
+comma-separated values, and missing values show muted “None.” Unimported records
+remain visible. There are no Edit import actions or view toggles. Readiness
+buttons open the pending import queue. An enabled “Refresh Mixcloud” button uses
+the shared toolbar action position and styling beside search. It calls the
+refresh route, disables itself with “Refreshing Mixcloud…” while refreshing and
+reloading the table, and preserves search and sort. Inline status/error messages
+appear below the toolbar. Refresh failures retain existing rows and allow
+another button click to retry; errors include human-readable server feedback
+rather than raw internal errors. A reload failure after a successful refresh is
+identified separately. Shared toolbar creation controls and table Edit controls
+are optional; existing resources continue supplying them.
 
 The user verified and approved the parser-column UI after chunk 3. The automated
 browser verification attempt was interrupted before completion.
@@ -345,20 +403,43 @@ browser verification attempt was interrupted before completion.
 ### Mixcloud readiness controls
 
 The Mixcloud toolbar places “ready for import” and “needs review” immediately
-before “Refresh Mixcloud”. Nonzero counts appear in red square badges with a 1px
-black outline and white text, aligned to the right. Zero counts show no badge.
-Counts load from `/api/admin/mixcloud-import/status` on page load and after
-refresh. Loading hides badges and disables the controls; status failures show
-retry feedback. Clicking a category filters pending rows; clicking it again
-restores all rows. Search and sorting combine with that filter, while counts
-describe the whole pending queue. Dates derived from `created_time` require
-review. The shared toolbar exposes `actionsBeforeCreate` for these
-resource-specific controls and wraps actions on narrow screens.
+before “Refresh Mixcloud”. Nonzero counts appear in square badges: green for
+“ready for import” and red for “needs review”, with a 1px black outline and
+white text, aligned to the right. Zero counts show no badge. Hovering “needs
+review” shows a native tooltip explaining that these shows could not be
+automatically parsed or their DJs have not been onboarded yet. “ready for
+import” has a native tooltip explaining that parsing and DJ onboarding are
+complete and the shows are ready to review and import. “Refresh Mixcloud” has a
+native tooltip explaining that it fetches the latest shows and updates their
+import status. The shared toolbar accepts an optional `createTitle` for this
+action tooltip. Counts load from `/api/admin/mixcloud-import/status` on page
+load and after refresh or import. Loading hides badges and disables the
+controls; status failures show retry feedback. Each category button opens Import
+Show with all pending category rows in ascending ID order, independent of table
+search and sort. Imported rows are excluded. A category with no pending rows
+shows a brief message dialog. The buttons use dialog-launch semantics rather
+than toggles.
 
-Verified with `agent-browser` against an isolated local PostgreSQL schema: one
-ready row, two review rows, and an imported row excluded from counts. Both
-category filters, toggle-off, search with unchanged counts, and desktop/ 390px
-phone screenshots passed acceptance checks.
+Remaining count includes current and skipped pending rows. Save decreases it;
+Next Show advances without writes or count changes. Skipped rows return when
+reopening. Cancel closes the import session without importing or advancing.
+Cancel and navigation guard dirty edits using the shared confirmation.
+Successful 201 and already-imported 200 responses advance, and the last session
+item closes automatically. Closing restores focus to the launching category
+button after the background becomes interactive. The resource view is inert
+while a dialog is open, and Refresh Mixcloud is disabled.
+
+After Save, local tracking and counts update before list/status reloads. Reload
+failures appear separately with Reload import list, preserving the committed
+import and advancing the queue. Obsolete overlapping reload responses are
+ignored. Table search and sort are retained throughout.
+
+`integration-tests/mixcloud-import-queue.spec.ts` mocks API reads and mutations
+and covers both categories, order, exclusions, count semantics, skipped-row
+reopening, empty/final closure, dirty dismissal/navigation, focus,
+pending/failure and retry behavior, post-commit reload failure, overlapping
+reloads, and phone action reachability. The user is performing visual acceptance
+for this chunk.
 
 ### Show image URL variants
 
@@ -370,3 +451,68 @@ table replaces the legacy image column with clickable `image_small` and
 `image_large` columns, each searchable and independently sortable. Grid cards
 continue using the legacy image value, which saves synchronize with the large
 URL.
+
+### Import success toast
+
+Mixcloud imports display a reusable `ToastModal` after a successful save. It
+shows “Successfully added show.”, the saved show title and comma-separated DJ
+names, and saved colored tag chips at the top left. A vertical flex column uses
+an 8px gap between the heading, show details, and tags. The toast sits outside
+the queue so it survives the final item closing. Each success resets its timer.
+The white box uses black text and a 1px black border, with message and right
+close button in a flex row. It begins fading after four seconds and dismisses
+250ms later. Hovering pauses the timer and keeps the toast visible; leaving
+resumes the remaining time. Reduced motion removes the transition. It announces
+status without moving focus, and its close button dismisses immediately. Failed
+saves show no success toast.
+
+The source section omits id, key, and show_id. HTTP(S) source URLs are clickable
+and open in a new tab; missing URLs keep the existing None feedback.
+
+The Mixcloud database table uses one `mixcloud_tag_json` column, displaying the
+original key/name/URL JSON from the `mixcloud_tags` API field. Names preserve
+source case. The column participates in shared search and sorting; absent source
+tag data displays None, and an empty array displays `[]`.
+
+Mixcloud import navigation includes a mirrored Previous Show arrow to the left
+of the panel, matching Next Show. On smaller screens the arrows sit together
+below the scrolling panel. Previous is disabled when no earlier pending session
+item exists and uses a gray arrow, border, and background while disabled;
+imported items are excluded in both directions. Back navigation uses the same
+dirty-change confirmation and submission lock as Next.
+
+The import source panel also shows `mixcloud_tag_json`; the duplicate keys
+column is removed from the database table. Selected tags in the shared input
+carry `title` and optional `mixcloud_key` / `mixcloud_url`. Chip removal removes
+the full object, while draft commits create title-only objects and preserve
+metadata on existing selections. DJ and Show requests convert selections to
+titles; import Save passes selected new source objects to create-tag.
+
+### DJ relationship picker
+
+Only the Mixcloud import form opts into empty DJ feedback. An empty DJ selection
+makes the DJ label, search text, and selector border red, with `aria-invalid` on
+the search input. Selecting a DJ restores normal styling; loading does not show
+the empty-selection warning.
+
+The shared DJ picker places selected names in square chips inside the search
+field, with a separate right-hand x button for each removal. Display names omit
+record IDs. Focusing or typing in the field opens a scrolling dropdown of DJ
+options. There is no dropdown arrow. The search has a 12px gap from the chips,
+gray inline completion, and the same Tab-completion helper as tags. Clicking
+anywhere on an option row selects it while keeping search focused; selected DJs
+are excluded from suggestions. Arrow keys navigate, Enter selects, and Tab
+accepts a prefix completion. Tags and DJs share matching, completion, and option
+pointer handling through `shared/modal/autocomplete`. Leaving the control closes
+it, and Escape from search closes the dropdown before dismissing the modal. The
+Mixcloud source name value is bold for easier comparison with the editable
+title.
+
+DJ chips preserve selection order, including after options reload or a DJ is
+removed and selected again. Tags and DJs share `useChipBackspace`: with an empty
+search, the first Backspace outlines the last selected chip; the second removes
+it. Typing, choosing an option, or removing a chip clears the armed state.
+
+The import form uses the shared content-sized modal panel, matching other forms.
+Its height follows content up to the viewport limit, with longer forms scrolling
+inside the panel. Ordinary Show create/edit forms keep empty DJ fields neutral.

@@ -11,6 +11,8 @@ import { up as createImports } from "../../src/db/migrations/0018_create_mixclou
 import { up as addMetadata } from "../../src/db/migrations/0019_add_mixcloud_source_metadata.js";
 import { up as addFlag } from "../../src/db/migrations/0021_add_mixcloud_data_changed.js";
 import { up as addParserResults } from "../../src/db/migrations/0022_add_mixcloud_parser_results.js";
+import { up as addSourceTags } from "../../src/db/migrations/0025_add_mixcloud_source_tags.js";
+import { up as dropTagKeys } from "../../src/db/migrations/0026_drop_mixcloud_tag_keys.js";
 import type { Database } from "../../src/db/types.js";
 import {
 	MIXCLOUD_PARSER_VERSION,
@@ -63,6 +65,8 @@ test.skipIf(!databaseUrl)(
 				.execute();
 			await addFlag(db);
 			await addParserResults(db);
+			await addSourceTags(db);
+			await dropTagKeys(db);
 			await persistMixcloudEntry(db, entry);
 			await persistMixcloudEntry(db, { ...entry, key: "/missing-later/" });
 			const first = await read();
@@ -73,7 +77,10 @@ test.skipIf(!databaseUrl)(
 				duration: 3600,
 				image_small: "small.jpg",
 				image_large: "large.jpg",
-				mixcloud_tag_keys: ["/a/", "/b/"],
+				mixcloud_tags: [
+					{ key: "/a/", name: "A", url: "https://example.test/a" },
+					{ key: "/b/", name: "B", url: "https://example.test/b" },
+				],
 				show_id: null,
 				imported_at: null,
 				data_changed: false,
@@ -111,13 +118,12 @@ test.skipIf(!databaseUrl)(
 				.set({
 					show_id: showId,
 					imported_at: importedAt,
-					mixcloud_tag_keys: ["/b/", "/a/", "/a/"],
 				})
 				.where("key", "=", entry.key)
 				.execute();
 			await persistMixcloudEntry(db, {
 				...entry,
-				tags: [...entry.tags].reverse(),
+				tags: [...entry.tags, ...entry.tags].reverse(),
 				play_count: 500,
 			});
 			expect((await read()).data_changed).toBe(false);
@@ -132,6 +138,17 @@ test.skipIf(!databaseUrl)(
 					pictures: { ...entry.pictures, "1024wx1024h": "new-large" },
 				},
 				{ ...entry, tags: [] },
+				{
+					...entry,
+					tags: entry.tags.map((tag) => ({
+						...tag,
+						url: "https://example.test/changed",
+					})),
+				},
+				{
+					...entry,
+					tags: entry.tags.map((tag) => ({ ...tag, name: "MiXeD Genre" })),
+				},
 			]) {
 				await persistMixcloudEntry(db, entry);
 				await db
@@ -284,6 +301,12 @@ for (const [name, source, date] of [
 				expect(insert?.sql).toContain(`"${field}" = "excluded"."${field}"`);
 			}
 			expect(insert?.parameters).toContain(MIXCLOUD_PARSER_VERSION);
+			expect(insert?.parameters).toContain(
+				JSON.stringify([
+					{ key: "/a/", name: "A", url: "https://example.test/a" },
+					{ key: "/b/", name: "B", url: "https://example.test/b" },
+				]),
+			);
 			if (source === null) {
 				expect(
 					insert?.parameters.filter((value) => value === null),

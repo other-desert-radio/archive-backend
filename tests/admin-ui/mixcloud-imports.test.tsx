@@ -20,7 +20,7 @@ import {
 } from "../../src/admin-ui/loaders/mixcloud-imports.js";
 
 const linked: MixcloudImportAdminRow = {
-	mixcloud_tag_keys: ["/genres/ambient/", "/genres/experimental/"],
+	mixcloud_tags: [{ key: "/genres/ambient/", name: "AMBIENT Source" }],
 	data_changed: true,
 	id: 2,
 	key: "/odr/test/",
@@ -218,7 +218,7 @@ describe("Mixcloud table", () => {
 			"date_source",
 			"image_small",
 			"image_large",
-			"mixcloud_tag_keys",
+			"mixcloud_tag_json",
 			"duration",
 			"show_id",
 			"imported_at",
@@ -254,7 +254,7 @@ describe("Mixcloud table", () => {
 		expect(html).toContain("https://www.mixcloud.com/odr/source-show/");
 		expect(html).toContain("DJ Two, DJ Nine");
 		expect(html).toContain("None");
-		expect(html).toContain("/genres/ambient/, /genres/experimental/");
+		expect(html).toContain("AMBIENT Source");
 		expect(html).toContain(">true<");
 		expect(html).toContain(">false<");
 		expect(html).not.toContain("Actions");
@@ -269,9 +269,7 @@ describe("Mixcloud table", () => {
 			/>,
 		);
 		expect(toolbar).toContain("Search Mixcloud");
-		expect(toolbar).toContain(
-			'<button type="button">Refresh Mixcloud</button>',
-		);
+		expect(toolbar).toContain("Refresh Mixcloud</button>");
 	});
 	test("sorts parser fields and preserves empty arrays and version zero", () => {
 		const other: MixcloudImportAdminRow = {
@@ -344,17 +342,15 @@ describe("Mixcloud table", () => {
 		).toEqual([linked, pending]);
 	});
 	test("searches and sorts source tag keys and handles empty arrays", () => {
-		expect(filterMixcloudImports(rows, "/genres/experimental/")).toEqual([
-			linked,
-		]);
+		expect(filterMixcloudImports(rows, "/genres/ambient/")).toEqual([linked]);
 		expect(
-			sortResourceRows(rows, mixcloudColumns, "mixcloud_tag_keys", "asc"),
+			sortResourceRows(rows, mixcloudColumns, "mixcloud_tags", "asc"),
 		).toEqual([pending, linked]);
-		const column = mixcloudColumns.find((c) => c.key === "mixcloud_tag_keys");
+		const column = mixcloudColumns.find((c) => c.key === "mixcloud_tags");
 		if (!column) throw new Error("Missing source tag keys column");
 		expect(
 			renderToStaticMarkup(
-				column.render({ ...pending, mixcloud_tag_keys: [] }),
+				column.render({ ...pending, mixcloud_tags: undefined }),
 			),
 		).toContain("None");
 	});
@@ -424,7 +420,7 @@ test("loads and validates the status endpoint", async () => {
 		),
 	).rejects.toThrow("Unable to load Mixcloud import status");
 });
-test("shows category counts before refresh and marks the selected category", () => {
+test("shows nonzero category counts and dialog launchers before refresh", () => {
 	const html = renderToStaticMarkup(
 		<MixcloudToolbar
 			query=""
@@ -433,14 +429,13 @@ test("shows category counts before refresh and marks the selected category", () 
 			isRefreshing={false}
 			refreshFailed={false}
 			status={{ auto_parsed: 0, unparsable: 12 }}
-			category="unparsable"
-			onCategoryChange={() => {}}
+			onOpenImport={() => {}}
 		/>,
 	);
-	expect(html).toContain('aria-pressed="true"');
-	expect(html).toContain("ready for import<span");
+	expect(html).toContain('aria-haspopup="dialog"');
+	expect(html).toContain("ready for import</button>");
 	expect(html).toContain("needs review<span");
-	expect(html).toContain(">0</span>");
+	expect(html).not.toContain(">0</span>");
 	expect(html).toContain(">12</span>");
 	expect(html.indexOf("ready for import")).toBeLessThan(
 		html.indexOf("needs review"),
@@ -448,4 +443,19 @@ test("shows category counts before refresh and marks the selected category", () 
 	expect(html.indexOf("needs review")).toBeLessThan(
 		html.indexOf("Refresh Mixcloud"),
 	);
+});
+
+test("source tag names and keys display, search, and sort with missing data first", () => {
+	expect(filterMixcloudImports(rows, "AMBIENT Source")).toEqual([linked]);
+	const column = mixcloudColumns.find(
+		(column) => column.key === "mixcloud_tags",
+	);
+	if (!column) throw new Error("Missing source tag column");
+	expect(renderToStaticMarkup(column.render(linked))).toContain(
+		"AMBIENT Source",
+	);
+	expect(renderToStaticMarkup(column.render(pending))).toContain("None");
+	expect(
+		sortResourceRows(rows, mixcloudColumns, "mixcloud_tags", "asc"),
+	).toEqual([pending, linked]);
 });

@@ -1,4 +1,4 @@
-import type { Generated } from "kysely";
+import type { ColumnType, Generated } from "kysely";
 
 export type Database = {
 	djs: DJsTable;
@@ -19,7 +19,11 @@ export type MixcloudImportTable = {
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	key: string;
-	mixcloud_tag_keys: string[] | null;
+	mixcloud_tags: ColumnType<
+		{ key: string; name: string; url: string }[] | null,
+		string | null | undefined,
+		{ key: string; name: string; url: string }[] | string | null
+	>;
 	url: string | null;
 	name: string | null;
 	created_time: Date | null;
@@ -60,7 +64,6 @@ export type ShowsTable = {
 	title: string;
 	date: Date;
 	duration: number;
-	image: string | null;
 	image_small: string;
 	image_large: string;
 	url: string;

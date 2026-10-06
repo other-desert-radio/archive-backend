@@ -1,0 +1,48 @@
+.section {
+	grid-column: 1 / -1;
+	min-width: 0;
+	position: relative;
+	border: 1px dashed #000;
+	padding: 24px 16px 16px;
+}
+.section h3 {
+	position: absolute;
+	top: -10px;
+	left: 50%;
+	transform: translateX(-50%);
+	margin: 0;
+	padding: 0 8px;
+	font-size: var(--modal-helper-size);
+	font-weight: 400;
+	background: #fff;
+	white-space: nowrap;
+}
+.section dl {
+	margin: 0;
+}
+.section dl > div {
+	display: grid;
+	grid-template-columns: 17ch minmax(0, 1fr);
+	gap: 16px;
+	margin-top: 12px;
+}
+.section dl > div:first-child {
+	margin-top: 0;
+}
+.section dt {
+	text-align: right;
+}
+.section dd {
+	margin: 0;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+@media (max-width: 450px) {
+	.section dl > div {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 8px;
+	}
+	.section dt {
+		text-align: left;
+	}
+}

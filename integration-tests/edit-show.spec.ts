@@ -93,23 +93,24 @@ test("replaces DJ links, persists inverse links, and requires a DJ", async ({
 }) => {
 	const replacement = await createDJ(request, false);
 	const form = await openShowEditor(page, show.id);
-	const original = form.getByRole("checkbox", {
-		name: `${dj.title} (#${dj.id})`,
+	await form.getByRole("combobox", { name: "Search DJs" }).focus();
+	const original = form.getByRole("button", {
+		name: `Remove ${dj.title}`,
 		exact: true,
 	});
-	await expect(original).toBeChecked();
+	await expect(original).toBeVisible();
 	await form
-		.getByRole("searchbox", { name: "Search DJs" })
+		.getByRole("combobox", { name: "Search DJs" })
 		.fill(replacement.title);
 	await form
-		.getByRole("checkbox", {
-			name: `${replacement.title} (#${replacement.id})`,
+		.getByRole("option", {
+			name: `${replacement.title}`,
 			exact: true,
 		})
-		.check();
+		.click();
 	await form
 		.getByRole("button", {
-			name: `Remove ${dj.title} (#${dj.id})`,
+			name: `Remove ${dj.title}`,
 			exact: true,
 		})
 		.click();
@@ -119,15 +120,16 @@ test("replaces DJ links, persists inverse links, and requires a DJ", async ({
 	expect((await loadDJ(request, replacement.id)).shows).toContain(show.id);
 	await page.reload();
 	const reopened = await openShowEditor(page, show.id);
+	await reopened.getByRole("combobox", { name: "Search DJs" }).focus();
 	await expect(
-		reopened.getByRole("checkbox", {
-			name: `${replacement.title} (#${replacement.id})`,
+		reopened.getByRole("button", {
+			name: `Remove ${replacement.title}`,
 			exact: true,
 		}),
-	).toBeChecked();
+	).toBeVisible();
 	await reopened
 		.getByRole("button", {
-			name: `Remove ${replacement.title} (#${replacement.id})`,
+			name: `Remove ${replacement.title}`,
 			exact: true,
 		})
 		.click();
@@ -163,6 +165,7 @@ test("adds existing and focused draft tags, removes tags, and clears all assignm
 	expect(saved.tags).toContain(existingTag.id);
 	await page.reload();
 	const reopened = await openShowEditor(page, show.id);
+	await reopened.getByRole("combobox", { name: "Search DJs" }).focus();
 	await reopened
 		.getByRole("button", { name: `Remove ${show.title}`, exact: true })
 		.click();

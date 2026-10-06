@@ -1,25 +1,27 @@
 import {
 	type FocusEvent,
 	type KeyboardEvent,
+	type ReactNode,
 	useEffect,
 	useId,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
+import { AutocompleteOption, useChipBackspace } from "../autocomplete/index.js";
 import fieldStyles from "../labeled-form-control/labeled-form-control.module.css";
 import styles from "./tags-input.module.css";
-import type { TagsInputOption } from "./tags-input-utils.js";
+import type { SelectedTag, TagsInputOption } from "./tags-input-utils.js";
 import {
-	commitTagDraft,
+	commitSelectedTagDraft,
 	findTagMatches,
 	getTagCompletion,
-	uniqueTagTitles,
+	uniqueSelectedTags,
 } from "./tags-input-utils.js";
 
 export type { TagsInputOption } from "./tags-input-utils.js";
 
-export type TagsInputValue = { tags: string[]; draft: string };
+export type TagsInputValue = { tags: SelectedTag[]; draft: string };
 type TagsInputProps = {
 	id: string;
 	value: TagsInputValue;
@@ -28,6 +30,7 @@ type TagsInputProps = {
 	isLoading?: boolean;
 	error?: string;
 	onRetry?: () => void;
+	helper?: ReactNode;
 };
 
 /** A Figma-aligned tag combobox with colored chips and inline completion. */
@@ -39,16 +42,26 @@ export const TagsInput = ({
 	isLoading = false,
 	error,
 	onRetry,
+	helper,
 }: TagsInputProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [scrollLeft, setScrollLeft] = useState(0);
 	const [isFocused, setIsFocused] = useState(false);
 	const [activeIndex, setActiveIndex] = useState<number>();
 	const [isComposing, setIsComposing] = useState(false);
-	const [backspaceArmedTag, setBackspaceArmedTag] = useState<string>();
+	const { armedChip, resetBackspace, handleBackspace } = useChipBackspace(
+		value.tags.map((tag) => tag.title),
+		value.draft,
+		() => onChange({ tags: value.tags.slice(0, -1), draft: "" }),
+	);
 	const listId = useId();
 	const matches = useMemo(
-		() => findTagMatches(value.draft, options, value.tags),
+		() =>
+			findTagMatches(
+				value.draft,
+				options,
+				value.tags.map(({ title }) => title),
+			),
 		[options, value.draft, value.tags],
 	);
 	const activeMatch = matches[activeIndex ?? 0];
@@ -61,7 +74,7 @@ export const TagsInput = ({
 		[options],
 	);
 	const unknownTags = value.tags.filter(
-		(tag) => !selectedByTitle.has(tag.toLocaleLowerCase()),
+		(tag) => !selectedByTitle.has(tag.title.toLocaleLowerCase()),
 	);
 	const canIdentifyUnknownTags = !isLoading && error === undefined;
 	const isOpen = isFocused && value.draft.trim() !== "" && matches.length > 0;
@@ -69,44 +82,43 @@ export const TagsInput = ({
 		if ((activeIndex ?? 0) >= matches.length) setActiveIndex(undefined);
 	}, [activeIndex, matches.length]);
 	const commit = (draft = value.draft) => {
-		const tags = commitTagDraft(value.tags, draft);
+		const tags = commitSelectedTagDraft(value.tags, draft);
 		onChange({ tags, draft: "" });
 		setActiveIndex(undefined);
-		setBackspaceArmedTag(undefined);
+		resetBackspace();
 	};
 	const select = (option: TagsInputOption) => {
 		onChange({
-			tags: uniqueTagTitles([...value.tags, option.title]),
+			tags: uniqueSelectedTags([
+				...value.tags,
+				{
+					title: option.title,
+					...(option.mixcloud_key === undefined
+						? {}
+						: { mixcloud_key: option.mixcloud_key }),
+					...(option.mixcloud_url === undefined
+						? {}
+						: { mixcloud_url: option.mixcloud_url }),
+				},
+			]),
 			draft: "",
 		});
 		setActiveIndex(undefined);
-		setBackspaceArmedTag(undefined);
+		resetBackspace();
 		inputRef.current?.focus();
 	};
 	const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (isComposing) return;
-		if (event.key === "Backspace" && value.draft === "") {
-			const lastTag = value.tags.at(-1);
-			if (lastTag === undefined) return;
-			event.preventDefault();
-			if (backspaceArmedTag === lastTag) {
-				onChange({
-					tags: value.tags.slice(0, -1),
-					draft: "",
-				});
-				setBackspaceArmedTag(undefined);
-			} else setBackspaceArmedTag(lastTag);
-			return;
-		}
+		if (handleBackspace(event)) return;
 		if (event.key === "ArrowDown" && matches.length > 0) {
 			event.preventDefault();
-			setBackspaceArmedTag(undefined);
+			resetBackspace();
 			setActiveIndex((current) => ((current ?? -1) + 1) % matches.length);
 			return;
 		}
 		if (event.key === "ArrowUp" && matches.length > 0) {
 			event.preventDefault();
-			setBackspaceArmedTag(undefined);
+			resetBackspace();
 			setActiveIndex(
 				(current) => ((current ?? 0) - 1 + matches.length) % matches.length,
 			);
@@ -156,30 +168,30 @@ export const TagsInput = ({
 				<div className={styles.inputGroup}>
 					<div className={styles.box}>
 						{value.tags.map((tag) => {
-							const option = selectedByTitle.get(tag.toLocaleLowerCase());
+							const option = selectedByTitle.get(tag.title.toLocaleLowerCase());
 							return (
 								<span
-									key={tag.toLocaleLowerCase()}
+									key={tag.title.toLocaleLowerCase()}
 									className={`${styles.chip} ${
 										option === undefined && canIdentifyUnknownTags
 											? styles.unknown
 											: ""
-									} ${backspaceArmedTag === tag ? styles.armed : ""}`}
+									} ${armedChip === tag.title ? styles.armed : ""}`}
 									{...(option === undefined
 										? {}
 										: { style: { background: option.color } })}
 								>
-									{tag}
+									{tag.title}
 									<button
 										type="button"
 										className={styles.remove}
-										aria-label={`Remove ${tag}`}
+										aria-label={`Remove ${tag.title}`}
 										onClick={() => {
 											onChange({
 												tags: value.tags.filter((selected) => selected !== tag),
 												draft: value.draft,
 											});
-											setBackspaceArmedTag(undefined);
+											resetBackspace();
 											inputRef.current?.focus();
 										}}
 									>
@@ -209,12 +221,12 @@ export const TagsInput = ({
 									const nextDraft = event.target.value;
 									if (nextDraft.includes(","))
 										onChange({
-											tags: commitTagDraft(value.tags, nextDraft),
+											tags: commitSelectedTagDraft(value.tags, nextDraft),
 											draft: "",
 										});
 									else onChange({ tags: value.tags, draft: nextDraft });
 									setActiveIndex(undefined);
-									setBackspaceArmedTag(undefined);
+									resetBackspace();
 								}}
 								onFocus={() => setIsFocused(true)}
 								onBlur={commitOnBlur}
@@ -230,7 +242,7 @@ export const TagsInput = ({
 										? undefined
 										: `${listId}-${activeIndex}`
 								}
-								aria-describedby={`${id}-help`}
+								aria-describedby={`${id}-help${helper ? ` ${id}-extra-help` : ""}`}
 							/>
 						</div>
 					</div>
@@ -242,15 +254,12 @@ export const TagsInput = ({
 							aria-label="Matching tags"
 						>
 							{matches.map((option, index) => (
-								<button
+								<AutocompleteOption
 									key={option.id}
 									id={`${listId}-${index}`}
-									type="button"
-									role="option"
-									aria-selected={index === activeIndex}
+									selected={index === activeIndex}
 									className={`${styles.option} ${index === activeIndex ? styles.optionActive : ""}`}
-									onMouseDown={(event) => event.preventDefault()}
-									onClick={() => select(option)}
+									onSelect={() => select(option)}
 								>
 									<span
 										className={styles.optionTag}
@@ -258,7 +267,7 @@ export const TagsInput = ({
 									>
 										{option.title}
 									</span>
-								</button>
+								</AutocompleteOption>
 							))}
 						</div>
 					)}
@@ -272,7 +281,7 @@ export const TagsInput = ({
 						: isLoading
 							? "Loading existing tags…"
 							: canIdentifyUnknownTags && unknownTags.length > 0
-								? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
+								? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag.title}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
 								: "Type to search. Press Tab to accept the gray completion."}
 					{error !== undefined && onRetry !== undefined && (
 						<button type="button" onClick={onRetry}>
@@ -280,6 +289,11 @@ export const TagsInput = ({
 						</button>
 					)}
 				</p>
+				{helper && (
+					<div id={`${id}-extra-help`} className={styles.extraHelper}>
+						{helper}
+					</div>
+				)}
 			</div>
 		</div>
 	);

@@ -75,6 +75,7 @@ export type MixcloudImportAdminRow = {
 	created_time?: string;
 	derived_title?: string;
 	derived_date?: string;
+	decoded_djs_exist?: boolean;
 	decoded_djs?: string[];
 	parser_version?: number;
 	parser_key?: string;
@@ -86,7 +87,7 @@ export type MixcloudImportAdminRow = {
 	show_name?: string;
 	djs: number[];
 	dj_names: string[];
-	mixcloud_tag_keys?: string[];
+	mixcloud_tags?: { key: string; name: string; url: string }[];
 	duration?: number;
 	tags: number[];
 };

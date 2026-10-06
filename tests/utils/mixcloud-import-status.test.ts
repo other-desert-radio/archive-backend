@@ -23,6 +23,7 @@ for (const incomplete of [
 	{ ...ready, derived_date: null },
 	{ ...ready, derived_date: "invalid" },
 	{ ...ready, decoded_djs: [] },
+	{ ...ready, decoded_djs_exist: false },
 	{ ...ready, decoded_djs: ["Ethan", " "] },
 	{ ...ready, parser_key: null },
 	{ ...ready, parser_version: null },

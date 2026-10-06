@@ -1,0 +1,42 @@
+import type { Dispatch, SetStateAction } from "react";
+import { LabeledFormControl } from "../../../shared/modal/index.js";
+import type { ShowFormValues } from "../show-form-state/index.js";
+
+type Props = {
+	fields: ShowFormValues;
+	setFields: Dispatch<SetStateAction<ShowFormValues>>;
+	idPrefix: string;
+};
+export const ShowDurationField = ({ fields, setFields, idPrefix }: Props) => {
+	const { duration } = fields;
+	const seconds = Number(duration);
+	const helper =
+		duration.trim() !== "" &&
+		Number.isInteger(seconds) &&
+		seconds > 0 &&
+		seconds <= 2_147_483_647
+			? [
+					[Math.floor(seconds / 3600), "hours"],
+					[Math.floor((seconds % 3600) / 60), "minutes"],
+					[seconds % 60, "seconds"],
+				]
+					.filter(([value]) => value !== 0)
+					.map(([value, unit]) => `${value} ${unit}`)
+					.join(", ")
+			: undefined;
+	return (
+		<LabeledFormControl
+			id={`${idPrefix}-duration`}
+			name="duration"
+			label="duration (seconds)"
+			type="number"
+			min={1}
+			max={2_147_483_647}
+			step={1}
+			value={duration}
+			onChange={(duration) => setFields({ ...fields, duration })}
+			{...(helper === undefined ? {} : { helper })}
+			required
+		/>
+	);
+};

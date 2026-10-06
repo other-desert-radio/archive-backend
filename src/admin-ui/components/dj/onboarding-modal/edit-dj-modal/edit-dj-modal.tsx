@@ -92,7 +92,10 @@ export const EditDJModal = ({
 			removeImage: false,
 		};
 		setTitle(dj.title);
-		setTags({ tags: dj.directTagTitles, draft: "" });
+		setTags({
+			tags: dj.directTagTitles.map((title) => ({ title })),
+			draft: "",
+		});
 		setShowTitle(dj.showTitle ?? "");
 		setShowDescription(dj.showDescription ?? "");
 		setSocials(dj.socials === undefined ? "" : safeHtmlToPlainText(dj.socials));
@@ -109,7 +112,7 @@ export const EditDJModal = ({
 				id: dj.id,
 				title,
 				bio,
-				tags: tags.tags,
+				tags: tags.tags.map(({ title }) => title),
 				tagDraft: tags.draft,
 				socials,
 				showTitle,
@@ -132,7 +135,7 @@ export const EditDJModal = ({
 						socials,
 						showTitle,
 						showDescription,
-						tags: tags.tags,
+						tags: tags.tags.map(({ title }) => title),
 						tagDraft: tags.draft,
 						image,
 						removeImage: isExistingImageRemoved,

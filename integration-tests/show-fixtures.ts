@@ -77,7 +77,7 @@ export const openShowEditor = async (page: Page, id: number) => {
 	const dialog = page.getByRole("dialog", { name: "Edit Show", exact: true });
 	await expect(dialog).toBeVisible();
 	await expect(
-		dialog.getByRole("searchbox", { name: "Search DJs", exact: true }),
+		dialog.getByRole("combobox", { name: "Search DJs", exact: true }),
 	).toBeVisible();
 	return dialog;
 };

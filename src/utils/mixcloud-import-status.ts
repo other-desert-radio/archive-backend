@@ -3,6 +3,7 @@ type ImportSuggestions = {
 	show_id?: number | null;
 	derived_title?: string | null;
 	derived_date?: Date | string | null;
+	decoded_djs_exist?: boolean;
 	decoded_djs?: string[] | null;
 	parser_version?: number | null;
 	parser_key?: string | null;
@@ -20,6 +21,7 @@ export const classifyMixcloudImport = (
 		Boolean(row.derived_title?.trim()) &&
 		row.derived_date != null &&
 		!Number.isNaN(new Date(row.derived_date).getTime()) &&
+		row.decoded_djs_exist !== false &&
 		Boolean(row.decoded_djs?.length) &&
 		row.decoded_djs?.every((name) => name.trim().length > 0) &&
 		row.parser_version != null &&

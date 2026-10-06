@@ -5,22 +5,6 @@
 	display: grid;
 	gap: 0.75rem;
 }
-.selected {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-.selected button {
-	border: 1px solid #000;
-	border-radius: 0;
-	padding: 0.25rem 0.5rem;
-	color: #000;
-	background: #fff;
-	font: inherit;
-}
 .options {
 	display: grid;
 	max-height: 12rem;
@@ -28,6 +12,13 @@
 	border: 1px solid #000;
 }
 .option {
+	width: 100%;
+	border: 0;
+	background: #fff;
+	color: #000;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
 	display: flex;
 	gap: 0.5rem;
 	padding: 0.5rem;
@@ -44,16 +35,6 @@
 	color: #ff2c2c;
 }
 
-.control > input {
-	width: 100%;
-	min-width: 0;
-	min-height: var(--modal-control-height);
-	padding: var(--modal-control-padding);
-	border: 1px solid #000;
-	border-radius: 0;
-	font: inherit;
-}
-
 .field > label {
 	align-self: start;
 	padding-top: 10px;
@@ -68,4 +49,130 @@
 	.field > label {
 		padding-top: 0;
 	}
+}
+
+.helper {
+	margin: 0;
+	font-size: var(--modal-helper-size);
+	line-height: 1.5;
+	color: #555;
+	overflow-wrap: anywhere;
+}
+
+.withHelper {
+	gap: 8px;
+}
+
+.inputGroup {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	position: relative;
+	min-width: 0;
+}
+.box {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	min-height: var(--modal-control-height);
+	padding: 6px 12px;
+	border: 1px solid #000;
+	background: #fff;
+}
+.box:focus-within {
+	box-shadow: inset 0 0 0 1px #000;
+}
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	max-width: 100%;
+	overflow-wrap: anywhere;
+	padding: 3px 5px;
+	border: 1px solid #000;
+}
+.remove {
+	margin-left: auto;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-weight: 700;
+	cursor: pointer;
+}
+.inputGroup .options {
+	position: absolute;
+	z-index: 3;
+	top: 100%;
+	width: 100%;
+	background: #fff;
+}
+.optionActive,
+.option:hover {
+	background: #eee;
+}
+
+.draftWrap {
+	position: relative;
+	flex: 1 0 10rem;
+	height: 1.5em;
+	min-width: 10rem;
+}
+.input,
+.preview {
+	box-sizing: border-box;
+	width: 100%;
+	height: 1.5em;
+	padding: 0 0.25rem;
+	border: 0;
+	font: inherit;
+	line-height: 1.5;
+	white-space: pre;
+}
+.input {
+	position: relative;
+	z-index: 1;
+	min-width: 0;
+	color: transparent;
+	background: transparent;
+	caret-color: #000;
+}
+.preview {
+	pointer-events: none;
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+}
+.preview > span {
+	display: block;
+}
+.completion {
+	color: #9c9898;
+}
+
+.input:focus {
+	outline: 0;
+	box-shadow: none;
+}
+
+.armed {
+	outline: 1px solid #000;
+	outline-offset: 1px;
+}
+
+.missing > label,
+.missing .preview,
+.missing .input::placeholder {
+	color: #ff2c2c;
+}
+.missing .box {
+	border-color: #ff2c2c;
+}
+.missing .box:focus-within {
+	box-shadow: inset 0 0 0 1px #ff2c2c;
+}
+.missing .input {
+	caret-color: #ff2c2c;
 }

@@ -246,3 +246,15 @@ variant, required-field rejection, draft retention, reload/reopening, and
 URLs. `tests/db/show-image-urls-migration.test.ts` uses an explicit disposable
 `SHOW_MIGRATION_TEST_DATABASE_URL` to check backfill, null rejection, atomic
 failure, and rollback; otherwise it skips.
+
+### Mixcloud import queue interaction coverage
+
+`integration-tests/mixcloud-import-queue.spec.ts` mocks source rows, readiness
+counts, DJ/tag resolution, creation, and reloads. It writes no archive records.
+It checks queue membership/order independent of table state, exclusions, Save
+and Skip counts, repeated-import success, reopening, empty/final closure,
+discard confirmation and focus restoration, pending-request protection,
+failed-save retry, post-commit reload failure, stale reload protection, and
+390px/320px action reachability. Persistence and concurrency remain covered by
+`tests/db/import-show.test.ts` against an explicitly supplied disposable
+database.
