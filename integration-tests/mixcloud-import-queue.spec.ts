@@ -152,7 +152,7 @@ const launch = (
 	category = "ready for import",
 ) => page.getByRole("button", { name: new RegExp(`^${category}`) }).click();
 const save = (page: import("@playwright/test").Page) =>
-	page.getByRole("button", { name: "Save", exact: true });
+	page.getByRole("button", { name: "Import", exact: true });
 
 test("both launchers queue all pending category rows in ID order regardless of search/sort", async ({
 	page,
@@ -550,9 +550,7 @@ test("empty DJ selection highlights label and box until a DJ is selected", async
 		.getByRole("button", { name: "Remove Known DJ", exact: true })
 		.click();
 	const input = page.getByRole("combobox", { name: "Search DJs" });
-	const label = page.locator(
-		'label[for="' + (await input.getAttribute("id")) + '"]',
-	);
+	const label = page.locator(`label[for="${await input.getAttribute("id")}"]`);
 	await expect(input).toHaveAttribute("aria-invalid", "true");
 	await expect(label).toHaveCSS("color", "rgb(255, 44, 44)");
 	await expect(input.locator("../..")).toHaveCSS(

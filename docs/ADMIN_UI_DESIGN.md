@@ -193,9 +193,10 @@ resetting typed metadata or tag drafts. Save waits for both resolution and tag
 options; Retry preserves edits. Source changes remount the keyed form, resetting
 selectors, errors, helpers, and baseline while ignoring stale requests.
 
-The form calls the ordinary creation loader with `mixcloud_import_id` and
-reports successful 201 or already-imported 200 results to its caller. Category
-launchers open the corresponding pending queue.
+The submit button reads “Import”, changing to “Importing…” while submitting. The
+form calls the ordinary creation loader with `mixcloud_import_id` and reports
+successful 201 or already-imported 200 results to its caller. Category launchers
+open the corresponding pending queue.
 
 ### Message modal contract
 

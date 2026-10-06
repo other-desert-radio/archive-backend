@@ -85,7 +85,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	});
 	await page.getByRole("button", { name: "Open import" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeEnabled();
 	await expect(page.getByLabel("title", { exact: true })).toHaveValue(
 		"Suggested title",
@@ -160,7 +160,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	await page
 		.getByRole("combobox", { name: "tags", exact: true })
 		.fill("New Tag");
-	await page.getByRole("button", { name: "Save", exact: true }).click();
+	await page.getByRole("button", { name: "Import", exact: true }).click();
 	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
 	expect(tagPayloads).toEqual([
 		{
@@ -189,7 +189,7 @@ test("resolved opening selections are clean and item changes reset fields, helpe
 }) => {
 	await page.getByRole("button", { name: "Open import" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeEnabled();
 	await page.getByRole("combobox", { name: "Search DJs" }).fill("No matches");
 	await page.getByRole("button", { name: "Next Show" }).click();
@@ -221,12 +221,12 @@ test("resolution failure disables Save and Retry preserves metadata edits", asyn
 	);
 	await page.getByRole("button", { name: "Open import" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeDisabled();
 	await page.getByLabel("title", { exact: true }).fill("Edited while loading");
 	await page.getByRole("button", { name: "Retry source suggestions" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeEnabled();
 	await expect(page.getByLabel("title", { exact: true })).toHaveValue(
 		"Edited while loading",
@@ -247,12 +247,12 @@ test("tag choices retry preserves resolved selections and metadata", async ({
 		page.getByRole("button", { name: "Remove Ambient" }),
 	).toBeVisible();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeDisabled();
 	await page.getByLabel("title", { exact: true }).fill("Retained");
 	await page.getByRole("button", { name: "Retry", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeEnabled();
 	await expect(page.getByLabel("title", { exact: true })).toHaveValue(
 		"Retained",
@@ -273,7 +273,7 @@ test("late source responses after replacement cannot change the next item", asyn
 	});
 	await page.getByRole("button", { name: "Open import" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeDisabled();
 	await expect.poll(() => Boolean(release)).toBe(true);
 	await page.getByRole("button", { name: "Next Show" }).click();
@@ -303,15 +303,15 @@ test("failed Save retains values and an already-imported 200 succeeds on retry",
 	);
 	await page.getByRole("button", { name: "Open import" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeEnabled();
 	await page.getByLabel("title", { exact: true }).fill("Retain draft");
-	await page.getByRole("button", { name: "Save", exact: true }).click();
+	await page.getByRole("button", { name: "Import", exact: true }).click();
 	await expect(page.getByRole("alert")).toBeVisible();
 	await expect(page.getByLabel("title", { exact: true })).toHaveValue(
 		"Retain draft",
 	);
-	await page.getByRole("button", { name: "Save", exact: true }).click();
+	await page.getByRole("button", { name: "Import", exact: true }).click();
 	await expect(page.getByLabel("Imported Show")).toHaveText("Existing Show");
 });
 
@@ -322,7 +322,7 @@ for (const width of [1280, 390, 320])
 		await page.setViewportSize({ width, height: 844 });
 		await page.getByRole("button", { name: "Open import" }).click();
 		await expect(
-			page.getByRole("button", { name: "Save", exact: true }),
+			page.getByRole("button", { name: "Import", exact: true }),
 		).toBeEnabled();
 		await page
 			.getByRole("button", { name: "Cancel", exact: true })
@@ -362,7 +362,7 @@ test("unresolved source keys reuse matching tag names and colors, and only new n
 	});
 	await page.getByRole("button", { name: "Open import" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeEnabled();
 	await expect(
 		page
@@ -374,7 +374,7 @@ test("unresolved source keys reuse matching tag names and colors, and only new n
 			.getByRole("button", { name: "Remove MiXeD Genre", exact: true })
 			.locator(".."),
 	).toHaveCSS("color", "rgb(255, 0, 0)");
-	await page.getByRole("button", { name: "Save", exact: true }).click();
+	await page.getByRole("button", { name: "Import", exact: true }).click();
 	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
 	expect(payload?.tags).toEqual(["Ambient", "MiXeD Genre"]);
 });
@@ -397,7 +397,7 @@ test("removing a source chip excludes its metadata from tag creation", async ({
 	});
 	await page.getByRole("button", { name: "Open import" }).click();
 	await expect(
-		page.getByRole("button", { name: "Save", exact: true }),
+		page.getByRole("button", { name: "Import", exact: true }),
 	).toBeEnabled();
 	await page
 		.getByRole("button", { name: "Remove New Genre", exact: true })
@@ -405,7 +405,7 @@ test("removing a source chip excludes its metadata from tag creation", async ({
 	await page
 		.getByRole("combobox", { name: "tags", exact: true })
 		.fill("Manual");
-	await page.getByRole("button", { name: "Save", exact: true }).click();
+	await page.getByRole("button", { name: "Import", exact: true }).click();
 	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
 	expect(createdTags).toEqual([]);
 	expect(showPayload?.tags).toEqual(["Ambient", "Manual"]);
@@ -433,7 +433,7 @@ test("failed tag creation preserves metadata for retry and prevents Show creatio
 		});
 	});
 	await page.getByRole("button", { name: "Open import" }).click();
-	const save = page.getByRole("button", { name: "Save", exact: true });
+	const save = page.getByRole("button", { name: "Import", exact: true });
 	await expect(save).toBeEnabled();
 	await save.click();
 	await expect(page.getByText(/Tag save failed/)).toBeVisible();
@@ -569,7 +569,7 @@ for (const width of [1280, 390])
 		await page.setViewportSize({ width, height: 1800 });
 		await page.getByRole("button", { name: "Open import" }).click();
 		await expect(
-			page.getByRole("button", { name: "Save", exact: true }),
+			page.getByRole("button", { name: "Import", exact: true }),
 		).toBeEnabled();
 		const panel = page
 			.getByRole("heading", { name: "Import Show", exact: true })

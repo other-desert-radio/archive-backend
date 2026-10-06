@@ -131,8 +131,8 @@ export const ImportShowForm = ({
 		<OnboardingModal
 			isOpen
 			title="Import Show"
-			submitLabel="Save"
-			submittingLabel="Saving…"
+			submitLabel="Import"
+			submittingLabel="Importing…"
 			cancelLabel="Cancel"
 			onClose={onClose}
 			hasUnsavedChanges={hasUnsavedChanges}
