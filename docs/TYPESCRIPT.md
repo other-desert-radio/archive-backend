@@ -123,3 +123,10 @@ it may retain `null` for nullable columns so the insert object matches the
 database contract directly. Keep that choice at the database-facing boundary;
 JSON response types should still omit absent optional properties when omission
 is the public contract.
+
+## HTTP(S) URL validation
+
+Use `isHttpUrl` from `src/utils/index.ts` for absolute HTTP(S) URL checks in
+backend and admin UI code. It uses the URL parser and returns false for invalid
+or non-HTTP(S) URLs without throwing. Callers retain responsibility for trimming
+stored values, optional-field handling, and validation messages.

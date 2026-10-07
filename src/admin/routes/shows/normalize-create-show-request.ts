@@ -1,4 +1,5 @@
 import { isMatching, P } from "ts-pattern";
+import { isHttpUrl } from "../../../utils/index.js";
 import type { CreateShowRequest } from "./types.js";
 
 export type NormalizedCreateShowRequest = {
@@ -10,15 +11,6 @@ export type NormalizedCreateShowRequest = {
 	image_small: string;
 	image_large: string;
 	tags: string[];
-};
-
-const isHttpUrl = (value: string) => {
-	try {
-		const url = new URL(value);
-		return url.protocol === "http:" || url.protocol === "https:";
-	} catch {
-		return false;
-	}
 };
 
 const parseCalendarDate = (value: string): Date | undefined => {

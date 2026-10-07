@@ -1,5 +1,5 @@
 import { isMatching, match, P } from "ts-pattern";
-import { undefinedOrEmpty } from "../../../utils/index.js";
+import { isHttpUrl, undefinedOrEmpty } from "../../../utils/index.js";
 import type { ModifyTagRequest } from "./types.js";
 
 export class TagEditValidationError extends Error {}
@@ -37,19 +37,11 @@ const normalizeMetadata = (
 		throw new TagEditValidationError(
 			"Color must be a six-digit hex color (#RRGGBB)",
 		);
-	if (!undefinedOrEmpty(url)) {
-		let valid = false;
-		try {
-			const parsed = new URL(url);
-			valid = parsed.protocol === "http:" || parsed.protocol === "https:";
-		} catch {
-			/* Invalid absolute URL. */
-		}
-		if (!valid)
-			throw new TagEditValidationError(
-				"Mixcloud URL must be an absolute HTTP(S) URL",
-			);
-	}
+	if (!undefinedOrEmpty(url) && !isHttpUrl(url))
+		throw new TagEditValidationError(
+			"Mixcloud URL must be an absolute HTTP(S) URL",
+		);
+
 	if (
 		input.edit_type === "partial_edit" &&
 		[title, color, key, url].every((value) => value === undefined)
