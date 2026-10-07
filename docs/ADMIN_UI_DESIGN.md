@@ -522,9 +522,12 @@ inside the panel. Ordinary Show create/edit forms keep empty DJ fields neutral.
 Tags uses the same ResourceGrid/card renderer and saved table/grid preference as
 Shows and DJs, defaulting to table. Grid columns have a 32rem minimum,
 constrained to the available width; existing resource grid defaults remain
-16rem. Large chips use 2.625rem text (three times the ordinary chip text) and
-three times the ordinary chip padding, following the app’s responsive root font
-size. Long names wrap, and controls stack below chips on phones.
+16rem. ResourceGrid accepts an optional numeric minimumColumnWidthRem
+(default 16) and builds its responsive column expression internally. Callers
+pass widths in rem without constructing CSS strings. Large chips use 2.625rem
+text (three times the ordinary chip text) and three times the ordinary chip
+padding, following the app’s responsive root font size. Long names wrap, and
+controls stack below chips on phones.
 
 Each tile displays a large tag, native color swatch, and Edit action opening the
 existing metadata modal. Swatch and actions stay visually grouped with a

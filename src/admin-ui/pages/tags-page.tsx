@@ -110,7 +110,7 @@ export const TagsPage = () => {
 						<ResourceGrid
 							rows={visibleTags}
 							rowKey={(tag) => tag.id}
-							minimumColumnWidth="32rem"
+							minimumColumnWidthRem={32}
 							renderCard={(tag, key) =>
 								renderTagCard(tag, key, setEditingTag, handleColorSave)
 							}
