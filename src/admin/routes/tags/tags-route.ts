@@ -168,18 +168,23 @@ export const tagRoutes =
 						if (target === undefined) return { status: "missing" } as const;
 						const duplicate = await match(normalized)
 							.with({ edit_type: "review" }, () => false)
-							.with({ edit_type: "full_edit" }, async ({ values }) => {
-								const others = await transaction
-									.selectFrom("tags")
-									.select("title")
-									.where("id", "!=", id)
-									.execute();
-								return others.some(
-									(tag) =>
-										tag.title.trim().toLowerCase() ===
-										values.title.toLowerCase(),
-								);
-							})
+							.with(
+								{ edit_type: "full_edit" },
+								{ edit_type: "partial_edit" },
+								async ({ values }) => {
+									if (values.title === undefined) return false;
+									const title = values.title;
+									const others = await transaction
+										.selectFrom("tags")
+										.select("title")
+										.where("id", "!=", id)
+										.execute();
+									return others.some(
+										(tag) =>
+											tag.title.trim().toLowerCase() === title.toLowerCase(),
+									);
+								},
+							)
 							.exhaustive();
 						if (duplicate) return { status: "duplicate" } as const;
 						const tag = await transaction

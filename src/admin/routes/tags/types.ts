@@ -55,9 +55,24 @@ export const ModifyTagReviewRequestPattern = {
 export type ModifyTagReviewRequest = P.infer<
 	typeof ModifyTagReviewRequestPattern
 >;
+/** Partial edits preserve omitted metadata. */
+export const ModifyTagPartialEditRequestPattern = {
+	edit_type: "partial_edit",
+	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
+	title: P.optional(P.string),
+	color: P.optional(P.string),
+	mixcloud_key: P.optional(P.string),
+	mixcloud_url: P.optional(P.string),
+	reviewed: P.optional(undefined),
+} as const;
+export type ModifyTagPartialEditRequest = P.infer<
+	typeof ModifyTagPartialEditRequestPattern
+>;
+
 export const ModifyTagRequestPattern = P.union(
 	ModifyTagFullEditRequestPattern,
 	ModifyTagReviewRequestPattern,
+	ModifyTagPartialEditRequestPattern,
 );
 export type ModifyTagRequest = P.infer<typeof ModifyTagRequestPattern>;
 

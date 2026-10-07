@@ -90,8 +90,10 @@ shared-modal editor with hex input, a native color picker, and a live inline
 chip. Saving marks reviewed and reloads Tags; failed saves retain values. The “+
 tag” action now opens onboarding with the same validated fields and color
 preview. New tags are reviewed; existing titles reuse the current tag.
-Successful creation refreshes Tags and clears search. Merging and grid views
-remain outside this workflow.
+Successful creation refreshes Tags and clears search. Partial edits also support
+updating only supplied metadata fields through `edit_type: "partial_edit"`;
+omitted fields are preserved and successful saves mark reviewed. Merging and
+grid views remain outside this workflow.
 
 For UI development, run `scripts/build-container-watch` after database setup. It
 builds the stack, mounts host `dist/admin` into the API container, and starts
