@@ -298,6 +298,18 @@ response, authentication, and error handling. Success returns the updated
 `TagsJSON` item; missing targets return `404`, and unexpected failures roll back
 and return `500`.
 
+For `edit_type: "partial_edit"`, the request requires `id` and at least one of
+`title`, `color`, `mixcloud_key`, or `mixcloud_url`. Omitted fields remain
+unchanged. Supplied strings are trimmed and use full-edit validation; blank
+Mixcloud fields clear only their respective column. Null field values and an
+explicit `reviewed` value are rejected. Title collision checks run only when a
+title is supplied. Every successful partial edit marks the tag reviewed,
+including unchanged saves. It shares full-edit authentication, transaction,
+response, logging, and error behavior, preserving identity, creation timestamp,
+and relationships. For example,
+`{ edit_type: "partial_edit", id: 1, color: "#abcdef" }` changes only color and
+review status. No migration is needed.
+
 ## Tag hard deletion
 
 `GET /api/admin/tags/:id/delete-impact` returns an object with

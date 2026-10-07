@@ -1,6 +1,6 @@
 import { isMatching, P } from "ts-pattern";
 import type { CreateShowRequest } from "../../../../../admin/routes/shows/index.js";
-import { splitCommaSeparated } from "../../../../../utils/index.js";
+import { isHttpUrl, splitCommaSeparated } from "../../../../../utils/index.js";
 
 export type CreateShowForm = CreateShowRequest;
 
@@ -23,13 +23,8 @@ export const buildCreateShowRequest = (fields: {
 		["Small", image_small],
 		["Large", image_large],
 	] as const) {
-		try {
-			const url = new URL(value);
-			if (url.protocol !== "http:" && url.protocol !== "https:")
-				throw new Error();
-		} catch {
+		if (!isHttpUrl(value))
 			throw new Error(`${label} image must be an absolute HTTP(S) URL.`);
-		}
 	}
 	const tags = splitCommaSeparated(fields.tags);
 	return {

@@ -3,6 +3,7 @@ import {
 	ModifyTagFullEditRequestPattern,
 	type ModifyTagRequest,
 } from "../../../../../admin/routes/tags/index.js";
+import { isHttpUrl } from "../../../../../utils/index.js";
 
 export type TagFormValues = {
 	title: string;
@@ -24,17 +25,9 @@ export const buildTagFields = (fields: TagFormValues): TagFormValues => {
 	if (request.title === "") throw new Error("Title is required.");
 	if (!isTagColor(request.color))
 		throw new Error("Color must be a six-digit hex color (#RRGGBB).");
-	if (request.mixcloud_url !== "") {
-		let valid = false;
-		try {
-			const url = new URL(request.mixcloud_url);
-			valid = url.protocol === "http:" || url.protocol === "https:";
-		} catch {
-			/* Invalid absolute URL. */
-		}
-		if (!valid)
-			throw new Error("Mixcloud URL must be an absolute HTTP(S) URL.");
-	}
+	if (request.mixcloud_url !== "" && !isHttpUrl(request.mixcloud_url))
+		throw new Error("Mixcloud URL must be an absolute HTTP(S) URL.");
+
 	return request;
 };
 

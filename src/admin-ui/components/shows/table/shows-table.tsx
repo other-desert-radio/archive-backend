@@ -1,3 +1,4 @@
+import { isHttpUrl } from "../../../../utils/index.js";
 import type { ShowsAdminRow } from "../../../loaders/shows.js";
 import {
 	formatDuration,
@@ -19,20 +20,14 @@ type ShowsTableProps = {
 
 const compareText = (left: string | undefined, right: string | undefined) =>
 	(left ?? "").localeCompare(right ?? "", undefined, { sensitivity: "base" });
-const formatURL = (url: string) => {
-	try {
-		const parsed = new URL(url);
-		return parsed.protocol === "http:" || parsed.protocol === "https:" ? (
-			<a href={url} target="_blank" rel="noreferrer">
-				{url}
-			</a>
-		) : (
-			url
-		);
-	} catch {
-		return url;
-	}
-};
+const formatURL = (url: string) =>
+	isHttpUrl(url) ? (
+		<a href={url} target="_blank" rel="noreferrer">
+			{url}
+		</a>
+	) : (
+		url
+	);
 
 export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 	[

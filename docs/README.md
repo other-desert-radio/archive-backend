@@ -42,10 +42,10 @@ and Vite. Useful entry points:
 - `tests/` and `integration-tests/`: Bun and Playwright verification.
 
 The admin UI supports DJ and Show table/grid views, creation, and editing. Tags
-have a table, creation, metadata editing, and inline review. Mixcloud Import is
-read-only: its table lists tracking records and linked Show/DJ/tag details.
-Migration `0018_create_mixcloud_import_table` creates its backing table; apply
-it explicitly before expecting that view to load.
+have table/grid views, creation, metadata editing, and inline review. Mixcloud
+Import is read-only: its table lists tracking records and linked Show/DJ/tag
+details. Migration `0018_create_mixcloud_import_table` creates its backing
+table; apply it explicitly before expecting that view to load.
 
 This branch includes the WIP Mixcloud parser (`src/db/import-mixcloud.ts`) and
 its launcher (`scripts/import-mixcloud`). They parse source records and print
@@ -90,8 +90,12 @@ shared-modal editor with hex input, a native color picker, and a live inline
 chip. Saving marks reviewed and reloads Tags; failed saves retain values. The “+
 tag” action now opens onboarding with the same validated fields and color
 preview. New tags are reviewed; existing titles reuse the current tag.
-Successful creation refreshes Tags and clears search. Merging and grid views
-remain outside this workflow.
+Successful creation refreshes Tags and clears search. Partial edits also support
+updating only supplied metadata fields through `edit_type: "partial_edit"`;
+omitted fields are preserved and successful saves mark reviewed. The Tags grid
+supports large chips and inline color previews with cancel/save actions using
+partial edits. Grid Edit opens the same metadata modal. Merging remains outside
+this workflow.
 
 For UI development, run `scripts/build-container-watch` after database setup. It
 builds the stack, mounts host `dist/admin` into the API container, and starts

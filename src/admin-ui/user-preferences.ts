@@ -1,11 +1,12 @@
 import type { ResourceViewMode } from "./components/shared/resource-views/index.js";
 
 type BrowserStorage = Pick<Storage, "getItem" | "setItem">;
-export type ResourceViewPreference = "djs" | "shows";
+export type ResourceViewPreference = "djs" | "shows" | "tags";
 
 type StoredUserPreferences = Partial<{
 	djsViewMode: ResourceViewMode;
 	showsViewMode: ResourceViewMode;
+	tagsViewMode: ResourceViewMode;
 }>;
 
 const storageKey = "odr-admin-user-preferences";

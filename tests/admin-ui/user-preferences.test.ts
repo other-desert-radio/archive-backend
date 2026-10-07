@@ -18,20 +18,26 @@ describe("admin user preferences", () => {
 
 		expect(preferences.getResourceViewMode("djs")).toBe("table");
 		expect(preferences.getResourceViewMode("shows")).toBe("table");
+		expect(preferences.getResourceViewMode("tags")).toBe("table");
 	});
 
-	test("persists DJ and Shows view modes independently", () => {
+	test("persists DJ, Shows, and Tags view modes independently", () => {
 		const storage = createStorage();
 		const preferences = new UserPreferences(() => storage);
 
 		preferences.setResourceViewMode("djs", "grid");
 		preferences.setResourceViewMode("shows", "table");
+		preferences.setResourceViewMode("tags", "grid");
 
 		expect(JSON.parse(storage.getValue() ?? "{}")).toEqual({
 			djsViewMode: "grid",
 			showsViewMode: "table",
+			tagsViewMode: "grid",
 		});
 		expect(new UserPreferences(() => storage).getResourceViewMode("djs")).toBe(
+			"grid",
+		);
+		expect(new UserPreferences(() => storage).getResourceViewMode("tags")).toBe(
 			"grid",
 		);
 	});

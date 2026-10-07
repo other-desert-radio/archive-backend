@@ -5,12 +5,18 @@ type TagProps = {
 	children: ReactNode;
 	color?: string;
 	as?: "li" | "span";
+	size?: "default" | "large";
 };
 
 /** Renders a colored tag chip for resource views. */
-export const Tag = ({ children, color, as: Component = "li" }: TagProps) => (
+export const Tag = ({
+	children,
+	color,
+	as: Component = "li",
+	size = "default",
+}: TagProps) => (
 	<Component
-		className={styles.tag}
+		className={`${styles.tag} ${size === "large" ? styles.large : ""}`}
 		{...(color === undefined ? {} : { style: { backgroundColor: color } })}
 	>
 		{children}

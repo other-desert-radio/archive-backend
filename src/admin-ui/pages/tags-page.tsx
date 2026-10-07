@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+	ResourceGrid,
 	ResourceView,
+	type ResourceViewMode,
 	type SortDirection,
 	sortResourceRows,
 } from "../components/shared/resource-views/index.js";
@@ -9,6 +11,7 @@ import {
 	EditTagModal,
 	filterTags,
 	OnboardTagModal,
+	renderTagCard,
 	type TagSortColumn,
 	TagsTable,
 	TagsToolbar,
@@ -17,6 +20,7 @@ import {
 import { createTag } from "../loaders/create-tag.js";
 import { modifyTag } from "../loaders/modify-tag.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
+import { userPreferences } from "../user-preferences.js";
 
 export const TagsPage = () => {
 	const [deletingTag, setDeletingTag] = useState<TagsAdminRow>();
@@ -25,6 +29,23 @@ export const TagsPage = () => {
 	const [editingTag, setEditingTag] = useState<TagsAdminRow>();
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
+	const [viewMode, setViewMode] = useState<ResourceViewMode>(() =>
+		userPreferences.getResourceViewMode("tags"),
+	);
+	const handleViewModeChange = (mode: ResourceViewMode) => {
+		userPreferences.setResourceViewMode("tags", mode);
+		setViewMode(mode);
+	};
+	const handleColorSave = async (tag: TagsAdminRow, color: string) => {
+		const saved = await modifyTag({
+			edit_type: "partial_edit",
+			id: tag.id,
+			color,
+		});
+		setTags((current) =>
+			current.map((row) => (row.id === saved.id ? saved : row)),
+		);
+	};
 	const [sortColumn, setSortColumn] = useState<TagSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isLoading, setIsLoading] = useState(true);
@@ -77,30 +98,43 @@ export const TagsPage = () => {
 					noResultsMessage="No tags match your search."
 					toolbar={
 						<TagsToolbar
+							viewMode={viewMode}
+							onViewModeChange={handleViewModeChange}
 							query={query}
 							onQueryChange={setQuery}
 							onAddTag={() => setIsOnboarding(true)}
 						/>
 					}
 				>
-					<TagsTable
-						tags={visibleTags}
-						sortColumn={sortColumn}
-						sortDirection={sortDirection}
-						onSort={handleSort}
-						onEdit={setEditingTag}
-						onDelete={setDeletingTag}
-						onReviewSave={async (request) => {
-							const saved = await modifyTag(request);
-							setTags((current) =>
-								current.map((tag) =>
-									tag.id === saved.id
-										? { ...tag, reviewed: saved.reviewed }
-										: tag,
-								),
-							);
-						}}
-					/>
+					{viewMode === "grid" ? (
+						<ResourceGrid
+							rows={visibleTags}
+							rowKey={(tag) => tag.id}
+							minimumColumnWidthRem={32}
+							renderCard={(tag, key) =>
+								renderTagCard(tag, key, setEditingTag, handleColorSave)
+							}
+						/>
+					) : (
+						<TagsTable
+							tags={visibleTags}
+							sortColumn={sortColumn}
+							sortDirection={sortDirection}
+							onSort={handleSort}
+							onEdit={setEditingTag}
+							onDelete={setDeletingTag}
+							onReviewSave={async (request) => {
+								const saved = await modifyTag(request);
+								setTags((current) =>
+									current.map((tag) =>
+										tag.id === saved.id
+											? { ...tag, reviewed: saved.reviewed }
+											: tag,
+									),
+								);
+							}}
+						/>
+					)}
 				</ResourceView>
 			</div>
 			{deletingTag !== undefined && (

@@ -95,6 +95,124 @@ const payload = {
 const edit = (app: Awaited<ReturnType<typeof setup>>["app"], data: object) =>
 	app.inject({ method: "POST", url: "/api/admin/modify-tag", payload: data });
 describe("Tag update API", () => {
+	test("partial edits update supplied fields only and mark reviewed", async () => {
+		for (const [fields, expected] of [
+			[{ color: " #aBc123 " }, { color: "#aBc123" }],
+			[{ title: " DANCE " }, { title: "DANCE" }],
+			[{ mixcloud_key: " new " }, { mixcloud_key: "new" }],
+			[
+				{ mixcloud_url: " https://example.test/new " },
+				{ mixcloud_url: "https://example.test/new" },
+			],
+			[{ mixcloud_key: " " }, { mixcloud_key: null }],
+			[{ mixcloud_url: "" }, { mixcloud_url: null }],
+			[
+				{
+					title: " New ",
+					color: "#abcdef",
+					mixcloud_key: "",
+					mixcloud_url: "",
+				},
+				{
+					title: "New",
+					color: "#abcdef",
+					mixcloud_key: null,
+					mixcloud_url: null,
+				},
+			],
+		]) {
+			const { app, rows } = await setup();
+			try {
+				const response = await edit(app, {
+					edit_type: "partial_edit",
+					id: 1,
+					...fields,
+				});
+				expect(response.statusCode).toBe(200);
+				expect(rows[0]).toEqual({ ...original, ...expected, reviewed: true });
+				expect(response.json()).toMatchObject({ id: 1, reviewed: true });
+			} finally {
+				await app.close();
+			}
+		}
+	});
+	test("partial color edits skip existing title collisions", async () => {
+		const { app, rows } = await setup();
+		rows[0].title = "house";
+		try {
+			expect(
+				(
+					await edit(app, {
+						edit_type: "partial_edit",
+						id: 1,
+						color: "#abcdef",
+					})
+				).statusCode,
+			).toBe(200);
+			expect(rows[0].title).toBe("house");
+		} finally {
+			await app.close();
+		}
+	});
+	test("partial edits reject empty, invalid, conflicting and missing targets without writes", async () => {
+		const { app, rows } = await setup();
+		const before = structuredClone(rows);
+		try {
+			for (const fields of [
+				{},
+				{ reviewed: true },
+				{ color: null },
+				{ title: null },
+				{ mixcloud_key: null },
+				{ mixcloud_url: null },
+				{ title: " " },
+				{ title: " house " },
+				{ color: "#fff" },
+				{ color: "#gggggg" },
+				{ mixcloud_url: "relative" },
+				{ mixcloud_url: "ftp://example.test" },
+				{ mixcloud_key: 1 },
+				{ id: 0, color: "#abcdef" },
+				{ id: 1.5, color: "#abcdef" },
+				{ id: "1", color: "#abcdef" },
+				{ id: Number.MAX_SAFE_INTEGER + 1, color: "#abcdef" },
+			]) {
+				expect(
+					(await edit(app, { edit_type: "partial_edit", id: 1, ...fields }))
+						.statusCode,
+				).toBe(400);
+				expect(rows).toEqual(before);
+			}
+			expect(
+				(
+					await edit(app, {
+						edit_type: "partial_edit",
+						id: 99,
+						color: "#abcdef",
+					})
+				).statusCode,
+			).toBe(404);
+			expect(rows).toEqual(before);
+		} finally {
+			await app.close();
+		}
+	});
+	test("partial-edit failures roll back", async () => {
+		const { app, rows } = await setup("admin", true);
+		try {
+			const response = await edit(app, {
+				edit_type: "partial_edit",
+				id: 1,
+				color: "#abcdef",
+			});
+			expect(response.statusCode).toBe(500);
+			expect(response.json()).toEqual({ error: "Internal Server Error" });
+			expect(rows[0]).toEqual(original);
+		} finally {
+			await app.close();
+		}
+	});
+
 	test("review-only saves toggle both ways and preserve every other field", async () => {
 		const { app, rows } = await setup();
 		// Reviewing existing data does not rename tags or run title collision checks.
@@ -296,6 +414,15 @@ describe("Tag update API", () => {
 			const { app, rows } = await setup(role);
 			try {
 				expect((await edit(app, payload)).statusCode).toBe(status);
+				expect(
+					(
+						await edit(app, {
+							edit_type: "partial_edit",
+							id: 1,
+							color: "#abcdef",
+						})
+					).statusCode,
+				).toBe(status);
 				expect(
 					(await edit(app, { edit_type: "review", id: 1, reviewed: true }))
 						.statusCode,
