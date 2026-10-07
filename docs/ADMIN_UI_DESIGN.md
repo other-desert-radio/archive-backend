@@ -217,7 +217,7 @@ excluded from Tab order, alongside Escape handling.
 ## Interaction decisions to preserve
 
 The shared resource toolbar stays sticky below the fixed management header while
-DJ and Show tables/grids and the Tags table scroll underneath. Its gray
+DJ and Show tables/grids and Tags tables/grids scroll underneath. Its gray
 background and solid bottom border appear only when it sticks. The header height
 and sticky offset share a whole-pixel CSS variable to avoid a gap. Its stacking
 order keeps controls above scrolling content. Search can shrink to fit narrow
@@ -516,3 +516,23 @@ it. Typing, choosing an option, or removing a chip clears the armed state.
 The import form uses the shared content-sized modal panel, matching other forms.
 Its height follows content up to the viewport limit, with longer forms scrolling
 inside the panel. Ordinary Show create/edit forms keep empty DJ fields neutral.
+
+### Tags grid and inline color editing
+
+Tags uses the same ResourceGrid/card renderer and saved table/grid preference as
+Shows and DJs, defaulting to table. Grid columns have a 32rem minimum,
+constrained to the available width; existing resource grid defaults remain
+16rem. Large chips use 2.625rem text (three times the ordinary chip text) and
+three times the ordinary chip padding, following the app’s responsive root font
+size. Long names wrap, and controls stack below chips on phones.
+
+Each tile displays a large tag, native color swatch, and Edit action opening the
+existing metadata modal. Swatch and actions stay visually grouped with a
+0.625rem gap and no reserved empty action width. Changing the swatch previews
+the color locally and replaces Edit with cancel/save icons only when the color
+differs from the saved value ignoring hex case. Cancel restores the saved color
+without a request. Save sends only ID and color using modify-tag partial_edit,
+marks reviewed, and updates the returned tag in place. Controls are disabled
+during save; failures retain the preview and show an inline error for retry.
+Drafts are discarded when switching views or filtering the card out. Table-only
+review and delete actions remain available through the table view.

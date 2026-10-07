@@ -1,0 +1,80 @@
+.card {
+	min-width: 0;
+}
+.row {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+.preview {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+}
+.preview > span {
+	width: 100%;
+	box-sizing: border-box;
+}
+.controls {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	flex-shrink: 0;
+}
+.swatch {
+	width: 42px;
+	height: 42px;
+	padding: 3px;
+	border: 1px solid #000;
+	background: #fff;
+	cursor: pointer;
+}
+.actions {
+	display: flex;
+	gap: 0.25rem;
+}
+.actions button {
+	font: inherit;
+	border-radius: 0;
+	min-height: 42px;
+	min-width: 42px;
+	padding: 0.5rem;
+	border: 1px solid #000;
+	background: #fff;
+	color: #000;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+.actions svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+}
+.actions button:hover:not(:disabled) {
+	background: #ddd;
+}
+.controls :disabled {
+	cursor: wait;
+	opacity: 0.6;
+}
+.controls :focus-visible {
+	outline: 2px solid #000;
+	outline-offset: 3px;
+}
+.error {
+	font-size: 0.875rem;
+	margin: 0.5rem 0 0;
+	overflow-wrap: anywhere;
+}
+@media (max-width: 450px) {
+	.row {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+	}
+	.controls {
+		justify-content: flex-end;
+	}
+}
