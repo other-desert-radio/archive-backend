@@ -539,3 +539,11 @@ marks reviewed, and updates the returned tag in place. Controls are disabled
 during save; failures retain the preview and show an inline error for retry.
 Drafts are discarded when switching views or filtering the card out. Table-only
 review and delete actions remain available through the table view.
+
+### Tags show associations
+
+The Tags table includes a sortable shows column listing every directly
+associated Show title alphabetically, separated by commas. Tags without Shows
+display None. The page loads existing Tags and Shows endpoints together; either
+read failing uses the page error/retry state rather than displaying missing
+associations.

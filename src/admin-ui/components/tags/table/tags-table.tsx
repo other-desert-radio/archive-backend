@@ -12,6 +12,7 @@ export type TagSortColumn =
 	| "id"
 	| "title"
 	| "color"
+	| "shows"
 	| "reviewed"
 	| "mixcloud_key"
 	| "mixcloud_url";
@@ -42,6 +43,16 @@ export const tagColumns: ResourceTableColumn<TagsAdminRow, TagSortColumn>[] = [
 			</Tag>
 		),
 		compare: (left, right) => left.title.localeCompare(right.title),
+	},
+	{
+		key: "shows",
+		label: "shows",
+		render: (tag) =>
+			tag.showTitles?.length ? tag.showTitles.join(", ") : "None",
+		compare: (left, right) =>
+			(left.showTitles ?? [])
+				.join(", ")
+				.localeCompare((right.showTitles ?? []).join(", ")),
 	},
 	{
 		key: "color",

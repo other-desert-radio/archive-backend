@@ -19,6 +19,7 @@ import {
 } from "../components/tags/index.js";
 import { createTag } from "../loaders/create-tag.js";
 import { modifyTag } from "../loaders/modify-tag.js";
+import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
 import { userPreferences } from "../user-preferences.js";
 
@@ -28,6 +29,7 @@ export const TagsPage = () => {
 	const [isOnboarding, setIsOnboarding] = useState(false);
 	const [editingTag, setEditingTag] = useState<TagsAdminRow>();
 	const [tags, setTags] = useState<TagsAdminRow[]>([]);
+	const [shows, setShows] = useState<ShowsAdminRow[]>([]);
 	const [query, setQuery] = useState("");
 	const [viewMode, setViewMode] = useState<ResourceViewMode>(() =>
 		userPreferences.getResourceViewMode("tags"),
@@ -55,8 +57,11 @@ export const TagsPage = () => {
 		setIsLoading(true);
 		setError(undefined);
 
-		loadTags()
-			.then(setTags)
+		Promise.all([loadTags(), loadShows()])
+			.then(([loadedTags, loadedShows]) => {
+				setTags(loadedTags);
+				setShows(loadedShows);
+			})
 			.catch(() => setError("The tags could not be loaded."))
 			.finally(() => setIsLoading(false));
 	}, []);
@@ -68,12 +73,21 @@ export const TagsPage = () => {
 	const visibleTags = useMemo(
 		() =>
 			sortResourceRows(
-				filterTags(tags, query),
+				filterTags(
+					tags.map((tag) => ({
+						...tag,
+						showTitles: shows
+							.filter((show) => show.tags.includes(tag.id))
+							.sort((a, b) => a.title.localeCompare(b.title) || a.id - b.id)
+							.map((show) => show.title),
+					})),
+					query,
+				),
 				tagColumns,
 				sortColumn,
 				sortDirection,
 			),
-		[tags, query, sortColumn, sortDirection],
+		[tags, shows, query, sortColumn, sortDirection],
 	);
 	const handleSort = (column: TagSortColumn) => {
 		if (column === sortColumn) {

@@ -1,6 +1,6 @@
 import type { TagsJSON } from "../../json-transformers/index.js";
 
-export type TagsAdminRow = TagsJSON;
+export type TagsAdminRow = TagsJSON & { showTitles?: string[] };
 
 export const loadTags = async (
 	fetcher: typeof fetch = fetch,
