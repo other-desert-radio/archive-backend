@@ -1,9 +1,9 @@
 # Admin UI design and reuse guide
 
-Read this guide before building or editing admin UI. It records the reviewed
-modal design and the reusable components behind it. Follow explicit user
-instructions when they differ from these defaults, and update this guide when
-reviewed decisions change.
+For admin UI work, read the shared guidance and affected resource sections. This
+guide records the reviewed modal design and the reusable components behind it.
+Follow explicit user instructions when they differ from these defaults, and
+update this guide when reviewed decisions change.
 
 ## Aesthetic and readability
 
@@ -109,6 +109,13 @@ a generic form framework or components with many unrelated mode flags.
 - **`useDJImageSelection`:** Decoding, crop candidates, accepted files, removal
   state, and obsolete-work cleanup
 
+Keep shared tables, grids, toolbars, and formatters in `resource-views/`, and
+modal/form primitives in `modal/`. Both DJ and Shows use `card/`, `table/`,
+`toolbar/`, and `onboarding-modal/` responsibility groups. DJ image code is
+split into `crop-modal/`, `dropzone/`, `image-selection/`, and `utils/` under
+`dj/image/`; `dj/image/index.ts` re-exports those children. Public imports use
+`shared/modal`, `shared/resource-views`, `dj`, or `shows` group barrels.
+
 Shared primitives live under `components/shared/modal/` or
 `components/shared/resource-views/`. Resource components belong under their
 responsibility groups, including `dj/onboarding-modal/`,
@@ -131,8 +138,8 @@ Small resource wrappers supply empty or existing values and the mutation
 callback. Edit controls in both table and grid open the same form. Show cards
 require an edit callback so their Edit action cannot silently do nothing. Dates
 prefill from the UTC calendar portion of the stored timestamp; duration stays in
-integer seconds. All creation fields are editable, and clearing the image URL
-removes the image.
+integer seconds. All creation fields are editable; both image URLs remain
+required.
 
 Assigned tag titles come from the loaded resource data. If an assigned tag is
 unresolved, saving stays disabled until tag loading or Retry resolves it. Late
@@ -196,7 +203,10 @@ selectors, errors, helpers, and baseline while ignoring stale requests.
 The submit button reads “Import”, changing to “Importing…” while submitting. The
 form calls the ordinary creation loader with `mixcloud_import_id` and reports
 successful 201 or already-imported 200 results to its caller. Category launchers
-open the corresponding pending queue.
+open the corresponding pending queue. Pending Mixcloud table rows also expose an
+Import action, opening the same import modal with only that row in the session.
+Imported rows have no Import button. Row actions are disabled during source
+refresh; successful imports use the same feedback and table/count reload.
 
 ### Message modal contract
 
@@ -283,8 +293,8 @@ required; color starts at `#cccccc`. Optional blank metadata is omitted from
 creation requests. New tags are reviewed; existing titles reuse their current
 tag without changing its metadata. Success closes and refreshes Tags, clearing
 the search so the tag can be found. Failed submissions retain values; dirty
-dismissal requires confirmation. Merging and grid views remain outside this
-workflow.
+dismissal requires confirmation. Merging remains outside this workflow; the grid
+behavior is described below.
 
 ### Inline Tag review
 
@@ -305,18 +315,32 @@ mark metadata saves reviewed.
 
 ## Verification and delivery
 
-Deliver one narrowly scoped chunk with documentation and focused verification,
-then pause for user review before starting another. Read
-[`TYPESCRIPT.md`](TYPESCRIPT.md) for code conventions and
-[`api-routes.md`](api-routes.md) before changing API behavior.
+Use the selected [development mode](DEVELOPMENT.md#development-modes) for review
+gates. Apply [TypeScript conventions](TYPESCRIPT.md) to UI code and
+[API conventions](api-routes.md) when changing API behavior.
 
 For layout, styling, or interaction changes, use `agent-browser` against the
-authenticated local stack before handoff, as required by
-[`AGENTS.md`](../AGENTS.md). Inspect affected create/edit views at desktop and
-phone widths; 390px and 320px have been used for phone checks. Wait for
-rendering and fonts to settle. Exercise changed controls, keyboard focus,
-scrolling, and layered dialogs where relevant. Capture and inspect screenshots;
-report any runtime blocker explicitly.
+authenticated local stack before handoff. This is a required acceptance check.
+Inspect affected create/edit views at desktop and phone widths; 390px and 320px
+have been used for phone checks. Wait for rendering and fonts to settle.
+Exercise changed controls, keyboard focus, scrolling, and layered dialogs where
+relevant. Capture and inspect screenshots; report any runtime blocker
+explicitly.
+
+Start the [local stack](DEVELOPMENT.md#local-environment-and-startup), then:
+
+```sh
+agent-browser --session admin-ui-verify set credentials admin admin
+agent-browser --session admin-ui-verify open http://localhost:3000/admin/#djs
+agent-browser --session admin-ui-verify wait 500
+agent-browser --session admin-ui-verify snapshot -i
+agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
+```
+
+Use `#shows`, `#tags`, or `#mixcloud` as applicable. Credentials are for local
+development only. Set them on the session, never in the URL: embedded
+credentials break relative admin API requests. The session socket is outside the
+workspace sandbox; request elevated permission when necessary.
 
 Run formatting, lint, TypeScript checks, and the smallest relevant tests. The
 modal interaction suite is `integration-tests/modal-cancellation.spec.ts`; it
@@ -397,9 +421,6 @@ rather than raw internal errors. A reload failure after a successful refresh is
 identified separately. Shared toolbar creation controls and table Edit controls
 are optional; existing resources continue supplying them.
 
-The user verified and approved the parser-column UI after chunk 3. The automated
-browser verification attempt was interrupted before completion.
-
 ### Mixcloud readiness controls
 
 The Mixcloud toolbar places “ready for import” and “needs review” immediately
@@ -438,8 +459,8 @@ ignored. Table search and sort are retained throughout.
 and covers both categories, order, exclusions, count semantics, skipped-row
 reopening, empty/final closure, dirty dismissal/navigation, focus,
 pending/failure and retry behavior, post-commit reload failure, overlapping
-reloads, and phone action reachability. The user is performing visual acceptance
-for this chunk.
+reloads, and phone action reachability. Visual acceptance follows the checks
+above.
 
 ### Show image URL variants
 
@@ -547,3 +568,13 @@ associated Show title alphabetically, separated by commas. Tags without Shows
 display None. The page loads existing Tags and Shows endpoints together; either
 read failing uses the page error/retry state rather than displaying missing
 associations.
+
+## Original design references
+
+Use these to recover original visual intent when needed; current reviewed
+behavior in this guide takes precedence over old screenshot measurements. Figma
+access is not required to use the established local components.
+
+- [DJ table, node 174:762](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=174-762)
+- [DJ onboarding, node 207:1052](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=207-1052)
+- [Tags, node 205:890](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=205-890)

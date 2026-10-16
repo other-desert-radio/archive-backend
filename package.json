@@ -22,6 +22,7 @@
 		"format": "./scripts/format",
 		"lint": "./scripts/lint",
 		"typecheck": "tsc --noEmit",
+		"docs:check": "python3 scripts/check-docs.py",
 		"setup-hooks": "./scripts/setup-git-hooks"
 	},
 	"dependencies": {

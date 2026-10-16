@@ -1,58 +1,60 @@
 # Agent instructions
 
-Before changing this repository, read the relevant guidance in [`docs/`](docs/).
-Before building or editing UI, also read
-[`docs/ADMIN_UI_DESIGN.md`](docs/ADMIN_UI_DESIGN.md) for reusable components,
-reviewed aesthetics, sizing, spacing, interactions, and verification defaults.
-Before adding or changing an API route, also read
-[`docs/api-routes.md`](docs/api-routes.md) and follow its authentication,
-route-layout, shared-type, and validation conventions. Keep the implementation
-small and update the docs in the same chunk as any behavior or workflow change.
+## Working scope
 
-Build all features incrementally. Implement one small, narrowly scoped feature
-at a time, include focused tests and documentation, then stop and ask the user
-for review or input before beginning the next feature. Do not bundle unrelated
-backend, frontend, authentication, database, or deployment work into a single
-chunk.
+Keep changes focused; preserve unrelated local edits. Update authoritative docs
+when documented behavior or conventions change.
 
-## Admin UI component organization
+For substantial new features, architectural changes, or multi-file
+implementations without an explicit mode, ask: “Would you like to build this in
+chunks (structure → scaffolding → implementation) or one-shot?” Explicit mode
+choices apply only to the current task; small fixes/refactors proceed normally.
+For mode selection or chunked work, use
+[Development modes](docs/DEVELOPMENT.md#development-modes).
 
-Keep reusable admin UI primitives in `src/admin-ui/components/shared/` with one
-component per subdirectory. Put resource views, tables, grids, toolbars, and
-formatters in `resource-views/`; put onboarding modal and form primitives in
-`modal/`.
+## Selective reference loading
 
-Keep DJ and Shows components grouped by responsibility, also with one component
-per subdirectory. Use `card/`, `table/`, `toolbar/`, and `onboarding-modal/` in
-both resource directories. DJ image components belong under `dj/image/`, split
-into `crop-modal/`, `dropzone/`, `image-selection/`, and `utils/`. Co-locate a
-component's CSS and its private utility files with that component. Every
-component directory must expose an `index.ts` barrel; import public component
-APIs from the highest relevant group barrel (`shared/modal`,
-`shared/resource-views`, `dj`, or `shows`). The `dj/image/index.ts` barrel
-re-exports its child folders.
+Identify the affected code first. Follow the matching reference below only when
+its trigger applies; read relevant sections and expand only as needed. Links are
+navigation, not automatic imports. Do not load all of `docs/`, follow every
+link, or reread unchanged guidance during the same task.
 
-## Visual admin UI checks
+- TypeScript implementation/refactoring → [TypeScript](docs/TYPESCRIPT.md)
+- Backend feature lifecycle logging or API routes →
+  [API conventions](docs/api-routes.md)
+- Admin UI components, layout, style, interactions →
+  [UI guide](docs/ADMIN_UI_DESIGN.md)
+- Adding/changing tests or selecting verification → [Testing](docs/TESTING.md)
+- Schema, relationships, migrations, database types →
+  [Database](docs/DATABASES.md)
+- Service boundaries, auth ownership, deployment →
+  [Architecture](docs/ARCHITECTURE.md)
+- Setup, local stack, data utilities, backups →
+  [Development](docs/DEVELOPMENT.md)
 
-For any admin UI layout, styling, or interaction work, use `agent-browser`
-before handoff. This is a required acceptance check, not an optional diagnostic:
-start the local stack, open the affected authenticated view, wait for it to
-settle, and inspect its snapshot or screenshot. Exercise the affected control
-when the change is interactive.
+For other domains or uncertainty, consult
+[the documentation index](docs/README.md). A small unrelated edit needs no
+reference that does not apply. Admin UI visual acceptance remains mandatory; its
+commands and criteria live in the UI guide.
 
-```sh
-agent-browser --session admin-ui-verify set credentials admin admin
-agent-browser --session admin-ui-verify open http://localhost:3000/admin/#djs
-agent-browser --session admin-ui-verify wait 500
-agent-browser --session admin-ui-verify snapshot -i
-agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
-```
+## Task state
 
-The browser session uses a socket outside the workspace sandbox, so request
-approved elevated permission when necessary. The documented credentials are for
-local development only; never use them outside that environment. Do not embed
-the credentials in the URL: this version of `agent-browser` preserves them in
-the document URL, causing relative admin API fetches to fail. Set credentials on
-the session first, then open the credential-free local URL. Check `#shows` and
-`#tags` as applicable. Report what was verified, or clearly state the local
-runtime blocker that prevented verification.
+For multi-step work needing persistent state, use `docs/plans/active/<task>.md`.
+Read only the plan for the current task; track incomplete/completed steps,
+blockers, decisions, and next actions there. Never mark user review complete
+without user input. Trivial tasks need no plan. On completion, delete disposable
+plans or move useful history to `docs/plans/archive/`; update links when moving.
+Create these directories only when a plan is needed. Root instructions are not a
+task log. Historical notes do not override current reference standards.
+
+## Documentation maintenance
+
+- Search for an existing authoritative reference before creating a document;
+  update it instead of duplicating it. Do not create a summary after every task.
+- Keep stable conventions separate from temporary implementation details. Remove
+  obsolete rules rather than appending exceptions or rules for one-off errors.
+- Update links/indexes when moving or deleting documents. Do not add
+  unconditional reads without a concrete reason; keep agent-specific
+  configuration minimal.
+- Prefer existing linters, formatting, type checks, and tests to prose
+  enforcement. Run `bun run docs:check` for documentation changes.

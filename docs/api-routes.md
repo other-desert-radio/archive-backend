@@ -164,13 +164,13 @@ required positive safe-integer `id`. Creation and editing share validation and
 transactional persistence. Editing replaces all editable metadata, DJ links, and
 Show tags while retaining `id` and `createdAt`. Both image URLs are required on
 every save; omitted, blank, relative, and non-HTTP(S) image URLs return `400`.
-The public JSON `image` field maps to `image_large`; migration `0024` removes
-the legacy database column. Omitted or empty `tags` clears Show tag assignments.
-At least one existing DJ remains required. Unlinked DJs and tags are preserved;
-missing tag titles are created through the shared tag service. Success returns
-`200` with the admin Show shape, including both image URLs; an unknown Show
-returns `404 { "error": "Not Found" }`. Invalid fields or missing selected DJs
-return `400`, and unexpected failures roll back all writes and return `500`.
+Public JSON exposes both image URL fields; migration `0024` removes the legacy
+database column. Omitted or empty `tags` clears Show tag assignments. At least
+one existing DJ remains required. Unlinked DJs and tags are preserved; missing
+tag titles are created through the shared tag service. Success returns `200`
+with the admin Show shape, including both image URLs; an unknown Show returns
+`404 { "error": "Not Found" }`. Invalid fields or missing selected DJs return
+`400`, and unexpected failures roll back all writes and return `500`.
 
 Tag creation accepts `{ title: string }`, optionally with `color`,
 `mixcloud_key`, and `mixcloud_url`, for `create-tag`, and an array of those

@@ -1,5 +1,9 @@
 # DJ table view
 
+Historical product/design input. Examples and proposed behavior may be obsolete.
+Use the [documentation index](../docs/README.md) for current contracts and
+standards; consult this file only for original intent.
+
 This document outlines the DJ table view and DJ onboarding screen. Much of this
 logic and design language is to be shared across the tags and shows table views.
 

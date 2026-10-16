@@ -566,3 +566,25 @@ test("empty DJ selection highlights label and box until a DJ is selected", async
 		"rgb(0, 0, 0)",
 	);
 });
+
+test("row Import opens only that pending show and removes its action after saving", async ({
+	page,
+}) => {
+	const linkedRow = page.locator("tbody tr").filter({ hasText: "Ready 1" });
+	await expect(
+		linkedRow.getByRole("button", { name: "Import", exact: true }),
+	).toHaveCount(0);
+	const row = page.locator("tbody tr").filter({ hasText: "Review 4" });
+	const action = row.getByRole("button", { name: "Import", exact: true });
+	await action.click();
+	await expect(sourceId(page)).toHaveText("Source 4");
+	await expect(page.getByText("1 remaining", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(action).toBeFocused();
+	await action.click();
+	await expect(save(page)).toBeEnabled();
+	await save(page).click();
+	await expect(page.getByRole("dialog")).toBeHidden();
+	await expect(action).toHaveCount(0);
+	expect(state.posts).toBe(1);
+});

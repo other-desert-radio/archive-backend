@@ -1,5 +1,9 @@
 # Features
 
+Historical product/design input. Examples and proposed behavior may be obsolete.
+Use the [documentation index](../docs/README.md) for current contracts and
+standards; consult this file only for original intent.
+
 - Digital Ocean Droplet
 - Responsibilities
   - Handle upload, post to MixCloud

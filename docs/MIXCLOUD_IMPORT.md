@@ -8,13 +8,13 @@ the API.
 ## Current scope
 
 Migration `0018_create_mixcloud_import_table` implements the tracking schema
-from `human_docs/databases_human.md`. The importer itself remains future work.
-This branch includes the WIP parser and launcher. `./scripts/import-mixcloud`
-runs `src/db/import-mixcloud.ts`, which reads `src/res/mixcloud.json`, parses
-cloudcast names, and prints diagnostics without database writes. Keep that
-parsing workflow read-only until the import phase is implemented. The following
-documents the tracking schema and future importer requirements; the migration
-does not enable imports or add show soft deletion.
+from `human_docs/databases_human.md`. Show creation now supports transactional
+import; see the API contract. This branch includes the WIP parser and launcher.
+`./scripts/import-mixcloud` runs `src/db/import-mixcloud.ts`, which reads
+`src/res/mixcloud.json`, parses cloudcast names, and prints diagnostics without
+database writes. Keep that diagnostic parsing workflow read-only; UI/API imports
+are separate. The following documents the tracking schema and import
+requirements; the migration does not enable imports or add show soft deletion.
 
 ### `mixcloud_import`
 
@@ -49,7 +49,7 @@ cloudcast URL and name; `created_time` is Mixcloud's creation timestamp;
 source image URLs. Refresh maps `pictures.large` to `image_small` and
 `pictures["1024wx1024h"]` to `image_large`; both source fields are required by
 fetch validation. Existing rows receive the new URLs on their next refresh.
-Applying this migration does not run the importer. Migration
+Applying this migration does not import Shows. Migration
 `0020_add_mixcloud_tag_keys` adds nullable `mixcloud_tag_keys`, an array of
 source genre key strings. Existing rows default to null (unknown); an empty
 array represents a cloudcast with no source tags. These are source metadata, not
@@ -82,11 +82,11 @@ Mixcloud's source timestamp, never the tracking row's local `createdAt`.
 
 Existing and new rows start with null suggestions. This migration does not run
 the parser, backfill data, expose new API/UI fields, or change refresh behavior.
-Parser persistence follows in a separate reviewed chunk. Rollback removes only
-these columns and their constraint, retaining source metadata and import links.
-`tests/db/mixcloud-parser-results-migration.test.ts` verifies nullable defaults,
-stored suggestions, date-source validation, and rollback using the disposable
-`MIXCLOUD_MIGRATION_TEST_DATABASE_URL`.
+Refresh now persists parser results as described in the database reference.
+Rollback removes only these columns and their constraint, retaining source
+metadata and import links. `tests/db/mixcloud-parser-results-migration.test.ts`
+verifies nullable defaults, stored suggestions, date-source validation, and
+rollback using the disposable `MIXCLOUD_MIGRATION_TEST_DATABASE_URL`.
 
 ## Parser suggestions
 
@@ -156,13 +156,14 @@ row-level delete/update actions and could remove tracking rows. Deleting a
 tracking row removes duplicate-import protection for that key. Hard-deleting its
 show resets the tracking row to pending; both permit a later reimport.
 
-### Future import workflow
+### Import workflow
 
-For each source key, insert a pending tracking row using
-`ON CONFLICT (key) DO NOTHING`. In a database transaction, lock that row with
-`SELECT ... FOR UPDATE` and recheck `show_id`; skip it if already populated.
-This serializes concurrent imports for the same key rather than relying only on
-an application-level precheck.
+Refresh supplies pending tracking rows. Show creation accepts an optional
+tracking ID as documented in
+[the API contract](api-routes.md#request-validation-with-ts-pattern). In a
+database transaction, lock that row with `SELECT ... FOR UPDATE` and recheck
+`show_id`; skip it if already populated. This serializes concurrent imports for
+the same key rather than relying only on an application-level precheck.
 
 Create the show and its required DJ/tag associations, then set `show_id` and
 `imported_at` together in that same transaction. Set the timestamp only on a
@@ -209,10 +210,10 @@ apply it there. Focused coverage includes:
   deleting all shows preserves every tracking row and clears both fields.
 - Migration rollback removes the table and function without deleting shows.
 
-When the importer is implemented in a later feature, verify reruns and
-concurrent runs create only one show per key, and simulate a failure after show
-creation to verify transaction rollback. Verify that a soft-delete update leaves
-tracking unchanged once the show's soft-delete representation exists.
+Import regression tests must verify reruns and concurrent runs create only one
+show per key, and simulate a failure after show creation to verify transaction
+rollback. Verify that a soft-delete update leaves tracking unchanged once the
+show's soft-delete representation exists.
 
 ## Consolidated source tags
 
