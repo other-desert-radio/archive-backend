@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-"""Validate local Markdown links and bound always-loaded agent instructions."""
+"""Keep repository documentation navigable and agent instructions lightweight.
+
+Run with `bun run docs:check` or `python3 scripts/check-docs.py`. Scan tracked
+and untracked, non-ignored Markdown files for inline links and images whose
+local targets are missing. For Markdown heading fragments, check generated
+heading anchors, including duplicate-heading suffixes; ignore fenced code
+blocks when collecting headings. External URLs are skipped, and this is not a
+full Markdown parser or a check of remote links.
+
+Also limit each AGENTS.md and CLAUDE.md to 4096 bytes and 80 lines so that
+always-loaded instructions stay concise and detailed guidance lives in
+task-specific documentation. Print errors and a summary, exiting nonzero if
+any check fails. Files are never modified.
+"""
 from pathlib import Path
 import re
 import subprocess
