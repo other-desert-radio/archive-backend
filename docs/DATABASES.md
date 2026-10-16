@@ -4,11 +4,11 @@ Read this when changing archive tables, relationships, migrations, or typed
 database wiring. Read only the linked workflow guidance relevant to the task:
 
 - [Mixcloud tracking and imports](MIXCLOUD_IMPORT.md): source metadata, refresh
-  persistence, import state, deletion, and future import transactions.
+  persistence, import state, deletion, and import transactions.
 - [Mixcloud parser](MIXCLOUD_PARSER.md): matchers, DJ names, date suggestions,
   and read-only diagnostics.
 - [Static archive export](ARCHIVE_EXPORT.md): JSON contracts and image assets.
-- [Development commands](README.md#commands-and-checks): seed and delete
+- [Development commands](DEVELOPMENT.md#local-dummy-data): seed and delete
   scripts.
 - [Database testing](DATABASE_E2E_TESTING.md): disposable PostgreSQL setup.
 - [Human design notes](../human_docs/databases_human.md): intent and plans.
@@ -19,11 +19,12 @@ Confirm current schema in `src/db/migrations/` and application types in
 `src/db/types.ts`. PostgreSQL is the source of truth; exported ID arrays are
 frontend representations, not primary entity storage.
 
-Build changes incrementally in dependency order and stop for review after each
-small feature. Add migrations rather than editing already-applied migrations.
-Apply reviewed migrations explicitly, one step at a time; API startup checks
+Follow dependency order and the selected
+[development mode](DEVELOPMENT.md#development-modes) for implementation review
+gates. Add migrations rather than editing already-applied migrations. Apply
+reviewed migrations explicitly, one step at a time; API startup checks
 connectivity and does not run migrations. Commands are in the
-[development guide](README.md#local-environment-and-startup).
+[development guide](DEVELOPMENT.md#local-environment-and-startup).
 
 Archive tables use `createdAt timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP`.
 Existing rows received the migration time when this column was introduced.
@@ -45,6 +46,9 @@ public sign-up remains disabled. These tables are managed by Better Auth and are
 not archive resources.
 
 ## Core tables
+
+DJ and Show titles are not unique. Do not introduce duplicate-title rejection
+without a deliberate schema/product decision.
 
 ### `djs`
 
@@ -102,9 +106,9 @@ Rollback drops only the new columns and preserves `image`. There are no defaults
 or URL-format constraints. Show create/edit routes and dummy seeds supply both
 columns. Migration `0024_drop_show_image` then removes the legacy `image`
 column. Apply migrations through `0024` before running the updated application.
-Public JSON retains its `image` field by reading `image_large`. Rolling back
-`0024` restores `image` from the current large URL; distinct legacy values are
-not recoverable.
+Public JSON exposes `image_small` and `image_large`; see the export contract.
+Rolling back `0024` restores `image` from the current large URL; distinct legacy
+values are not recoverable.
 
 ### `tags`
 

@@ -1,5 +1,7 @@
 # Other Desert Radio Backend
 
+For agents and robots, see [docs/README.md](docs/README.md).
+
 This is the backend repo for Other Desert Radio's new archive page.
 
 the database, backend, and admin UI live here.

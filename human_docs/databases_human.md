@@ -1,5 +1,9 @@
 # Database Notes
 
+Historical product/design input. Examples and proposed behavior may be obsolete.
+Use the [documentation index](../docs/README.md) for current contracts and
+standards; consult this file only for original intent.
+
 The archive front end that plugs into this is a GitHub static site.
 
 It will source data from static JSON files included in the GitHub repo.

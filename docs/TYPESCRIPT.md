@@ -1,17 +1,8 @@
 # TypeScript Conventions
 
-This document is the implementation reference for TypeScript style in the
-backend.
-
-## UI implementation guidance
-
-Before building or editing UI, read [`ADMIN_UI_DESIGN.md`](ADMIN_UI_DESIGN.md).
-It records the reusable component and hook boundaries, reviewed aesthetic,
-responsive sizing and spacing, and modal interaction requirements. Apply this
-document's TypeScript conventions to UI code as well: typed props and requests,
-narrow component responsibilities, and public group-barrel imports. Extend
-existing primitives before duplicating them, and preserve the guide's behavior
-and visual verification workflow.
+This document is the implementation reference for backend and admin UI
+TypeScript. Development stages are defined in
+[Development modes](DEVELOPMENT.md#development-modes), when applicable.
 
 ## Use type aliases
 
@@ -80,9 +71,10 @@ tag colors.
 
 ## Type explicit route contracts
 
-Add explicit types wherever TypeScript supports them, especially at framework
-boundaries. Fastify routes should declare their request and reply contracts with
-route generics instead of relying on inference alone.
+Use meaningful explicit parameter and return types at public module/framework
+boundaries where they clarify the contract. Let local values and straightforward
+callbacks use inference rather than repeating obvious types. Fastify routes
+declare request and reply contracts with route generics.
 
 ```ts
 app.get<{ Reply: { 200: ArchiveEntry[]; 500: ErrorResponse } }>(
@@ -130,3 +122,42 @@ Use `isHttpUrl` from `src/utils/index.ts` for absolute HTTP(S) URL checks in
 backend and admin UI code. It uses the URL parser and returns false for invalid
 or non-HTTP(S) URLs without throwing. Callers retain responsibility for trimming
 stored values, optional-field handling, and validation messages.
+
+## Contracts and safe narrowing
+
+Keep public contracts at their owning module; avoid duplicate shapes across the
+call chain. Use generics when they preserve a real relationship between inputs
+and outputs, and discriminated unions for alternatives with different required
+fields. Preserve the existing `type` preference; interfaces are not required to
+express these contracts.
+
+Treat untrusted input as `unknown` until its shape is validated. Check structure
+before accessing fields or trimming strings, then normalize and validate
+semantic constraints with the existing patterns/helpers. Static types and
+assertions do not validate HTTP, file, database JSON, or external-service input
+at runtime. Avoid `any`, unsafe casts, and unnecessary non-null assertions;
+narrow or handle the absent case. A necessary interop exception should be narrow
+and justified. Keep boundary-specific wire/SQL representations separate when
+their semantics actually differ, following the absence conventions above.
+
+## Functions and organization
+
+Give functions one understandable responsibility and consistent names throughout
+the call chain. Make inputs, outputs, dependencies, and side effects explicit;
+pass dependencies such as the database rather than reaching for hidden mutable
+state. Keep pure transformations separate from I/O where that improves clarity,
+without creating a file or layer for every function. Respect existing module and
+UI ownership boundaries and barrel conventions.
+
+Prefer simple functions; use classes only when state, encapsulation, or existing
+patterns justify them. Reuse established modules and dependencies before adding
+helpers, layers, or abstractions. Keep private helpers local until reuse or
+responsibility warrants extraction. Favor readable control flow over cleverness,
+speculative features, and unrelated cleanup. Preserve architectural decisions
+unless the task justifies changing them.
+
+Propagate failures to the layer responsible for recovery or protocol responses.
+Do not swallow errors or turn failure into success-shaped values. Keep mutations
+atomic where required; distinguish expected validation/domain failures from
+unexpected failures. API status mapping and safe lifecycle logging belong to
+[API conventions](api-routes.md), not a second error framework.

@@ -22,11 +22,11 @@ entity tables.
 
 ## Export rules
 
-The exporter produces the DJ/tag portion of the asset layout described in
-[`human_docs/databases_human.md`](../human_docs/databases_human.md). All arrays
-are ordered deterministically: DJ indexes by title then ID, tags by ID, and
-relationship IDs numerically ascending. The command logs its nested progress,
-including each generated JSON and image file.
+The exporter produces the asset layout above. Original design intent lives in
+[historical notes](../human_docs/databases_human.md); this document owns the
+current contract. All arrays are ordered deterministically: DJ indexes by title
+then ID, tags by ID, and relationship IDs numerically ascending. The command
+logs its nested progress, including each generated JSON and image file.
 
 `tags.json` is the canonical tag dictionary. Every other exported document uses
 the `tagIds` field rather than duplicating tag titles and colors. The Astro
@@ -60,3 +60,7 @@ The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must
 prefix file and asset paths with `import.meta.env.BASE_URL`, rather than
 assuming the site is deployed at `/`.
+
+Inspect the absolute `ARCHIVE_RESOURCE_DIRECTORY` and `ARCHIVE_ASSET_DIRECTORY`
+constants in `src/db/export-archive.ts` before exporting: they target the
+sibling Astro site, not this backend’s `dist/`.

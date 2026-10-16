@@ -18,6 +18,14 @@ type ResourceTableProps<Row, ColumnKey extends string> = {
 	sortColumn: ColumnKey;
 	sortDirection: SortDirection;
 	onSort: (column: ColumnKey) => void;
+	rowAction?:
+		| undefined
+		| {
+				label: string;
+				onClick: (row: Row) => void;
+				isVisible: (row: Row) => boolean;
+				disabled?: boolean;
+		  };
 	onEdit?: (row: Row) => void;
 	onDelete?: (row: Row) => void;
 };
@@ -31,6 +39,7 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 	sortColumn,
 	sortDirection,
 	onSort,
+	rowAction,
 	onEdit,
 	onDelete,
 }: ResourceTableProps<Row, ColumnKey>) => (
@@ -39,7 +48,9 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 			<caption className={styles.hidden}>{caption}</caption>
 			<thead>
 				<tr>
-					{(onEdit !== undefined || onDelete !== undefined) && (
+					{(rowAction !== undefined ||
+						onEdit !== undefined ||
+						onDelete !== undefined) && (
 						<th scope="col" className={styles.actionHeader}>
 							Actions
 						</th>
@@ -74,8 +85,20 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 			<tbody>
 				{rows.map((row) => (
 					<tr key={rowKey(row)}>
-						{(onEdit !== undefined || onDelete !== undefined) && (
+						{(rowAction !== undefined ||
+							onEdit !== undefined ||
+							onDelete !== undefined) && (
 							<td className={styles.actionCell}>
+								{rowAction?.isVisible(row) && (
+									<button
+										type="button"
+										className={styles.editButton}
+										disabled={rowAction.disabled}
+										onClick={() => rowAction.onClick(row)}
+									>
+										{rowAction.label}
+									</button>
+								)}
 								{onEdit && (
 									<button
 										type="button"

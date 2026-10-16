@@ -62,6 +62,7 @@ describe("tags table", () => {
 		expect(tagColumns.map(({ key }) => key)).toEqual([
 			"id",
 			"title",
+			"shows",
 			"color",
 			"reviewed",
 			"mixcloud_key",
@@ -76,6 +77,16 @@ describe("tags table", () => {
 		expect(
 			tagColumns.find(({ key }) => key === "mixcloud_url")?.render(tag),
 		).toBe("https://www.mixcloud.com/genres/ambient/");
+	});
+
+	test("lists every associated show and uses None for unassigned tags", () => {
+		const column = tagColumns.find(({ key }) => key === "shows");
+		const tag = { id: 1, title: "Ambient", color: "#abcdef", reviewed: true };
+		expect(
+			column?.render({ ...tag, showTitles: ["First Show", "Second Show"] }),
+		).toBe("First Show, Second Show");
+		expect(column?.render({ ...tag, showTitles: [] })).toBe("None");
+		expect(column?.render(tag)).toBe("None");
 	});
 
 	test("filters by title or color", () => {

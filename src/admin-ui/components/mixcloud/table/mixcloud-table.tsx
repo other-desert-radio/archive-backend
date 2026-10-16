@@ -228,12 +228,28 @@ type Props = {
 	sortColumn: MixcloudSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: MixcloudSortColumn) => void;
+	onImport?: (row: Row) => void;
+	isImportDisabled?: boolean;
 };
-export const MixcloudTable = (props: Props) => (
+export const MixcloudTable = ({
+	onImport,
+	isImportDisabled,
+	...props
+}: Props) => (
 	<ResourceTable
 		{...props}
 		rowKey={(r) => r.id}
 		caption="Mixcloud"
 		columns={mixcloudColumns}
+		rowAction={
+			onImport === undefined
+				? undefined
+				: {
+						label: "Import",
+						onClick: onImport,
+						isVisible: (row) => row.show_id == null,
+						disabled: isImportDisabled ?? false,
+					}
+		}
 	/>
 );

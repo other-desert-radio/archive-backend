@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MixcloudImportCategory } from "../../utils/mixcloud-import-status.js";
+import {
+	classifyMixcloudImport,
+	type MixcloudImportCategory,
+} from "../../utils/mixcloud-import-status.js";
 import {
 	filterMixcloudImports,
 	MixcloudImportQueue,
@@ -32,6 +35,7 @@ import styles from "./mixcloud-page.module.css";
 
 type ImportSession = {
 	category: MixcloudImportCategory;
+	singleRow?: boolean;
 	items: MixcloudImportAdminRow[];
 };
 
@@ -85,6 +89,16 @@ export const MixcloudPage = () => {
 			return;
 		}
 		setSession({ category, items });
+	};
+	const openRowImport = (row: MixcloudImportAdminRow) => {
+		const category = classifyMixcloudImport(row);
+		if (category === undefined || isImportOpen || refreshInFlight.current)
+			return;
+		launcherRef.current =
+			document.activeElement instanceof HTMLElement
+				? document.activeElement
+				: undefined;
+		setSession({ category, items: [row], singleRow: true });
 	};
 	const [statusError, setStatusError] = useState<string>();
 	const loadStatus = useCallback(() => {
@@ -271,6 +285,8 @@ export const MixcloudPage = () => {
 						sortColumn={sortColumn}
 						sortDirection={sortDirection}
 						onSort={onSort}
+						onImport={openRowImport}
+						isImportDisabled={isRefreshing}
 					/>
 				</ResourceView>
 				{importReloadError !== undefined && (
@@ -324,7 +340,11 @@ export const MixcloudPage = () => {
 			{session !== undefined && (
 				<MixcloudImportQueue
 					items={session.items}
-					remainingCount={pendingMixcloudImports(rows, session.category).length}
+					remainingCount={
+						session.singleRow
+							? 1
+							: pendingMixcloudImports(rows, session.category).length
+					}
 					onClose={closeImport}
 					onImported={onImported}
 				/>
