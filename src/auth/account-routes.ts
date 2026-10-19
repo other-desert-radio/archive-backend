@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { isMatching, P } from "ts-pattern";
 import type { TypedDatabase } from "../admin/routes/types.js";
 import { AccountError, getAccountSession } from "./access.js";
 import {
@@ -33,7 +34,7 @@ export const accountRoutes =
 			try {
 				const session = await getAccountSession(auth, request, true);
 				const body = requireAccountBody(request.body);
-				if (typeof body.currentPassword !== "string" || !body.currentPassword)
+				if (!isMatching(P.string.minLength(1), body.currentPassword))
 					throw new AccountError(400, "Current password is required");
 				const currentPassword = body.currentPassword;
 				const newPassword = validatePassword(body.newPassword);
@@ -62,11 +63,7 @@ export const accountRoutes =
 						});
 						if (!response.ok) {
 							const result: unknown = await response.json();
-							const invalid =
-								typeof result === "object" &&
-								result !== null &&
-								"code" in result &&
-								result.code === "INVALID_PASSWORD";
+							const invalid = isMatching({ code: "INVALID_PASSWORD" }, result);
 							throw new AccountError(
 								400,
 								invalid

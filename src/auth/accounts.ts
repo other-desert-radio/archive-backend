@@ -21,9 +21,12 @@ export const safeUserColumns = [
 ] as const;
 export const validatePassword = (password: unknown): string => {
 	if (
-		typeof password !== "string" ||
-		password.length < minimumPasswordLength ||
-		password.length > maximumPasswordLength
+		!isMatching(
+			P.string
+				.minLength(minimumPasswordLength)
+				.maxLength(maximumPasswordLength),
+			password,
+		)
 	)
 		throw new AccountError(
 			400,
@@ -32,7 +35,7 @@ export const validatePassword = (password: unknown): string => {
 	return password;
 };
 export const normalizeAccountEmail = (value: unknown): string => {
-	if (typeof value !== "string")
+	if (!isMatching(P.string, value))
 		throw new AccountError(400, "A valid email is required");
 	const email = value.trim().toLowerCase();
 	if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
@@ -46,7 +49,7 @@ export const requireAccountBody = (body: unknown): Record<string, unknown> => {
 	return body;
 };
 export const requireAccountId = (id: unknown): string => {
-	if (typeof id !== "string" || !id.trim())
+	if (!isMatching(P.string, id) || !id.trim())
 		throw new AccountError(400, "Account ID is required");
 	return id;
 };

@@ -10,6 +10,11 @@ type ManagementShellProps = {
 	onLogout?: () => Promise<void>;
 };
 
+const styleWhenActive = (
+	activeResource: ManagementShellProps["activeResource"],
+	resource: ManagementShellProps["activeResource"],
+) => (activeResource === resource ? styles.active : undefined);
+
 export const ManagementShell = ({
 	activeResource,
 	children,
@@ -34,9 +39,7 @@ export const ManagementShell = ({
 					<ul>
 						<li>
 							<a
-								className={
-									activeResource === "shows" ? styles.active : undefined
-								}
+								className={styleWhenActive(activeResource, "shows")}
 								href="#shows"
 								aria-current={activeResource === "shows" ? "page" : undefined}
 							>
@@ -45,7 +48,7 @@ export const ManagementShell = ({
 						</li>
 						<li>
 							<a
-								className={activeResource === "djs" ? styles.active : undefined}
+								className={styleWhenActive(activeResource, "djs")}
 								href="#djs"
 								aria-current={activeResource === "djs" ? "page" : undefined}
 							>
@@ -54,9 +57,7 @@ export const ManagementShell = ({
 						</li>
 						<li>
 							<a
-								className={
-									activeResource === "tags" ? styles.active : undefined
-								}
+								className={styleWhenActive(activeResource, "tags")}
 								href="#tags"
 								aria-current={activeResource === "tags" ? "page" : undefined}
 							>
@@ -65,9 +66,7 @@ export const ManagementShell = ({
 						</li>
 						<li>
 							<a
-								className={
-									activeResource === "mixcloud" ? styles.active : undefined
-								}
+								className={styleWhenActive(activeResource, "mixcloud")}
 								href="#mixcloud"
 								aria-current={
 									activeResource === "mixcloud" ? "page" : undefined
@@ -85,9 +84,7 @@ export const ManagementShell = ({
 							<li>
 								<a
 									href="#users"
-									className={
-										activeResource === "users" ? styles.active : undefined
-									}
+									className={styleWhenActive(activeResource, "users")}
 									aria-current={activeResource === "users" ? "page" : undefined}
 								>
 									⤷ users

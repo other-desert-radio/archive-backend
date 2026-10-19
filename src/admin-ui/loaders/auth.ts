@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern";
 import { apiFetch } from "./api-fetch.js";
 
 export type { UserSummary as AccountUser } from "../../admin/routes/users/types.js";
@@ -17,14 +18,16 @@ export const authRequest = async <T>(
 					body: JSON.stringify(body),
 				},
 	);
-	const result = await response.json();
+	const result: unknown = await response.json();
 	if (!response.ok)
 		throw new Error(
-			typeof result.error === "string"
-				? result.error
-				: (result.error?.message ??
-						result.message ??
-						"The request could not be completed. Please try again."),
+			match(result)
+				.with({ error: P.string }, ({ error }) => error)
+				.with({ error: { message: P.string } }, ({ error }) => error.message)
+				.with({ message: P.string }, ({ message }) => message)
+				.otherwise(
+					() => "The request could not be completed. Please try again.",
+				),
 		);
 	return result as T;
 };
