@@ -1,10 +1,6 @@
 import { randomUUID } from "node:crypto";
-import {
-	type APIRequestContext,
-	test as base,
-	expect,
-	type Page,
-} from "@playwright/test";
+import { type APIRequestContext, expect, type Page } from "@playwright/test";
+import { test as base } from "./auth-fixtures.js";
 
 type Tag = {
 	id: number;
@@ -19,7 +15,7 @@ const test = base.extend<{ tag: Tag }>({
 		const response = await request.post("/api/admin/create-tag", {
 			data: {
 				title: `Review Tag ${randomUUID()}`,
-				mixcloud_key: "/genres/original/",
+				mixcloud_key: `/genres/review-${randomUUID()}/`,
 				mixcloud_url: "https://example.test/original",
 			},
 		});
@@ -29,7 +25,6 @@ const test = base.extend<{ tag: Tag }>({
 });
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });
 const row = (page: Page, id: number) =>
 	page
@@ -40,7 +35,10 @@ const row = (page: Page, id: number) =>
 				.locator("td:nth-child(2)")
 				.filter({ hasText: new RegExp(`^${id}$`) }),
 		});
-const cell = (page: Page, id: number) => row(page, id).getByRole("cell").nth(4);
+const cell = (page: Page, id: number) =>
+	row(page, id)
+		.getByRole("cell")
+		.filter({ has: page.locator("div[aria-busy]") });
 const load = async (request: APIRequestContext, id: number): Promise<Tag> => {
 	const response = await request.get("/api/admin/tags");
 	expect(response.ok()).toBeTruthy();

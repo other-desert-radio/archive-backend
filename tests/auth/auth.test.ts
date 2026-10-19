@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
+import { betterAuth } from "better-auth";
 import { buildApp } from "../../src/app.js";
 
 process.env.NODE_ENV = "test";
@@ -19,14 +20,27 @@ describe("Better Auth configuration", () => {
 	test("enables email/password authentication without public sign-up", () => {
 		expect(auth.options.emailAndPassword?.enabled).toBe(true);
 		expect(auth.options.emailAndPassword?.disableSignUp).toBe(true);
-		expect(auth.options.user?.additionalFields?.role?.input).toBe(false);
-		expect(auth.options.user?.additionalFields?.role?.defaultValue).toBe(
-			"admin",
+		expect(auth.options.user?.additionalFields?.mustChangePassword?.input).toBe(
+			false,
 		);
+		expect(auth.options.emailAndPassword?.minPasswordLength).toBe(8);
+		expect(auth.options.emailAndPassword?.maxPasswordLength).toBe(128);
+		expect(auth.options.session?.expiresIn).toBe(604800);
+		expect(auth.options.session?.cookieCache?.enabled).toBe(false);
+		expect(auth.options.rateLimit?.storage).toBe("database");
+		expect(
+			auth.options.plugins?.find((plugin) => plugin.id === "admin")?.options
+				.defaultRole,
+		).toBe("editor");
 	});
 
 	test("serves session and sign-out endpoints through the configured instance", async () => {
-		const app = buildApp(auth);
+		// Isolate transport/config coverage from the disposable database integration suite.
+		const isolatedAuth = betterAuth({
+			...auth.options,
+			rateLimit: { enabled: false },
+		});
+		const app = buildApp(isolatedAuth);
 
 		const signInResponse = await app.inject({
 			method: "POST",

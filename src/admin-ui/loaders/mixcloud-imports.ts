@@ -3,9 +3,10 @@ import type {
 	MixcloudImportStatus,
 	RefreshMixcloudResponse,
 } from "../../admin/routes/mixcloud-imports/index.js";
+import { apiFetch } from "./api-fetch.js";
 
 export const refreshMixcloud = async (
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<RefreshMixcloudResponse> => {
 	const response = await fetcher("/api/admin/refresh-mixcloud", {
 		method: "POST",
@@ -42,7 +43,7 @@ export const refreshMixcloud = async (
 
 export type { MixcloudImportAdminRow } from "../../admin/routes/mixcloud-imports/index.js";
 export const loadMixcloudImports = async (
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<MixcloudImportAdminRow[]> => {
 	const response = await fetcher("/api/admin/mixcloud-imports");
 	if (!response.ok) throw new Error("Unable to load Mixcloud imports");
@@ -54,7 +55,7 @@ import { describeMutationFailure } from "./mutation-error.js";
 
 export type { MixcloudImportStatus } from "../../admin/routes/mixcloud-imports/index.js";
 export const loadMixcloudImportStatus = async (
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<MixcloudImportStatus> => {
 	const response = await fetcher("/api/admin/mixcloud-import/status");
 	if (!response.ok) throw new Error("Unable to load Mixcloud import status");

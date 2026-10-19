@@ -1,5 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
 import type { MixcloudImportAdminRow } from "../src/admin-ui/loaders/mixcloud-imports.js";
+import { test } from "./auth-fixtures.js";
 import {
 	fixtureDJs,
 	fixtureTags,
@@ -9,7 +10,6 @@ import {
 
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });
 const ready = (id: number): MixcloudImportAdminRow => ({
 	...importRows[0],
@@ -289,7 +289,7 @@ test("pending Save blocks duplicates, navigation, dismissal, and background refr
 	await page.getByLabel("title", { exact: true }).fill("Retained draft");
 	await save(page).click();
 	await expect.poll(() => Boolean(state.release)).toBe(true);
-	for (const name of ["Saving…", "Cancel", "Next Show", "Close"])
+	for (const name of ["Importing…", "Cancel", "Next Show", "Close"])
 		await expect(
 			page.getByRole("button", { name, exact: true }),
 		).toBeDisabled();
@@ -560,7 +560,7 @@ test("empty DJ selection highlights label and box until a DJ is selected", async
 	await input.fill("Known");
 	await page.getByRole("option", { name: "Known DJ", exact: true }).click();
 	await expect(input).not.toHaveAttribute("aria-invalid", "true");
-	await expect(label).toHaveCSS("color", "rgb(0, 0, 0)");
+	await expect(label).toHaveCSS("color", "rgb(17, 17, 17)");
 	await expect(input.locator("../..")).toHaveCSS(
 		"border-color",
 		"rgb(0, 0, 0)",

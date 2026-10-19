@@ -1,10 +1,11 @@
 import type { ModifyShowRequest } from "../../admin/routes/shows/index.js";
+import { apiFetch } from "./api-fetch.js";
 import { describeMutationFailure } from "./mutation-error.js";
 import type { ShowsAdminRow } from "./shows.js";
 
 export const modifyShow = async (
 	request: ModifyShowRequest,
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<ShowsAdminRow> => {
 	const response = await fetcher("/api/admin/modify-show", {
 		method: "POST",

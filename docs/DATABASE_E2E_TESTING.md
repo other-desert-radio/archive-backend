@@ -51,13 +51,22 @@ PORT=3001 \
 DATABASE_URL=postgres://admin:archive_e2e_dev@localhost:55432/archive_e2e \
 BETTER_AUTH_SECRET=isolated-e2e-development-secret-not-for-production \
 BETTER_AUTH_URL=http://localhost:3001 \
-ADMIN_BASIC_USERNAME=admin \
-ADMIN_BASIC_PASSWORD=admin \
 bun src/server.ts
 ```
 
 The temporary secret is only for this disposable local process. Use a suitably
 long random value if Better Auth warns about its length.
+
+Before browser/API checks, run the initial-admin command from the development
+runbook against this disposable database. Create a temporary cookie jar:
+
+```sh
+curl --silent --show-error --cookie-jar /tmp/archive-e2e.cookies \
+  --header 'content-type: application/json' \
+  --header 'Origin: http://localhost:3001' \
+  --data '{"email":"your-test-admin@example.test","password":"your temporary admin password"}' \
+  http://localhost:3001/api/auth/sign-in/email
+```
 
 ## Exercise the behavior
 
@@ -66,12 +75,14 @@ workflow through the authenticated API or UI. For example, Show creation needs
 an existing DJ:
 
 ```sh
-curl --silent --show-error --user admin:admin \
+curl --silent --show-error --cookie /tmp/archive-e2e.cookies \
+  --header 'Origin: http://localhost:3001' \
   --form-string title='E2E DJ' \
   --form-string bio='Isolated test DJ' \
   http://localhost:3001/api/admin/create-dj
 
-curl --silent --show-error --user admin:admin \
+curl --silent --show-error --cookie /tmp/archive-e2e.cookies \
+  --header 'Origin: http://localhost:3001' \
   --header 'content-type: application/json' \
   --data '{
     "title":"E2E Show",
@@ -85,17 +96,15 @@ curl --silent --show-error --user admin:admin \
   }' \
   http://localhost:3001/api/admin/create-show
 
-curl --silent --show-error --user admin:admin \
+curl --silent --show-error --cookie /tmp/archive-e2e.cookies \
+  --header 'Origin: http://localhost:3001' \
   http://localhost:3001/api/admin/shows
 ```
 
-For browser verification, configure Basic Auth on the browser session and use a
-credential-free URL. Do not put `admin:admin@` in the URL: this version of
-`agent-browser` retains credentials in the document URL, which breaks relative
-admin API fetches.
+For browser verification, open the login page and sign in with the disposable
+admin credentials before exercising archive controls.
 
 ```sh
-agent-browser --session database-e2e-verify set credentials admin admin
 agent-browser --session database-e2e-verify open http://localhost:3001/admin/#shows
 agent-browser --session database-e2e-verify wait 500
 agent-browser --session database-e2e-verify snapshot -i

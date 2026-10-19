@@ -1,11 +1,12 @@
 import type { EditDJForm } from "../components/dj/index.js";
+import { apiFetch } from "./api-fetch.js";
 import type { DJsAdminRow } from "./djs.js";
 import { describeMutationFailure } from "./mutation-error.js";
 
 /** Replaces a DJ's editable fields through the authenticated admin API. */
 export const modifyDJ = async (
 	request: EditDJForm,
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<DJsAdminRow> => {
 	const form = new FormData();
 	form.append("id", String(request.id));

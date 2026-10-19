@@ -330,16 +330,15 @@ explicitly.
 Start the [local stack](DEVELOPMENT.md#local-environment-and-startup), then:
 
 ```sh
-agent-browser --session admin-ui-verify set credentials admin admin
 agent-browser --session admin-ui-verify open http://localhost:3000/admin/#djs
 agent-browser --session admin-ui-verify wait 500
 agent-browser --session admin-ui-verify snapshot -i
 agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
 ```
 
-Use `#shows`, `#tags`, or `#mixcloud` as applicable. Credentials are for local
-development only. Set them on the session, never in the URL: embedded
-credentials break relative admin API requests. The session socket is outside the
+Use `#shows`, `#tags`, or `#mixcloud` as applicable. Sign in using the centered
+email/password form first. Provision the initial admin using the development
+runbook; never store credentials in a URL. The session socket is outside the
 workspace sandbox; request elevated permission when necessary.
 
 Run formatting, lint, TypeScript checks, and the smallest relevant tests. The
@@ -568,6 +567,23 @@ associated Show title alphabetically, separated by commas. Tags without Shows
 display None. The page loads existing Tags and Shows endpoints together; either
 read failing uses the page error/retry state rather than displaying missing
 associations.
+
+## Authentication and account management
+
+The unauthenticated shell displays a centered panel using existing modal tokens,
+email/password labels, autocomplete, pending controls, and inline errors. The
+final visual reference is pending user input. Forced password replacement blocks
+the archive shell until the account owner supplies their current and new
+password. Everyone can change their own password and sign out.
+
+Only admins see the Users sidebar page. Its account list supports creation, role
+changes, administrator password resets, and confirmed deletion. Editors retain
+every archive action. Account forms use shared modal/focus/dismissal behavior
+and never redisplay saved passwords. Failed requests preserve drafts;
+self-deletion and self-demotion are unavailable. Verify login, forced change,
+account management, sign-out, keyboard focus, and 390px/320px layouts against a
+disposable database. `integration-tests/authentication.spec.ts` covers the real
+cookie/role lifecycle; existing suites share `auth-fixtures.ts`.
 
 ## Original design references
 

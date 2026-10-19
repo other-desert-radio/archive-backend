@@ -1,4 +1,5 @@
 import type { DJJSON } from "../../json-transformers/index.js";
+import { apiFetch } from "./api-fetch.js";
 
 export type DJsAdminRow = Omit<DJJSON, "createdAt"> & {
 	createdAt: string;
@@ -7,7 +8,7 @@ export type DJsAdminRow = Omit<DJJSON, "createdAt"> & {
 };
 
 export const loadDJs = async (
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<DJsAdminRow[]> => {
 	const response = await fetcher("/api/admin/djs");
 

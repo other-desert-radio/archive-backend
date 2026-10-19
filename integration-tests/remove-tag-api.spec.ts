@@ -5,7 +5,6 @@ import { loadShow, test } from "./show-fixtures.js";
 
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });
 
 test("tag hard deletion cascades links and preserves Shows, DJs and other tags", async ({

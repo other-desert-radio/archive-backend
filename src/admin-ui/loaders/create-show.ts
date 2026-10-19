@@ -1,10 +1,11 @@
 import type { CreateShowForm } from "../components/shows/index.js";
+import { apiFetch } from "./api-fetch.js";
 import { describeMutationFailure } from "./mutation-error.js";
 import type { ShowsAdminRow } from "./shows.js";
 
 export const createShow = async (
 	request: CreateShowForm,
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<ShowsAdminRow> => {
 	const response = await fetcher("/api/admin/create-show", {
 		method: "POST",

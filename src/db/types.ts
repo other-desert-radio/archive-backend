@@ -12,6 +12,7 @@ export type Database = {
 	session: BetterAuthSessionTable;
 	account: BetterAuthAccountTable;
 	verification: BetterAuthVerificationTable;
+	rateLimit: BetterAuthRateLimitTable;
 };
 
 export type MixcloudImportTable = {
@@ -106,7 +107,11 @@ export type BetterAuthUserTable = {
 	email: string;
 	emailVerified: boolean;
 	image: string | null;
-	role: string | null;
+	role: "admin" | "editor";
+	mustChangePassword: boolean;
+	banned: boolean;
+	banReason: string | null;
+	banExpires: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -117,6 +122,7 @@ export type BetterAuthSessionTable = {
 	token: string;
 	createdAt: Date;
 	updatedAt: Date;
+	impersonatedBy: string | null;
 	ipAddress: string | null;
 	userAgent: string | null;
 	userId: string;
@@ -145,4 +151,11 @@ export type BetterAuthVerificationTable = {
 	expiresAt: Date;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type BetterAuthRateLimitTable = {
+	id: string;
+	key: string;
+	count: number;
+	lastRequest: number;
 };

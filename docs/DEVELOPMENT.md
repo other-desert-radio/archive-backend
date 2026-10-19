@@ -131,6 +131,34 @@ Repeat migration steps after each review checkpoint. Use
 `scripts/run-migrations` only when all pending migrations have been reviewed.
 Startup checks PostgreSQL connectivity; `/health` is public.
 
+### Initial administrator and browser login
+
+After reviewing and applying the authentication migrations, run
+`scripts/create-admin` from an interactive host terminal with the same database
+and Better Auth environment as the API. It prompts for email and a hidden,
+confirmed password (8–128 characters), and refuses to provision when an admin
+already exists. Passwords are hashed by Better Auth; never pass them on a
+command line or put them in `.env`. Existing accounts retain admin access after
+upgrade.
+
+Open `/admin/` and sign in with email/password. Admins manage accounts and roles
+from Users; editors manage all archive resources. Newly assigned/reset passwords
+must be replaced on first sign-in. Account owners can change their password
+using the current password. Public signup and email-based recovery are absent;
+another admin performs resets. Basic Auth credentials no longer grant access.
+
+Set `BETTER_AUTH_URL` to the browser's canonical application URL; HTTPS enables
+secure cookies. `BETTER_AUTH_TRUSTED_ORIGINS` optionally adds comma-separated
+exact HTTP(S) origins, such as another development port. Keep production origins
+explicit. Sessions expire after seven days; authentication/account changes use
+database-backed rate limits. Configure HTTPS before production login.
+
+Set `BETTER_AUTH_SECRET` to a unique random value of at least 32 characters. The
+Docker image runs in production mode and rejects the example development secret.
+This server secret secures sessions; it is separate from every account's
+password. Generate a value with `openssl rand -base64 32` and keep it in the
+existing untracked `.env` or deployment secret configuration.
+
 For UI development, run `scripts/build-container-watch` after database setup. It
 builds the stack, mounts host `dist/admin` into the API container, and starts
 Vite's build watcher. Stop the watcher with Ctrl-C; stop containers separately

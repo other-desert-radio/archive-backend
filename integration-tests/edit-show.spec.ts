@@ -120,7 +120,7 @@ test("replaces DJ links, persists inverse links, and requires a DJ", async ({
 	expect((await loadDJ(request, replacement.id)).shows).toContain(show.id);
 	await page.reload();
 	const reopened = await openShowEditor(page, show.id);
-	await reopened.getByRole("combobox", { name: "Search DJs" }).focus();
+	await reopened.locator("#edit-show-tags").focus();
 	await expect(
 		reopened.getByRole("button", {
 			name: `Remove ${replacement.title}`,
@@ -165,7 +165,7 @@ test("adds existing and focused draft tags, removes tags, and clears all assignm
 	expect(saved.tags).toContain(existingTag.id);
 	await page.reload();
 	const reopened = await openShowEditor(page, show.id);
-	await reopened.getByRole("combobox", { name: "Search DJs" }).focus();
+	await reopened.locator("#edit-show-tags").focus();
 	await reopened
 		.getByRole("button", { name: `Remove ${show.title}`, exact: true })
 		.click();

@@ -6,7 +6,6 @@ import { loadShow, test } from "./show-fixtures.js";
 
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });
 
 // Direct assertions use only the disposable Compose database, never local archive data.
@@ -43,12 +42,13 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 		});
 		const originalLinks = await links();
 		const title = `Edited Tag ${randomUUID()}`;
+		const mixcloudKey = `/genres/new-${randomUUID()}/`;
 		const payload = {
 			edit_type: "full_edit",
 			id,
 			title: ` ${title} `,
 			color: " #AbC123 ",
-			mixcloud_key: " /genres/new/ ",
+			mixcloud_key: ` ${mixcloudKey} `,
 			mixcloud_url: " https://example.test/new ",
 		};
 		const response = await request.post("/api/admin/modify-tag", {
@@ -61,7 +61,7 @@ test("edits a linked Tag without replacing timestamps or relationship rows", asy
 			title,
 			color: "#AbC123",
 			reviewed: true,
-			mixcloud_key: "/genres/new/",
+			mixcloud_key: mixcloudKey,
 			mixcloud_url: "https://example.test/new",
 		});
 		const after = await pool.query("SELECT * FROM tags WHERE id = $1", [id]);

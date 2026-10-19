@@ -1,5 +1,6 @@
 import { rm } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./auth-fixtures.js";
 import { buildSharedModalFixture } from "./fixtures/build-shared-modal.js";
 import {
 	fixtureDJs,
@@ -9,7 +10,6 @@ import {
 
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 	timezoneId: "America/Los_Angeles",
 });
 let fixture: Awaited<ReturnType<typeof buildSharedModalFixture>>;
@@ -589,7 +589,7 @@ test("empty DJ warning is limited to import and clears after selection", async (
 	await expect(search).not.toHaveAttribute("aria-invalid", "true");
 	await expect(page.locator('label[for="show-djs"]')).toHaveCSS(
 		"color",
-		"rgb(0, 0, 0)",
+		"rgb(17, 17, 17)",
 	);
 	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await page.getByRole("button", { name: "Open import" }).click();
@@ -599,13 +599,13 @@ test("empty DJ warning is limited to import and clears after selection", async (
 	await expect(search).toHaveAttribute("aria-invalid", "true");
 	await expect(page.locator('label[for="import-show-djs"]')).toHaveCSS(
 		"color",
-		"rgb(255, 0, 0)",
+		"rgb(255, 44, 44)",
 	);
 	await search.fill("Known");
 	await page.getByRole("option", { name: "Known DJ", exact: true }).click();
 	await expect(search).not.toHaveAttribute("aria-invalid", "true");
 	await expect(page.locator('label[for="import-show-djs"]')).toHaveCSS(
 		"color",
-		"rgb(0, 0, 0)",
+		"rgb(17, 17, 17)",
 	);
 });

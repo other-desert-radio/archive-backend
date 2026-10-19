@@ -1,6 +1,6 @@
-create table "user" ("id" text not null primary key, "name" text not null, "email" text not null unique, "emailVerified" boolean not null, "image" text, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz default CURRENT_TIMESTAMP not null, "role" text);
+create table "user" ("id" text not null primary key, "name" text not null, "email" text not null unique, "emailVerified" boolean not null, "image" text, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz default CURRENT_TIMESTAMP not null, "role" text not null default 'editor' check ("role" in ('admin', 'editor')), "mustChangePassword" boolean not null default false, "banned" boolean not null default false, "banReason" text, "banExpires" timestamptz, constraint user_email_normalized check (email = lower(btrim(email))));
 
-create table "session" ("id" text not null primary key, "expiresAt" timestamptz not null, "token" text not null unique, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz not null, "ipAddress" text, "userAgent" text, "userId" text not null references "user" ("id") on delete cascade);
+create table "session" ("id" text not null primary key, "expiresAt" timestamptz not null, "token" text not null unique, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz not null, "impersonatedBy" text, "ipAddress" text, "userAgent" text, "userId" text not null references "user" ("id") on delete cascade);
 
 create table "account" ("id" text not null primary key, "accountId" text not null, "providerId" text not null, "userId" text not null references "user" ("id") on delete cascade, "accessToken" text, "refreshToken" text, "idToken" text, "accessTokenExpiresAt" timestamptz, "refreshTokenExpiresAt" timestamptz, "scope" text, "password" text, "createdAt" timestamptz default CURRENT_TIMESTAMP not null, "updatedAt" timestamptz not null);
 
@@ -11,3 +11,7 @@ create index "session_userId_idx" on "session" ("userId");
 create index "account_userId_idx" on "account" ("userId");
 
 create index "verification_identifier_idx" on "verification" ("identifier");
+
+create unique index user_normalized_email_unique on "user" (lower(btrim(email)));
+
+create table "rateLimit" ("id" text not null primary key, "key" text not null unique, "count" integer not null, "lastRequest" bigint not null);

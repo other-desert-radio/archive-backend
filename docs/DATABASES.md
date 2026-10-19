@@ -40,10 +40,15 @@ and a trigger to retain source rows and clear their import timestamps; see the
 Better Auth owns its authentication tables separately from archive entities.
 Migration `0007_create_better_auth_tables` creates the `user`, `session`,
 `account`, and `verification` tables and their lookup indexes. Migration `0008`
-adds the server-owned `user.role` field. The configured application uses the
-single `admin` role; Better Auth initializes new accounts with that role while
-public sign-up remains disabled. These tables are managed by Better Auth and are
-not archive resources.
+adds the server-owned `user.role` field. Migration `0028` adds required
+constrained `admin`/`editor` roles (new accounts default to editor),
+`mustChangePassword`, Admin plugin fields, and database rate limits. Existing
+accounts remain admins without a forced password change. Emails are normalized
+and have a case-insensitive unique index; migration fails on collisions for
+explicit operator resolution. Public signup remains disabled. Better Auth owns
+password hashing in `account.password` and session lifecycle. Passwords are
+never reversibly encrypted. Deleting a user cascades to their accounts/sessions.
+These tables are not archive resources.
 
 ## Core tables
 

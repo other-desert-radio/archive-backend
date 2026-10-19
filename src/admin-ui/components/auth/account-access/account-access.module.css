@@ -1,0 +1,67 @@
+.screen {
+	display: grid;
+	place-items: center;
+	min-height: 100dvh;
+	padding: 16px;
+}
+.panel {
+	width: min(100%, 480px);
+	padding: var(--modal-padding);
+	border: 1px solid #000;
+	background: #fff;
+	font-size: max(14px, 1rem);
+	line-height: 1.5;
+}
+.panel h1 {
+	margin: 0 0 28px;
+	font-size: 2rem;
+}
+.fields {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--modal-field-gap);
+	border: 0;
+	padding: 0;
+	margin: 0;
+	min-width: 0;
+}
+.fields > div {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+}
+.fields input {
+	width: 100%;
+}
+.submit {
+	border-radius: 0;
+	min-height: var(--modal-control-height);
+	padding: var(--modal-control-padding);
+	justify-self: start;
+	transition:
+		transform 150ms,
+		box-shadow 150ms;
+}
+.submit:hover:not(:disabled) {
+	transform: translate(-4px, -4px);
+	box-shadow: 4px 4px #000;
+}
+.secondary {
+	margin-top: 10px;
+	border-radius: 0;
+	min-height: var(--modal-control-height);
+	padding: var(--modal-control-padding);
+}
+.secondary:hover:not(:disabled) {
+	background: #efefef;
+}
+.error {
+	color: #b00000;
+	overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+	.submit {
+		transition: none;
+	}
+}

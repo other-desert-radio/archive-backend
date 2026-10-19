@@ -254,7 +254,7 @@ describe("Mixcloud import list", () => {
 		});
 	}
 
-	for (const role of [undefined, "user", "admin"] as const) {
+	for (const role of [undefined, "user", "editor", "admin"] as const) {
 		test(`refresh enforces admin access: ${role ?? "anonymous"}`, async () => {
 			const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue(
 				Response.json({ data: [] }),
@@ -271,7 +271,6 @@ describe("Mixcloud import list", () => {
 							},
 						} as never,
 						db,
-						{ username: "", password: "" },
 					),
 				);
 				const response = await app.inject({
@@ -279,15 +278,17 @@ describe("Mixcloud import list", () => {
 					url: "/api/admin/refresh-mixcloud",
 				});
 				expect(response.statusCode).toBe(
-					role === "admin" ? 200 : role === "user" ? 403 : 401,
+					role === "admin" || role === "editor" ? 200 : role ? 403 : 401,
 				);
 				expect(response.json()).toEqual(
-					role === "admin"
+					role === "admin" || role === "editor"
 						? { status: "ok" }
 						: { error: role === "user" ? "Forbidden" : "Unauthorized" },
 				);
 				expect(queries).toEqual([]);
-				expect(fetchMock).toHaveBeenCalledTimes(role === "admin" ? 1 : 0);
+				expect(fetchMock).toHaveBeenCalledTimes(
+					role === "admin" || role === "editor" ? 1 : 0,
+				);
 			} finally {
 				fetchMock.mockRestore();
 				await app.close();
@@ -434,15 +435,12 @@ describe("Mixcloud import list", () => {
 			await db.destroy();
 		}
 	});
-	test("requires admin access and accepts local Basic Auth", async () => {
+	test("rejects anonymous and Basic Auth requests", async () => {
 		const db = database([]);
 		const app = Fastify();
 		try {
 			await app.register(
-				adminRoutes({ api: { getSession: async () => null } } as never, db, {
-					username: "admin",
-					password: "admin",
-				}),
+				adminRoutes({ api: { getSession: async () => null } } as never, db),
 			);
 			expect((await app.inject("/api/admin/mixcloud-imports")).statusCode).toBe(
 				401,
@@ -456,7 +454,7 @@ describe("Mixcloud import list", () => {
 						},
 					})
 				).statusCode,
-			).toBe(200);
+			).toBe(401);
 		} finally {
 			await app.close();
 			await db.destroy();
@@ -541,7 +539,7 @@ describe("Mixcloud import status", () => {
 			}
 		});
 	}
-	for (const role of [undefined, "user", "admin"] as const) {
+	for (const role of [undefined, "user", "editor", "admin"] as const) {
 		test(`requires admin access for status: ${role ?? "anonymous"}`, async () => {
 			const queries: string[] = [];
 			const db = database([], false, queries);
@@ -555,14 +553,14 @@ describe("Mixcloud import status", () => {
 							},
 						} as never,
 						db,
-						{ username: "", password: "" },
 					),
 				);
 				const response = await app.inject("/api/admin/mixcloud-import/status");
 				expect(response.statusCode).toBe(
-					role === "admin" ? 200 : role === "user" ? 403 : 401,
+					role === "admin" || role === "editor" ? 200 : role ? 403 : 401,
 				);
-				if (role !== "admin") expect(queries).toHaveLength(0);
+				if (role !== "admin" && role !== "editor")
+					expect(queries).toHaveLength(0);
 			} finally {
 				await app.close();
 				await db.destroy();

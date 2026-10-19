@@ -13,20 +13,24 @@ services:
 
   migrations:
     build: .
-    command: bun src/db/migrate.ts latest
+    command: ["sh", "-c", "bun src/db/migrate.ts latest && bun integration-tests/seed-auth.ts"]
+    volumes:
+      - ./integration-tests/seed-auth.ts:/app/integration-tests/seed-auth.ts:ro
     environment: &api-environment
       DATABASE_URL: postgres://integration:integration@postgres:5432/archive_integration
       PORT: 3000
       BETTER_AUTH_SECRET: integration-test-secret-that-is-long-enough
-      BETTER_AUTH_URL: http://api:3000
-      ADMIN_BASIC_USERNAME: admin
-      ADMIN_BASIC_PASSWORD: admin
+      BETTER_AUTH_URL: http://127.0.0.1:${INTEGRATION_API_PORT:-3001}
+      BETTER_AUTH_TRUSTED_ORIGINS: http://api:3000
+      INTEGRATION_AUTH_SEED: disposable
     depends_on:
       postgres:
         condition: service_healthy
 
   api:
     build: .
+    ports:
+      - "127.0.0.1:${INTEGRATION_API_PORT:-3001}:3000"
     environment: *api-environment
     depends_on:
       migrations:
@@ -37,7 +41,10 @@ services:
       context: .
       dockerfile: integration-tests/Dockerfile
     environment:
+      DATABASE_URL: postgres://integration:integration@postgres:5432/archive_integration
+      INTEGRATION_AUTH_SEED: disposable
       E2E_BASE_URL: http://api:3000
+      E2E_AUTH_ORIGIN: http://127.0.0.1:${INTEGRATION_API_PORT:-3001}
     depends_on:
       api:
         condition: service_started

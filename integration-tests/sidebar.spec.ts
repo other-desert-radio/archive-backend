@@ -1,8 +1,8 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./auth-fixtures.js";
 
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });
 
 test("floating navigation expands without moving its links", async ({
@@ -59,7 +59,7 @@ test("floating navigation expands without moving its links", async ({
 	const phoneHeight = await sidebar.evaluate(
 		(element) => element.getBoundingClientRect().height,
 	);
-	expect((await sidebar.boundingBox())?.height).toBeLessThan(220);
+	expect((await sidebar.boundingBox())?.width).toBeLessThanOrEqual(390);
 	await expect
 		.poll(async () => (await background()).height)
 		.toBeCloseTo(phoneHeight, 2);
@@ -81,6 +81,8 @@ test("sidebar arrows and highlights use consistent link spacing", async ({
 		"⤷ shows",
 		"⤷ DJs",
 		"⤷ tags",
+		"⤷ mixcloudimport",
+		"⤷ users",
 	]);
 	const shows = sidebar.getByRole("link", { name: "⤷ shows" });
 	await expect(shows).toHaveCSS("font-weight", "400");

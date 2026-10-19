@@ -1,11 +1,7 @@
 import { randomUUID } from "node:crypto";
-import {
-	type APIRequestContext,
-	test as base,
-	expect,
-	type Page,
-} from "@playwright/test";
+import { type APIRequestContext, expect, type Page } from "@playwright/test";
 import sharp from "sharp";
+import { test as base } from "./auth-fixtures.js";
 
 type DJ = {
 	id: number;
@@ -156,5 +152,4 @@ export const test = base.extend<{ dj: DJ }>({
 });
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });

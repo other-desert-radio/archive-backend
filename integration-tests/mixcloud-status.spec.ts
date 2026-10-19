@@ -1,9 +1,9 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./auth-fixtures.js";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://api:3000";
 test.use({
 	baseURL,
-	httpCredentials: { username: "admin", password: "admin" },
 });
 
 test.beforeEach(async ({ page }) => {
@@ -37,7 +37,10 @@ for (const counts of [
 			if (count > 0) {
 				const badge = button.locator("span");
 				await expect(badge).toHaveText(String(count));
-				await expect(badge).toHaveCSS("background-color", "rgb(204, 0, 0)");
+				await expect(badge).toHaveCSS(
+					"background-color",
+					label === "ready for import" ? "rgb(0, 128, 0)" : "rgb(204, 0, 0)",
+				);
 				await expect(badge).toHaveCSS("color", "rgb(255, 255, 255)");
 				await expect(badge).toHaveCSS("border-top-color", "rgb(0, 0, 0)");
 				await expect(badge).toHaveCSS("border-top-width", "1px");

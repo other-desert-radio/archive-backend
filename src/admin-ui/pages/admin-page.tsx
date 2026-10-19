@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { ManagementShell } from "../components/layout/management-shell.js";
+import type { AccountUser } from "../loaders/auth.js";
 import { DJsPage } from "./djs-page.js";
 import { MixcloudPage } from "./mixcloud-page.js";
 import { ShowsPage } from "./shows-page.js";
 import { TagsPage } from "./tags-page.js";
+import { UsersPage } from "./users-page.js";
 
-type AdminResource = "shows" | "djs" | "tags" | "mixcloud";
+type AdminResource = "shows" | "djs" | "tags" | "mixcloud" | "users";
 
 const getResourceFromHash = (): AdminResource => {
+	if (window.location.hash === "#users") return "users";
 	if (window.location.hash === "#djs") {
 		return "djs";
 	}
@@ -21,7 +24,13 @@ const getResourceFromHash = (): AdminResource => {
 	return "shows";
 };
 
-export const AdminPage = () => {
+export const AdminPage = ({
+	user,
+	onLogout,
+}: {
+	user: AccountUser;
+	onLogout: () => Promise<void>;
+}) => {
 	const [resource, setResource] = useState<AdminResource>(getResourceFromHash);
 
 	useEffect(() => {
@@ -33,8 +42,14 @@ export const AdminPage = () => {
 	}, []);
 
 	return (
-		<ManagementShell activeResource={resource}>
-			{resource === "shows" ? (
+		<ManagementShell activeResource={resource} user={user} onLogout={onLogout}>
+			{resource === "users" ? (
+				user.role === "admin" ? (
+					<UsersPage currentUser={user} />
+				) : (
+					<p role="alert">Administrator access is required.</p>
+				)
+			) : resource === "shows" ? (
 				<ShowsPage />
 			) : resource === "djs" ? (
 				<DJsPage />
