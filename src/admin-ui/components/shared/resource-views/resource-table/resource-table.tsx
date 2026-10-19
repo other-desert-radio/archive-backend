@@ -27,6 +27,8 @@ type ResourceTableProps<Row, ColumnKey extends string> = {
 				disabled?: boolean;
 		  };
 	onEdit?: (row: Row) => void;
+	isEditDisabled?: (row: Row) => boolean;
+	isDeleteDisabled?: (row: Row) => boolean;
 	onDelete?: (row: Row) => void;
 };
 
@@ -41,6 +43,8 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 	onSort,
 	rowAction,
 	onEdit,
+	isEditDisabled,
+	isDeleteDisabled,
 	onDelete,
 }: ResourceTableProps<Row, ColumnKey>) => (
 	<div className={styles.wrapper}>
@@ -103,6 +107,7 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 									<button
 										type="button"
 										className={styles.editButton}
+										disabled={isEditDisabled?.(row)}
 										onClick={() => onEdit(row)}
 									>
 										Edit
@@ -112,6 +117,7 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 									<button
 										type="button"
 										className={styles.deleteButton}
+										disabled={isDeleteDisabled?.(row)}
 										onClick={() => onDelete(row)}
 									>
 										Delete

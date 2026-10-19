@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
 
 compose=(docker compose --project-name archive-backend-integration -f compose.integration.yml)
 cleanup() {

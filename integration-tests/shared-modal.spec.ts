@@ -1,11 +1,11 @@
 import { rm } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./auth-fixtures.js";
 import { buildSharedModalFixture } from "./fixtures/build-shared-modal.js";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://api:3000";
 test.use({
 	baseURL,
-	httpCredentials: { username: "admin", password: "admin" },
 });
 let fixture: Awaited<ReturnType<typeof buildSharedModalFixture>>;
 test.beforeAll(async () => {

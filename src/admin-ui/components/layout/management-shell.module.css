@@ -122,3 +122,17 @@
 	display: inline-block;
 	vertical-align: top;
 }
+
+.account {
+	display: grid;
+	gap: 10px;
+	margin-top: 24px;
+	overflow-wrap: anywhere;
+	font-size: 12px;
+}
+.account button {
+	border-radius: 0;
+	text-align: left;
+	font-size: 12px;
+	min-height: 42px;
+}

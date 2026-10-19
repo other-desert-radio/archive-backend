@@ -1,10 +1,11 @@
 import type { CreateTagRequest } from "../../admin/routes/tags/index.js";
+import { apiFetch } from "./api-fetch.js";
 import { describeMutationFailure } from "./mutation-error.js";
 import type { TagsAdminRow } from "./tags.js";
 
 export const createTag = async (
 	request: CreateTagRequest,
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<TagsAdminRow> => {
 	const response = await fetcher("/api/admin/create-tag", {
 		method: "POST",

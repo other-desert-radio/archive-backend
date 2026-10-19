@@ -11,7 +11,16 @@ smallest relevant checks; report failures and unavailable checks.
   Playwright suites in `integration-tests/` run separately.
 - Real database/API/browser workflows: `bun run test:integration` builds a
   disposable Compose stack and removes only its own containers and test volume.
-  See [the database runbook](DATABASE_E2E_TESTING.md) for manual setup and
+  The auth suite runs serially first against that disposable database, including
+  migration rollback/reapply, cookie roles, and rate-limit checks; remaining
+  browser suites share a real authenticated cookie fixture. Their page fixture
+  reuses one saved safe user summary for `/api/auth/get-session` so resource
+  tests do not exhaust the production session-read rate limit; archive API
+  requests still authenticate their real cookies. The separate `@auth` suites
+  use unmodified Playwright and exercise real session reads and rate limits. The
+  API is available at `http://127.0.0.1:3001` while the stack runs
+  (`INTEGRATION_API_PORT` overrides the port). See
+  [the database runbook](DATABASE_E2E_TESTING.md) for manual setup and
   feature-specific coverage; do not read its coverage catalog for unit tests.
 - Migration tests require an explicit disposable database URL and otherwise
   skip. Check the test's environment variable, including

@@ -1,7 +1,9 @@
 import Fastify from "fastify";
 import { adminRoutes } from "./admin/admin.js";
+import { accountRoutes } from "./auth/account-routes.js";
 import type { auth } from "./auth/auth.js";
 import { authRoutes } from "./auth/routes.js";
+import { db } from "./db/db.js";
 import { PrettyLogStream } from "./utils/pretty-log-stream.js";
 
 type BetterAuth = typeof auth;
@@ -28,6 +30,7 @@ export const buildApp = (auth: BetterAuth) => {
 	app.get("/health", async () => ({ status: "ok" }));
 	app.register(adminRoutes(auth));
 	app.register(authRoutes(auth));
+	app.register(accountRoutes(auth, db));
 
 	return app;
 };

@@ -8,7 +8,10 @@ type LabeledFormControlProps = {
 	value: string;
 	onChange: (value: string) => void;
 	onBlur?: () => void;
-	type?: "text" | "url" | "date" | "number";
+	type?: "text" | "url" | "date" | "number" | "email" | "password";
+	autoComplete?: string;
+	minLength?: number;
+	maxLength?: number;
 	min?: number;
 	max?: number;
 	step?: number;
@@ -28,6 +31,9 @@ export const LabeledFormControl = ({
 	onChange,
 	onBlur,
 	type = "text",
+	autoComplete,
+	minLength,
+	maxLength,
 	min,
 	max,
 	step,
@@ -62,6 +68,9 @@ export const LabeledFormControl = ({
 						id={id}
 						name={name}
 						type={type}
+						autoComplete={autoComplete}
+						minLength={minLength}
+						maxLength={maxLength}
 						min={min}
 						max={max}
 						step={step}

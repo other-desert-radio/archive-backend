@@ -1,4 +1,5 @@
 import type { CreateDJForm } from "../components/dj/index.js";
+import { apiFetch } from "./api-fetch.js";
 import type { DJsAdminRow } from "./djs.js";
 import { describeMutationFailure } from "./mutation-error.js";
 
@@ -12,7 +13,7 @@ import { describeMutationFailure } from "./mutation-error.js";
  */
 export const createDJ = async (
 	request: CreateDJForm,
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<DJsAdminRow> => {
 	const form = new FormData();
 	form.append("title", request.title);

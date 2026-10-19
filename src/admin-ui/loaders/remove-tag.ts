@@ -3,11 +3,12 @@ import type {
 	RemoveTagResponse,
 	TagDeleteImpact,
 } from "../../admin/routes/tags/index.js";
+import { apiFetch } from "./api-fetch.js";
 import { describeMutationFailure } from "./mutation-error.js";
 
 export const loadTagDeleteImpact = async (
 	id: number,
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<TagDeleteImpact> => {
 	const response = await fetcher(`/api/admin/tags/${id}/delete-impact`);
 	if (!response.ok)
@@ -24,7 +25,7 @@ export const loadTagDeleteImpact = async (
 
 export const removeTag = async (
 	request: RemoveTagRequest,
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<RemoveTagResponse> => {
 	const response = await fetcher("/api/admin/remove-tag", {
 		method: "POST",

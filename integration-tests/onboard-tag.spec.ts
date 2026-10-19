@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./auth-fixtures.js";
 
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });
 test("creates a reviewed tag with metadata, reloads, and reuses existing titles", async ({
 	page,
@@ -11,11 +11,12 @@ test("creates a reviewed tag with metadata, reloads, and reuses existing titles"
 }) => {
 	await page.goto("/admin/#tags");
 	const title = `Onboard ${randomUUID()}`;
+	const mixcloudKey = `key-${randomUUID()}`;
 	await page.getByRole("button", { name: "+ tag", exact: true }).click();
 	const form = page.getByRole("dialog", { name: "Onboard Tag", exact: true });
 	await page.locator("#tag-title").fill(` ${title} `);
 	await form.getByLabel("Choose tag color").fill("#123456");
-	await page.locator("#tag-mixcloud-key").fill(" key ");
+	await page.locator("#tag-mixcloud-key").fill(` ${mixcloudKey} `);
 	await page.locator("#tag-mixcloud-url").fill(" https://example.test/genre ");
 	await form.getByRole("button", { name: "Submit", exact: true }).click();
 	await expect(form).toBeHidden();
@@ -29,7 +30,7 @@ test("creates a reviewed tag with metadata, reloads, and reuses existing titles"
 	).toMatchObject({
 		color: "#123456",
 		reviewed: true,
-		mixcloud_key: "key",
+		mixcloud_key: mixcloudKey,
 		mixcloud_url: "https://example.test/genre",
 	});
 	await page.getByRole("button", { name: "+ tag", exact: true }).click();

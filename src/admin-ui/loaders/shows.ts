@@ -1,4 +1,5 @@
 import type { AdminShowsJSON } from "../../admin/routes/shows/index.js";
+import { apiFetch } from "./api-fetch.js";
 
 /** Browser representation of the admin-only Show list response. */
 export type ShowsAdminRow = Omit<AdminShowsJSON, "date" | "createdAt"> & {
@@ -7,7 +8,7 @@ export type ShowsAdminRow = Omit<AdminShowsJSON, "date" | "createdAt"> & {
 };
 
 export const loadShows = async (
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<ShowsAdminRow[]> => {
 	const response = await fetcher("/api/admin/shows");
 

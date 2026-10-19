@@ -1,9 +1,9 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./auth-fixtures.js";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://api:3000";
 test.use({
 	baseURL,
-	httpCredentials: { username: "admin", password: "admin" },
 });
 
 test.beforeEach(async ({ page }) => {

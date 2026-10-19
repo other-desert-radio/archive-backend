@@ -1,9 +1,9 @@
-import { expect, type Locator, test } from "@playwright/test";
+import { expect, type Locator } from "@playwright/test";
+import { test } from "./auth-fixtures.js";
 
 // Reads and writes are intercepted; no archive records are changed.
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });
 const tags = [
 	{

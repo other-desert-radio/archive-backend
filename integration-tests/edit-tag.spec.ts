@@ -1,10 +1,6 @@
 import { randomUUID } from "node:crypto";
-import {
-	type APIRequestContext,
-	test as base,
-	expect,
-	type Page,
-} from "@playwright/test";
+import { type APIRequestContext, expect, type Page } from "@playwright/test";
+import { test as base } from "./auth-fixtures.js";
 
 type Tag = {
 	id: number;
@@ -56,7 +52,7 @@ const test = base.extend<{ tag: Tag; linked: { dj: number; show: number } }>({
 		const response = await request.post("/api/admin/create-tag", {
 			data: {
 				title: `Integration Tag ${randomUUID()}`,
-				mixcloud_key: "/genres/original/",
+				mixcloud_key: `/genres/original-${randomUUID()}/`,
 				mixcloud_url: "https://example.test/original",
 			},
 		});
@@ -92,7 +88,6 @@ const test = base.extend<{ tag: Tag; linked: { dj: number; show: number } }>({
 });
 test.use({
 	baseURL: process.env.E2E_BASE_URL ?? "http://api:3000",
-	httpCredentials: { username: "admin", password: "admin" },
 });
 test.beforeEach(async ({ page, tag }) => {
 	await page.goto("/admin/#tags");
@@ -102,7 +97,7 @@ test.beforeEach(async ({ page, tag }) => {
 for (const [field, value] of [
 	["title", "Edited"],
 	["color", "#AbC123"],
-	["mixcloud-key", "/genres/edited/"],
+	["mixcloud-key", `/genres/edited-${randomUUID()}/`],
 	["mixcloud-url", "https://example.test/edited"],
 ] as const) {
 	test(`prefills and persists ${field} through reload and reopening`, async ({

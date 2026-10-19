@@ -4,13 +4,33 @@ Read this document before adding or changing an API route.
 
 ## Authentication
 
-`adminRoutes` in `src/admin/admin.ts` installs the authentication hook and
-registers both the `/api/admin/*` API routes and `/admin/*` UI routes. Every
-route registered beneath those prefixes is authenticated and requires an admin
-session or the configured temporary Basic Auth credentials.
+`adminRoutes` in `src/admin/admin.ts` protects `/api/admin/*` with a Better Auth
+cookie session. Admins and editors can manage archive resources; only admins can
+list, create, delete, reset passwords, or change roles for accounts. The
+`/admin/*` shell and `/health` are public. Basic Auth is removed.
 
-Public routes, such as `/health`, are registered outside `adminRoutes`. Document
-route plugin functions with a comment that identifies them as authenticated.
+Browser auth routes allow sign-in, session lookup, and sign-out under
+`/api/auth/*`. Public signup and direct Admin plugin/alternate password mutation
+routes are blocked. Account mutations require a trusted Origin. Never expose
+password hashes, tokens, or plaintext passwords in API responses or logs.
+
+- `GET /api/admin/users` returns `{id,email,role,mustChangePassword}[]`.
+- `POST /api/admin/create-user` accepts `{email,password,role}`.
+- `POST /api/admin/modify-user-role` accepts `{id,role}`.
+- `POST /api/admin/reset-user-password` accepts `{id,password}`.
+- `POST /api/admin/remove-user` accepts `{id}` and returns `{id}`.
+- `POST /api/account/change-password` accepts `{currentPassword,newPassword}`.
+
+Create, role change, and reset return the user summary. Admin-supplied passwords
+require replacement before archive access; protected requests return 403 with
+`code: "PASSWORD_CHANGE_REQUIRED"`. Passwords must contain 8–128 characters;
+spaces are preserved. Reset and role changes revoke existing sessions.
+Management mutations serialize with a database lock; self-deletion,
+self-demotion, and removing the last admin are rejected. Errors use
+`{error,code?}`.
+
+Document resource route plugins as authenticated and register them beneath the
+shared boundary rather than duplicating permission checks.
 
 ## Route layout
 
@@ -323,16 +343,16 @@ advisory; assignments can change before confirmation.
 permanently deletes the tag in one atomic statement. Existing foreign-key
 cascades remove all direct DJ and Show tag assignments present at deletion time;
 Shows, DJs, their mutual links, and other tags remain intact. No migration is
-needed. Both routes require admin authentication, validate positive safe-integer
-IDs, return `400` for invalid input and `404` for unknown tags, and log failures
-before returning generic `500` errors. The Tags UI loads the preview before
-enabling confirmation; successful deletion removes the row while retaining
-search and sort.
+needed. Both routes require an admin or editor session, validate positive
+safe-integer IDs, return `400` for invalid input and `404` for unknown tags, and
+log failures before returning generic `500` errors. The Tags UI loads the
+preview before enabling confirmation; successful deletion removes the row while
+retaining search and sort.
 
 ## Mixcloud import list
 
-`POST /api/admin/refresh-mixcloud` requires admin authentication and no request
-body. It fetches
+`POST /api/admin/refresh-mixcloud` requires an admin or editor session and no
+request body. It fetches
 `https://api.mixcloud.com/otherdesertradio/cloudcasts/?limit=100&offset=0` and
 follows `paging.next`, combining all source records into `{ data: [...] }` in
 request-local memory. It returns `200 { "status": "ok" }` after all pages

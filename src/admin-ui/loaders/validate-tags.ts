@@ -1,4 +1,5 @@
 import type { ResolveMixcloudTagsResponse } from "../../admin/routes/tags/index.js";
+import { apiFetch } from "./api-fetch.js";
 
 export type { ResolveMixcloudTagsResponse } from "../../admin/routes/tags/index.js";
 export type ValidateTagsResult = {
@@ -16,7 +17,7 @@ export type ValidateTagsResult = {
  */
 export const validateTags = async (
 	tags: string[],
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<ValidateTagsResult> => {
 	const response = await fetcher("/api/admin/validate-tags", {
 		method: "POST",
@@ -34,7 +35,7 @@ export const validateTags = async (
 /** Resolves source keys into canonical archive tag chips. */
 export const resolveMixcloudTags = async (
 	mixcloudKeys: string[],
-	fetcher: typeof fetch = fetch,
+	fetcher: typeof fetch = apiFetch,
 ): Promise<ResolveMixcloudTagsResponse> => {
 	const response = await fetcher("/api/admin/validate-tags", {
 		method: "POST",

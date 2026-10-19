@@ -11,13 +11,15 @@ exported files.
 ## Ownership
 
 - `src/app.ts` / `src/server.ts`: registration and startup.
-- `src/admin/admin.ts`: shared admin API/UI authorization boundary; `/health` is
-  public. [API conventions](api-routes.md#authentication) own route
-  authentication rules.
+- `src/admin/admin.ts`: shared archive API authorization boundary; the UI shell
+  is public; `/health` is public.
+  [API conventions](api-routes.md#authentication) own route authentication
+  rules.
 - Better Auth owns users, sessions, accounts, and verification, not archive
-  CRUD. Multiple accounts share one server-owned admin role; public sign-up is
-  disabled. Do not use the Better Auth Admin plugin for archive resource
-  management.
+  CRUD. Accounts have admin/editor roles; both manage archive resources, while
+  only admins manage accounts. Public sign-up is disabled. The Admin plugin is
+  used by trusted server code for account management; its browser routes are
+  blocked.
 - `src/admin/routes/`: resource APIs with injected database access.
 - `src/admin-ui/pages/`: orchestration; components/loaders separate presentation
   and data access. [UI guidance](ADMIN_UI_DESIGN.md) owns those boundaries.
@@ -38,8 +40,10 @@ migrations, backups, and restores.
 Keep secrets outside Git; preserve an existing `.env`, and update `.env.example`
 when required variables change. Better Auth requires `BETTER_AUTH_SECRET` and
 `BETTER_AUTH_URL`. Review secure, HTTP-only, same-site cookies, expiry, HTTPS,
-and server-side authorization when preparing production authentication.
-Temporary Basic Auth defaults are local development only.
+and server-side authorization when preparing production authentication. Browser
+login uses database-backed, seven-day cookie sessions; Basic Auth is removed.
+HTTPS enables secure cookies. Origin checks and database-backed rate limits
+protect authentication and account mutations.
 
 The initial architecture intentionally uses application authentication without
 requiring an additional VPN, private network, proxy allowlist, or identity
@@ -47,13 +51,11 @@ provider. Adding one is a separate architectural decision.
 
 ## Deferred product ideas
 
-The former implementation plans included admin account provisioning and
-successful cookie sign-in verification; audio upload limits/storage, Mixcloud
+The former implementation plans included audio upload limits/storage, Mixcloud
 publishing, job status/retry, optional FFMPEG and tracklist editing; automated
-GitHub Actions publication; CSRF, rate limits, security headers, durable audit
-logging, and server pagination/filtering. These are candidates to assess against
-current code, not an approved work queue or evidence that each remains absent.
-Rich-text B/I controls and matching-text highlighting were optional UI ideas.
-Preserve the plain-text-to-safe-HTML boundary; do not introduce arbitrary raw
-HTML editing. Original product intent remains in
-[human notes](../human_docs/features.md).
+GitHub Actions publication; security headers, durable audit logging, and server
+pagination/filtering. These are candidates to assess against current code, not
+an approved work queue or evidence that each remains absent. Rich-text B/I
+controls and matching-text highlighting were optional UI ideas. Preserve the
+plain-text-to-safe-HTML boundary; do not introduce arbitrary raw HTML editing.
+Original product intent remains in [human notes](../human_docs/features.md).

@@ -1,9 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import multipart from "@fastify/multipart";
-import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { accountAccessGuard } from "../auth/access.js";
 import type { auth } from "../auth/auth.js";
+import { requireSameOrigin } from "../auth/security.js";
 import { db as defaultDb } from "../db/db.js";
 import { clientDescription } from "./logging.js";
 import { djRoutes } from "./routes/djs/index.js";
@@ -12,6 +13,7 @@ import { showRoutes } from "./routes/shows/index.js";
 import { adminStatusRoutes } from "./routes/status.js";
 import { tagRoutes } from "./routes/tags/index.js";
 import type { ErrorResponse, TypedDatabase } from "./routes/types.js";
+import { userRoutes } from "./routes/users/index.js";
 
 export type { TypedDatabase } from "./routes/types.js";
 
@@ -26,82 +28,17 @@ type AdminUiRoute = {
 	};
 };
 
-export type BasicAuthCredentials = {
-	username: string;
-	password: string;
-};
-
-const defaultBasicAuthCredentials: BasicAuthCredentials = {
-	username: process.env.ADMIN_BASIC_USERNAME ?? "",
-	password: process.env.ADMIN_BASIC_PASSWORD ?? "",
-};
-
-const hasValidBasicAuth = (
-	authorization: string | undefined,
-	credentials: BasicAuthCredentials,
-): boolean => {
-	if (!authorization?.startsWith("Basic ")) {
-		return false;
-	}
-
-	const decoded = Buffer.from(authorization.slice(6), "base64").toString(
-		"utf8",
-	);
-	const separator = decoded.indexOf(":");
-
-	return (
-		separator !== -1 &&
-		decoded.slice(0, separator) === credentials.username &&
-		decoded.slice(separator + 1) === credentials.password &&
-		credentials.username !== "" &&
-		credentials.password !== ""
-	);
-};
-
-const requireAuthenticatedAdminAccess = (
-	auth: BetterAuth,
-	credentials: BasicAuthCredentials,
-) => {
-	return async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	): Promise<void> => {
-		if (hasValidBasicAuth(request.headers.authorization, credentials)) {
-			return;
-		}
-
-		const session = await auth.api.getSession({
-			headers: fromNodeHeaders(request.headers),
-		});
-
-		if (!session?.user) {
-			reply
-				.header(
-					"WWW-Authenticate",
-					'Basic realm="Archive Admin", charset="UTF-8"',
-				)
-				.code(401)
-				.send({ error: "Unauthorized" });
-			reply.hijack();
-			return;
-		}
-
-		if (session.user.role !== "admin") {
-			reply.code(403).send({ error: "Forbidden" });
-			reply.hijack();
-			return;
-		}
-	};
-};
-
 /**
- * Registers the authenticated admin API and UI routes.
- *
- * The `/api/admin/*` and `/admin/*` routes are protected by the hook below.
- * Public routes, including `/health`, are registered outside this function.
+ * Registers session-protected archive APIs; account management adds admin checks.
+ * Public SPA assets are registered separately so sign-in can render.
  */
-const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
+const adminApiRoutes = (
+	auth: BetterAuth,
+	database: TypedDatabase,
+): FastifyPluginAsync => {
 	return async (app) => {
+		app.addHook("onRequest", accountAccessGuard(auth));
+		app.addHook("onRequest", requireSameOrigin);
 		app.addHook("onRequest", async (request) => {
 			request.log.info(
 				{
@@ -136,6 +73,7 @@ const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 				parts: 9,
 			},
 		});
+		await app.register(userRoutes(auth, database));
 		await app.register(adminStatusRoutes);
 		await app.register(djRoutes(database));
 		await app.register(showRoutes(database));
@@ -144,7 +82,7 @@ const adminApiRoutes = (database: TypedDatabase): FastifyPluginAsync => {
 	};
 };
 
-/** Registers authenticated admin UI asset routes. */
+/** Serves the public SPA shell and assets; APIs enforce account access. */
 const adminUiRoutes: FastifyPluginAsync = async (app) => {
 	const adminUiRoot = resolve(process.cwd(), "dist/admin");
 
@@ -195,21 +133,17 @@ const contentTypeFor = (filePath: string): string => {
 /**
  * Registers the authenticated admin boundary.
  *
- * Both `/api/admin/*` and `/admin/*` require an admin session or configured
- * temporary Basic Auth credentials. This function does not register public
- * routes; `/health` is registered separately in the application.
+ * `/api/admin/*` requires an admin/editor session. SPA assets at `/admin/*`
+ * are public so the browser can render sign-in before a session exists.
  */
 export const adminRoutes = (
 	auth: BetterAuth,
 	database: TypedDatabase = defaultDb,
-	credentials: BasicAuthCredentials = defaultBasicAuthCredentials,
 ): FastifyPluginAsync => {
 	return async (app) => {
-		app.addHook(
-			"onRequest",
-			requireAuthenticatedAdminAccess(auth, credentials),
-		);
-		await app.register(adminApiRoutes(database), { prefix: "/api/admin" });
+		await app.register(adminApiRoutes(auth, database), {
+			prefix: "/api/admin",
+		});
 		await app.register(adminUiRoutes, { prefix: "/admin" });
 	};
 };

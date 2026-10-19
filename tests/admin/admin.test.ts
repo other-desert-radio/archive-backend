@@ -129,60 +129,92 @@ describe("admin route boundary", () => {
 
 		expect(apiResponse.statusCode).toBe(401);
 		expect(apiResponse.json()).toEqual({ error: "Unauthorized" });
-		expect(uiResponse.statusCode).toBe(401);
+		expect(uiResponse.statusCode).toBe(200);
 	});
 
-	test("challenges for temporary browser-based Basic Auth", async () => {
+	test("does not accept Basic credentials or challenge browser authentication", async () => {
 		const app = Fastify({ logger: false });
-		await app.register(
-			adminRoutes(testAuth, undefined, {
-				username: "admin",
-				password: "secret",
-			}),
-		);
-
-		for (const url of ["/api/admin", "/admin"]) {
-			const response = await app.inject({ method: "GET", url });
-
-			expect(response.statusCode).toBe(401);
-			expect(response.headers["www-authenticate"]).toBe(
-				'Basic realm="Archive Admin", charset="UTF-8"',
-			);
-
-			const invalidResponse = await app.inject({
-				method: "GET",
-				url,
-				headers: {
-					authorization: `Basic ${Buffer.from("admin:wrong").toString("base64")}`,
-				},
-			});
-
-			expect(invalidResponse.statusCode).toBe(401);
-		}
-
-		const authenticatedResponse = await app.inject({
+		await app.register(adminRoutes(testAuth));
+		const response = await app.inject({
 			method: "GET",
 			url: "/api/admin",
 			headers: {
 				authorization: `Basic ${Buffer.from("admin:secret").toString("base64")}`,
 			},
 		});
-
-		expect(authenticatedResponse.statusCode).toBe(200);
-
-		const authenticatedUiResponse = await app.inject({
-			method: "GET",
-			url: "/admin",
-			headers: {
-				authorization: `Basic ${Buffer.from("admin:secret").toString("base64")}`,
-			},
-		});
-
-		expect(authenticatedUiResponse.statusCode).toBe(200);
-
+		expect(response.statusCode).toBe(401);
+		expect(response.headers["www-authenticate"]).toBeUndefined();
 		await app.close();
 	});
-
+	test("allows editors to manage archive data but denies every account-management endpoint", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(
+			adminRoutes(
+				{
+					api: {
+						getSession: async () => ({
+							user: {
+								id: "editor-user",
+								role: "editor",
+								mustChangePassword: false,
+							},
+						}),
+					},
+				} as never,
+				testDatabase,
+			),
+		);
+		expect(
+			(await app.inject({ method: "GET", url: "/api/admin/djs" })).statusCode,
+		).toBe(200);
+		expect(
+			(
+				await app.inject({
+					method: "POST",
+					url: "/api/admin/validate-tags",
+					payload: { tags: ["dance"] },
+				})
+			).statusCode,
+		).toBe(200);
+		for (const [method, url] of [
+			["GET", "/users"],
+			["POST", "/create-user"],
+			["POST", "/modify-user-role"],
+			["POST", "/reset-user-password"],
+			["POST", "/remove-user"],
+		] as const) {
+			const response = await app.inject({ method, url: `/api/admin${url}` });
+			expect(response.statusCode).toBe(403);
+			expect(response.json()).toEqual({ error: "Forbidden" });
+		}
+		await app.close();
+	});
+	test("blocks archive access until a temporary password is replaced", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(
+			adminRoutes(
+				{
+					api: {
+						getSession: async () => ({
+							user: {
+								id: "temporary-user",
+								role: "admin",
+								mustChangePassword: true,
+							},
+						}),
+					},
+				} as never,
+				testDatabase,
+			),
+		);
+		const response = await app.inject({ method: "GET", url: "/api/admin/djs" });
+		expect(response.statusCode).toBe(403);
+		expect(response.json()).toMatchObject({ code: "PASSWORD_CHANGE_REQUIRED" });
+		expect(
+			(await app.inject({ method: "GET", url: "/admin" })).statusCode,
+		).toBe(200);
+		await app.close();
+	});
 	test("rejects admin requests without a Better Auth session", async () => {
 		const app = Fastify({ logger: false });
 		await app.register(
@@ -206,8 +238,8 @@ describe("admin route boundary", () => {
 			url: "/admin",
 		});
 
-		expect(uiResponse.statusCode).toBe(401);
-		expect(uiResponse.json()).toEqual({ error: "Unauthorized" });
+		expect(uiResponse.statusCode).toBe(200);
+		expect(uiResponse.body).toContain("Archive Admin");
 
 		await app.close();
 	});
@@ -243,7 +275,7 @@ describe("admin route boundary", () => {
 		await app.close();
 	});
 
-	test("rejects an authenticated non-admin user", async () => {
+	test("rejects an authenticated unknown role", async () => {
 		const app = Fastify({ logger: false });
 		await app.register(
 			adminRoutes({
@@ -307,6 +339,7 @@ describe("admin route boundary", () => {
 				id: 10,
 				createdAt: "2026-01-02T00:00:00.000Z",
 				title: "Show One",
+				image: "https://example.com/large.jpg",
 				image_small: "https://example.com/small.jpg",
 				image_large: "https://example.com/large.jpg",
 				date: "2026-01-01T00:00:00.000Z",
@@ -493,7 +526,7 @@ describe("admin route boundary", () => {
 		await app.close();
 	});
 
-	test("protects tag validation from non-admin users", async () => {
+	test("protects tag validation from unknown roles", async () => {
 		const app = Fastify({ logger: false });
 		await app.register(
 			adminRoutes(
