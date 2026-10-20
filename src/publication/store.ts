@@ -1,4 +1,4 @@
-import type { Kysely, Selectable } from "kysely";
+import { type Kysely, type Selectable, sql } from "kysely";
 import { isMatching, P } from "ts-pattern";
 import type { ArchivePublicationJobsTable, Database } from "../db/types.js";
 import type {
@@ -13,9 +13,14 @@ import type {
 } from "./types.js";
 /** Dedicated connection owns the session advisory lock until release. */
 export type PublicationLease = {
+	/** Use only until release; never retain or query this handle after releasing it. */
 	database: Kysely<Database>;
 	release: () => Promise<void>;
 };
+
+// Two-key advisory-lock namespace: ASCII "ARCH", publication lock 1.
+const publicationLockNamespace = 1095910216;
+const publicationLockId = 1;
 /** Acknowledgement is permitted only after confirmed push or verified no-change. */
 export type PublicationCompletion = {
 	outcome: PublicationOutcome;
@@ -106,12 +111,86 @@ export const readPublicationJob = (
 
 /** Return undefined when busy; keep the lock on one dedicated connection. */
 export const acquirePublicationLease = (
-	_database: Kysely<Database>,
-): Promise<PublicationLease | undefined> => {
-	throw new Error("Not implemented: acquirePublicationLease");
+	database: Kysely<Database>,
+): Promise<PublicationLease | undefined> =>
+	new Promise((resolve, reject) => {
+		if (database.isTransaction) {
+			reject(
+				new Error(
+					"Publication leases require a database outside a transaction",
+				),
+			);
+			return;
+		}
+		// The connection callback stays open until release, outside any transaction.
+		const connectionTask = database.connection().execute(async (connection) => {
+			const result = await sql<{
+				acquired: boolean;
+			}>`SELECT pg_try_advisory_lock(${publicationLockNamespace}, ${publicationLockId}) AS acquired`.execute(
+				connection,
+			);
+			if (result.rows[0]?.acquired !== true) {
+				resolve(undefined);
+				return;
+			}
+			await new Promise<void>((finish) => {
+				resolve({
+					database: connection,
+					release: async () => {
+						finish();
+						await connectionTask;
+					},
+				});
+			});
+			const unlocked = await sql<{
+				released: boolean;
+			}>`SELECT pg_advisory_unlock(${publicationLockNamespace}, ${publicationLockId}) AS released`.execute(
+				connection,
+			);
+			if (unlocked.rows[0]?.released !== true)
+				throw new Error("Publication advisory lock was lost");
+		});
+		// Acquisition errors reject the caller; release awaits cleanup errors directly.
+		void connectionTask.catch(reject);
+	});
+
+export class PublicationBusyError extends Error {
+	constructor() {
+		super("Another publication is running or awaiting interruption recovery");
+		this.name = "PublicationBusyError";
+	}
+}
+
+/** Reserve durably under the publisher lock; caller must release in finally. */
+export const reservePublicationJob = async ({
+	database,
+	request,
+	config,
+}: {
+	database: Kysely<Database>;
+	request: PublicationStart;
+	config: PublicationConfig;
+}): Promise<{ lease: PublicationLease; job: PublicationJob }> => {
+	if (!config.enabled) throw new Error("Archive publication is disabled");
+	const lease = await acquirePublicationLease(database);
+	if (lease === undefined) throw new PublicationBusyError();
+	try {
+		const running = await lease.database
+			.selectFrom("archive_publication_jobs")
+			.select("id")
+			.where("outcome", "=", "running")
+			.limit(1)
+			.executeTakeFirst();
+		if (running !== undefined) throw new PublicationBusyError();
+		const job = await createPublicationJob({ lease, request, config });
+		return { lease, job };
+	} catch (error) {
+		await lease.release();
+		throw error;
+	}
 };
 
-/** Caller will own the publication lease; admission/retry checks are a later unit. */
+/** Low-level insert; runner admission must use reservePublicationJob instead. */
 export const createPublicationJob = async ({
 	lease,
 	request,

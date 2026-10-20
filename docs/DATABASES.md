@@ -82,12 +82,37 @@ Git object ID. Captured revisions and commits cannot be overwritten, and
 completed jobs reject progress updates. Missing/ineligible jobs fail writes
 rather than silently reporting success.
 
-This layer does not yet admit concurrent starts, acquire the publisher advisory
-lock, complete/acknowledge jobs, or recover after restart. Those units remain
-separate and the store is not wired into routes or startup. Job writes do not
-change archive publication revisions. Rolling back `0030` drops job history
-while preserving archive tables and the singleton revision row; roll back the
-dependent log migration first.
+This layer does not yet complete/acknowledge jobs or recover after restart.
+Those units remain separate and the store is not wired into routes or startup.
+Job writes do not change archive publication revisions. Rolling back `0030`
+drops job history while preserving archive tables and the singleton revision
+row; roll back the dependent log migration first.
+
+### Publication admission and lock ownership
+
+`acquirePublicationLease` pins one database connection with Kysely's connection
+callback and takes the PostgreSQL session advisory lock `(1095910216, 1)`
+(`ARCH`, publication lock 1). It returns undefined when another session holds
+the lock. The callback stays open until `release()` unlocks and returns the
+connection to the pool. Repeated release calls await the same cleanup and do not
+unlock a later lease. Acquisition rejects transaction handles: job creation and
+progress must commit durably while the session lock remains held.
+
+`reservePublicationJob` is the admission entry point for the future runner. It
+rejects disabled publication, acquires the lease, checks for any durable running
+job, and only then inserts a queued job. Contention or an existing running row
+throws `PublicationBusyError`; database errors propagate. Rejected reservations
+release their lease. A successful reservation returns both job and lease; its
+caller must release in `finally` after execution. Use the connection on the
+lease for publication database work, and never reuse that handle after release.
+`createPublicationJob` remains a low-level insert, not an admission entry point.
+
+The lock spans job execution without a long database transaction. PostgreSQL
+releases session locks on disconnect, but the durable running row still blocks a
+new reservation until interruption recovery handles it. Automatic recovery,
+retry eligibility validation, and live runner/API integration remain deferred.
+Tests use independent one-connection pools to verify contention, durable job
+visibility, repeated release, and cleanup after rejected reservations.
 
 ### Publication logs and retention
 
@@ -117,8 +142,8 @@ sequences, inserts lines, and trims overflow atomically. Missing or completed
 jobs reject appends. The storage function retains at most 2,000 lines per job.
 After overflow it keeps the latest 1,999 lines plus one persistent truncation
 notice at sequence 0. Normal lines start at 1, and trimming does not renumber
-them. The row lock serializes concurrent appends without acquiring the later
-publisher advisory lock.
+them. The row lock serializes concurrent appends without acquiring the publisher
+advisory lock used for job reservation/execution.
 
 `readPublicationJob` reads metadata and ordered logs in one read-only,
 repeatable-read snapshot. It returns `logsTruncated` when sequence 0 exists;

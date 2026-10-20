@@ -2,10 +2,9 @@
 
 ## Current checkpoint
 
-Logs/retention scaffolding was approved by the request for the next chunk.
-Migration `0031`, sanitized bounded appends, consistent job-detail reads, and
-completed-job retention are implemented and await user review. Nothing is wired
-into live routes/startup. Continue with one responsibility per review.
+Logs/retention was approved by the request for the next chunk. Session advisory
+leases and durable reservation admission now await review. They remain off live
+routes/startup. Continue with one responsibility per review.
 
 ## Agreed scope
 
@@ -38,8 +37,9 @@ that specific update is included alongside the authoritative database reference.
 - [x] Logs/retention scaffolding.
 - [x] User review of logs/retention scaffolding.
 - [x] Sanitized bounded logs and completed-job retention.
-- [ ] User review of logs and retention implementation.
-- [ ] Advisory-lock ownership and concurrent-start rejection.
+- [x] User review of logs and retention implementation.
+- [x] Advisory-lock ownership and concurrent-start rejection.
+- [ ] User review of advisory locking and admission.
 - [ ] Abandoned-job interruption handling.
 - [ ] Git checkout/repository/branch safety validation.
 - [ ] Git fetch and fast-forward synchronization.
@@ -70,20 +70,20 @@ desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Review migration `0031` and the log sanitization, append, detail-read, and
-pruning functions. Each job retains at most 2,000 lines, including a sequence-0
-notice when truncated. Pruning preserves running jobs and the newest 20
-completed jobs; foreign keys cascade log cleanup. Callers must supply known
-secrets and avoid sensitive raw command output. Job error summaries remain
-separate from log sanitization. Automatic pruning during completion is still
-deferred.
+Review connection-pinned advisory leases and `reservePublicationJob` in the
+publication store. The latter is the runner's future admission entry point;
+`createPublicationJob` remains a low-level insert. Successful reservations
+retain the lock until the caller releases in finally. Disabled publication, lock
+contention, and durable running rows reject starts; failed reservations release
+the connection. The lock is session-scoped, not a long transaction.
 
-Three focused tests passed with 101 assertions, covering sanitization,
-concurrent appends, atomic failures, exact bounds, large batches, history
-retention and its rollback, coherent job/log snapshots, and migration
-rollback/reapply. Tests used disposable PostgreSQL; no regular archive database
-was modified.
+Four focused storage tests passed with 119 assertions against disposable
+PostgreSQL. Coverage includes independent one-connection pool contention, one
+winner in a start race, committed job visibility before release, repeated
+release, rejected-start cleanup, stale-running-row protection, and retained
+log/history behavior. No regular database was changed.
 
-After approval, the next checkpoint is advisory-lock ownership and concurrent
-start rejection. Completion/acknowledgement and interruption recovery remain
-unfinished. Follow [development modes](../../DEVELOPMENT.md#development-modes).
+After approval, implement abandoned-job interruption handling only. Retry
+eligibility, completion/acknowledgement, runner orchestration, and live API
+integration remain unfinished. Follow
+[development modes](../../DEVELOPMENT.md#development-modes).

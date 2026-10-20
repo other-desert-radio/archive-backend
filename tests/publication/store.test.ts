@@ -11,15 +11,18 @@ import {
 } from "../../src/db/migrations/0031_add_archive_publication_logs.js";
 import type { Database } from "../../src/db/types.js";
 import {
+	acquirePublicationLease,
 	appendPublicationLog,
 	capturePublicationRevision,
 	createPublicationJob,
+	PublicationBusyError,
 	type PublicationConfig,
 	type PublicationLease,
 	pruneCompletedPublicationJobs,
 	readPublicationJob,
 	readPublicationJobRecord,
 	recordPublicationCommit,
+	reservePublicationJob,
 	sanitizePublicationLog,
 	updatePublicationStage,
 } from "../../src/publication/index.js";
@@ -31,6 +34,151 @@ const config: PublicationConfig = {
 	checkoutPath: "/archive-site",
 	branch: "publish-dev",
 };
+
+test.skipIf(!databaseUrl)(
+	"publication leases pin connections, reject concurrent starts, and release on failed reservations",
+	async () => {
+		const schema = `publication_lock_${crypto.randomUUID().replaceAll("-", "")}`;
+		const connect = () =>
+			new Kysely<Database>({
+				dialect: new PostgresDialect({
+					pool: new Pool({
+						connectionString: databaseUrl,
+						max: 1,
+						options: `-c search_path=${schema}`,
+					}),
+				}),
+			});
+		const first = connect();
+		const second = connect();
+		const leases: PublicationLease[] = [];
+		const acquire = async (database: Kysely<Database>) => {
+			const lease = await acquirePublicationLease(database);
+			if (lease === undefined)
+				throw new Error("Expected an available publication lease");
+			leases.push(lease);
+			return lease;
+		};
+		try {
+			await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(first);
+			await expect(
+				reservePublicationJob({
+					database: first,
+					request: { requestedBy: "admin" },
+					config,
+				}),
+			).rejects.toThrow();
+			const lease = await acquire(first);
+			const backend = await sql<{
+				pid: number;
+			}>`SELECT pg_backend_pid() AS pid`.execute(lease.database);
+			expect(await acquirePublicationLease(second)).toBeUndefined();
+			// A failed try-lock returns its connection to a one-connection pool.
+			expect((await sql`SELECT 1`.execute(second)).rows).toHaveLength(1);
+			await lease.database.transaction().execute(up);
+			expect(
+				(
+					await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
+						lease.database,
+					)
+				).rows,
+			).toEqual(backend.rows);
+			await lease.release();
+			const reacquired = await acquire(first);
+			await lease.release();
+			expect(await acquirePublicationLease(second)).toBeUndefined();
+			await reacquired.release();
+			await first.transaction().execute(async (transaction) => {
+				await expect(acquirePublicationLease(transaction)).rejects.toThrow(
+					"outside a transaction",
+				);
+			});
+			await expect(
+				reservePublicationJob({
+					database: first,
+					request: { requestedBy: "admin" },
+					config: { ...config, enabled: false },
+				}),
+			).rejects.toThrow("disabled");
+			await expect(
+				reservePublicationJob({
+					database: first,
+					request: { requestedBy: " " },
+					config,
+				}),
+			).rejects.toThrow();
+			// Independent connections race without sleeps: exactly one reserves a durable job.
+			const results = await Promise.allSettled(
+				[first, second].map((database) =>
+					reservePublicationJob({
+						database,
+						request: { requestedBy: "admin" },
+						config,
+					}),
+				),
+			);
+			const winners = results.filter((result) => result.status === "fulfilled");
+			const losers = results.filter((result) => result.status === "rejected");
+			expect(winners).toHaveLength(1);
+			expect(losers).toHaveLength(1);
+			expect(losers[0]?.reason).toBeInstanceOf(PublicationBusyError);
+			const winner = winners[0]?.value;
+			if (winner === undefined) throw new Error("Expected one reservation");
+			leases.push(winner.lease);
+			const observer = results[0]?.status === "fulfilled" ? second : first;
+			expect(await readPublicationJobRecord(observer, winner.job.id)).toEqual(
+				winner.job,
+			);
+			await updatePublicationStage(winner.lease, winner.job.id, "exporting");
+			await capturePublicationRevision(winner.lease, winner.job.id, "5");
+			expect(
+				(await readPublicationJobRecord(observer, winner.job.id))?.revision,
+			).toBe("5");
+			await expect(
+				reservePublicationJob({
+					database: observer,
+					request: { requestedBy: "admin" },
+					config,
+				}),
+			).rejects.toBeInstanceOf(PublicationBusyError);
+			await winner.lease.release();
+			// A durable running row blocks a new start even when no session holds the lock.
+			await expect(
+				reservePublicationJob({
+					database: observer,
+					request: { requestedBy: "admin" },
+					config,
+				}),
+			).rejects.toBeInstanceOf(PublicationBusyError);
+			expect(
+				await observer
+					.selectFrom("archive_publication_jobs")
+					.select("id")
+					.execute(),
+			).toHaveLength(1);
+			const afterRejection = await acquire(observer);
+			await afterRejection.release();
+			await observer
+				.updateTable("archive_publication_jobs")
+				.set({ outcome: "interrupted", completed_at: new Date() })
+				.where("id", "=", winner.job.id)
+				.execute();
+			const retry = await reservePublicationJob({
+				database: observer,
+				request: { requestedBy: "admin", retryJobId: winner.job.id },
+				config,
+			});
+			leases.push(retry.lease);
+			expect(retry.job.retryJobId).toBe(winner.job.id);
+			expect(retry.job.id).not.toBe(winner.job.id);
+			await retry.lease.release();
+		} finally {
+			await Promise.all(leases.map((lease) => lease.release()));
+			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(first);
+			await Promise.all([first.destroy(), second.destroy()]);
+		}
+	},
+);
 
 test("publication log sanitization removes controls and redacts credentials before splitting lines", () => {
 	const lines = sanitizePublicationLog({
@@ -344,7 +492,7 @@ test.skipIf(!databaseUrl)(
 				}),
 			});
 		const database = connect();
-		// Storage is tested independently of the not-yet-implemented admission lock.
+		// Metadata storage is tested independently; reservation has its own coverage.
 		const lease: PublicationLease = {
 			database,
 			release: () => database.destroy(),
