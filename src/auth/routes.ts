@@ -1,5 +1,6 @@
 import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyPluginAsync } from "fastify";
+import { isMatching, P } from "ts-pattern";
 import { authOrigin } from "./auth.js";
 import { requireSameOrigin } from "./security.js";
 
@@ -53,11 +54,7 @@ export const authRoutes =
 						try {
 							const body: unknown = await response.clone().json();
 							if (
-								typeof body === "object" &&
-								body !== null &&
-								"code" in body &&
-								typeof body.code === "string" &&
-								/^[A-Z0-9_]{1,64}$/.test(body.code)
+								isMatching({ code: P.string.regex(/^[A-Z0-9_]{1,64}$/) }, body)
 							)
 								errorCode = body.code;
 						} catch {
