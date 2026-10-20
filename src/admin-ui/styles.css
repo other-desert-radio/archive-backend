@@ -31,7 +31,7 @@
 }
 
 :root {
-	--management-header-height: round(up, 3.0625rem, 1px);
+	--management-header-height: 66px;
 	--modal-padding: 32px;
 	--modal-field-gap: 20px;
 	--modal-control-padding: 10px 12px;

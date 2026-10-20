@@ -507,7 +507,8 @@ boundary. Publication success means pushed to GitHub, without waiting for Pages.
   and administrator permission are revalidated on reads; revoked or expired
   sessions close the stream. Heartbeat comments keep idle connections alive.
 
-Unexpected failures are logged and return a generic `500` response. Stream
-failures close the connection for browser reconnection. Revisions remain decimal
-strings throughout JSON to preserve bigint precision. No endpoint accepts Git
-commands, repository paths, or branch overrides from clients.
+Unexpected publication failures are logged and return an operation-specific
+`500` message with recovery guidance and a request ID for server-log lookup.
+Stream failures close the connection for browser reconnection. Revisions remain
+decimal strings throughout JSON to preserve bigint precision. No endpoint
+accepts Git commands, repository paths, or branch overrides from clients.

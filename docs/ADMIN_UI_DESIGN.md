@@ -598,9 +598,13 @@ access is not required to use the established local components.
 ### Archive publication
 
 Only admins request publication state or see its control at the right of the
-management header. Pending changes show Publish; a running job shows Publishing…
-and failed or interrupted jobs show Retry. Disabled publication and successful,
-clean state hide the control. The title and control fit 390px and 320px headers.
+management header. The header is 66px tall, leaving 12px above and below its
+42px publication control. Reload status uses square corners. Pending changes
+show publish changes; a running job shows Publishing… and failed, interrupted,
+or unavailable status keeps the publish changes label. Clean state keeps the
+control visible with the label “all changes pushed”. Pending changes remain
+visible when publishing is disabled; the modal explains the server setting
+needed to enable it. The title and control fit 390px and 320px headers.
 
 The shared message modal confirms pending changes and names the target branch.
 Close receives initial focus; Escape, backdrop, and Close restore focus to the

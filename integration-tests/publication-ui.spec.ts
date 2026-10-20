@@ -79,14 +79,16 @@ for (const width of [1440, 390, 320]) {
 			return route.fulfill({ json: status });
 		});
 		await page.goto("/admin/#djs");
-		await page.getByRole("button", { name: "Publish", exact: true }).click();
+		await page
+			.getByRole("button", { name: "publish changes", exact: true })
+			.click();
 		await expect(page.getByRole("dialog")).toContainText("publish-dev");
 		await expect(
 			page.getByRole("button", { name: "Close", exact: true }),
 		).toBeFocused();
 		await page
 			.getByRole("dialog")
-			.getByRole("button", { name: "Publish", exact: true })
+			.getByRole("button", { name: "publish changes", exact: true })
 			.click();
 		await expect(page.getByRole("dialog")).toContainText(
 			"Current stage: exporting",
@@ -119,6 +121,9 @@ for (const width of [1440, 390, 320]) {
 		await expect(
 			page.getByRole("button", { name: "Publishing…", exact: true }),
 		).toHaveCount(0);
+		await expect(
+			page.getByRole("button", { name: "all changes pushed", exact: true }),
+		).toBeVisible();
 	});
 }
 test("editors do not request or expose publication", async ({ page }) => {
@@ -146,7 +151,7 @@ test("editors do not request or expose publication", async ({ page }) => {
 		page.getByRole("heading", { name: "DJs", exact: true }),
 	).toBeVisible();
 	await expect(
-		page.getByRole("button", { name: "Publish", exact: true }),
+		page.getByRole("button", { name: "publish changes", exact: true }),
 	).toHaveCount(0);
 	expect(requests).toBe(0);
 });
@@ -205,7 +210,9 @@ test("failed publication requires an explicit retry and preserves failure logs",
 		return route.fulfill({ json: { ...initial, latestJob: failed } });
 	});
 	await page.goto("/admin/#djs");
-	await page.getByRole("button", { name: "Retry", exact: true }).click();
+	await page
+		.getByRole("button", { name: "publish changes", exact: true })
+		.click();
 	await expect(page.getByRole("log")).toContainText("Push interrupted");
 	expect(posts).toBe(0);
 	await page
@@ -251,7 +258,110 @@ test("an expired publication event session returns to sign in", async ({
 		page.getByRole("heading", { name: "Sign in", exact: true }),
 	).toBeVisible();
 	await expect(
-		page.getByRole("button", { name: "Publish", exact: true }),
+		page.getByRole("button", { name: "publish changes", exact: true }),
 	).toHaveCount(0);
 	await expect(page.getByLabel("email", { exact: true })).toBeFocused();
 });
+
+test("status failures keep the publish changes label", async ({ page }) => {
+	await page.route("**/api/auth/get-session", (route) =>
+		route.fulfill({
+			json: {
+				user: {
+					id: "admin",
+					email: "admin@example.test",
+					role: "admin",
+					mustChangePassword: false,
+				},
+			},
+		}),
+	);
+	await page.route("**/api/admin/djs", (route) => route.fulfill({ json: [] }));
+	await page.route("**/api/admin/tags", (route) => route.fulfill({ json: [] }));
+	await page.route("**/api/admin/publication", (route) =>
+		route.fulfill({ status: 500, json: { error: "Internal Server Error" } }),
+	);
+	await page.route("**/api/admin/publication/events", (route) => route.abort());
+	await page.goto("/admin/#djs");
+	await page
+		.getByRole("button", { name: "publish changes", exact: true })
+		.click();
+	await expect(page.getByRole("dialog")).toContainText(
+		"Could not load publication status (HTTP 500)",
+	);
+	await expect(
+		page.getByRole("button", { name: "Reload status", exact: true }),
+	).toBeVisible();
+});
+
+for (const enabled of [true, false]) {
+	test(`archive edits reveal publication control when enabled=${enabled}`, async ({
+		page,
+	}) => {
+		let status = {
+			...initial,
+			enabled,
+			revision: "1",
+			publishedRevision: "1",
+			pending: false,
+		};
+		let posts = 0;
+		await page.route("**/api/auth/get-session", (route) =>
+			route.fulfill({
+				json: {
+					user: {
+						id: "admin",
+						email: "admin@example.test",
+						role: "admin",
+						mustChangePassword: false,
+					},
+				},
+			}),
+		);
+		await page.route("**/api/admin/djs", (route) =>
+			route.fulfill({ json: [] }),
+		);
+		await page.route("**/api/admin/tags", (route) =>
+			route.fulfill({ json: [] }),
+		);
+		await page.route("**/api/admin/publication/events", (route) =>
+			route.abort(),
+		);
+		await page.route("**/api/admin/publication", (route) => {
+			if (route.request().method() === "POST") posts++;
+			return route.fulfill({ json: status });
+		});
+		await page.goto("/admin/#djs");
+		await expect(
+			page.getByRole("button", { name: "all changes pushed", exact: true }),
+		).toBeVisible();
+		// A committed archive edit advances durable state; reconnect polling observes it.
+		status = { ...status, revision: "2", pending: true };
+		await page
+			.getByRole("button", { name: "publish changes", exact: true })
+			.click();
+		if (enabled) {
+			await expect(page.getByRole("dialog")).toContainText(
+				"Archive changes are pending",
+			);
+			await expect(
+				page
+					.getByRole("dialog")
+					.getByRole("button", { name: "publish changes", exact: true }),
+			).toBeEnabled();
+		} else {
+			await expect(page.getByRole("dialog")).toContainText(
+				"Publishing is disabled",
+			);
+			await expect(page.getByRole("dialog")).toContainText(
+				"ARCHIVE_PUBLISH_ENABLED=true",
+			);
+			await expect(
+				page
+					.getByRole("dialog")
+					.getByRole("button", { name: "publish changes", exact: true }),
+			).toHaveCount(0);
+		}
+		expect(posts).toBe(0);
+	});
+}

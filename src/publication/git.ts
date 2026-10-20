@@ -34,6 +34,8 @@ const runGit = async ({
 			[
 				"--no-optional-locks",
 				"-c",
+				`safe.directory=${checkout}`,
+				"-c",
 				"core.hooksPath=/dev/null",
 				"-c",
 				"core.fsmonitor=false",

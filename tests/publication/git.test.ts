@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { execFile } from "node:child_process";
 import {
+	chmod,
 	mkdir,
 	mkdtemp,
 	readFile,
@@ -622,4 +623,43 @@ test("recovery rejects an unrecognized outgoing commit without pushing or rewrit
 	expect(
 		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
 	).toBe(remoteBefore);
+});
+
+test("publisher trusts only its configured checkout when mounted with different ownership", async () => {
+	const { directory, checkout, context } = await fixture();
+	const realGit = (await execute("which", ["git"])).stdout.trim();
+	const environment = {
+		...process.env,
+		GIT_TEST_ASSUME_DIFFERENT_OWNER: "1",
+		GIT_CONFIG_NOSYSTEM: "1",
+		GIT_CONFIG_GLOBAL: "/dev/null",
+	};
+	await expect(
+		execute(realGit, ["-C", checkout, "rev-parse", "--show-toplevel"], {
+			env: environment,
+		}),
+	).rejects.toThrow("dubious ownership");
+	const shim = path.join(directory, "bin");
+	await mkdir(shim);
+	// Simulate the container ownership mismatch for every publisher Git subprocess.
+	await writeFile(
+		path.join(shim, "git"),
+		`#!/bin/sh
+GIT_TEST_ASSUME_DIFFERENT_OWNER=1 exec '${realGit}' "$@"
+`,
+	);
+	await chmod(path.join(shim, "git"), 0o755);
+	const previousPath = process.env.PATH;
+	process.env.PATH = `${shim}:${previousPath}`;
+	try {
+		await validatePublicationCheckout(context);
+		// The exception is per invocation; it must not change persistent trust settings.
+		await expect(
+			execute(realGit, ["-C", checkout, "rev-parse", "--show-toplevel"], {
+				env: environment,
+			}),
+		).rejects.toThrow("dubious ownership");
+	} finally {
+		process.env.PATH = previousPath;
+	}
 });

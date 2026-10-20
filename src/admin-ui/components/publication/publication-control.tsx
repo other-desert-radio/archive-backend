@@ -11,10 +11,11 @@ export const PublicationControl = ({
 }: PublicationControlProps): ReactElement | null => {
 	const { status, detail, error } = publication;
 	const job = status?.latestJob ?? detail?.job;
-	if (status && !status.enabled) return null;
 	const running = job?.outcome === "running";
 	const failed = job?.outcome === "failed" || job?.outcome === "interrupted";
-	if (!running && !failed && !status?.pending && !error) return null;
+	const clean =
+		status !== undefined && !status.pending && !running && !failed && !error;
+	if (!status && !error && !running && !failed) return null;
 	return (
 		<button
 			type="button"
@@ -24,11 +25,9 @@ export const PublicationControl = ({
 		>
 			{running
 				? "Publishing…"
-				: failed
-					? "Retry"
-					: error
-						? "Publication status"
-						: "Publish"}
+				: clean
+					? "all changes pushed"
+					: "publish changes"}
 		</button>
 	);
 };

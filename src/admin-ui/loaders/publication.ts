@@ -49,14 +49,38 @@ const detailPattern = {
 	logsTruncated: P.boolean,
 };
 const request = async (path: string, init?: RequestInit): Promise<unknown> => {
-	const response = await apiFetch(`${root}${path}`, init);
-	const data: unknown = await response.json();
-	if (!response.ok)
+	const operation =
+		init?.method === "POST"
+			? "start publication"
+			: path
+				? "load publication job and logs"
+				: "load publication status";
+	let response: Response;
+	try {
+		response = await apiFetch(`${root}${path}`, init);
+	} catch {
 		throw new Error(
-			isMatching({ error: P.string }, data)
-				? data.error
-				: `Publication request failed (${response.status}).`,
+			`Could not ${operation}: the server could not be reached. Check your connection and reload status before retrying publication.`,
 		);
+	}
+	let data: unknown;
+	try {
+		data = await response.json();
+	} catch {
+		throw new Error(
+			`Could not ${operation} (HTTP ${response.status}): the server returned an unreadable response. Reload status.`,
+		);
+	}
+	if (!response.ok) {
+		const detail =
+			isMatching({ error: P.string.minLength(1) }, data) &&
+			data.error !== "Internal Server Error"
+				? data.error
+				: "The server encountered an unexpected error. Reload status before retrying publication.";
+		throw new Error(
+			`Could not ${operation} (HTTP ${response.status}). ${detail}`,
+		);
+	}
 	return data;
 };
 export const loadPublicationStatus = async (): Promise<PublicationStatus> => {

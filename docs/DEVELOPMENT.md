@@ -300,6 +300,9 @@ the target branch is preserved; setup success does not guarantee it is safe to
 publish. `ARCHIVE_GIT_NAME` and `ARCHIVE_GIT_EMAIL` configure identity locally
 in the checkout; existing local values may be retained by leaving them unset. Do
 not depend on global Git identity/configuration, which publication ignores.
+Publisher Git commands trust only the configured checkout through a per-command
+`safe.directory` entry, allowing a host-owned bind mount inside the container
+without changing global trust settings.
 
 Create a dedicated SSH deploy key outside the repository and add its public key
 to the archive-site repository with write access. Provision the private key and
@@ -312,6 +315,26 @@ publication, and mode `0600` for the private key. Keep these files and the
 checkout outside the backend build context. For host setup, make the same
 identity and verified hosts available to the current user's SSH client
 (`~/.ssh/id_ed25519` and `~/.ssh/known_hosts`, or its SSH configuration).
+
+Existing SSH files can be mounted directly instead of copied to the default
+`../archive-publication-ssh/` directory. For example, set these absolute host
+paths in the backend `.env`, replacing the username and key filename as needed:
+
+```dotenv
+ARCHIVE_DEPLOY_KEY_PATH=/home/garrepi/.ssh/id_ed25519
+ARCHIVE_KNOWN_HOSTS_PATH=/home/garrepi/.ssh/known_hosts
+```
+
+The existing private key must have write access to the archive-site repository
+and work without a passphrase or SSH agent; the container does not inherit the
+host's SSH agent or SSH configuration. The existing `known_hosts` file must
+contain a verified entry for the configured Git host (`github.com` by default).
+A dedicated service key remains recommended. Both paths must point to existing
+files; setting only `ARCHIVE_KNOWN_HOSTS_PATH` leaves the private-key mount at
+its default path. An `invalid mount config for type "bind"` error names the
+missing host path: provision that file or update its corresponding `.env`
+setting. The setup script prepares the checkout, not these SSH files. After
+updating the paths, rerun `docker compose up -d --build`.
 
 Compose bind-mounts the checkout persistently and the two credential files
 read-only into `/root/.ssh/id_ed25519` and `/root/.ssh/known_hosts`. These match

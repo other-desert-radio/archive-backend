@@ -16,20 +16,30 @@ export const PublicationModal = ({
 	const failed = job?.outcome === "failed" || job?.outcome === "interrupted";
 	const complete = job?.outcome === "succeeded" || job?.outcome === "no-change";
 	const canStart = status?.enabled && (failed || (!running && status.pending));
-	const title = running
-		? "Publishing archive"
-		: failed
-			? "Publication needs attention"
-			: complete && !status?.pending
-				? "Archive published"
-				: "Publish archive?";
-	const description = running
-		? "Publication continues when you close this window."
-		: failed
-			? "Review the logs below, then retry when you are ready."
-			: complete && !status?.pending
-				? "The archive was pushed to GitHub. Site deployment may still be running."
-				: "Archive changes are pending. Publish the latest archive data and images to GitHub.";
+	const clean = status !== undefined && !status.pending && !running && !failed;
+	const disabled = status?.enabled === false && !clean;
+	const title = disabled
+		? "Publishing is disabled"
+		: running
+			? "Publishing archive"
+			: failed
+				? "Publication needs attention"
+				: complete && !status?.pending
+					? "Archive published"
+					: clean
+						? "All changes pushed"
+						: "Publish archive?";
+	const description = disabled
+		? "Archive changes are pending, but publishing is disabled on this server. Set ARCHIVE_PUBLISH_ENABLED=true and restart the server to enable publication."
+		: running
+			? "Publication continues when you close this window."
+			: failed
+				? "Review the logs below, then retry when you are ready."
+				: complete && !status?.pending
+					? "The archive was pushed to GitHub. Site deployment may still be running."
+					: clean
+						? "There are no pending archive changes to publish."
+						: "Archive changes are pending. Publish the latest archive data and images to GitHub.";
 	return (
 		<MessageModal
 			title={title}
@@ -44,7 +54,7 @@ export const PublicationModal = ({
 								? "Starting…"
 								: failed
 									? "Retry publication"
-									: "Publish",
+									: "publish changes",
 							disabled: starting || loading,
 							onClick: () =>
 								void publication.start(failed ? job?.id : undefined),
@@ -65,7 +75,8 @@ export const PublicationModal = ({
 				{loading && <p role="status">Loading publication status…</p>}
 				{!connected && !loading && (
 					<p className={styles.helper} role="status">
-						Reconnecting to live progress…
+						Live progress is disconnected. Reconnecting automatically; use
+						Reload status to check the latest saved progress.
 					</p>
 				)}
 				{job && (
@@ -76,10 +87,14 @@ export const PublicationModal = ({
 				{job && job.outcome !== "running" && job.error && (
 					<p role="alert">{job.error}</p>
 				)}
-				{error && (
-					<div role="alert">
-						<p>{error}</p>
-						<button type="button" onClick={() => void publication.refresh()}>
+				{error && <p role="alert">{error}</p>}
+				{(error || (!connected && !loading)) && (
+					<div>
+						<button
+							type="button"
+							className={styles.reload}
+							onClick={() => void publication.refresh()}
+						>
 							Reload status
 						</button>
 					</div>

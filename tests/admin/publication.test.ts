@@ -200,7 +200,10 @@ describe("publication routes", () => {
 		const { app } = await setup({ fail: true });
 		const response = await app.inject("/api/admin/publication");
 		expect(response.statusCode).toBe(500);
-		expect(response.json()).toEqual({ error: "Internal Server Error" });
+		expect(response.json().error).toContain(
+			"Could not load publication status. Reload status",
+		);
+		expect(response.json().error).toContain("Request ID:");
 	});
 	for (const role of ["editor", "anonymous"])
 		test(`${role} cannot access any publication endpoint`, async () => {

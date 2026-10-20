@@ -73,7 +73,9 @@ export const publicationRoutes =
 				return await readPublicationStatus(database, config);
 			} catch (error) {
 				request.log.error({ err: error }, "[Publication] status read failed");
-				return reply.code(500).send({ error: "Internal Server Error" });
+				return reply.code(500).send({
+					error: `Could not load publication status. Reload status to try again. Request ID: ${request.id}.`,
+				});
 			}
 		});
 		app.get<PublicationJobRoute>(
@@ -98,7 +100,9 @@ export const publicationRoutes =
 						: detail;
 				} catch (error) {
 					request.log.error({ err: error }, "[Publication] job read failed");
-					return reply.code(500).send({ error: "Internal Server Error" });
+					return reply.code(500).send({
+						error: `Could not load the publication job and logs. Reload status to try again. Request ID: ${request.id}.`,
+					});
 				}
 			},
 		);
@@ -167,7 +171,9 @@ export const publicationRoutes =
 						.code(error.status === 401 ? 401 : 403)
 						.send({ error: error.message });
 				request.log.error({ err: error }, "[Publication] start failed");
-				return reply.code(500).send({ error: "Internal Server Error" });
+				return reply.code(500).send({
+					error: `Could not start publication. Reload status to check whether a job was created before retrying. Request ID: ${request.id}.`,
+				});
 			}
 		});
 		app.get("/publication/events", async (request, reply) => {
