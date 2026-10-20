@@ -425,7 +425,8 @@ are optional; existing resources continue supplying them.
 The Mixcloud toolbar places “ready for import” and “needs review” immediately
 before “Refresh Mixcloud”. Nonzero counts appear in square badges: green for
 “ready for import” and red for “needs review”, with a 1px black outline and
-white text, aligned to the right. Zero counts show no badge. Hovering “needs
+white text, aligned to the right. Zero counts show no badge and disable the
+corresponding button with gray text, border, and background. Hovering “needs
 review” shows a native tooltip explaining that these shows could not be
 automatically parsed or their DJs have not been onboarded yet. “ready for
 import” has a native tooltip explaining that parsing and DJ onboarding are

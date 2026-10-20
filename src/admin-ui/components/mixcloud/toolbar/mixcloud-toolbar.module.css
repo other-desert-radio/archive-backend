@@ -12,6 +12,12 @@
 	border: 1px solid #000;
 	border-radius: 0;
 }
+.category:disabled {
+	color: #777;
+	border-color: #aaa;
+	background: #eee;
+	cursor: default;
+}
 .count {
 	display: inline-flex;
 	align-items: center;
