@@ -1,5 +1,8 @@
 import type { Kysely } from "kysely";
-import type { ArchiveDocuments } from "../db/export-archive.js";
+import {
+	type ArchiveDocuments,
+	loadArchiveDocuments,
+} from "../db/export-archive.js";
 import type { Database } from "../db/types.js";
 import type { PublicationLease } from "./store.js";
 import type {
@@ -19,10 +22,23 @@ export type PublicationRunner = {
 };
 
 export const readPublicationSnapshot = (
-	_database: Kysely<Database>,
-): Promise<PublicationSnapshot> => {
-	throw new Error("Not implemented: readPublicationSnapshot");
-};
+	database: Kysely<Database>,
+): Promise<PublicationSnapshot> =>
+	database
+		.transaction()
+		.setIsolationLevel("repeatable read")
+		.setAccessMode("read only")
+		.execute(async (transaction) => {
+			const { revision } = await transaction
+				.selectFrom("archive_publication_state")
+				.select("revision")
+				.where("id", "=", 1)
+				.executeTakeFirstOrThrow();
+			const documents = await loadArchiveDocuments(transaction, {
+				log: () => {},
+			});
+			return { revision, documents };
+		});
 
 /**
  * Lease → validate/reconcile Git → fast-forward → snapshot → writeArchiveDocuments

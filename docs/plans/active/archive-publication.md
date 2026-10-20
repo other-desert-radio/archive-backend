@@ -2,10 +2,9 @@
 
 ## Current checkpoint
 
-Configuration was reviewed; the user requested the next chunk. The export-only
-launcher is now `publish-locally`, and destinations derive from the configured
-checkout with the legacy sibling fallback. Awaiting review before snapshot
-reading. Other stubs remain provisional and disconnected from live
+Consistent-snapshot archive reading was approved. The reusable module and its
+tests retain the `export-archive` filenames. Durable job schema/persistence is
+the next checkpoint. Other stubs remain provisional and disconnected from live
 routes/startup. Continue with one responsibility per review.
 
 ## Agreed scope
@@ -30,8 +29,9 @@ that specific update is included alongside the authoritative database reference.
 - [x] Checkout configuration and path validation.
 - [x] User review of checkout configuration and path validation.
 - [x] Export-only launcher rename and configured destinations.
-- [ ] User review of export-only launcher and destinations.
-- [ ] Consistent-snapshot archive reading.
+- [x] User review of export-only launcher and destinations.
+- [x] Consistent-snapshot archive reading.
+- [x] User review of consistent-snapshot reading.
 - [ ] Durable job schema and persistence.
 - [ ] Sanitized bounded logs and completed-job retention.
 - [ ] Advisory-lock ownership and concurrent-start rejection.
@@ -65,16 +65,17 @@ desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Review the launcher rename, package command, destination resolver, and export
-documentation. The launcher changes to the backend root before invoking the
-existing exporter. A shared checkout-path resolver preserves path validation
-without requiring unrelated publisher settings. Standalone exports default to
-`../archive-site` only when `ARCHIVE_CHECKOUT_PATH` is unset.
+Review the shared transaction-bound document loader, standalone repeatable-read
+transaction, and publication revision/document snapshot reader. File writes
+begin after the read transaction finishes; reads never acknowledge publication.
+The direct export-to-config import avoids a cycle through the runner barrel.
 
-Thirteen focused configuration/export tests passed with 88 assertions, including
-the renamed package command against disposable PostgreSQL and temporary output.
-It preserves unrelated assets, exports JSON/images, and leaves revisions
-unchanged without Git. No regular database or real checkout was modified.
+Fourteen focused configuration/export tests passed with 109 assertions using
+disposable PostgreSQL and temporary output. Deterministic interleaving verifies
+consistent documents across table reads, matching captured revision/data,
+changed images and relationships, fresh subsequent snapshots, unchanged
+published revision, and recovery after missing-table/missing-state errors. No
+regular database or real checkout was modified.
 
-After approval, implement consistent-snapshot archive reading only. Follow
+After approval, implement durable job schema and persistence only. Follow
 [development modes](../../DEVELOPMENT.md#development-modes).

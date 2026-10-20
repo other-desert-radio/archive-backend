@@ -3,16 +3,40 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
 import {
 	archiveExportDirectories,
 	buildArchiveDocuments,
+	exportArchive,
 	writeArchiveDocuments,
 } from "../../src/db/export-archive.js";
+import { up as createPublicationState } from "../../src/db/migrations/0029_add_archive_publication_state.js";
+import type { Database } from "../../src/db/types.js";
+import { readPublicationSnapshot } from "../../src/publication/index.js";
 
 const temporaryDirectories: string[] = [];
 
 const exportDatabaseUrl = process.env.ARCHIVE_EXPORT_TEST_DATABASE_URL;
+
+const createArchiveFixture = async (pool: Pool): Promise<void> => {
+	// Minimal current archive schema: fixtures exercise export reads, not historical schema migrations.
+	await pool.query(`
+	CREATE TABLE djs (id integer, title text, bio text, image_small bytea, image_large bytea, socials text, "showTitle" text, "showDescription" text);
+	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, image_small text, image_large text, url text);
+	CREATE TABLE tags (id integer, title text, color text, mixcloud_key text, mixcloud_url text);
+	CREATE TABLE show_djs (dj_id integer, show_id integer);
+	CREATE TABLE dj_tags (dj_id integer, tag_id integer);
+	CREATE TABLE show_tags (show_id integer, tag_id integer);
+	CREATE TABLE archive_publication_state (id integer, revision bigint, published_revision bigint);
+	INSERT INTO archive_publication_state VALUES (1, 7, 2);
+	INSERT INTO djs VALUES (1, 'CLI DJ', '<p>Bio</p>', decode('736d616c6c', 'hex'), decode('6c61726765', 'hex'), NULL, NULL, NULL);
+	INSERT INTO shows VALUES (1, 'CLI Show', '2026-01-01', 60, 'https://example.test/small', 'https://example.test/large', 'https://example.test/audio');
+	INSERT INTO tags VALUES (1, 'CLI Tag', '#cccccc', NULL, NULL);
+	INSERT INTO show_djs VALUES (1, 1);
+	INSERT INTO show_tags VALUES (1, 1);
+		`);
+};
 
 test.skipIf(!exportDatabaseUrl)(
 	"publish-locally exports from a disposable database without acknowledging revisions or requiring Git",
@@ -26,22 +50,7 @@ test.skipIf(!exportDatabaseUrl)(
 		temporaryDirectories.push(checkout);
 		try {
 			await pool.query(`CREATE SCHEMA ${schema}`);
-			// Minimal current archive schema: this test exercises the CLI, not migrations.
-			await pool.query(`
-			CREATE TABLE djs (id integer, title text, bio text, image_small bytea, image_large bytea, socials text, "showTitle" text, "showDescription" text);
-			CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, image_small text, image_large text, url text);
-			CREATE TABLE tags (id integer, title text, color text, mixcloud_key text, mixcloud_url text);
-			CREATE TABLE show_djs (dj_id integer, show_id integer);
-			CREATE TABLE dj_tags (dj_id integer, tag_id integer);
-			CREATE TABLE show_tags (show_id integer, tag_id integer);
-			CREATE TABLE archive_publication_state (id integer, revision bigint, published_revision bigint);
-			INSERT INTO archive_publication_state VALUES (1, 7, 2);
-			INSERT INTO djs VALUES (1, 'CLI DJ', '<p>Bio</p>', decode('736d616c6c', 'hex'), decode('6c61726765', 'hex'), NULL, NULL, NULL);
-			INSERT INTO shows VALUES (1, 'CLI Show', '2026-01-01', 60, 'https://example.test/small', 'https://example.test/large', 'https://example.test/audio');
-			INSERT INTO tags VALUES (1, 'CLI Tag', '#cccccc', NULL, NULL);
-			INSERT INTO show_djs VALUES (1, 1);
-			INSERT INTO show_tags VALUES (1, 1);
-		`);
+			await createArchiveFixture(pool);
 			await mkdir(path.join(checkout, "public/assets/djs"), {
 				recursive: true,
 			});
@@ -105,6 +114,148 @@ test.skipIf(!exportDatabaseUrl)(
 			expect(
 				(await pool.query("SELECT * FROM archive_publication_state")).rows,
 			).toEqual([{ id: 1, revision: "7", published_revision: "2" }]);
+		} finally {
+			await pool.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
+			await pool.end();
+		}
+	},
+);
+
+test.skipIf(!exportDatabaseUrl)(
+	"archive and publication snapshots remain consistent across committed writes and recover from read failures",
+	async () => {
+		const schema = `export_${crypto.randomUUID().replaceAll("-", "")}`;
+		const pool = new Pool({
+			connectionString: exportDatabaseUrl,
+			options: `-c search_path=${schema}`,
+		});
+		const checkout = await mkdtemp(path.join(tmpdir(), "publish-locally-"));
+		temporaryDirectories.push(checkout);
+		try {
+			await pool.query(`CREATE SCHEMA ${schema}`);
+			await createArchiveFixture(pool);
+			// Interleave committed writes after a real SELECT completes, without sleeps.
+			const database = new Kysely<Database>({
+				dialect: new PostgresDialect({ pool }),
+			});
+			await pool.query("DROP TABLE archive_publication_state");
+			await database.transaction().execute(createPublicationState);
+			const interleave = (column: string, write: () => Promise<void>) => {
+				let changed = false;
+				return database.withPlugin({
+					transformQuery: ({ node }) => node,
+					transformResult: async ({ result }) => {
+						if (!changed && result.rows.some((row) => column in row)) {
+							changed = true;
+							await write();
+						}
+						return result;
+					},
+				});
+			};
+			const exportDatabase = interleave("title", async () => {
+				await database.transaction().execute(async (transaction) => {
+					await transaction
+						.updateTable("djs")
+						.set({ title: "Changed DJ" })
+						.execute();
+					await transaction
+						.updateTable("shows")
+						.set({ title: "Changed Show" })
+						.execute();
+					await transaction
+						.updateTable("tags")
+						.set({ title: "Changed Tag" })
+						.execute();
+					await transaction
+						.insertInto("dj_tags")
+						.values({ dj_id: 1, tag_id: 2 })
+						.execute();
+				});
+			});
+			const resources = path.join(checkout, "src/res");
+			await exportArchive(
+				exportDatabase,
+				resources,
+				path.join(checkout, "public/assets"),
+				{ log: () => {} },
+			);
+			const originalDJ = JSON.parse(
+				await readFile(path.join(resources, "djs/1.json"), "utf8"),
+			);
+			expect(originalDJ.title).toBe("CLI DJ");
+			expect(originalDJ.tagIds).toEqual([1]);
+			expect(originalDJ.shows[0].title).toBe("CLI Show");
+			expect(
+				JSON.parse(await readFile(path.join(resources, "tags.json"), "utf8"))[0]
+					.title,
+			).toBe("CLI Tag");
+			// The next read sees the committed changes, not a retained snapshot.
+			const changed = await readPublicationSnapshot(database);
+			expect(changed.revision).toBe("5");
+			expect(changed.documents.djs[0]?.title).toBe("Changed DJ");
+			expect(changed.documents.djs[0]?.tagIds).toEqual([1, 2]);
+			const publicationDatabase = interleave("revision", async () => {
+				await database.transaction().execute(async (transaction) => {
+					await transaction
+						.updateTable("djs")
+						.set({ title: "Newest DJ", image_large: Buffer.from("new-image") })
+						.execute();
+					await transaction
+						.updateTable("shows")
+						.set({ title: "Newest Show" })
+						.execute();
+					await transaction
+						.updateTable("tags")
+						.set({ title: "Newest Tag" })
+						.execute();
+					await transaction.deleteFrom("dj_tags").execute();
+				});
+			});
+			const captured = await readPublicationSnapshot(publicationDatabase);
+			expect(captured.revision).toBe("5");
+			expect(captured.documents.djs[0]?.title).toBe("Changed DJ");
+			expect(captured.documents.shows[0]?.title).toBe("Changed Show");
+			expect(captured.documents.tags[0]?.title).toBe("Changed Tag");
+			expect(captured.documents.djs[0]?.tagIds).toEqual([1, 2]);
+			expect(
+				captured.documents.images.find((image) => image.variant === "large")
+					?.bytes,
+			).toEqual(Buffer.from("large"));
+			const newest = await readPublicationSnapshot(database);
+			expect(newest.revision).toBe("9");
+			expect(newest.documents.djs[0]?.title).toBe("Newest DJ");
+			expect(newest.documents.djs[0]?.tagIds).toEqual([1]);
+			expect(
+				(
+					await pool.query(
+						"SELECT published_revision FROM archive_publication_state",
+					)
+				).rows,
+			).toEqual([{ published_revision: "0" }]);
+			// Failed reads must not replace existing output or poison the next transaction.
+			await pool.query("ALTER TABLE show_tags RENAME TO unavailable_show_tags");
+			await expect(
+				exportArchive(
+					database,
+					resources,
+					path.join(checkout, "public/assets"),
+					{ log: () => {} },
+				),
+			).rejects.toThrow();
+			expect(
+				JSON.parse(await readFile(path.join(resources, "djs/1.json"), "utf8")),
+			).toEqual(originalDJ);
+			await pool.query("ALTER TABLE unavailable_show_tags RENAME TO show_tags");
+			await pool.query("DELETE FROM archive_publication_state");
+			await expect(readPublicationSnapshot(database)).rejects.toThrow();
+			await database.transaction().execute(async (transaction) => {
+				await transaction
+					.insertInto("archive_publication_state")
+					.defaultValues()
+					.execute();
+			});
+			expect((await readPublicationSnapshot(database)).revision).toBe("1");
 		} finally {
 			await pool.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
 			await pool.end();

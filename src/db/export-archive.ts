@@ -1,8 +1,9 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Kysely, Selectable } from "kysely";
-import { readArchiveCheckoutPath } from "../publication/index.js";
+import type { Kysely, Selectable, Transaction } from "kysely";
+// Direct import avoids a cycle through the publication runner and its barrel.
+import { readArchiveCheckoutPath } from "../publication/config.js";
 import { sanitizeArchiveHtml } from "../utils/sanitize-html.js";
 import { db } from "./db.js";
 import type {
@@ -342,54 +343,47 @@ export const writeArchiveDocuments = async (
 	);
 };
 
-/** Loads archive data, builds public files, and writes the DJ export. */
-export const exportArchive = async (
-	database: Kysely<Database> = db,
-	resourceDirectory: string = archiveExportDirectories().resourceDirectory,
-	assetDirectory: string = archiveExportDirectories().assetDirectory,
+/** Read within the caller's snapshot; no filesystem work occurs in the transaction. */
+export const loadArchiveDocuments = async (
+	transaction: Transaction<Database>,
 	reporter: ArchiveExportReporter = { log: console.log },
-): Promise<void> => {
-	reporter.log("Archive export");
-	reporter.log(`├─ JSON destination: ${resourceDirectory}`);
-	reporter.log(`├─ Image destination: ${assetDirectory}`);
+): Promise<ArchiveDocuments> => {
 	reporter.log("├─ Reading database");
-	const [djs, shows, tags, showDJs, djTags, showTags] = await Promise.all([
-		database
-			.selectFrom("djs")
-			.selectAll()
-			.orderBy("title")
-			.orderBy("id")
-			.execute(),
-		database
-			.selectFrom("shows")
-			.selectAll()
-			.orderBy("date", "desc")
-			.orderBy("id")
-			.execute(),
-		database
-			.selectFrom("tags")
-			.select(["id", "title", "color", "mixcloud_key", "mixcloud_url"])
-			.orderBy("id")
-			.execute(),
-		database
-			.selectFrom("show_djs")
-			.select(["dj_id", "show_id"])
-			.orderBy("dj_id")
-			.orderBy("show_id")
-			.execute(),
-		database
-			.selectFrom("dj_tags")
-			.select(["dj_id", "tag_id"])
-			.orderBy("dj_id")
-			.orderBy("tag_id")
-			.execute(),
-		database
-			.selectFrom("show_tags")
-			.select(["show_id", "tag_id"])
-			.orderBy("show_id")
-			.orderBy("tag_id")
-			.execute(),
-	]);
+	const djs = await transaction
+		.selectFrom("djs")
+		.selectAll()
+		.orderBy("title")
+		.orderBy("id")
+		.execute();
+	const shows = await transaction
+		.selectFrom("shows")
+		.selectAll()
+		.orderBy("date", "desc")
+		.orderBy("id")
+		.execute();
+	const tags = await transaction
+		.selectFrom("tags")
+		.select(["id", "title", "color", "mixcloud_key", "mixcloud_url"])
+		.orderBy("id")
+		.execute();
+	const showDJs = await transaction
+		.selectFrom("show_djs")
+		.select(["dj_id", "show_id"])
+		.orderBy("dj_id")
+		.orderBy("show_id")
+		.execute();
+	const djTags = await transaction
+		.selectFrom("dj_tags")
+		.select(["dj_id", "tag_id"])
+		.orderBy("dj_id")
+		.orderBy("tag_id")
+		.execute();
+	const showTags = await transaction
+		.selectFrom("show_tags")
+		.select(["show_id", "tag_id"])
+		.orderBy("show_id")
+		.orderBy("tag_id")
+		.execute();
 	reporter.log(`│  ├─ DJs: ${djs.length}`);
 	reporter.log(`│  ├─ Tags: ${tags.length}`);
 	reporter.log(`│  ├─ DJ/show relationships: ${showDJs.length}`);
@@ -409,6 +403,24 @@ export const exportArchive = async (
 	reporter.log(`│  ├─ Shows: ${documents.shows.length}`);
 	reporter.log(`│  ├─ Tags: ${documents.tags.length}`);
 	reporter.log(`│  └─ Images: ${documents.images.length}`);
+	return documents;
+};
+
+/** Loads one consistent archive snapshot, then writes its files after commit. */
+export const exportArchive = async (
+	database: Kysely<Database> = db,
+	resourceDirectory: string = archiveExportDirectories().resourceDirectory,
+	assetDirectory: string = archiveExportDirectories().assetDirectory,
+	reporter: ArchiveExportReporter = { log: console.log },
+): Promise<void> => {
+	reporter.log("Archive export");
+	reporter.log(`├─ JSON destination: ${resourceDirectory}`);
+	reporter.log(`├─ Image destination: ${assetDirectory}`);
+	const documents = await database
+		.transaction()
+		.setIsolationLevel("repeatable read")
+		.setAccessMode("read only")
+		.execute((transaction) => loadArchiveDocuments(transaction, reporter));
 
 	await writeArchiveDocuments(
 		documents,

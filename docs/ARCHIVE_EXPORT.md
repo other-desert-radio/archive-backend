@@ -28,6 +28,19 @@ current contract. All arrays are ordered deterministically: DJ indexes by title
 then ID, tags by ID, and relationship IDs numerically ascending. The command
 logs its nested progress, including each generated JSON and image file.
 
+Archive reads use one read-only, repeatable-read transaction for all six archive
+tables. Concurrent committed edits cannot mix different versions of DJs, Shows,
+Tags, relationships, or images in a single export. Documents are built inside
+that transaction, then files are written after it completes. A failed read
+leaves existing output untouched; filesystem failures during writing can still
+leave partial output.
+
+The publisher's `readPublicationSnapshot` reads the singleton revision first,
+then loads the archive documents in that same transaction. Changes committed
+after the snapshot remain pending for a later publication. Snapshot reads do not
+acknowledge revisions or write files. The standalone exporter uses the same
+document loader without requiring the publication-state table.
+
 `tags.json` is the canonical tag dictionary. Every other exported document uses
 the `tagIds` field rather than duplicating tag titles and colors. The Astro
 frontend loads `tags.json` once and resolves those IDs locally. When present, a
@@ -74,10 +87,13 @@ unset, this standalone command retains the sibling `../archive-site`
 destination; the server publisher's separate default is `../clean-archive-site`.
 The tracked `.env.example` explicitly selects `../clean-archive-site`, so
 copying that setting overrides the standalone fallback. Other publication
-settings do not affect this export-only command. The reusable exporter module
-and its tests retain their `export-archive` names.
+settings do not affect this export-only command. The reusable `export-archive`
+module owns snapshot reads, document building, and file writing; its tests use
+the same name.
 
 The CLI acceptance test in `tests/db/export-archive.test.ts` uses
 `ARCHIVE_EXPORT_TEST_DATABASE_URL` pointing at disposable PostgreSQL, creates a
 temporary schema and output directory, and verifies export and unchanged
-publication revisions. It skips that test when the variable is unset.
+publication revisions. A separate snapshot test interleaves committed edits
+between reads, checks matching revision/documents and fresh subsequent reads,
+and verifies recovery after read failures. Both skip when the variable is unset.
