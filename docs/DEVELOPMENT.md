@@ -182,6 +182,40 @@ builds the stack, mounts host `dist/admin` into the API container, and starts
 Vite's build watcher. Stop the watcher with Ctrl-C; stop containers separately
 with `docker compose down`.
 
+### Archive publication configuration
+
+The publication configuration reader accepts these settings. Runner/startup and
+Compose integration are still pending; these settings do not yet enable a
+publication job or change the standalone exporter.
+
+```dotenv
+ARCHIVE_SITE_REPOSITORY=git@github.com:other-desert-radio/archive-site.git
+ARCHIVE_CHECKOUT_PATH=../clean-archive-site
+ARCHIVE_CONTAINER_CHECKOUT_PATH=/archive-site
+ARCHIVE_PUBLISH_BRANCH=publish-dev
+ARCHIVE_PUBLISH_ENABLED=true
+```
+
+The application reads `ARCHIVE_CHECKOUT_PATH` only. Relative paths resolve from
+the explicit backend repository root, independently of the command's working
+directory. Compose will pass `ARCHIVE_CONTAINER_CHECKOUT_PATH` as the
+application's `ARCHIVE_CHECKOUT_PATH`; it is not a second application setting.
+The checkout must be separate from the backend, with neither containing the
+other. This configuration check is lexical; filesystem, symlink, repository, and
+actual branch validation belong to the later checkout safety check.
+
+Unset settings default to the repository, checkout, and branch above, with
+publishing **disabled**. The example explicitly enables it. Local publication
+targets `publish-dev`; configure `main` on the server. Enablement accepts only
+`true` or `false`. Values are trimmed; blank settings and embedded control
+characters are rejected, including when publishing is disabled. Repository
+settings accept SCP-style SSH, `ssh://`, or `https://` remotes without embedded
+passwords, query strings, or fragments; HTTPS usernames are also rejected.
+Branch names use letters, numbers, underscores, dots, slashes, or hyphens and
+must satisfy the reader's conservative Git name checks. Errors identify the
+setting without echoing its value. Reading configuration performs no filesystem,
+Git, database, or network operations.
+
 ## Local dummy data
 
 `bun run db:seed:djs` and `bun run db:seed:shows` each insert five standalone
