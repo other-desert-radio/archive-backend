@@ -16,6 +16,11 @@
 .control:focus-visible {
 	background: #333;
 }
+.control.clean {
+	border: 0;
+	color: #aaa;
+	font-style: italic;
+}
 .body {
 	min-width: 0;
 }

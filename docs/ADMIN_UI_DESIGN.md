@@ -602,9 +602,10 @@ management header. The header is 66px tall, leaving 12px above and below its
 42px publication control. Reload status uses square corners. Pending changes
 show publish changes; a running job shows Publishing… and failed, interrupted,
 or unavailable status keeps the publish changes label. Clean state keeps the
-control visible with the label “all changes pushed”. Pending changes remain
-visible when publishing is disabled; the modal explains the server setting
-needed to enable it. The title and control fit 390px and 320px headers.
+control visible with the label “all changes pushed”, italic gray text, and no
+border. Pending changes remain visible when publishing is disabled; the modal
+explains the server setting needed to enable it. The title and control fit 390px
+and 320px headers.
 
 The shared message modal confirms pending changes with “Publish latest changes
 to github.” and names the target branch. Publication uses a centered Publish

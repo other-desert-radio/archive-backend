@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import type { AccountUser } from "../../loaders/auth.js";
 import { ChangePasswordModal } from "../auth/index.js";
 import {
@@ -6,6 +6,7 @@ import {
 	PublicationModal,
 	usePublication,
 } from "../publication/index.js";
+import { MessageModal } from "../shared/modal/index.js";
 import styles from "./management-shell.module.css";
 
 type ManagementShellProps = {
@@ -13,6 +14,60 @@ type ManagementShellProps = {
 	children: ReactNode;
 	user?: AccountUser;
 	onLogout?: () => Promise<void>;
+};
+
+type AccountDialogProps = {
+	email: AccountUser["email"];
+	onDismiss: () => void;
+	onChangePassword: () => void;
+	onLogout: ManagementShellProps["onLogout"];
+};
+
+/** Owns the signed-in dialog and sign-out request feedback. */
+const AccountDialog = ({
+	email,
+	onDismiss,
+	onChangePassword,
+	onLogout,
+}: AccountDialogProps) => {
+	const [pending, setPending] = useState(false);
+	const [error, setError] = useState<string>();
+	const dismiss = () => {
+		if (!pending) onDismiss();
+	};
+	return (
+		<MessageModal
+			title="Signed In"
+			message={email}
+			panelClassName={styles.accountPanel}
+			showCloseButton
+			onDismiss={dismiss}
+			initialFocus="primary"
+			primaryAction={{
+				label: "Change password",
+				disabled: pending,
+				onClick: onChangePassword,
+			}}
+			secondaryAction={{
+				label: pending ? "Signing out…" : "Sign out",
+				disabled: pending || !onLogout,
+				onClick: async () => {
+					if (pending || !onLogout) return;
+					setPending(true);
+					setError(undefined);
+					try {
+						await onLogout();
+					} catch {
+						setError("Unable to sign out. Try again.");
+					} finally {
+						setPending(false);
+					}
+				},
+			}}
+		>
+			{error && <p role="alert">{error}</p>}
+		</MessageModal>
+	);
 };
 
 const styleWhenActive = (
@@ -29,11 +84,15 @@ export const ManagementShell = ({
 	const publication = usePublication(user?.role === "admin");
 	const [publishing, setPublishing] = useState(false);
 	const [changing, setChanging] = useState(false);
-	const [error, setError] = useState<string>();
-	const [pending, setPending] = useState(false);
+	const [accountOpen, setAccountOpen] = useState(false);
+	const accountButton = useRef<HTMLButtonElement>(null);
+	const restoreAccountFocus = () => {
+		requestAnimationFrame(() => accountButton.current?.focus());
+	};
+	const blocked = changing || publishing || accountOpen;
 	return (
 		<div className={styles.layout}>
-			<header className={styles.header} inert={changing || publishing}>
+			<header className={styles.header} inert={blocked}>
 				<span className={styles.headerTitle}>
 					OTHER DESERT RADIO / MANAGEMENT
 				</span>
@@ -43,11 +102,24 @@ export const ManagementShell = ({
 						onOpen={() => setPublishing(true)}
 					/>
 				)}
+				{user && (
+					<button
+						type="button"
+						ref={accountButton}
+						className={styles.accountButton}
+						aria-label="Account"
+						aria-haspopup="dialog"
+						aria-expanded={accountOpen}
+						onClick={() => setAccountOpen(true)}
+					>
+						<span aria-hidden="true">🩐</span>
+					</button>
+				)}
 			</header>
 			<aside
 				className={styles.sidebar}
 				aria-label="Admin navigation"
-				inert={changing || publishing}
+				inert={blocked}
 			>
 				<nav>
 					<p>DATABASE</p>
@@ -107,35 +179,9 @@ export const ManagementShell = ({
 							</li>
 						)}
 					</ul>
-					{user && (
-						<div className={styles.account}>
-							<span>{user.email}</span>
-							<button type="button" onClick={() => setChanging(true)}>
-								Change password
-							</button>
-							<button
-								type="button"
-								disabled={pending}
-								onClick={async () => {
-									setPending(true);
-									setError(undefined);
-									try {
-										await onLogout?.();
-									} catch {
-										setError("Unable to sign out. Try again.");
-									} finally {
-										setPending(false);
-									}
-								}}
-							>
-								{pending ? "Signing out…" : "Sign out"}
-							</button>
-							{error && <p role="alert">{error}</p>}
-						</div>
-					)}
 				</nav>
 			</aside>
-			<section className={styles.content} inert={changing || publishing}>
+			<section className={styles.content} inert={blocked}>
 				{children}
 			</section>
 			{publishing && (
@@ -144,7 +190,28 @@ export const ManagementShell = ({
 					onClose={() => setPublishing(false)}
 				/>
 			)}
-			{changing && <ChangePasswordModal onClose={() => setChanging(false)} />}
+			{changing && (
+				<ChangePasswordModal
+					onClose={() => {
+						setChanging(false);
+						restoreAccountFocus();
+					}}
+				/>
+			)}
+			{user && accountOpen && (
+				<AccountDialog
+					email={user.email}
+					onDismiss={() => {
+						setAccountOpen(false);
+						restoreAccountFocus();
+					}}
+					onChangePassword={() => {
+						setAccountOpen(false);
+						setChanging(true);
+					}}
+					onLogout={onLogout}
+				/>
+			)}
 		</div>
 	);
 };
