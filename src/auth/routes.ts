@@ -48,6 +48,25 @@ export const authRoutes =
 					](
 						`[Authentication] request completed -- endpoint: ${pathname}, status: ${response.status}, reference: ${request.id}${response.status >= 500 ? "; check authentication/database configuration and applied migrations" : ""}`,
 					);
+					if (pathname === "/api/auth/sign-in/email" && !response.ok) {
+						let errorCode: string | undefined;
+						try {
+							const body: unknown = await response.clone().json();
+							if (
+								typeof body === "object" &&
+								body !== null &&
+								"code" in body &&
+								typeof body.code === "string" &&
+								/^[A-Z0-9_]{1,64}$/.test(body.code)
+							)
+								errorCode = body.code;
+						} catch {
+							// Keep the auth response private; status remains useful for diagnosis.
+						}
+						request.log.warn(
+							`[Authentication] sign-in rejected -- status: ${response.status}${errorCode ? `, code: ${errorCode}` : ""}, reference: ${request.id}`,
+						);
+					}
 					return reply
 						.code(response.status)
 						.send(response.body ? await response.text() : null);
