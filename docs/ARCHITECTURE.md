@@ -41,7 +41,8 @@ state. A pushed commit is the success boundary; the separate archive-site Pages
 workflow deploys only `main`. Local publication uses `publish-dev`.
 
 Inspect `Dockerfile`, `compose.yml`, and `.env.example` for runtime
-configuration. Follow [development operations](DEVELOPMENT.md) for startup,
+configuration. Use the manual [server installation guide](SERVER_INSTALL.md) for
+host setup. Follow [development operations](DEVELOPMENT.md) for startup,
 explicit reviewed migrations, backups, restores, and publication SSH setup. The
 container installs Git/SSH but mounts a dedicated write deploy key and verified
 host keys at runtime; neither credentials nor checkout contents are baked into

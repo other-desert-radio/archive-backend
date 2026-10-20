@@ -34,6 +34,8 @@ import files into agent context. Reuse already-read, unchanged guidance.
 - Configuring server publication →
   [DEVELOPMENT.md](DEVELOPMENT.md#prepare-the-dedicated-checkout-and-ssh-files):
   persistent checkout, Git identity, deploy keys, and recovery
+- Installing on a server → [SERVER_INSTALL.md](SERVER_INSTALL.md): Bun, Docker,
+  environment, migrations, initial admin, and Git deploy keys
 - Changing Mixcloud refresh/tracking/import transactions →
   [MIXCLOUD_IMPORT.md](MIXCLOUD_IMPORT.md): persistence, constraints, deletion
   and import semantics

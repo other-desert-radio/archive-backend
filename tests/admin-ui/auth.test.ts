@@ -17,6 +17,48 @@ test("session lookup distinguishes signed out and password-change-required accou
 	fetchSpy.mockResolvedValueOnce(Response.json({ user }));
 	expect(await loadSession()).toEqual(user);
 });
+test("session lookup explains network failures without exposing transport details", async () => {
+	fetchSpy.mockRejectedValueOnce(new Error("private transport detail"));
+	await expect(loadSession()).rejects.toThrow(
+		"Unable to reach the sign-in service. Check your connection and retry.",
+	);
+});
+test("session errors include HTTP status and a safe request reference without response bodies", async () => {
+	for (const status of [401, 403, 404, 500, 502]) {
+		fetchSpy.mockResolvedValueOnce(
+			new Response("private upstream details", {
+				status,
+				headers: { "x-request-id": "req-test" },
+			}),
+		);
+		await expect(loadSession()).rejects.toThrow(
+			`The sign-in service could not check your session. Retry; if this continues, contact the administrator. (HTTP ${status}; reference req-test)`,
+		);
+	}
+	fetchSpy.mockResolvedValueOnce(new Response("", { status: 429 }));
+	await expect(loadSession()).rejects.toThrow(
+		"Too many session checks. Wait a minute, then retry. (HTTP 429)",
+	);
+});
+test("session lookup rejects proxy HTML and malformed successful payloads", async () => {
+	fetchSpy.mockResolvedValueOnce(new Response("<html>proxy page</html>"));
+	await expect(loadSession()).rejects.toThrow("unreadable response");
+	for (const body of [
+		{},
+		{ user: {} },
+		{
+			user: {
+				id: "one",
+				email: "editor@example.com",
+				role: "unexpected",
+				mustChangePassword: false,
+			},
+		},
+	]) {
+		fetchSpy.mockResolvedValueOnce(Response.json(body));
+		await expect(loadSession()).rejects.toThrow("unexpected response");
+	}
+});
 test("auth mutations submit JSON and preserve actionable server errors", async () => {
 	fetchSpy.mockResolvedValueOnce(
 		Response.json({ error: "Password does not meet policy" }, { status: 400 }),

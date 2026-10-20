@@ -132,9 +132,13 @@ export const AccountAccess = ({
 		setError(undefined);
 		try {
 			setUser(await loadSession());
-		} catch {
+		} catch (error: unknown) {
 			setSessionError(true);
-			setError("Unable to check your session. Please try again.");
+			setError(
+				error instanceof Error
+					? error.message
+					: "Unable to check your session. Retry; if this continues, contact the administrator.",
+			);
 		} finally {
 			setLoading(false);
 		}
