@@ -5,8 +5,8 @@ For schema invariants, see [DATABASES.md](DATABASES.md).
 
 ## Output layout
 
-The backend stores archive data in PostgreSQL. `bun run db:export:archive`
-writes the following assets to the configured Astro frontend directories:
+The backend stores archive data in PostgreSQL. `bun run publish-locally` writes
+the following assets to the configured Astro frontend directories:
 
 - `src/res/djs_brief.json`, the compact DJ index;
 - `src/res/djs/{id}.json`, one detail document per DJ;
@@ -61,6 +61,23 @@ stable even if internal database column names change. Astro frontend code must
 prefix file and asset paths with `import.meta.env.BASE_URL`, rather than
 assuming the site is deployed at `/`.
 
-Inspect the absolute `ARCHIVE_RESOURCE_DIRECTORY` and `ARCHIVE_ASSET_DIRECTORY`
-constants in `src/db/export-archive.ts` before exporting: they target the
-sibling Astro site, not this backend’s `dist/`.
+`scripts/publish-locally` replaces the former `scripts/export-archive` launcher;
+the package command is now `publish-locally`. It exports only: it does not
+commit, push, or acknowledge publication revisions, and does not require a Git
+checkout. It preserves the existing progress output and unrelated assets.
+
+Set `ARCHIVE_CHECKOUT_PATH` to choose the destination checkout. Relative paths
+resolve from this backend repository root, regardless of the launcher's working
+directory. JSON goes to `<checkout>/src/res` and images to
+`<checkout>/public/assets`. The checkout must be separate from the backend. When
+unset, this standalone command retains the sibling `../archive-site`
+destination; the server publisher's separate default is `../clean-archive-site`.
+The tracked `.env.example` explicitly selects `../clean-archive-site`, so
+copying that setting overrides the standalone fallback. Other publication
+settings do not affect this export-only command. The reusable exporter module
+and its tests retain their `export-archive` names.
+
+The CLI acceptance test in `tests/db/export-archive.test.ts` uses
+`ARCHIVE_EXPORT_TEST_DATABASE_URL` pointing at disposable PostgreSQL, creates a
+temporary schema and output directory, and verifies export and unchanged
+publication revisions. It skips that test when the variable is unset.

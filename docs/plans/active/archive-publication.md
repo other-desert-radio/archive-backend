@@ -2,12 +2,11 @@
 
 ## Current checkpoint
 
-Revision state/triggers were reviewed; the user requested the next chunk.
-Checkout configuration and lexical path validation are now implemented, with
-focused tests and documented environment settings. Awaiting user review before
-the export-only launcher rename. Other stubs remain provisional and disconnected
-from live routes/startup. Continue with one responsibility per review using the
-revised development workflow. The export launcher remains unchanged.
+Configuration was reviewed; the user requested the next chunk. The export-only
+launcher is now `publish-locally`, and destinations derive from the configured
+checkout with the legacy sibling fallback. Awaiting review before snapshot
+reading. Other stubs remain provisional and disconnected from live
+routes/startup. Continue with one responsibility per review.
 
 ## Agreed scope
 
@@ -29,8 +28,9 @@ that specific update is included alongside the authoritative database reference.
 - [x] Revision state migration and transactional triggers, with rollback tests.
 - [x] User review of revision state and triggers.
 - [x] Checkout configuration and path validation.
-- [ ] User review of checkout configuration and path validation.
-- [ ] Export-only launcher rename and configured destinations.
+- [x] User review of checkout configuration and path validation.
+- [x] Export-only launcher rename and configured destinations.
+- [ ] User review of export-only launcher and destinations.
 - [ ] Consistent-snapshot archive reading.
 - [ ] Durable job schema and persistence.
 - [ ] Sanitized bounded logs and completed-job retention.
@@ -65,14 +65,16 @@ desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Review `src/publication/config.ts`, its focused tests, `.env.example`, and the
-publication configuration section in the development guide. The reader defaults
-to disabled, validates settings, and resolves host paths from an explicit
-absolute backend root. Compose mapping, real filesystem/symlink/Git checks, and
-startup integration remain deferred. Eight configuration tests passed with 58
-assertions. Previous disposable migration verification passed 34 assertions; no
-regular database was migrated.
+Review the launcher rename, package command, destination resolver, and export
+documentation. The launcher changes to the backend root before invoking the
+existing exporter. A shared checkout-path resolver preserves path validation
+without requiring unrelated publisher settings. Standalone exports default to
+`../archive-site` only when `ARCHIVE_CHECKOUT_PATH` is unset.
 
-After approval, the next checkpoint is the export-only launcher rename and
-configured destinations. Keep consistent-snapshot reading for its own review.
-Follow [development modes](../../DEVELOPMENT.md#development-modes).
+Thirteen focused configuration/export tests passed with 88 assertions, including
+the renamed package command against disposable PostgreSQL and temporary output.
+It preserves unrelated assets, exports JSON/images, and leaves revisions
+unchanged without Git. No regular database or real checkout was modified.
+
+After approval, implement consistent-snapshot archive reading only. Follow
+[development modes](../../DEVELOPMENT.md#development-modes).

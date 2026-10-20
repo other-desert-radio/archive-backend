@@ -83,6 +83,33 @@ const containsPath = (parent: string, child: string): boolean => {
 	);
 };
 
+/** Resolve a separate checkout; standalone exports retain their legacy default. */
+export const readArchiveCheckoutPath = ({
+	environment,
+	repositoryRoot,
+	fallback = "../clean-archive-site",
+}: {
+	environment: NodeJS.ProcessEnv;
+	repositoryRoot: string;
+	fallback?: string;
+}): string => {
+	if (!isAbsolute(repositoryRoot))
+		throw new Error("Backend repository root must be absolute");
+	const checkoutPath = resolve(
+		repositoryRoot,
+		setting({ environment, name: "ARCHIVE_CHECKOUT_PATH", fallback }),
+	);
+	if (
+		containsPath(repositoryRoot, checkoutPath) ||
+		containsPath(checkoutPath, repositoryRoot)
+	) {
+		throw new Error(
+			"ARCHIVE_CHECKOUT_PATH must be separate from the backend repository",
+		);
+	}
+	return checkoutPath;
+};
+
 /** Parse settings only; filesystem, symlink, and Git checkout checks run before publishing. */
 export const readPublicationConfig = (
 	environment: NodeJS.ProcessEnv,
@@ -116,21 +143,6 @@ export const readPublicationConfig = (
 		throw new Error(
 			"ARCHIVE_PUBLISH_BRANCH must be a valid branch using letters, numbers, underscores, dots, slashes, or hyphens",
 		);
-	const checkoutPath = resolve(
-		repositoryRoot,
-		setting({
-			environment,
-			name: "ARCHIVE_CHECKOUT_PATH",
-			fallback: "../clean-archive-site",
-		}),
-	);
-	if (
-		containsPath(repositoryRoot, checkoutPath) ||
-		containsPath(checkoutPath, repositoryRoot)
-	) {
-		throw new Error(
-			"ARCHIVE_CHECKOUT_PATH must be separate from the backend repository",
-		);
-	}
+	const checkoutPath = readArchiveCheckoutPath({ environment, repositoryRoot });
 	return { enabled: enabled === "true", repository, checkoutPath, branch };
 };

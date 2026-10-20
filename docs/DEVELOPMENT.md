@@ -129,7 +129,7 @@ local file does not already exist, then configure its values. Keep `.env`
 untracked; update `.env.example` when introducing required variables.
 
 Compose runs the API and PostgreSQL 16. Ports come from `PORT` and
-`POSTGRES_PORT` (normally 3000 and 5432). Database data persists in
+`POSTGRES_PORT` (normally 43827 and 5432). Database data persists in
 `archive_postgres_data`; container rebuilds do not apply migrations.
 
 The API container uses the `postgres` service hostname. Host commands use
@@ -142,7 +142,7 @@ bun install
 scripts/build-container
 # After reviewing the pending migration, apply one step:
 scripts/migrate up
-curl http://localhost:3000/health
+curl http://localhost:43827/health
 ```
 
 Repeat migration steps after each review checkpoint. Use
@@ -166,10 +166,13 @@ using the current password. Public signup and email-based recovery are absent;
 another admin performs resets. Basic Auth credentials no longer grant access.
 
 Set `BETTER_AUTH_URL` to the browser's canonical application URL; HTTPS enables
-secure cookies. `BETTER_AUTH_TRUSTED_ORIGINS` optionally adds comma-separated
-exact HTTP(S) origins, such as another development port. Keep production origins
-explicit. Sessions expire after seven days; authentication/account changes use
-database-backed rate limits. Configure HTTPS before production login.
+secure cookies. Better Auth shares the API server and its `PORT`; when using a
+Cloudflare Tunnel, route the tunnel to `http://localhost:43827` and keep
+`BETTER_AUTH_URL` set to the public HTTPS origin. `BETTER_AUTH_TRUSTED_ORIGINS`
+optionally adds comma-separated exact HTTP(S) origins, such as another
+development port. Keep production origins explicit. Sessions expire after seven
+days; authentication/account changes use database-backed rate limits. Configure
+HTTPS before production login.
 
 Set `BETTER_AUTH_SECRET` to a unique random value of at least 32 characters. The
 Docker image runs in production mode and rejects the example development secret.
@@ -186,7 +189,9 @@ with `docker compose down`.
 
 The publication configuration reader accepts these settings. Runner/startup and
 Compose integration are still pending; these settings do not yet enable a
-publication job or change the standalone exporter.
+publication job. The export-only `bun run publish-locally` command already reads
+`ARCHIVE_CHECKOUT_PATH`; see [the export guide](ARCHIVE_EXPORT.md) for its
+standalone fallback and asset ownership rules.
 
 ```dotenv
 ARCHIVE_SITE_REPOSITORY=git@github.com:other-desert-radio/archive-site.git

@@ -1,6 +1,8 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Kysely, Selectable } from "kysely";
+import { readArchiveCheckoutPath } from "../publication/index.js";
 import { sanitizeArchiveHtml } from "../utils/sanitize-html.js";
 import { db } from "./db.js";
 import type {
@@ -13,13 +15,24 @@ import type {
 	TagsTable,
 } from "./types.js";
 
-/** Directory where Astro imports archive JSON during the site build. */
-export const ARCHIVE_RESOURCE_DIRECTORY =
-	"/home/garrepi/dev/odr/archive-site/src/res";
-
-/** Directory where Astro serves copied DJ image assets. */
-export const ARCHIVE_ASSET_DIRECTORY =
-	"/home/garrepi/dev/odr/archive-site/public/assets";
+/** Resolve exporter destinations without requiring publication/Git settings. */
+export const archiveExportDirectories = ({
+	environment = process.env,
+	repositoryRoot = fileURLToPath(new URL("../../", import.meta.url)),
+}: {
+	environment?: NodeJS.ProcessEnv;
+	repositoryRoot?: string;
+} = {}): { resourceDirectory: string; assetDirectory: string } => {
+	const checkoutPath = readArchiveCheckoutPath({
+		environment,
+		repositoryRoot,
+		fallback: "../archive-site",
+	});
+	return {
+		resourceDirectory: path.join(checkoutPath, "src/res"),
+		assetDirectory: path.join(checkoutPath, "public/assets"),
+	};
+};
 
 type ArchiveDJImage = {
 	id: number;
@@ -332,8 +345,8 @@ export const writeArchiveDocuments = async (
 /** Loads archive data, builds public files, and writes the DJ export. */
 export const exportArchive = async (
 	database: Kysely<Database> = db,
-	resourceDirectory: string = ARCHIVE_RESOURCE_DIRECTORY,
-	assetDirectory: string = ARCHIVE_ASSET_DIRECTORY,
+	resourceDirectory: string = archiveExportDirectories().resourceDirectory,
+	assetDirectory: string = archiveExportDirectories().assetDirectory,
 	reporter: ArchiveExportReporter = { log: console.log },
 ): Promise<void> => {
 	reporter.log("Archive export");

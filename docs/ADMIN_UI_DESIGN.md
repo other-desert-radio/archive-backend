@@ -330,7 +330,7 @@ explicitly.
 Start the [local stack](DEVELOPMENT.md#local-environment-and-startup), then:
 
 ```sh
-agent-browser --session admin-ui-verify open http://localhost:3000/admin/#djs
+agent-browser --session admin-ui-verify open http://localhost:43827/admin/#djs
 agent-browser --session admin-ui-verify wait 500
 agent-browser --session admin-ui-verify snapshot -i
 agent-browser --session admin-ui-verify screenshot /tmp/admin-djs.png
