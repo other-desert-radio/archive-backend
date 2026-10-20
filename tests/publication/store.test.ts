@@ -196,7 +196,7 @@ test.skipIf(!databaseUrl)(
 					.selectFrom("archive_publication_jobs")
 					.select("id")
 					.execute(),
-			).toHaveLength(20);
+			).toHaveLength(10);
 			expect(
 				await recovery.database
 					.selectFrom("archive_publication_jobs")
@@ -601,14 +601,14 @@ test.skipIf(!databaseUrl)(
 							...lease,
 							database: transaction,
 						}),
-					).toBe(5);
+					).toBe(15);
 					throw new Error("rollback retention");
 				}),
 			).rejects.toThrow("rollback retention");
 			expect(
 				await readPublicationJob(database, completedIds[0] ?? ""),
 			).toBeDefined();
-			expect(await pruneCompletedPublicationJobs(lease)).toBe(5);
+			expect(await pruneCompletedPublicationJobs(lease)).toBe(15);
 			expect(await pruneCompletedPublicationJobs(lease)).toBe(0);
 			expect(
 				(
@@ -619,7 +619,7 @@ test.skipIf(!databaseUrl)(
 						.orderBy("id")
 						.execute()
 				).map((row) => row.id),
-			).toEqual(completedIds.slice(5));
+			).toEqual(completedIds.slice(15));
 			expect((await readPublicationJob(database, job.id))?.logs).toHaveLength(
 				2000,
 			);
@@ -632,7 +632,7 @@ test.skipIf(!databaseUrl)(
 					.select("job_id")
 					.where("job_id", "!=", job.id)
 					.execute(),
-			).toHaveLength(20);
+			).toHaveLength(10);
 			const beforeSnapshot = await readPublicationJob(database, job.id);
 			let interleaved = false;
 			const snapshotReader = database.withPlugin({

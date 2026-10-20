@@ -466,10 +466,9 @@ export const appendPublicationLog = async (
 };
 
 /**
- * Delete completed jobs beyond the newest 20, ordered by completed_at, created_at,
+ * Delete completed jobs beyond the newest 10, ordered by completed_at, created_at,
  * then ID descending. Preserve every running job. The log foreign key cascades
  * deletes. Return the deleted job count; database failures propagate.
- * Completion orchestration will call this helper in its own transaction later.
  */
 export const pruneCompletedPublicationJobs = async (
 	lease: PublicationLease,
@@ -481,7 +480,7 @@ export const pruneCompletedPublicationJobs = async (
 		.orderBy("completed_at", "desc")
 		.orderBy("created_at", "desc")
 		.orderBy("id", "desc")
-		.offset(20);
+		.offset(10);
 	const result = await lease.database
 		.deleteFrom("archive_publication_jobs")
 		.where("outcome", "!=", "running")
@@ -490,7 +489,7 @@ export const pruneCompletedPublicationJobs = async (
 	return Number(result.numDeletedRows);
 };
 
-/** Atomically complete/acknowledge and retain the latest 20 completed jobs. */
+/** Atomically complete/acknowledge and retain the latest 10 completed jobs. */
 export const completePublicationJob = async (
 	lease: PublicationLease,
 	jobId: string,

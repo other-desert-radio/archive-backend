@@ -132,7 +132,7 @@ requester, retry identity, and logs. It neither touches Git nor acknowledges
 publication revisions, and it creates no job. Existing terminal jobs remain
 unchanged except for normal history retention.
 
-Interruption and pruning to the latest 20 completed jobs share one transaction;
+Interruption and pruning to the latest 10 completed jobs share one transaction;
 failure rolls both back. Repeating recovery does not rewrite interruption
 timestamps. The caller retains and releases the lease normally. Recovery never
 automatically retries a publication.
@@ -172,7 +172,7 @@ advisory lock used for job reservation/execution.
 repeatable-read snapshot. It returns `logsTruncated` when sequence 0 exists;
 missing jobs return undefined. This durable history lets progress views reload
 after closure or reconnection. `pruneCompletedPublicationJobs` retains the
-newest 20 completed jobs by completion time, creation time, and ID descending,
+newest 10 completed jobs by completion time, creation time, and ID descending,
 while preserving every running job. Deleting old jobs cascades to their logs. It
 is a single atomic statement and can participate in the later completion
 transaction; completion and interruption invoke it automatically. Rolling back

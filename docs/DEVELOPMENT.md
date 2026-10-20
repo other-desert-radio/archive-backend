@@ -443,7 +443,7 @@ checkout: inspect logs and resolve foreign commits, merge conflicts, staged
 changes, branch/origin mismatches, SSH permissions, or unavailable remotes
 first. Keep the checkout and job history intact so retries can reconcile a
 previously successful push. Logs are sanitized and bounded to 2,000 lines per
-job; only the latest 20 completed jobs remain.
+job; only the latest 10 completed jobs remain.
 
 ## Local dummy data
 
