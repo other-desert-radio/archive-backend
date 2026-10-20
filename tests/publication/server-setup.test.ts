@@ -26,6 +26,13 @@ const fixture = async () => {
 	const bin = path.join(directory, "bin");
 	await mkdir(path.join(root, "scripts"), { recursive: true });
 	await mkdir(bin);
+	await mkdir(path.join(root, "scripts/lib"));
+	for (const file of ["index.ts", "setup-publication-credentials.ts"]) {
+		await copyFile(
+			path.resolve(import.meta.dir, "../../scripts/lib", file),
+			path.join(root, "scripts/lib", file),
+		);
+	}
 	await copyFile(
 		path.resolve(import.meta.dir, "../../scripts/setup-server"),
 		path.join(root, "scripts/setup-server"),
@@ -300,4 +307,17 @@ test("server setup stops with ownership guidance when the non-root container can
 				item.args.join(" ") === "compose up -d --wait --wait-timeout 60 api",
 		),
 	).toBe(false);
+});
+
+test("unattended server setup with empty SSH paths stops before generating or running commands", async () => {
+	const { settings, writeEnv, run } = await fixture();
+	await writeEnv({
+		...settings,
+		ARCHIVE_DEPLOY_KEY_PATH: "",
+		ARCHIVE_KNOWN_HOSTS_PATH: "",
+	});
+	const result = await run();
+	expect(result.code).toBe(1);
+	expect(result.stderr).toContain("--yes cannot confirm");
+	expect(result.commands).toHaveLength(0);
 });

@@ -287,10 +287,10 @@ untracked `.env` with the public HTTPS `BETTER_AUTH_URL`, a unique
 `ARCHIVE_PUBLISH_ENABLED=true`, `ARCHIVE_PUBLISH_BRANCH=main`, and explicit
 `ARCHIVE_GIT_NAME` / `ARCHIVE_GIT_EMAIL` for publication commits. Set
 `ARCHIVE_RUNTIME_UID` and `ARCHIVE_RUNTIME_GID` to the numeric owner of the
-checkout and deploy key (`id -u` / `id -g` for that service account). Provision
-the write deploy key and verified known-hosts file at the configured paths
-outside the backend repository; restrict private-key permissions to `0600` or
-stricter.
+checkout and deploy key (`id -u` / `id -g` for that service account). Leave
+`ARCHIVE_DEPLOY_KEY_PATH` and `ARCHIVE_KNOWN_HOSTS_PATH` empty for guided
+credential setup, or set them to existing files outside the repository. Existing
+private keys must have permissions `0600` or stricter.
 
 Run from the backend repository (or invoke the script by absolute path):
 
@@ -300,10 +300,27 @@ Run from the backend repository (or invoke the script by absolute path):
 ./scripts/setup-server --migrate
 ```
 
+When either SSH path is empty, setup asks where credentials should live. The
+default is a sibling directory named `<backend-folder>-publication-ssh`, such as
+`../archive-backend-publication-ssh`. It generates an unencrypted Ed25519 key
+when needed, displays only its public key, and waits for you to type `added`
+after registering that public key in the archive repository’s GitHub deploy keys
+with **Allow write access**. Existing private keys are never overwritten; a
+cancelled attempt can be resumed using the same directory.
+
+For a missing known-hosts path, setup retrieves the SSH host key, displays its
+fingerprint and the GitHub fingerprint reference, and waits for `verified` after
+you independently check it. An existing known-hosts file in the chosen directory
+is also fingerprinted for confirmation. Only then are the selected paths saved
+to `.env`, preserving unrelated settings. Run credential generation as the
+account matching `ARCHIVE_RUNTIME_UID`.
+
 The command explains each step and waits for Enter before each external command;
-type `q` to stop. Use `--yes` to skip prompts for unattended execution (required
-without a terminal), optionally combined with `--migrate`. Stopping or a failure
-leaves completed changes in place.
+type `q` to stop. Use `--yes` to skip command prompts for unattended execution
+(required without a terminal), optionally combined with `--migrate`. Credential
+registration and host verification still require interactive confirmation;
+`--yes` cannot bypass them. Unattended setup requires both SSH paths to be
+configured already. Stopping or a failure leaves completed changes in place.
 
 The command validates configuration, dependencies, Docker access, and SSH mount
 sources, installs locked Bun dependencies, and reuses
@@ -324,14 +341,14 @@ configured key and repository deploy-key access.
 
 Without `--migrate`, missing publication tables fail readiness with migration
 guidance. Failed readiness or migration checks stop before API startup; an
-already-running API is not stopped. Reruns preserve existing `.env`,
-credentials, and checkout work. The command does not install host packages,
-create SSH keys, trust unverified host keys, configure DNS/TLS, or create an
-administrator. Configure HTTPS routing to the API port separately, then use
-`scripts/create-admin` for the initial administrator as described above.
-Changing PostgreSQL password variables does not rotate credentials in an
-existing data volume; use the database's credential-rotation procedure
-separately.
+already-running API is not stopped. Reruns preserve configured credentials and
+checkout work; guided credential setup updates only the two SSH paths in `.env`.
+The command does not install host packages, trust unverified host keys,
+configure DNS/TLS, or create an administrator. Configure HTTPS routing to the
+API port separately, then use `scripts/create-admin` for the initial
+administrator as described above. Changing PostgreSQL password variables does
+not rotate credentials in an existing data volume; use the database's
+credential-rotation procedure separately.
 
 ### Prepare the dedicated checkout and SSH files
 

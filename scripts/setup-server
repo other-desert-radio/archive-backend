@@ -5,9 +5,9 @@
  * BEFORE RUNNING
  * Install Bun, Git, OpenSSH, Docker, and Docker Compose on the host. Create
  * .env from .env.example with production credentials and a public HTTPS origin.
- * Provision a repository write deploy key and independently verified SSH host
- * keys outside this repository; the private key must have mode 0600 or stricter.
- * This script validates those inputs. It never prints their secret contents.
+ * Existing credential paths may be supplied, or leave both SSH paths empty for
+ * guided key generation, GitHub registration, and verified host-key setup.
+ * Private keys live outside this repository and their contents are never printed.
  *
  * USAGE
  *   ./scripts/setup-server                 Explain and confirm each command.
@@ -31,12 +31,13 @@
  * Without --migrate, an outdated database fails readiness before API startup.
  * An API that was already running is not stopped on failure or cancellation.
  *
- * Setup does not publish content, install host packages, create credentials,
+ * Setup does not publish content, install host packages,
  * configure DNS/TLS, or create an administrator. SSH read access cannot prove
  * write permission; grant that separately when provisioning the deploy key.
  * After setup, configure HTTPS routing and use scripts/create-admin as needed.
  * See docs/DEVELOPMENT.md (Server setup command) for the deployment runbook.
  */
+import { setupPublicationCredentials } from "./lib/index.ts";
 import { spawnSync } from "node:child_process";
 import { createInterface } from "node:readline/promises";
 import { statSync, unlinkSync } from "node:fs";
@@ -47,7 +48,7 @@ const root = path.resolve(import.meta.dir, "..");
 const args = process.argv.slice(2);
 if (args.includes("--help")) {
   console.log(
-    "Usage: scripts/setup-server [--migrate] [--yes]\nExplain each step and wait for Enter; type q to stop.\nPrepare .env, a write deploy key, and verified known_hosts first.\n--migrate applies all pending database migrations; back up existing databases first.\n--yes skips prompts (required when stdin or stdout is not a terminal).",
+    "Usage: scripts/setup-server [--migrate] [--yes]\nExplain each step and wait for Enter; type q to stop.\nPrepare .env; leave SSH paths empty for guided deploy-key generation.\n--migrate applies all pending database migrations; back up existing databases first.\n--yes skips command prompts; credential registration/trust still requires a terminal.",
   );
   process.exit(0);
 }
@@ -122,6 +123,23 @@ try {
         `${name} must be a positive non-root numeric ID matching the host checkout owner.`,
       );
   }
+  await setupPublicationCredentials({
+    root,
+    environment,
+    interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+    ask: async (question) => {
+      const prompt = createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      try {
+        return await prompt.question(question);
+      } finally {
+        prompt.close();
+      }
+    },
+    print: console.log,
+  });
   // Validate mount sources before Docker can create or write anything.
   for (const [name, fallback] of [
     ["ARCHIVE_DEPLOY_KEY_PATH", "../archive-publication-ssh/id_ed25519"],
