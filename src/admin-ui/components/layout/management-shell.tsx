@@ -15,6 +15,18 @@ type ManagementShellProps = {
 	onLogout?: () => Promise<void>;
 };
 
+type AccountDialogProps = {
+	email: AccountUser["email"];
+	onDismiss: () => void;
+	onChangePassword: () => void;
+	onLogout: ManagementShellProps["onLogout"];
+};
+
+/** Will compose MessageModal with account actions; not yet exposed by the header. */
+const AccountDialog = (_props: AccountDialogProps) => {
+	throw new Error("Not implemented: AccountDialog");
+};
+
 const styleWhenActive = (
 	activeResource: ManagementShellProps["activeResource"],
 	resource: ManagementShellProps["activeResource"],
@@ -31,6 +43,8 @@ export const ManagementShell = ({
 	const [changing, setChanging] = useState(false);
 	const [error, setError] = useState<string>();
 	const [pending, setPending] = useState(false);
+	// The implementation chunk will add the header trigger for this dialog.
+	const [accountOpen, setAccountOpen] = useState(false);
 	return (
 		<div className={styles.layout}>
 			<header className={styles.header} inert={changing || publishing}>
@@ -145,6 +159,14 @@ export const ManagementShell = ({
 				/>
 			)}
 			{changing && <ChangePasswordModal onClose={() => setChanging(false)} />}
+			{user && accountOpen && (
+				<AccountDialog
+					email={user.email}
+					onDismiss={() => setAccountOpen(false)}
+					onChangePassword={() => setChanging(true)}
+					onLogout={onLogout}
+				/>
+			)}
 		</div>
 	);
 };
