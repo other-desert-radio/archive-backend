@@ -3,7 +3,7 @@ import { buildApp } from "./app.js";
 import { auth } from "./auth/auth.js";
 import { db } from "./db/db.js";
 
-const port = Number(process.env.PORT ?? 3000);
+const port = Number(process.env.PORT ?? 43827);
 const app = buildApp(auth);
 
 app.addHook("onClose", async () => {
