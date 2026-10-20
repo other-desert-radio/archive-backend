@@ -1,7 +1,12 @@
 import type { ColumnType, Generated } from "kysely";
+import type {
+	PublicationOutcome,
+	PublicationStage,
+} from "../publication/types.js";
 
 export type Database = {
 	archive_publication_state: ArchivePublicationStateTable;
+	archive_publication_jobs: ArchivePublicationJobsTable;
 	djs: DJsTable;
 	shows: ShowsTable;
 	tags: TagsTable;
@@ -21,6 +26,22 @@ export type ArchivePublicationStateTable = {
 	id: Generated<number>;
 	revision: Generated<string>;
 	published_revision: Generated<string>;
+};
+
+export type ArchivePublicationJobsTable = {
+	id: string;
+	requested_by: string;
+	created_at: Generated<Date>;
+	completed_at: Date | null;
+	repository: string;
+	checkout_path: string;
+	branch: string;
+	retry_job_id: string | null;
+	stage: Generated<PublicationStage>;
+	outcome: Generated<"running" | PublicationOutcome>;
+	revision: string | null;
+	commit_id: string | null;
+	error: string | null;
 };
 
 export type MixcloudImportTable = {

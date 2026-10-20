@@ -58,6 +58,43 @@ serialize on the singleton row. Notifications are hints to re-read durable
 state. Rollback of the migration removes its triggers, function, and state table
 while preserving archive records. API startup does not apply it.
 
+## Durable publication jobs
+
+Migration `0030_add_archive_publication_jobs` creates
+`archive_publication_jobs`. Each job stores a UUID, requester ID, creation and
+completion timestamps, target repository/checkout/branch, optional retry job ID,
+stage, outcome, captured bigint revision, commit ID, and optional error. Targets
+are copied into each job so recovery can identify its original destination after
+configuration changes. Requester and retry IDs have no foreign keys: deleting an
+account or later pruning history must not erase job identity.
+
+New jobs start at `queued`/`running`. Database checks restrict stages and
+outcomes, require a completion timestamp for terminal outcomes, and prevent
+completion timestamps/errors on running jobs. Successful/no-change outcomes
+require a captured revision and no error; pushed success also requires a commit
+ID. Creation order is indexed by timestamp and ID.
+
+Storage currently supports metadata creation/read, running-job stage updates,
+and one-time capture of revision and commit ID. Bigint revisions remain decimal
+strings; response timestamps use ISO strings and absent nullable fields are
+omitted. Commit recording requires a captured revision and a full hexadecimal
+Git object ID. Captured revisions and commits cannot be overwritten, and
+completed jobs reject progress updates. Missing/ineligible jobs fail writes
+rather than silently reporting success.
+
+This layer does not yet admit concurrent starts, acquire locks, append logs,
+complete/acknowledge jobs, prune history, or recover after restart. Those units
+remain separate and the store is not wired into routes or startup. Metadata
+reads are separate from the unfinished job-detail reader with logs. Job writes
+do not change archive publication revisions. Rolling back `0030` drops job
+history while preserving archive tables and the singleton revision row.
+
+The focused test in `tests/publication/store.test.ts` requires
+`PUBLICATION_STORE_TEST_DATABASE_URL` for disposable PostgreSQL and otherwise
+skips. It creates a temporary schema and verifies persistence through another
+connection, schema constraints, transaction rollback, and migration
+rollback/reapply without changing archive revision state.
+
 ## Authentication tables
 
 Better Auth owns its authentication tables separately from archive entities.

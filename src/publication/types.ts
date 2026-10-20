@@ -23,6 +23,8 @@ export type PublicationJobBase = {
 	id: string;
 	requestedBy: string;
 	createdAt: string;
+	target: Pick<PublicationConfig, "repository" | "checkoutPath" | "branch">;
+	retryJobId?: string;
 	revision?: PublicationRevision;
 	commitId?: string;
 };

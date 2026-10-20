@@ -2,10 +2,10 @@
 
 ## Current checkpoint
 
-Consistent-snapshot archive reading was approved. The reusable module and its
-tests retain the `export-archive` filenames. Durable job schema/persistence is
-the next checkpoint. Other stubs remain provisional and disconnected from live
-routes/startup. Continue with one responsibility per review.
+Durable job schema and metadata persistence are implemented and awaiting review.
+The reusable exporter and tests retain their `export-archive` filenames. Other
+stubs remain provisional and disconnected from live routes/startup. Continue
+with one responsibility per review.
 
 ## Agreed scope
 
@@ -32,7 +32,8 @@ that specific update is included alongside the authoritative database reference.
 - [x] User review of export-only launcher and destinations.
 - [x] Consistent-snapshot archive reading.
 - [x] User review of consistent-snapshot reading.
-- [ ] Durable job schema and persistence.
+- [x] Durable job schema and persistence.
+- [ ] User review of durable job schema and persistence.
 - [ ] Sanitized bounded logs and completed-job retention.
 - [ ] Advisory-lock ownership and concurrent-start rejection.
 - [ ] Abandoned-job interruption handling.
@@ -65,17 +66,20 @@ desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Review the shared transaction-bound document loader, standalone repeatable-read
-transaction, and publication revision/document snapshot reader. File writes
-begin after the read transaction finishes; reads never acknowledge publication.
-The direct export-to-config import avoids a cycle through the runner barrel.
+Review migration `0030`, job database/wire types, and metadata storage
+functions. Jobs retain their target and retry identity, support stage updates
+and immutable revision/commit capture, and deserialize nullable values into
+optional fields. `readPublicationJobRecord` reads metadata without claiming logs
+are implemented. `createPublicationJob` now takes named lease/request/config
+parameters; it is a storage operation, with admission and retry eligibility
+still deferred.
 
-Fourteen focused configuration/export tests passed with 109 assertions using
-disposable PostgreSQL and temporary output. Deterministic interleaving verifies
-consistent documents across table reads, matching captured revision/data,
-changed images and relationships, fresh subsequent snapshots, unchanged
-published revision, and recovery after missing-table/missing-state errors. No
-regular database or real checkout was modified.
+The disposable database test passed 46 assertions covering independent-reader
+persistence, constraints, terminal-outcome mapping, rejected progress updates,
+transaction rollback, and migration rollback/reapply. No regular database was
+modified. Completion/acknowledgement, admission locking, logs/retention, and
+startup recovery remain explicit unfinished stubs. Terminal outcomes are tested
+through direct database writes until completion orchestration is implemented.
 
-After approval, implement durable job schema and persistence only. Follow
-[development modes](../../DEVELOPMENT.md#development-modes).
+After approval, implement sanitized bounded logs and completed-job retention
+only. Follow [development modes](../../DEVELOPMENT.md#development-modes).
