@@ -17,6 +17,28 @@ const environment = {
   ...process.env,
 };
 const config = readPublicationConfig(environment, backendRoot);
+const shellQuote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
+const sshArguments = [
+  "ssh",
+  "-o",
+  "BatchMode=yes",
+  "-o",
+  "StrictHostKeyChecking=yes",
+];
+if (environment.ARCHIVE_DEPLOY_KEY_PATH) {
+  sshArguments.push(
+    "-o",
+    "IdentitiesOnly=yes",
+    "-i",
+    path.resolve(backendRoot, environment.ARCHIVE_DEPLOY_KEY_PATH),
+  );
+}
+if (environment.ARCHIVE_KNOWN_HOSTS_PATH) {
+  sshArguments.push(
+    "-o",
+    `UserKnownHostsFile=${path.resolve(backendRoot, environment.ARCHIVE_KNOWN_HOSTS_PATH)}`,
+  );
+}
 const gitEnvironment = {
   ...Object.fromEntries(
     Object.entries(environment).filter(([key]) => !key.startsWith("GIT_")),
@@ -24,7 +46,7 @@ const gitEnvironment = {
   GIT_CONFIG_NOSYSTEM: "1",
   GIT_CONFIG_GLOBAL: "/dev/null",
   GIT_TERMINAL_PROMPT: "0",
-  GIT_SSH_COMMAND: "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes",
+  GIT_SSH_COMMAND: sshArguments.map(shellQuote).join(" "),
 };
 const git = (args, cwd = backendRoot) =>
   execFileSync(
@@ -32,6 +54,8 @@ const git = (args, cwd = backendRoot) =>
     [
       "-c",
       "core.hooksPath=/dev/null",
+      "-c",
+      `safe.directory=${cwd}`,
       "-c",
       "core.fsmonitor=false",
       "-c",
@@ -122,7 +146,7 @@ try {
   if (current !== config.branch) {
     if (inCheckout(["status", "--porcelain", "--untracked-files=all"])) {
       throw new Error(
-        "Pending work preserved; switch to the publication branch manually before setup",
+        `Pending work preserved; checkout is on branch "${current}" but publication is configured for branch "${config.branch}". Switch to the publication branch manually before setup.`,
       );
     }
     if (!hasRef(`refs/heads/${config.branch}`)) {

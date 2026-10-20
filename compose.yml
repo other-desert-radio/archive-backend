@@ -1,10 +1,16 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      args:
+        ARCHIVE_RUNTIME_UID: "${ARCHIVE_RUNTIME_UID:-1000}"
+        ARCHIVE_RUNTIME_GID: "${ARCHIVE_RUNTIME_GID:-1000}"
     environment:
       ARCHIVE_SITE_REPOSITORY: "${ARCHIVE_SITE_REPOSITORY:-git@github.com:other-desert-radio/archive-site.git}"
       ARCHIVE_CHECKOUT_PATH: "${ARCHIVE_CONTAINER_CHECKOUT_PATH:-/archive-site}"
       ARCHIVE_PUBLISH_BRANCH: "${ARCHIVE_PUBLISH_BRANCH:-publish-dev}"
+      ARCHIVE_GIT_NAME: "${ARCHIVE_GIT_NAME:-Other Desert Radio Archive}"
+      ARCHIVE_GIT_EMAIL: "${ARCHIVE_GIT_EMAIL:-archive@otherdesertradio.com}"
       ARCHIVE_PUBLISH_ENABLED: "${ARCHIVE_PUBLISH_ENABLED:-false}"
       PORT: "${PORT:?PORT is required}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}"
@@ -19,13 +25,13 @@ services:
           create_host_path: false
       - type: bind
         source: "${ARCHIVE_DEPLOY_KEY_PATH:-../archive-publication-ssh/id_ed25519}"
-        target: /root/.ssh/id_ed25519
+        target: /run/archive-ssh/id_ed25519
         read_only: true
         bind:
           create_host_path: false
       - type: bind
         source: "${ARCHIVE_KNOWN_HOSTS_PATH:-../archive-publication-ssh/known_hosts}"
-        target: /root/.ssh/known_hosts
+        target: /run/archive-ssh/known_hosts
         read_only: true
         bind:
           create_host_path: false

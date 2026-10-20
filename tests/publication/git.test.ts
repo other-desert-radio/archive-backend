@@ -378,7 +378,7 @@ test("checkout validation rejects changed targets, wrong branches, detached and 
 	).rejects.toThrow("saved job target");
 	await git("switch", "-c", "other");
 	await expect(validatePublicationCheckout(context)).rejects.toThrow(
-		"wrong branch",
+		'Publication checkout is on branch "other", but publication is configured for branch "publish-dev".',
 	);
 	await git("checkout", "--detach");
 	await expect(validatePublicationCheckout(context)).rejects.toThrow(
@@ -662,4 +662,30 @@ GIT_TEST_ASSUME_DIFFERENT_OWNER=1 exec '${realGit}' "$@"
 	} finally {
 		process.env.PATH = previousPath;
 	}
+});
+
+test("publication creates author and committer from configured identity without checkout-local identity", async () => {
+	const { checkout, context, git } = await remoteFixture();
+	await git("config", "--local", "--unset", "user.name");
+	await git("config", "--local", "--unset", "user.email");
+	await mkdir(path.join(checkout, "src/res"), { recursive: true });
+	await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
+	const result = await commitAndPushPublication(
+		{
+			...context,
+			config: {
+				...context.config,
+				gitIdentity: {
+					name: "Other Deser Radio Archive -- JohnARCH local",
+					email: "archive@otherdesertradio.com",
+				},
+			},
+			job: { ...context.job, revision: "7" },
+		},
+		{ kind: "ready" },
+	);
+	expect(result.kind).toBe("pushed");
+	expect(await git("show", "-s", "--format=%an <%ae>%n%cn <%ce>", "HEAD")).toBe(
+		"Other Deser Radio Archive -- JohnARCH local <archive@otherdesertradio.com>\nOther Deser Radio Archive -- JohnARCH local <archive@otherdesertradio.com>",
+	);
 });

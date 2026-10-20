@@ -82,9 +82,9 @@ test("setup refuses to switch branches with pending work", async () => {
 	await writeFile(path.join(checkout, "README.md"), "pending\n");
 	const result = setup();
 	expect(await result.exited).toBe(1);
-	expect(await new Response(result.stderr).text()).toContain(
-		"Pending work preserved",
-	);
+	const error = await new Response(result.stderr).text();
+	expect(error).toContain('checkout is on branch "manual-work"');
+	expect(error).toContain('publication is configured for branch "publish-dev"');
 	expect(git("branch", "--show-current")).toBe("manual-work");
 	expect(await readFile(path.join(checkout, "README.md"), "utf8")).toBe(
 		"pending\n",

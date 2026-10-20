@@ -144,5 +144,27 @@ export const readPublicationConfig = (
 			"ARCHIVE_PUBLISH_BRANCH must be a valid branch using letters, numbers, underscores, dots, slashes, or hyphens",
 		);
 	const checkoutPath = readArchiveCheckoutPath({ environment, repositoryRoot });
-	return { enabled: enabled === "true", repository, checkoutPath, branch };
+	const gitIdentity =
+		environment.ARCHIVE_GIT_NAME !== undefined ||
+		environment.ARCHIVE_GIT_EMAIL !== undefined
+			? {
+					name: setting({
+						environment,
+						name: "ARCHIVE_GIT_NAME",
+						fallback: "",
+					}),
+					email: setting({
+						environment,
+						name: "ARCHIVE_GIT_EMAIL",
+						fallback: "",
+					}),
+				}
+			: undefined;
+	return {
+		enabled: enabled === "true",
+		repository,
+		checkoutPath,
+		branch,
+		...(gitIdentity ? { gitIdentity } : {}),
+	};
 };

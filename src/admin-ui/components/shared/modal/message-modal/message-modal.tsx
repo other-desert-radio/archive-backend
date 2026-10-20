@@ -7,6 +7,7 @@ export type MessageModalAction = {
 	onClick: () => void;
 	disabled?: boolean;
 	destructive?: boolean;
+	appearance?: "text";
 };
 
 type MessageModalProps = {
@@ -20,6 +21,9 @@ type MessageModalProps = {
 	role?: "dialog" | "alertdialog";
 	children?: ReactNode;
 	restoreFocus?: boolean;
+	panelClassName?: string | undefined;
+	actionLayout?: "row" | "stacked";
+	showCloseButton?: boolean;
 };
 
 /** Presents a message and caller-supplied actions with keyboard focus containment. */
@@ -34,6 +38,9 @@ export const MessageModal = ({
 	role = "dialog",
 	children,
 	restoreFocus = false,
+	panelClassName,
+	actionLayout = "row",
+	showCloseButton = false,
 }: MessageModalProps) => {
 	const panelRef = useRef<HTMLDialogElement>(null);
 	const titleId = useId();
@@ -45,9 +52,14 @@ export const MessageModal = ({
 		initialFocusSelector: `button[data-action="${initialFocus}"]:not([disabled])`,
 		restoreFocus,
 	});
+	const primary = { ...primaryAction, kind: "primary" };
+	const secondary = secondaryAction
+		? [{ ...secondaryAction, kind: "secondary" }]
+		: [];
 	const actions = [
-		...(secondaryAction ? [{ ...secondaryAction, kind: "secondary" }] : []),
-		{ ...primaryAction, kind: "primary" },
+		...(actionLayout === "stacked"
+			? [primary, ...secondary]
+			: [...secondary, primary]),
 		...additionalActions.map((action) => ({ ...action, kind: "additional" })),
 	];
 	return (
@@ -63,22 +75,55 @@ export const MessageModal = ({
 				open
 				ref={panelRef}
 				tabIndex={-1}
-				className={styles.panel}
+				className={[styles.panel, panelClassName].filter(Boolean).join(" ")}
 				role={role}
 				aria-modal="true"
 				aria-labelledby={titleId}
 				aria-describedby={descriptionId}
 			>
-				<h2 id={titleId}>{title}</h2>
+				{showCloseButton ? (
+					<div className={styles.header}>
+						<h2 id={titleId}>{title}</h2>
+						<button
+							type="button"
+							className={styles.close}
+							aria-label="Close dialog"
+							onClick={onDismiss}
+						>
+							<svg
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
+								<path d="m6 6 12 12M18 6 6 18" />
+							</svg>
+						</button>
+					</div>
+				) : (
+					<h2 id={titleId}>{title}</h2>
+				)}
 				<p id={descriptionId}>{message}</p>
 				{children}
-				<div className={styles.actions}>
+				<div
+					className={[
+						styles.actions,
+						actionLayout === "stacked" ? styles.stacked : undefined,
+					]
+						.filter(Boolean)
+						.join(" ")}
+				>
 					{actions.map((action) => (
 						<button
 							key={action.label}
 							type="button"
 							data-action={action.kind}
-							className={action.destructive ? styles.destructive : undefined}
+							className={[
+								action.destructive ? styles.destructive : undefined,
+								action.appearance === "text" ? styles.textAction : undefined,
+							]
+								.filter(Boolean)
+								.join(" ")}
 							disabled={action.disabled}
 							onClick={action.onClick}
 						>

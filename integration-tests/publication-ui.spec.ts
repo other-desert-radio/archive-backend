@@ -83,6 +83,35 @@ for (const width of [1440, 390, 320]) {
 			.getByRole("button", { name: "publish changes", exact: true })
 			.click();
 		await expect(page.getByRole("dialog")).toContainText("publish-dev");
+		await expect(page.getByRole("dialog")).toContainText(
+			"Publish latest changes to github.",
+		);
+		const publish = page
+			.getByRole("dialog")
+			.getByRole("button", { name: "publish changes", exact: true });
+		const close = page.getByRole("button", { name: "Close", exact: true });
+		const panel = await page.getByRole("dialog").boundingBox();
+		const action = await publish.boundingBox();
+		const dismiss = await close.boundingBox();
+		expect(
+			Math.abs(
+				(action?.x ?? 0) +
+					(action?.width ?? 0) / 2 -
+					((panel?.x ?? 0) + (panel?.width ?? 0) / 2),
+			),
+		).toBeLessThan(2);
+		expect(dismiss?.y).toBeGreaterThan(
+			(action?.y ?? 0) + (action?.height ?? 0),
+		);
+		await expect(close).toHaveCSS("border-top-width", "0px");
+		await page.screenshot({ path: `/tmp/publication-actions-${width}.png` });
+		await page
+			.getByRole("button", { name: "Close dialog", exact: true })
+			.click();
+		await expect(page.getByRole("dialog")).toHaveCount(0);
+		await page
+			.getByRole("button", { name: "publish changes", exact: true })
+			.click();
 		await expect(
 			page.getByRole("button", { name: "Close", exact: true }),
 		).toBeFocused();
@@ -93,7 +122,17 @@ for (const width of [1440, 390, 320]) {
 		await expect(page.getByRole("dialog")).toContainText(
 			"Current stage: exporting",
 		);
+		await expect(page.locator('[role="log"]')).toBeHidden();
+		const disclosure = page.locator("summary", { hasText: "Publication log" });
+		await disclosure.focus();
+		await page.keyboard.press("Enter");
 		await expect(page.getByRole("log")).toContainText("Exporting generated");
+		const panelBounds = await page.getByRole("dialog").boundingBox();
+		expect(panelBounds?.width).toBe(width === 1440 ? 864 : width - 32);
+		await page.screenshot({ path: `/tmp/publication-expanded-${width}.png` });
+		await disclosure.click();
+		await expect(page.locator('[role="log"]')).toBeHidden();
+		await disclosure.click();
 		await page.keyboard.press("Escape");
 		await expect(page.getByRole("dialog")).toHaveCount(0);
 		await page
@@ -213,6 +252,8 @@ test("failed publication requires an explicit retry and preserves failure logs",
 	await page
 		.getByRole("button", { name: "publish changes", exact: true })
 		.click();
+	await expect(page.locator('[role="log"]')).toBeHidden();
+	await page.locator("summary", { hasText: "Publication log" }).click();
 	await expect(page.getByRole("log")).toContainText("Push interrupted");
 	expect(posts).toBe(0);
 	await page
@@ -304,6 +345,11 @@ for (const enabled of [true, false]) {
 			revision: "1",
 			publishedRevision: "1",
 			pending: false,
+			latestJob: {
+				...job,
+				outcome: "succeeded" as const,
+				completedAt: job.createdAt,
+			},
 		};
 		let posts = 0;
 		await page.route("**/api/auth/get-session", (route) =>
@@ -327,6 +373,11 @@ for (const enabled of [true, false]) {
 		await page.route("**/api/admin/publication/events", (route) =>
 			route.abort(),
 		);
+		await page.route("**/api/admin/publication/jobs/*", (route) =>
+			route.fulfill({
+				json: { job: status.latestJob, logs: [], logsTruncated: false },
+			}),
+		);
 		await page.route("**/api/admin/publication", (route) => {
 			if (route.request().method() === "POST") posts++;
 			return route.fulfill({ json: status });
@@ -340,9 +391,12 @@ for (const enabled of [true, false]) {
 		await page
 			.getByRole("button", { name: "publish changes", exact: true })
 			.click();
+		await expect(page.getByRole("dialog")).not.toContainText(
+			"Result: succeeded",
+		);
 		if (enabled) {
 			await expect(page.getByRole("dialog")).toContainText(
-				"Archive changes are pending",
+				"Publish latest changes to github.",
 			);
 			await expect(
 				page
@@ -363,5 +417,80 @@ for (const enabled of [true, false]) {
 			).toHaveCount(0);
 		}
 		expect(posts).toBe(0);
+	});
+}
+
+for (const width of [1440, 390, 320]) {
+	test(`retry logs remain separated after reload at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		await page.route("**/api/auth/get-session", (route) =>
+			route.fulfill({
+				json: {
+					user: {
+						id: "admin",
+						email: "admin@example.test",
+						role: "admin",
+						mustChangePassword: false,
+					},
+				},
+			}),
+		);
+		await page.route("**/api/admin/djs", (route) =>
+			route.fulfill({ json: [] }),
+		);
+		await page.route("**/api/admin/tags", (route) =>
+			route.fulfill({ json: [] }),
+		);
+		const retry = { ...job, id: "retry-job", retryJobId: job.id };
+		await page.route("**/api/admin/publication**", (route) => {
+			const path = new URL(route.request().url()).pathname;
+			if (path.endsWith("/events")) return route.abort();
+			if (path.endsWith("/jobs/pruned"))
+				return route.fulfill({ status: 404, json: { error: "Not Found" } });
+			if (path.includes("/jobs/")) {
+				const previous = path.endsWith(`/${job.id}`);
+				return route.fulfill({
+					json: {
+						job: previous
+							? {
+									...job,
+									outcome: "failed",
+									completedAt: job.createdAt,
+									retryJobId: "pruned",
+								}
+							: retry,
+						logs: [
+							{
+								sequence: 1,
+								timestamp: job.createdAt,
+								message: previous
+									? "First attempt failed"
+									: "Second attempt uploading",
+							},
+						],
+						logsTruncated: false,
+					},
+				});
+			}
+			return route.fulfill({ json: { ...initial, latestJob: retry } });
+		});
+		for (const reload of [false, true]) {
+			if (reload) await page.reload();
+			else await page.goto("/admin/#djs");
+			await page
+				.getByRole("button", { name: "Publishing…", exact: true })
+				.click();
+			await page.locator("summary", { hasText: "Publication log" }).click();
+			const log = page.getByRole("log");
+			await expect(log).toContainText("First attempt failed");
+			await expect(log).toContainText("Second attempt uploading");
+			await expect(log.locator("br")).toHaveCount(1);
+			await expect(log.locator("p").first()).toContainText(
+				"First attempt failed",
+			);
+		}
+		await page.screenshot({ path: `/tmp/publication-attempts-${width}.png` });
 	});
 }

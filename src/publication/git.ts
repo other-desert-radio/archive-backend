@@ -19,11 +19,13 @@ const runGit = async ({
 	args,
 	operation = "inspect",
 	timeout = 10000,
+	identity,
 }: {
 	checkout: string;
 	args: string[];
 	operation?: string;
 	timeout?: number;
+	identity?: PublicationConfig["gitIdentity"];
 }): Promise<string> => {
 	const environment = Object.fromEntries(
 		Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
@@ -47,6 +49,14 @@ const runGit = async ({
 				"gc.auto=0",
 				"-C",
 				checkout,
+				...(identity
+					? [
+							"-c",
+							`user.name=${identity.name}`,
+							"-c",
+							`user.email=${identity.email}`,
+						]
+					: []),
 				...args,
 			],
 			{
@@ -146,15 +156,16 @@ export const validatePublicationCheckout = async ({
 		throw new Error("Publication checkout must be the repository root");
 	}
 	await inspectGit(checkout, ["check-ref-format", "--branch", config.branch]);
-	if (
-		(await inspectGit(checkout, [
-			"symbolic-ref",
-			"--quiet",
-			"--short",
-			"HEAD",
-		])) !== config.branch
-	)
-		throw new Error("Publication checkout is on the wrong branch");
+	const currentBranch = await inspectGit(checkout, [
+		"symbolic-ref",
+		"--quiet",
+		"--short",
+		"HEAD",
+	]);
+	if (currentBranch !== config.branch)
+		throw new Error(
+			`Publication checkout is on branch "${currentBranch}", but publication is configured for branch "${config.branch}".`,
+		);
 	await inspectGit(checkout, ["rev-parse", "--verify", "HEAD^{commit}"]);
 	for (const args of [
 		["remote", "get-url", "--all", "origin"],
@@ -578,6 +589,7 @@ export const commitAndPushPublication = async (
 					"-m",
 					`Publish archive\n\nArchive-Publication-Job: ${context.job.id}\nArchive-Publication-Revision: ${context.job.revision}`,
 				],
+				identity: context.config.gitIdentity,
 				operation: "commit generated files",
 			});
 			commitId = await inspectGit(checkout, ["rev-parse", "HEAD"]);

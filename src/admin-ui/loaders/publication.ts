@@ -48,7 +48,11 @@ const detailPattern = {
 	logs: P.array({ sequence: P.number, timestamp: P.string, message: P.string }),
 	logsTruncated: P.boolean,
 };
-const request = async (path: string, init?: RequestInit): Promise<unknown> => {
+const request = async (
+	path: string,
+	init?: RequestInit,
+	allowMissing = false,
+): Promise<unknown> => {
 	const operation =
 		init?.method === "POST"
 			? "start publication"
@@ -63,6 +67,7 @@ const request = async (path: string, init?: RequestInit): Promise<unknown> => {
 			`Could not ${operation}: the server could not be reached. Check your connection and reload status before retrying publication.`,
 		);
 	}
+	if (allowMissing && response.status === 404) return undefined;
 	let data: unknown;
 	try {
 		data = await response.json();
@@ -93,6 +98,20 @@ export const loadPublicationJob = async (
 	jobId: string,
 ): Promise<PublicationJobDetail> => {
 	const data = await request(`/jobs/${encodeURIComponent(jobId)}`);
+	if (!isMatching(detailPattern, data))
+		throw new Error("Invalid publication job response.");
+	return data as PublicationJobDetail;
+};
+/** Retention may have removed an earlier retry attempt. */
+export const loadPreviousPublicationJob = async (
+	jobId: string,
+): Promise<PublicationJobDetail | undefined> => {
+	const data = await request(
+		`/jobs/${encodeURIComponent(jobId)}`,
+		undefined,
+		true,
+	);
+	if (data === undefined) return undefined;
 	if (!isMatching(detailPattern, data))
 		throw new Error("Invalid publication job response.");
 	return data as PublicationJobDetail;

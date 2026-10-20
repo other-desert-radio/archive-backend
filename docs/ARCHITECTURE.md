@@ -45,7 +45,9 @@ configuration. Follow [development operations](DEVELOPMENT.md) for startup,
 explicit reviewed migrations, backups, restores, and publication SSH setup. The
 container installs Git/SSH but mounts a dedicated write deploy key and verified
 host keys at runtime; neither credentials nor checkout contents are baked into
-the image.
+the image. The API runs as a non-root service account whose numeric UID/GID
+match the host checkout owner; development uses the developer’s IDs and servers
+use a dedicated service account. SSH mounts live under `/run/archive-ssh`.
 
 Keep secrets outside Git; preserve an existing `.env`, and update `.env.example`
 when required variables change. Better Auth requires `BETTER_AUTH_SECRET` and

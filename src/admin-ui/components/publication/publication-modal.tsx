@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { Fragment, type ReactElement } from "react";
 import { MessageModal } from "../shared/modal/index.js";
 import styles from "./publication.module.css";
 import type { PublicationView } from "./use-publication.js";
@@ -10,7 +10,16 @@ export const PublicationModal = ({
 	publication,
 	onClose,
 }: PublicationModalProps): ReactElement => {
-	const { status, detail, starting, error, connected, loading } = publication;
+	const {
+		status,
+		detail,
+		previousAttempts,
+		historyError,
+		starting,
+		error,
+		connected,
+		loading,
+	} = publication;
 	const job = detail?.job ?? status?.latestJob;
 	const running = job?.outcome === "running";
 	const failed = job?.outcome === "failed" || job?.outcome === "interrupted";
@@ -39,9 +48,12 @@ export const PublicationModal = ({
 					? "The archive was pushed to GitHub. Site deployment may still be running."
 					: clean
 						? "There are no pending archive changes to publish."
-						: "Archive changes are pending. Publish the latest archive data and images to GitHub.";
+						: "Publish latest changes to github.";
 	return (
 		<MessageModal
+			panelClassName={styles.panel}
+			actionLayout="stacked"
+			showCloseButton
 			title={title}
 			message={description}
 			onDismiss={onClose}
@@ -59,10 +71,16 @@ export const PublicationModal = ({
 							onClick: () =>
 								void publication.start(failed ? job?.id : undefined),
 						}
-					: { label: "Close", onClick: onClose }
+					: { label: "Close", onClick: onClose, appearance: "text" }
 			}
 			{...(canStart
-				? { secondaryAction: { label: "Close", onClick: onClose } }
+				? {
+						secondaryAction: {
+							label: "Close",
+							onClick: onClose,
+							appearance: "text",
+						},
+					}
 				: {})}
 		>
 			<div className={styles.body}>
@@ -79,7 +97,7 @@ export const PublicationModal = ({
 						Reload status to check the latest saved progress.
 					</p>
 				)}
-				{job && (
+				{job && !(complete && status?.pending) && (
 					<p role="status">
 						{running ? `Current stage: ${job.stage}` : `Result: ${job.outcome}`}
 					</p>
@@ -88,7 +106,8 @@ export const PublicationModal = ({
 					<p role="alert">{job.error}</p>
 				)}
 				{error && <p role="alert">{error}</p>}
-				{(error || (!connected && !loading)) && (
+				{historyError && <p role="alert">{historyError}</p>}
+				{(error || historyError || (!connected && !loading)) && (
 					<div>
 						<button
 							type="button"
@@ -100,8 +119,8 @@ export const PublicationModal = ({
 					</div>
 				)}
 				{detail && (
-					<>
-						<h3 className={styles.logTitle}>Publication log</h3>
+					<details className={styles.logDetails}>
+						<summary className={styles.logTitle}>Publication log</summary>
 						<div
 							className={styles.logs}
 							role="log"
@@ -111,24 +130,29 @@ export const PublicationModal = ({
 							// biome-ignore lint/a11y/noNoninteractiveTabindex: scrollable logs must be keyboard accessible
 							tabIndex={0}
 						>
-							{detail.logs.length === 0 ? (
-								<p>Waiting for log entries…</p>
-							) : (
-								detail.logs.map((line) => (
-									<p key={line.sequence}>
-										<time dateTime={line.timestamp}>{line.timestamp}</time>{" "}
-										{line.message}
-									</p>
-								))
-							)}
+							{[...previousAttempts, detail].map((attempt, index) => (
+								<Fragment key={attempt.job.id}>
+									{index > 0 && <br />}
+									{attempt.logs.length === 0 ? (
+										<p>Waiting for log entries…</p>
+									) : (
+										attempt.logs.map((line) => (
+											<p key={line.sequence}>
+												<time dateTime={line.timestamp}>{line.timestamp}</time>{" "}
+												{line.message}
+											</p>
+										))
+									)}
+									{attempt.logsTruncated && (
+										<p className={styles.helper}>
+											Earlier log entries were removed. The latest 2,000 lines
+											are retained.
+										</p>
+									)}
+								</Fragment>
+							))}
 						</div>
-						{detail.logsTruncated && (
-							<p className={styles.helper}>
-								Earlier log entries were removed. The latest 2,000 lines are
-								retained.
-							</p>
-						)}
-					</>
+					</details>
 				)}
 			</div>
 		</MessageModal>

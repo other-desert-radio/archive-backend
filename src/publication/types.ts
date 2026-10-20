@@ -5,6 +5,7 @@ export type PublicationConfig = {
 	repository: string;
 	checkoutPath: string;
 	branch: string;
+	gitIdentity?: { name: string; email: string };
 };
 export type PublicationStage =
 	| "queued"

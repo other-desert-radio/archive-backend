@@ -5,6 +5,7 @@ import type {
 } from "../../../publication/index.js";
 import {
 	connectPublicationStream,
+	loadPreviousPublicationJob,
 	loadPublicationJob,
 	loadPublicationStatus,
 	startPublication,
@@ -12,6 +13,8 @@ import {
 export type PublicationView = {
 	status?: PublicationStatus | undefined;
 	detail?: PublicationJobDetail | undefined;
+	previousAttempts: PublicationJobDetail[];
+	historyError?: string | undefined;
 	loading: boolean;
 	starting: boolean;
 	connected: boolean;
@@ -26,6 +29,11 @@ const message = (error: unknown) =>
 export const usePublication = (enabled = true): PublicationView => {
 	const [status, setStatus] = useState<PublicationStatus>();
 	const [detail, setDetail] = useState<PublicationJobDetail>();
+	const [previousAttempts, setPreviousAttempts] = useState<
+		PublicationJobDetail[]
+	>([]);
+	const [historyError, setHistoryError] = useState<string>();
+	const [historyVersion, setHistoryVersion] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [starting, setStarting] = useState(false);
 	const [connected, setConnected] = useState(false);
@@ -34,6 +42,7 @@ export const usePublication = (enabled = true): PublicationView => {
 	const startingRef = useRef(false);
 	const readVersion = useRef(0);
 	const refresh = useCallback(async (clearError = true) => {
+		if (clearError) setHistoryVersion((version) => version + 1);
 		const version = ++readVersion.current;
 		try {
 			const next = await loadPublicationStatus();
@@ -52,6 +61,38 @@ export const usePublication = (enabled = true): PublicationView => {
 			if (mounted.current && version === readVersion.current) setLoading(false);
 		}
 	}, []);
+	const retryJobId = detail?.job.retryJobId;
+	// biome-ignore lint/correctness/useExhaustiveDependencies: explicit reload retries failed history reads
+	useEffect(() => {
+		let obsolete = false;
+		setPreviousAttempts([]);
+		setHistoryError(undefined);
+		const loadHistory = async () => {
+			const attempts: PublicationJobDetail[] = [];
+			const seen = new Set<string>();
+			let id = retryJobId;
+			try {
+				while (id && !seen.has(id)) {
+					seen.add(id);
+					const attempt = await loadPreviousPublicationJob(id);
+					if (obsolete) return;
+					if (!attempt) break;
+					attempts.unshift(attempt);
+					id = attempt.job.retryJobId;
+				}
+				if (!obsolete) setPreviousAttempts(attempts);
+			} catch (error) {
+				if (!obsolete) {
+					setPreviousAttempts(attempts);
+					setHistoryError(message(error));
+				}
+			}
+		};
+		void loadHistory();
+		return () => {
+			obsolete = true;
+		};
+	}, [retryJobId, historyVersion]);
 	useEffect(() => {
 		mounted.current = true;
 		if (!enabled) {
@@ -118,6 +159,8 @@ export const usePublication = (enabled = true): PublicationView => {
 	return {
 		status,
 		detail,
+		previousAttempts,
+		historyError,
 		loading,
 		starting,
 		connected,

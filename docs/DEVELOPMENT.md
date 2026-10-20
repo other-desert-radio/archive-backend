@@ -279,6 +279,60 @@ Git redirection are ignored as in checkout inspection. Temporary bare remotes
 cover synchronization tests without GitHub access. Publisher-commit
 reconciliation precedes a fresh export and commit/push.
 
+### Server setup command
+
+Install Bun, Git, OpenSSH, and Docker with Compose on the host. Configure an
+untracked `.env` with the public HTTPS `BETTER_AUTH_URL`, a unique
+`BETTER_AUTH_SECRET` (at least 32 characters), a non-example database password,
+`ARCHIVE_PUBLISH_ENABLED=true`, `ARCHIVE_PUBLISH_BRANCH=main`, and explicit
+`ARCHIVE_GIT_NAME` / `ARCHIVE_GIT_EMAIL` for publication commits. Set
+`ARCHIVE_RUNTIME_UID` and `ARCHIVE_RUNTIME_GID` to the numeric owner of the
+checkout and deploy key (`id -u` / `id -g` for that service account). Provision
+the write deploy key and verified known-hosts file at the configured paths
+outside the backend repository; restrict private-key permissions to `0600` or
+stricter.
+
+Run from the backend repository (or invoke the script by absolute path):
+
+```bash
+./scripts/setup-server
+# After backup and review of all pending migrations:
+./scripts/setup-server --migrate
+```
+
+The command explains each step and waits for Enter before each external command;
+type `q` to stop. Use `--yes` to skip prompts for unattended execution (required
+without a terminal), optionally combined with `--migrate`. Stopping or a failure
+leaves completed changes in place.
+
+The command validates configuration, dependencies, Docker access, and SSH mount
+sources, installs locked Bun dependencies, and reuses
+`scripts/setup-archive-publication` to prepare the dedicated checkout and local
+Git identity. It builds the API image, starts PostgreSQL, optionally applies all
+pending migrations, validates publication schema and checkout using the actual
+container mounts and per-command Git trust exception, checks SSH remote read
+access, starts the API, and checks its health endpoint. Read access does not
+prove that the deploy key has repository write permission; grant that permission
+when provisioning the key. Setup does not publish or retry a publication. The
+SSH key is checked for unattended use without a passphrase or host agent before
+checkout preparation; use a dedicated publication key rather than weakening a
+development key. The container readiness check requires publishing to be enabled
+and resolves author and committer identity from its environment without creating
+a commit. Branch mismatches name both the checkout branch and configured
+publication branch. Remote-authentication failures explain how to verify the
+configured key and repository deploy-key access.
+
+Without `--migrate`, missing publication tables fail readiness with migration
+guidance. Failed readiness or migration checks stop before API startup; an
+already-running API is not stopped. Reruns preserve existing `.env`,
+credentials, and checkout work. The command does not install host packages,
+create SSH keys, trust unverified host keys, configure DNS/TLS, or create an
+administrator. Configure HTTPS routing to the API port separately, then use
+`scripts/create-admin` for the initial administrator as described above.
+Changing PostgreSQL password variables does not rotate credentials in an
+existing data volume; use the database's credential-rotation procedure
+separately.
+
 ### Prepare the dedicated checkout and SSH files
 
 Run setup from the backend after installing Bun and Git and copying
@@ -297,8 +351,11 @@ to `publish-dev`. Set `ARCHIVE_PUBLISH_BRANCH=main` on the server. Setup never
 pushes, commits, resets, stashes, or deletes work. A dirty checkout on another
 branch or an unfinished Git operation requires manual resolution. Dirty work on
 the target branch is preserved; setup success does not guarantee it is safe to
-publish. `ARCHIVE_GIT_NAME` and `ARCHIVE_GIT_EMAIL` configure identity locally
-in the checkout; existing local values may be retained by leaving them unset. Do
+publish. `ARCHIVE_GIT_NAME` and `ARCHIVE_GIT_EMAIL` supply the publisher commit
+identity inside Docker through Compose. The publisher applies them per commit,
+so a fresh checkout needs no manual Git configuration. Setup also writes these
+values locally in the checkout; outside Compose, existing local identity may be
+retained by leaving both unset. If either is supplied, both must be nonempty. Do
 not depend on global Git identity/configuration, which publication ignores.
 Publisher Git commands trust only the configured checkout through a per-command
 `safe.directory` entry, allowing a host-owned bind mount inside the container
@@ -337,13 +394,25 @@ setting. The setup script prepares the checkout, not these SSH files. After
 updating the paths, rerun `docker compose up -d --build`.
 
 Compose bind-mounts the checkout persistently and the two credential files
-read-only into `/root/.ssh/id_ed25519` and `/root/.ssh/known_hosts`. These match
-the default identity/host files of the image's root runtime user. Missing bind
-sources fail instead of silently creating empty directories; prepare them even
-when running this Compose file with publishing disabled. The application sees
-only the mounted `ARCHIVE_CONTAINER_CHECKOUT_PATH` under its normal
-`ARCHIVE_CHECKOUT_PATH` setting. Host-relative bind paths resolve from the
-backend Compose project directory. Credentials are never copied into the image.
+read-only into `/run/archive-ssh/id_ed25519` and `/run/archive-ssh/known_hosts`.
+The image’s SSH configuration uses these paths. The API runs as the non-root
+`bun` service account, built with `ARCHIVE_RUNTIME_UID` / `ARCHIVE_RUNTIME_GID`
+(both default to 1000). Missing bind sources fail instead of silently creating
+empty directories; prepare them even when running this Compose file with
+publishing disabled. The application sees only the mounted
+`ARCHIVE_CONTAINER_CHECKOUT_PATH` under its normal `ARCHIVE_CHECKOUT_PATH`
+setting. Host-relative bind paths resolve from the backend Compose project
+directory. Credentials are never copied into the image. The checkout and private
+key must be owned by the configured runtime UID; the checkout group must match
+the runtime GID. Use your own IDs locally and a dedicated service account on
+servers. Rebuild the image after changing IDs. Setup checks write access to
+generated-output and Git directories, creates a temporary file through the
+container, verifies its host-side owner, and removes it. This detects
+incompatible rootless/user-namespace mappings before API startup. Existing files
+created by an earlier root runtime need a one-time ownership repair; setup
+reports the mismatch and does not recursively chown or discard checkout work.
+Keep SSH files read-only to the container.
+
 Back up the database and dedicated checkout together; job recovery relies on
 retained Git objects and durable job records. Do not share this checkout with
 another publisher or an interactive editing workflow.

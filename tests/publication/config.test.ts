@@ -141,3 +141,27 @@ test("requires an absolute root and a lexically separate checkout", () => {
 		).checkoutPath,
 	).toBe("/work/archive-backend-copy");
 });
+
+test("publication reads explicit commit identity and rejects incomplete or malformed identity", () => {
+	expect(
+		readPublicationConfig(
+			{
+				ARCHIVE_GIT_NAME: " Archive Publisher ",
+				ARCHIVE_GIT_EMAIL: " publisher@example.test ",
+			},
+			root,
+		).gitIdentity,
+	).toEqual({ name: "Archive Publisher", email: "publisher@example.test" });
+	for (const environment of [
+		{ ARCHIVE_GIT_NAME: "Publisher" },
+		{ ARCHIVE_GIT_EMAIL: "publisher@example.test" },
+		{ ARCHIVE_GIT_NAME: "Publisher", ARCHIVE_GIT_EMAIL: " " },
+		{
+			ARCHIVE_GIT_NAME: "Publisher\nInjected",
+			ARCHIVE_GIT_EMAIL: "publisher@example.test",
+		},
+	])
+		expect(() => readPublicationConfig(environment, root)).toThrow(
+			"ARCHIVE_GIT_",
+		);
+});
