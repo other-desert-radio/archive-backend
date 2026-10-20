@@ -35,6 +35,29 @@ removes dependent association rows. Mixcloud tracking uses `ON DELETE SET NULL`
 and a trigger to retain source rows and clear their import timestamps; see the
 [tracking deletion contract](MIXCLOUD_IMPORT.md#consistency-and-deletion).
 
+## Archive publication revisions
+
+Migration `0029_add_archive_publication_state` creates the singleton
+`archive_publication_state` row (`id = 1`). Its bigint `revision` starts at 1
+and `published_revision` at 0, so an existing archive starts pending. Pending
+means `revision > published_revision`. PostgreSQL bigint values remain decimal
+strings in application types and JSON to avoid numeric precision loss.
+
+Statement-level triggers on `djs`, `shows`, `tags`, `show_djs`, `show_tags`, and
+`dj_tags` increment the revision after each INSERT, UPDATE, DELETE, or TRUNCATE
+statement. This conservatively includes no-op updates and statements affecting
+zero rows; revisions are change signals, not row counts or export diffs.
+Cascading relationship writes may advance it further. Authentication and
+Mixcloud tracking writes do not directly advance archive revisions.
+
+Each trigger emits `archive_publication_changed` with the decimal revision as
+its payload. The revision update and notification belong to the writing
+transaction: rollback preserves the prior revision and emits no notification;
+listeners receive notifications only after commit. Concurrent archive writers
+serialize on the singleton row. Notifications are hints to re-read durable
+state. Rollback of the migration removes its triggers, function, and state table
+while preserving archive records. API startup does not apply it.
+
 ## Authentication tables
 
 Better Auth owns its authentication tables separately from archive entities.

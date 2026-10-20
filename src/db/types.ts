@@ -1,6 +1,7 @@
 import type { ColumnType, Generated } from "kysely";
 
 export type Database = {
+	archive_publication_state: ArchivePublicationStateTable;
 	djs: DJsTable;
 	shows: ShowsTable;
 	tags: TagsTable;
@@ -13,6 +14,13 @@ export type Database = {
 	account: BetterAuthAccountTable;
 	verification: BetterAuthVerificationTable;
 	rateLimit: BetterAuthRateLimitTable;
+};
+
+/** PostgreSQL bigint values are returned as decimal strings by pg. */
+export type ArchivePublicationStateTable = {
+	id: Generated<number>;
+	revision: Generated<string>;
+	published_revision: Generated<string>;
 };
 
 export type MixcloudImportTable = {

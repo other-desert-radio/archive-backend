@@ -2,13 +2,11 @@
 
 ## Current checkpoint
 
-User approved the existing scaffolding, but found the combined backend/API/UI
-checkpoint too large. Continue with one small responsibility per review, using
-the revised development workflow. Existing stubs are provisional; review and
-refine only those needed for the current unit rather than expanding them all.
-They remain disconnected from live routes and startup. Existing application
-behavior and the export launcher remain unchanged. The launcher rename is
-deferred to implementation unit 2.
+Revision state migration and transactional triggers are implemented and verified
+against a dedicated disposable PostgreSQL container. Awaiting user review before
+checkout configuration. Other stubs remain provisional and disconnected from
+live routes/startup. Continue with one responsibility per review using the
+revised development workflow. The export launcher remains unchanged.
 
 ## Agreed scope
 
@@ -26,7 +24,8 @@ revisions. Preserve unrelated Git work and assets; leave
 - [x] Explicitly request scaffolding; establish contracts and unfinished stubs
       off live routes/startup and verify structure.
 - [x] User review of existing scaffolding.
-- [ ] Revision state migration and transactional triggers, with rollback tests.
+- [x] Revision state migration and transactional triggers, with rollback tests.
+- [ ] User review of revision state and triggers.
 - [ ] Checkout configuration and path validation.
 - [ ] Export-only launcher rename and configured destinations.
 - [ ] Consistent-snapshot archive reading.
@@ -63,9 +62,18 @@ desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Next implementation checkpoint: revision state migration and transactional
-triggers only, with disposable-database verification. This documentation update
-does not start that implementation. Migration files deliberately remain
-comment-only: the runner discovers exported migrations automatically. Shell,
-CSS, and test placeholders remain unfinished; no tests assert stub behavior.
-Follow [development modes](../../DEVELOPMENT.md#development-modes).
+Review migration `0029`, its database types, focused migration test, and
+database documentation. It starts pending at revision 1/published revision 0 and
+sends commit-delivered `archive_publication_changed` notifications. Write
+statements, including zero-row operations and cascading relationship deletes,
+advance the revision. Rollback cancels both state changes and notifications.
+Migration rollback/reapply preserves archive records. No regular database was
+migrated.
+
+Focused verification uses `PUBLICATION_MIGRATION_TEST_DATABASE_URL` and a unique
+schema in a disposable PostgreSQL database; it skips when that variable is
+unset. The completed run passed 34 assertions including concurrent writers and
+bigint precision. Remaining migrations, shell, CSS, and tests retain
+placeholders. After approval, the next checkpoint is checkout configuration and
+path validation only. Follow
+[development modes](../../DEVELOPMENT.md#development-modes).
