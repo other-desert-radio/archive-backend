@@ -2,9 +2,10 @@
 
 ## Current checkpoint
 
-Stage 1: user approved the proposed file structure; responsibility-only
-placeholders have been created. Awaiting an explicit scaffolding request.
-Existing application files and the export launcher remain unchanged. The
+Stage 2: user requested the next chunk. Typed backend, route, stream-client, and
+UI contracts now exist with explicit unfinished stubs. They are disconnected
+from live routes and startup. Awaiting scaffolding review before unit 1.
+Existing application behavior and the export launcher remain unchanged. The
 launcher rename is deferred to implementation unit 2.
 
 ## Agreed scope
@@ -20,8 +21,9 @@ revisions. Preserve unrelated Git work and assets; leave
 ## Review gates
 
 - [x] Agree file structure, then create only approved placeholders.
-- [ ] Explicitly request scaffolding; establish contracts and unfinished stubs
-      off live routes/startup, verify structure, and review.
+- [x] Explicitly request scaffolding; establish contracts and unfinished stubs
+      off live routes/startup and verify structure.
+- [ ] User review of scaffolding.
 - [ ] Unit 1: revision migration and triggers.
 - [ ] Unit 2: checkout configuration, launcher rename, snapshot export.
 - [ ] Unit 3: durable jobs, bounded logs, locking, interruption handling.
@@ -39,5 +41,8 @@ must cover desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Await an explicit request to make the scaffolding. Follow
+Approve scaffolding before implementing unit 1 (revision migration/triggers).
+Migration files deliberately remain comment-only: the runner discovers exported
+migrations automatically. Shell, CSS, and test placeholders remain unfinished;
+no tests assert stub behavior. Follow
 [development modes](../../DEVELOPMENT.md#development-modes).
