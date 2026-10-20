@@ -22,6 +22,12 @@ entity tables.
 
 ## Export rules
 
+The exporter owns the entire `src/res/djs/` and `public/assets/djs/` directories
+and replaces their contents on each export, including stale files. Keep manually
+maintained assets outside those directories. It also owns the three top-level
+generated JSON files; other files such as `src/res/mixcloud.json` and
+`public/assets/logo.svg` remain untouched and outside publication commits.
+
 The exporter produces the asset layout above. Original design intent lives in
 [historical notes](../human_docs/databases_human.md); this document owns the
 current contract. All arrays are ordered deterministically: DJ indexes by title
@@ -97,3 +103,15 @@ temporary schema and output directory, and verifies export and unchanged
 publication revisions. A separate snapshot test interleaves committed edits
 between reads, checks matching revision/documents and fresh subsequent reads,
 and verifies recovery after read failures. Both skip when the variable is unset.
+
+## Server publication
+
+The admin publisher uses this same exporter after safely synchronizing its
+dedicated checkout. It stages only generated JSON and DJ image paths, including
+deletions, commits changed output with a job identifier, and pushes without
+force. It acknowledges only the captured revision after success or a no-change
+result; newer edits remain pending. Unrelated assets and edits remain outside
+the generated-file commit. Durable jobs allow explicit recovery after restart or
+a lost response from the Git remote. See
+[publication operations](DEVELOPMENT.md#publication-operation-and-recovery) for
+setup, branch selection, and retry procedures.

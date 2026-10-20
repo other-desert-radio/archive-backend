@@ -187,11 +187,10 @@ with `docker compose down`.
 
 ### Archive publication configuration
 
-The publication configuration reader accepts these settings. Runner/startup and
-Compose integration are still pending; these settings do not yet enable a
-publication job. The export-only `bun run publish-locally` command already reads
-`ARCHIVE_CHECKOUT_PATH`; see [the export guide](ARCHIVE_EXPORT.md) for its
-standalone fallback and asset ownership rules.
+The admin-only publisher uses these settings. The export-only
+`bun run publish-locally` command reads `ARCHIVE_CHECKOUT_PATH`; see
+[the export guide](ARCHIVE_EXPORT.md) for its standalone fallback and asset
+ownership rules.
 
 ```dotenv
 ARCHIVE_SITE_REPOSITORY=git@github.com:other-desert-radio/archive-site.git
@@ -203,11 +202,11 @@ ARCHIVE_PUBLISH_ENABLED=true
 
 The application reads `ARCHIVE_CHECKOUT_PATH` only. Relative paths resolve from
 the explicit backend repository root, independently of the command's working
-directory. Compose will pass `ARCHIVE_CONTAINER_CHECKOUT_PATH` as the
-application's `ARCHIVE_CHECKOUT_PATH`; it is not a second application setting.
-The checkout must be separate from the backend, with neither containing the
-other. This configuration check is lexical; filesystem, symlink, repository, and
-actual branch validation belong to the later checkout safety check.
+directory. Compose passes `ARCHIVE_CONTAINER_CHECKOUT_PATH` as the application's
+`ARCHIVE_CHECKOUT_PATH`; it is not a second application setting. The checkout
+must be separate from the backend, with neither containing the other. This
+configuration check is lexical; filesystem, symlink, repository, and actual
+branch validation run before publication.
 
 Unset settings default to the repository, checkout, and branch above, with
 publishing **disabled**. The example explicitly enables it. Local publication
@@ -223,13 +222,13 @@ Git, database, or network operations.
 
 ### Publication checkout safety
 
-The publication validator is implemented independently of the unfinished runner.
-It inspects the checkout locally without fetching, writing files, changing the
-index, or contacting a remote. It requires an existing dedicated normal clone,
-the repository root on the configured branch with a committed HEAD, and one
-origin fetch URL and one effective push URL matching the configured repository
-exactly. Linked worktrees, submodule checkouts, and symlinked `.git` directories
-are rejected. The current configuration must match the job's saved target.
+The publication validator inspects the checkout locally without fetching,
+writing files, changing the index, or contacting a remote. It requires an
+existing dedicated normal clone, the repository root on the configured branch
+with a committed HEAD, and one origin fetch URL and one effective push URL
+matching the configured repository exactly. Linked worktrees, submodule
+checkouts, and symlinked `.git` directories are rejected. The current
+configuration must match the job's saved target.
 
 Checkout paths are resolved through symlinks before checking separation from the
 backend. Existing output ancestors and managed DJ directories must be real
@@ -245,21 +244,26 @@ command failures use a generic error rather than exposing raw stderr or
 credential-bearing configuration. Success emits a fixed validation log line.
 Staged, unstaged, and untracked edits are preserved and do not by themselves
 fail this identity/path check. Dirty-file policy, outgoing-commit recognition,
-fetch/fast-forward, and interrupted-work reconciliation belong to later units;
+fetch/fast-forward, and interrupted-work reconciliation run after validation;
 passing validation alone does not authorize a push. Tests use temporary local
 repositories and never contact GitHub.
 
 ### Publication synchronization
 
 `synchronizePublicationCheckout` validates the checkout, rejects staged/unmerged
-changes, and fetches only the configured branch from origin into its explicit
-remote-tracking ref. It does not fetch tags, recurse into submodules, or run
-automatic maintenance. Fetch can update local objects and the tracking ref; it
-never pushes or changes the local branch by itself. A missing branch or
-unavailable remote fails with a fixed error, without raw Git stderr.
+changes, and fetches the configured branch from origin into its explicit
+remote-tracking ref. For the first `publish-dev` publication only, if neither
+origin nor its tracking ref has that branch, it instead fetches and verifies
+remote `main` as the baseline. The first successful push creates `publish-dev`,
+even if generated output already matches `main`. A missing `main`, missing
+previously tracked target, or other missing target fails. Fetch does not fetch
+tags, recurse into submodules, or run automatic maintenance. It can update local
+objects and the tracking ref; it never pushes or changes the local branch by
+itself. An unavailable remote fails with a fixed error, without raw Git stderr.
 
-After fetch, any local commits (ahead or diverged history) block synchronization
-for later explicit reconciliation. If local HEAD already matches the fetched
+After fetch, any remaining local commits (ahead or diverged history) block
+synchronization. Explicit Retry reconciles recognized interrupted publisher
+commits before synchronization. If local HEAD already matches the fetched
 commit, synchronization finishes without changing files. Otherwise Git performs
 only `merge --ff-only --no-autostash` against the captured fetched commit, then
 revalidates checkout/output safety. Hooks and filesystem-monitor commands are
@@ -269,11 +273,85 @@ Staged work must be resolved before synchronization.
 
 Git subprocesses use argument arrays and fixed errors/log messages. SSH uses
 batch mode and strict host-key checking; verified known-hosts and credentials
-must be provisioned by the later runtime setup. Fetch has a 30-second timeout;
-local commands have a 10-second timeout. Global/system Git configuration and
-inherited Git redirection are ignored as in checkout inspection. Temporary bare
-remotes cover synchronization tests without GitHub access. Publisher-commit
-reconciliation, export, commit/push, and runner wiring remain separate units.
+are provisioned by the runtime setup below. Fetch has a 30-second timeout; local
+commands have a 10-second timeout. Global/system Git configuration and inherited
+Git redirection are ignored as in checkout inspection. Temporary bare remotes
+cover synchronization tests without GitHub access. Publisher-commit
+reconciliation precedes a fresh export and commit/push.
+
+### Prepare the dedicated checkout and SSH files
+
+Run setup from the backend after installing Bun and Git and copying
+`.env.example` to an untracked `.env`:
+
+```bash
+./scripts/setup-archive-publication
+```
+
+The script loads the backend `.env` with exported environment values taking
+precedence. It clones the configured repository when the destination is absent,
+otherwise validates its root and origin. It selects an existing target branch,
+or creates the target from its remote tracking branch; when neither exists it
+fetches remote `main` and creates the local target there. Local setup defaults
+to `publish-dev`. Set `ARCHIVE_PUBLISH_BRANCH=main` on the server. Setup never
+pushes, commits, resets, stashes, or deletes work. A dirty checkout on another
+branch or an unfinished Git operation requires manual resolution. Dirty work on
+the target branch is preserved; setup success does not guarantee it is safe to
+publish. `ARCHIVE_GIT_NAME` and `ARCHIVE_GIT_EMAIL` configure identity locally
+in the checkout; existing local values may be retained by leaving them unset. Do
+not depend on global Git identity/configuration, which publication ignores.
+
+Create a dedicated SSH deploy key outside the repository and add its public key
+to the archive-site repository with write access. Provision the private key and
+a `known_hosts` file at the `.env` paths `ARCHIVE_DEPLOY_KEY_PATH` and
+`ARCHIVE_KNOWN_HOSTS_PATH`. Verify the Git host's public-key fingerprints
+through its official documentation or another trusted channel before trusting
+the entries; `ssh-keyscan` output by itself does not verify the host. Use an
+unencrypted dedicated service key with restricted host access for unattended
+publication, and mode `0600` for the private key. Keep these files and the
+checkout outside the backend build context. For host setup, make the same
+identity and verified hosts available to the current user's SSH client
+(`~/.ssh/id_ed25519` and `~/.ssh/known_hosts`, or its SSH configuration).
+
+Compose bind-mounts the checkout persistently and the two credential files
+read-only into `/root/.ssh/id_ed25519` and `/root/.ssh/known_hosts`. These match
+the default identity/host files of the image's root runtime user. Missing bind
+sources fail instead of silently creating empty directories; prepare them even
+when running this Compose file with publishing disabled. The application sees
+only the mounted `ARCHIVE_CONTAINER_CHECKOUT_PATH` under its normal
+`ARCHIVE_CHECKOUT_PATH` setting. Host-relative bind paths resolve from the
+backend Compose project directory. Credentials are never copied into the image.
+Back up the database and dedicated checkout together; job recovery relies on
+retained Git objects and durable job records. Do not share this checkout with
+another publisher or an interactive editing workflow.
+
+### Publication operation and recovery
+
+Apply the reviewed database migrations before enabling publication, then build
+and start the API with `docker compose up -d --build`. Publication is restricted
+to authenticated admins. The header appears for pending archive revisions;
+confirming Publish starts a durable server job. Closing or refreshing the page
+does not cancel it. Reopen the control to view progress and retained logs.
+Editors cannot read publication status, logs, or invoke jobs.
+
+A successful job means the generated files were pushed to GitHub, or already
+matched the remote result. It does not mean the site deployment completed. The
+archive-site Pages workflow deploys `main` only; pushes to local `publish-dev`
+are reviewable publication tests and do not deploy Pages.
+`bun run publish-locally` remains an export-only diagnostic command and never
+acknowledges pending revisions. A real push to `publish-dev` is a separately
+reviewed acceptance operation; automated tests use local temporary remotes.
+
+Only one publisher holds the PostgreSQL advisory lock. Changes arriving after
+its captured snapshot remain pending. After a restart, abandoned jobs become
+interrupted and require explicit Retry; there is no automatic retry loop.
+Recovery recognizes commits tagged with publication job IDs before resuming a
+push. Never solve a rejection with force-push, hard reset, or deleting the
+checkout: inspect logs and resolve foreign commits, merge conflicts, staged
+changes, branch/origin mismatches, SSH permissions, or unavailable remotes
+first. Keep the checkout and job history intact so retries can reconcile a
+previously successful push. Logs are sanitized and bounded to 2,000 lines per
+job; only the latest 20 completed jobs remain.
 
 ## Local dummy data
 

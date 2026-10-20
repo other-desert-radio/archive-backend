@@ -2,11 +2,33 @@ services:
   api:
     build: .
     environment:
+      ARCHIVE_SITE_REPOSITORY: "${ARCHIVE_SITE_REPOSITORY:-git@github.com:other-desert-radio/archive-site.git}"
+      ARCHIVE_CHECKOUT_PATH: "${ARCHIVE_CONTAINER_CHECKOUT_PATH:-/archive-site}"
+      ARCHIVE_PUBLISH_BRANCH: "${ARCHIVE_PUBLISH_BRANCH:-publish-dev}"
+      ARCHIVE_PUBLISH_ENABLED: "${ARCHIVE_PUBLISH_ENABLED:-false}"
       PORT: "${PORT:?PORT is required}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}"
       BETTER_AUTH_URL: "${BETTER_AUTH_URL:?BETTER_AUTH_URL is required}"
       BETTER_AUTH_TRUSTED_ORIGINS: "${BETTER_AUTH_TRUSTED_ORIGINS:-}"
       DATABASE_URL: "postgres://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}"
+    volumes:
+      - type: bind
+        source: "${ARCHIVE_CHECKOUT_PATH:-../clean-archive-site}"
+        target: "${ARCHIVE_CONTAINER_CHECKOUT_PATH:-/archive-site}"
+        bind:
+          create_host_path: false
+      - type: bind
+        source: "${ARCHIVE_DEPLOY_KEY_PATH:-../archive-publication-ssh/id_ed25519}"
+        target: /root/.ssh/id_ed25519
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: "${ARCHIVE_KNOWN_HOSTS_PATH:-../archive-publication-ssh/known_hosts}"
+        target: /root/.ssh/known_hosts
+        read_only: true
+        bind:
+          create_host_path: false
     ports:
       - "${PORT:?PORT is required}:${PORT:?PORT is required}"
     depends_on:

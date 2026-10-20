@@ -1,1 +1,175 @@
-# Placeholder: safely set up the publication checkout, Git identity, and target branch.
+#!/usr/bin/env bun
+// Prepare the dedicated checkout without committing, pushing, stashing, or resetting work.
+import { execFileSync } from "node:child_process";
+import { existsSync, lstatSync, realpathSync } from "node:fs";
+import path from "node:path";
+import { parseEnv } from "node:util";
+import {
+  readArchiveCheckoutPath,
+  readPublicationConfig,
+} from "../src/publication/config.ts";
+
+const backendRoot = path.resolve(import.meta.dir, "..");
+// Bun loads .env relative to cwd; explicitly load the repository's file as well.
+const dotenv = Bun.file(path.join(backendRoot, ".env"));
+const environment = {
+  ...((await dotenv.exists()) ? parseEnv(await dotenv.text()) : {}),
+  ...process.env,
+};
+const config = readPublicationConfig(environment, backendRoot);
+const gitEnvironment = {
+  ...Object.fromEntries(
+    Object.entries(environment).filter(([key]) => !key.startsWith("GIT_")),
+  ),
+  GIT_CONFIG_NOSYSTEM: "1",
+  GIT_CONFIG_GLOBAL: "/dev/null",
+  GIT_TERMINAL_PROMPT: "0",
+  GIT_SSH_COMMAND: "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes",
+};
+const git = (args, cwd = backendRoot) =>
+  execFileSync(
+    "git",
+    [
+      "-c",
+      "core.hooksPath=/dev/null",
+      "-c",
+      "core.fsmonitor=false",
+      "-c",
+      "submodule.recurse=false",
+      "-C",
+      cwd,
+      ...args,
+    ],
+    {
+      env: gitEnvironment,
+      encoding: "utf8",
+      timeout: 30000,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  ).trim();
+const inCheckout = (args) => git(args, config.checkoutPath);
+const hasRef = (ref) => {
+  try {
+    inCheckout(["show-ref", "--verify", "--quiet", ref]);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+try {
+  git(["check-ref-format", "--branch", config.branch]);
+  // Resolve existing ancestors before clone, so a symlink cannot redirect writes
+  // into the backend even when the checkout directory does not exist yet.
+  let ancestor = config.checkoutPath;
+  while (!existsSync(ancestor)) ancestor = path.dirname(ancestor);
+  readArchiveCheckoutPath({
+    environment: {
+      ARCHIVE_CHECKOUT_PATH: path.resolve(
+        realpathSync(ancestor),
+        path.relative(ancestor, config.checkoutPath),
+      ),
+    },
+    repositoryRoot: realpathSync(backendRoot),
+  });
+  if (!existsSync(config.checkoutPath)) {
+    git([
+      "clone",
+      "--no-recurse-submodules",
+      "--",
+      config.repository,
+      config.checkoutPath,
+    ]);
+  }
+  if (!lstatSync(path.join(config.checkoutPath, ".git")).isDirectory()) {
+    throw new Error(
+      "Use a normal dedicated clone, not a linked worktree or symlinked .git",
+    );
+  }
+  const checkout = realpathSync(config.checkoutPath);
+  const backend = realpathSync(backendRoot);
+  if (
+    checkout === backend ||
+    checkout.startsWith(`${backend}${path.sep}`) ||
+    backend.startsWith(`${checkout}${path.sep}`)
+  ) {
+    throw new Error("The checkout must be separate from the backend");
+  }
+  if (realpathSync(inCheckout(["rev-parse", "--show-toplevel"])) !== checkout) {
+    throw new Error("The checkout path must be the repository root");
+  }
+  if (
+    inCheckout(["remote", "get-url", "--all", "origin"]) !==
+      config.repository ||
+    inCheckout(["remote", "get-url", "--push", "--all", "origin"]) !==
+      config.repository
+  ) {
+    throw new Error("The checkout origin must match ARCHIVE_SITE_REPOSITORY");
+  }
+  for (const marker of [
+    "MERGE_HEAD",
+    "CHERRY_PICK_HEAD",
+    "REVERT_HEAD",
+    "BISECT_LOG",
+    "rebase-merge",
+    "rebase-apply",
+    "sequencer",
+  ]) {
+    if (existsSync(path.join(checkout, ".git", marker)))
+      throw new Error("Finish the current Git operation before setup");
+  }
+  const current = inCheckout(["symbolic-ref", "--quiet", "--short", "HEAD"]);
+  if (current !== config.branch) {
+    if (inCheckout(["status", "--porcelain", "--untracked-files=all"])) {
+      throw new Error(
+        "Pending work preserved; switch to the publication branch manually before setup",
+      );
+    }
+    if (!hasRef(`refs/heads/${config.branch}`)) {
+      if (hasRef(`refs/remotes/origin/${config.branch}`)) {
+        inCheckout([
+          "branch",
+          "--track",
+          config.branch,
+          `origin/${config.branch}`,
+        ]);
+      } else {
+        inCheckout([
+          "fetch",
+          "--no-tags",
+          "--no-recurse-submodules",
+          "origin",
+          "+refs/heads/main:refs/remotes/origin/main",
+        ]);
+        inCheckout(["branch", "--", config.branch, "refs/remotes/origin/main"]);
+      }
+    }
+    inCheckout(["switch", "--no-guess", "--", config.branch]);
+  }
+  for (const [key, variable] of [
+    ["user.name", "ARCHIVE_GIT_NAME"],
+    ["user.email", "ARCHIVE_GIT_EMAIL"],
+  ]) {
+    const value = environment[variable]?.trim();
+    if (value) inCheckout(["config", "--local", key, value]);
+    else {
+      try {
+        if (!inCheckout(["config", "--local", "--get", key])) throw new Error();
+      } catch {
+        throw new Error(
+          `Set ${variable} to configure the checkout's local Git identity`,
+        );
+      }
+    }
+  }
+  console.log(
+    `Publication checkout ready on ${config.branch}. No commit or push was performed.`,
+  );
+} catch (error) {
+  console.error(
+    error instanceof Error && !error.code
+      ? error.message
+      : "Unable to prepare publication checkout with Git; existing work has been preserved.",
+  );
+  process.exitCode = 1;
+}

@@ -82,11 +82,12 @@ Git object ID. Captured revisions and commits cannot be overwritten, and
 completed jobs reject progress updates. Missing/ineligible jobs fail writes
 rather than silently reporting success.
 
-This layer does not yet complete/acknowledge jobs. Interruption recovery is
-available as an explicit store operation; the store is not wired into routes or
-startup. Job writes do not change archive publication revisions. Rolling back
-`0030` drops job history while preserving archive tables and the singleton
-revision row; roll back the dependent log migration first.
+The runner completes jobs and acknowledges only their captured revision in the
+same transaction, then prunes history. Failure never acknowledges publication;
+newer archive revisions remain pending. Metadata writes do not advance archive
+revisions. Interruption recovery and the authenticated APIs are wired at
+startup. Rolling back `0030` drops job history while preserving archive tables
+and the singleton revision row; roll back the dependent log migration first.
 
 ### Publication admission and lock ownership
 
@@ -98,30 +99,31 @@ connection to the pool. Repeated release calls await the same cleanup and do not
 unlock a later lease. Acquisition rejects transaction handles: job creation and
 progress must commit durably while the session lock remains held.
 
-`reservePublicationJob` is the admission entry point for the future runner. It
-rejects disabled publication, acquires the lease, checks for any durable running
-job, and only then inserts a queued job. Contention or an existing running row
-throws `PublicationBusyError`; database errors propagate. Rejected reservations
-release their lease. A successful reservation returns both job and lease; its
-caller must release in `finally` after execution. Use the connection on the
-lease for publication database work, and never reuse that handle after release.
+`reservePublicationJob` is the admission entry point for the runner. It rejects
+disabled publication, acquires the lease, checks for any durable running job,
+and only then inserts a queued job. Contention or an existing running row throws
+`PublicationBusyError`; database errors propagate. Rejected reservations release
+their lease. A successful reservation returns both job and lease; its caller
+must release in `finally` after execution. Use the connection on the lease for
+publication database work, and never reuse that handle after release.
 `createPublicationJob` remains a low-level insert, not an admission entry point.
 
 The lock spans job execution without a long database transaction. PostgreSQL
 releases session locks on disconnect, but the durable running row still blocks a
-new reservation until interruption recovery handles it. Startup integration,
-retry eligibility validation, and live runner/API integration remain deferred.
-Tests use independent one-connection pools to verify contention, durable job
-visibility, repeated release, and cleanup after rejected reservations.
+new reservation until interruption recovery handles it. Retrying requires the
+latest failed/interrupted job ID and an unchanged target; callers cannot bypass
+failure recovery by starting a fresh job. Tests use independent one-connection
+pools to verify contention, durable job visibility, repeated release, and
+cleanup after rejected reservations.
 
 ### Abandoned-job interruption
 
-Before admitting jobs after startup, the future runner must acquire a fresh
-publication lease and call `interruptAbandonedPublications`. The store tracks
-active lease objects; fabricated or released leases cannot perform recovery.
-Another backend holding the publication lock prevents acquisition, so startup
-must defer recovery while that publisher is active. Call recovery before
-reserving work, never against a job executing under the caller's own lease.
+Before admitting jobs after startup, the runner acquires a fresh publication
+lease and call `interruptAbandonedPublications`. The store tracks active lease
+objects; fabricated or released leases cannot perform recovery. Another backend
+holding the publication lock prevents acquisition, so startup must defer
+recovery while that publisher is active. Call recovery before reserving work,
+never against a job executing under the caller's own lease.
 
 Recovery changes all leftover `running` jobs to `interrupted`, records the
 completion timestamp, and saves a fixed message explaining that explicit Retry
@@ -132,8 +134,8 @@ unchanged except for normal history retention.
 
 Interruption and pruning to the latest 20 completed jobs share one transaction;
 failure rolls both back. Repeating recovery does not rewrite interruption
-timestamps. The caller retains and releases the lease normally. Startup wiring
-and retry eligibility checks remain deferred to their later units.
+timestamps. The caller retains and releases the lease normally. Recovery never
+automatically retries a publication.
 
 ### Publication logs and retention
 
@@ -173,8 +175,8 @@ after closure or reconnection. `pruneCompletedPublicationJobs` retains the
 newest 20 completed jobs by completion time, creation time, and ID descending,
 while preserving every running job. Deleting old jobs cascades to their logs. It
 is a single atomic statement and can participate in the later completion
-transaction; automatic invocation remains deferred. Rolling back `0031` removes
-logs while preserving job metadata.
+transaction; completion and interruption invoke it automatically. Rolling back
+`0031` removes logs while preserving job metadata.
 
 The focused test in `tests/publication/store.test.ts` requires
 `PUBLICATION_STORE_TEST_DATABASE_URL` for disposable PostgreSQL and otherwise

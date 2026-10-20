@@ -5,7 +5,11 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { isMatching, P } from "ts-pattern";
 import { readArchiveCheckoutPath } from "./config.js";
-import type { PublicationConfig, PublicationJob } from "./types.js";
+import type {
+	PublicationConfig,
+	PublicationJob,
+	PublicationStage,
+} from "./types.js";
 
 const executeFile = promisify(execFile);
 
@@ -79,6 +83,8 @@ export type PublicationGitContext = {
 	config: PublicationConfig;
 	job: PublicationJob;
 	log: (message: string) => Promise<void>;
+	recordCommit: (commitId: string) => Promise<void>;
+	updateStage: (stage: PublicationStage) => Promise<void>;
 };
 export type PublicationGitResult =
 	| { kind: "no-change" }
@@ -197,11 +203,243 @@ export const validatePublicationCheckout = async ({
 	await log("Validated publication checkout, branch, origin, and output paths");
 };
 
-export const reconcilePublicationGit = (
-	_context: PublicationGitContext,
-	_previousJob: PublicationJob | undefined,
+/** Exporter-owned paths only, including deleted files and ignored new assets. */
+const generatedPaths = [
+	"src/res/djs",
+	"src/res/djs_brief.json",
+	"src/res/shows.json",
+	"src/res/tags.json",
+	"public/assets/djs",
+];
+const generatedPath = (file: string): boolean =>
+	[
+		"src/res/djs_brief.json",
+		"src/res/shows.json",
+		"src/res/tags.json",
+	].includes(file) ||
+	file.startsWith("src/res/djs/") ||
+	file.startsWith("public/assets/djs/");
+const pathsFromGit = (output: string): string[] =>
+	output.split("\0").filter(Boolean);
+const containsCommit = async (
+	checkout: string,
+	ancestor: string,
+	descendant: string,
+): Promise<boolean> =>
+	(await inspectGit(checkout, [
+		"rev-list",
+		"--count",
+		`${descendant}..${ancestor}`,
+	])) === "0";
+
+/** A new non-main publication branch may start at the verified remote main. */
+const fetchPublicationBranch = async (
+	context: PublicationGitContext,
+): Promise<{ commit: string; missing: boolean }> => {
+	const checkout = context.config.checkoutPath;
+	const branch = context.config.branch;
+	const advertised = await runGit({
+		checkout,
+		args: ["ls-remote", "--refs", "origin", `refs/heads/${branch}`],
+		operation: "read remote branch",
+		timeout: 30000,
+	});
+	const missing = advertised === "";
+	let source = branch;
+	if (missing) {
+		if (
+			branch !== "publish-dev" ||
+			(await inspectGit(checkout, [
+				"for-each-ref",
+				"--format=%(objectname)",
+				`refs/remotes/origin/${branch}`,
+			])) !== ""
+		) {
+			throw new Error("Configured publication branch is missing from origin");
+		}
+		source = "main";
+	}
+	const remoteRef = `refs/remotes/origin/${source}`;
+	await runGit({
+		checkout,
+		args: [
+			"fetch",
+			"--no-tags",
+			"--no-recurse-submodules",
+			"--no-write-fetch-head",
+			"--no-auto-maintenance",
+			"--refmap=",
+			"origin",
+			`refs/heads/${source}:${remoteRef}`,
+		],
+		operation: "fetch",
+		timeout: 30000,
+	});
+	const commit = await inspectGit(checkout, [
+		"rev-parse",
+		"--verify",
+		`${remoteRef}^{commit}`,
+	]);
+	await context.log("Fetched publication branch");
+	return { commit, missing };
+};
+
+const verifyPublisherCommit = async (
+	context: PublicationGitContext,
+	commit: string,
+	previous: PublicationJob,
+): Promise<void> => {
+	const checkout = context.config.checkoutPath;
+	if (previous.revision === undefined)
+		throw new Error("Interrupted publication has no captured revision");
+	const message = await inspectGit(checkout, [
+		"show",
+		"-s",
+		"--format=%B",
+		commit,
+	]);
+	const jobLines = message
+		.split("\n")
+		.filter((line) => line.startsWith("Archive-Publication-Job: "));
+	const revisionLines = message
+		.split("\n")
+		.filter((line) => line.startsWith("Archive-Publication-Revision: "));
+	if (
+		jobLines.length !== 1 ||
+		revisionLines.length !== 1 ||
+		revisionLines[0] !== `Archive-Publication-Revision: ${previous.revision}` ||
+		(jobLines[0] !== `Archive-Publication-Job: ${previous.id}` &&
+			previous.commitId !== commit)
+	) {
+		throw new Error("Unrecognized interrupted publication commit");
+	}
+	const parents = (
+		await inspectGit(checkout, ["rev-list", "--parents", "-n", "1", commit])
+	).split(" ");
+	if (parents.length !== 2)
+		throw new Error("Publisher commits must have exactly one parent");
+	const changed = pathsFromGit(
+		await inspectGit(checkout, [
+			"diff-tree",
+			"--no-commit-id",
+			"--name-only",
+			"--no-renames",
+			"-r",
+			"-z",
+			commit,
+		]),
+	);
+	if (changed.length === 0 || changed.some((file) => !generatedPath(file)))
+		throw new Error("Interrupted commit changes unrecognized paths");
+};
+
+export const reconcilePublicationGit = async (
+	context: PublicationGitContext,
+	previousJob: PublicationJob | undefined,
 ): Promise<PublicationRecovery> => {
-	throw new Error("Not implemented: reconcilePublicationGit");
+	if (previousJob === undefined) return { kind: "ready" };
+	await validatePublicationCheckout(context);
+	if (
+		previousJob.target.repository !== context.config.repository ||
+		previousJob.target.branch !== context.config.branch ||
+		previousJob.target.checkoutPath !== context.config.checkoutPath
+	) {
+		throw new Error(
+			"Interrupted publication target differs from the retry target",
+		);
+	}
+	const checkout = context.config.checkoutPath;
+	const staged = pathsFromGit(
+		await inspectGit(checkout, ["diff", "--cached", "--name-only", "-z"]),
+	);
+	if (staged.length > 0) {
+		if (
+			previousJob.revision === undefined ||
+			staged.some((file) => !generatedPath(file)) ||
+			(await inspectGit(checkout, ["ls-files", "--unmerged", "-z"])) !== ""
+		)
+			throw new Error("Unrecognized staged work blocks publication recovery");
+		await runGit({
+			checkout,
+			args: [
+				"restore",
+				"--staged",
+				"--source=HEAD",
+				"--",
+				...staged.map((file) => `:(literal)${file}`),
+			],
+			operation: "reconcile generated staging",
+		});
+	}
+	const remote = await fetchPublicationBranch(context);
+	const outgoing = (
+		await inspectGit(checkout, [
+			"rev-list",
+			"--reverse",
+			`${remote.commit}..HEAD`,
+		])
+	)
+		.split("\n")
+		.filter(Boolean);
+	let candidate = previousJob.commitId;
+	if (candidate === undefined && previousJob.revision !== undefined) {
+		const found = (
+			await inspectGit(checkout, [
+				"log",
+				"--all",
+				"--format=%H",
+				"--max-count=2",
+				`--grep=^Archive-Publication-Job: ${previousJob.id}$`,
+			])
+		)
+			.split("\n")
+			.filter(Boolean);
+		if (found.length > 1)
+			throw new Error("Multiple commits claim the interrupted publication job");
+		candidate = found[0];
+	}
+	if (candidate === undefined) {
+		if (outgoing.length !== 0)
+			throw new Error(
+				"Unrecognized outgoing commits block publication recovery",
+			);
+		return { kind: "ready" };
+	}
+	// A no-change first publication can reference the already trusted remote main.
+	const main = await inspectGit(checkout, [
+		"for-each-ref",
+		"--format=%(objectname)",
+		"refs/remotes/origin/main",
+	]);
+	const baseline =
+		previousJob.commitId === candidate &&
+		candidate === main &&
+		previousJob.revision !== undefined;
+	if (!baseline) await verifyPublisherCommit(context, candidate, previousJob);
+	if (
+		(await containsCommit(checkout, candidate, remote.commit)) &&
+		!remote.missing
+	) {
+		if (outgoing.length !== 0)
+			throw new Error(
+				"Unrecognized outgoing commits block publication recovery",
+			);
+		await context.log("Confirmed interrupted publication is already on origin");
+		return { kind: "already-pushed", commitId: candidate };
+	}
+	const head = await inspectGit(checkout, ["rev-parse", "HEAD"]);
+	if (
+		head !== candidate ||
+		(!baseline && (outgoing.length !== 1 || outgoing[0] !== candidate)) ||
+		!(await containsCommit(checkout, remote.commit, candidate))
+	)
+		throw new Error(
+			"Interrupted commit cannot be pushed without rewriting or including unrecognized history",
+		);
+	await context.log(
+		"Recognized interrupted publication commit for explicit retry",
+	);
+	return { kind: "resume-push", commitId: candidate };
 };
 
 /** Fetch one branch and permit only a fast-forward, preserving local work on failure. */
@@ -219,28 +457,7 @@ export const synchronizePublicationCheckout = async (
 			"Resolve staged or unmerged changes before synchronizing publication",
 		);
 	}
-	const remoteRef = `refs/remotes/origin/${context.config.branch}`;
-	await runGit({
-		checkout,
-		args: [
-			"fetch",
-			"--no-tags",
-			"--no-recurse-submodules",
-			"--no-write-fetch-head",
-			"--no-auto-maintenance",
-			"--refmap=",
-			"origin",
-			`refs/heads/${context.config.branch}:${remoteRef}`,
-		],
-		operation: "fetch",
-		timeout: 30000,
-	});
-	await context.log("Fetched publication branch");
-	const remoteCommit = await inspectGit(checkout, [
-		"rev-parse",
-		"--verify",
-		`${remoteRef}^{commit}`,
-	]);
+	const { commit: remoteCommit } = await fetchPublicationBranch(context);
 	const counts = (
 		await inspectGit(checkout, [
 			"rev-list",
@@ -272,9 +489,135 @@ export const synchronizePublicationCheckout = async (
 	);
 };
 
-export const commitAndPushPublication = (
-	_context: PublicationGitContext,
-	_recovery: PublicationRecovery,
+/** Commit only exporter-owned files; record the commit durably before pushing. */
+export const commitAndPushPublication = async (
+	context: PublicationGitContext,
+	recovery: PublicationRecovery,
 ): Promise<PublicationGitResult> => {
-	throw new Error("Not implemented: commitAndPushPublication");
+	await validatePublicationCheckout(context);
+	const checkout = context.config.checkoutPath;
+	if (recovery.kind === "already-pushed") {
+		await context.recordCommit(recovery.commitId);
+		return { kind: "pushed", commitId: recovery.commitId };
+	}
+	let commitId: string;
+	if (recovery.kind === "resume-push") {
+		commitId = recovery.commitId;
+	} else {
+		if (context.job.revision === undefined)
+			throw new Error("Publication commit requires a captured revision");
+		if (
+			(await inspectGit(checkout, [
+				"diff",
+				"--cached",
+				"--name-only",
+				"-z",
+			])) !== ""
+		)
+			throw new Error("Staged work blocks publication commit");
+		const remote = await fetchPublicationBranch(context);
+		const head = await inspectGit(checkout, ["rev-parse", "HEAD"]);
+		if (head !== remote.commit)
+			throw new Error("Remote changed during export; retry publication");
+		await context.updateStage("committing");
+		const candidates = [
+			...new Set(
+				pathsFromGit(
+					await inspectGit(checkout, [
+						"ls-files",
+						"--cached",
+						"--others",
+						"-z",
+						"--",
+						...generatedPaths,
+					]),
+				),
+			),
+		];
+		if (candidates.some((file) => !generatedPath(file)))
+			throw new Error("Unrecognized generated output path");
+		for (let offset = 0; offset < candidates.length; offset += 100) {
+			await runGit({
+				checkout,
+				args: [
+					"add",
+					"--all",
+					"--force",
+					"--",
+					...candidates
+						.slice(offset, offset + 100)
+						.map((file) => `:(literal)${file}`),
+				],
+				operation: "stage generated files",
+			});
+		}
+		const staged = pathsFromGit(
+			await inspectGit(checkout, ["diff", "--cached", "--name-only", "-z"]),
+		);
+		if (staged.some((file) => !generatedPath(file)))
+			throw new Error("Unrelated staged files block publication commit");
+		if (staged.length === 0) {
+			if (!remote.missing) {
+				await context.log(
+					"Generated files already match origin; no commit needed",
+				);
+				return { kind: "no-change" };
+			}
+			// The generated snapshot already matches main; create the new target ref only.
+			commitId = head;
+		} else {
+			await runGit({
+				checkout,
+				args: [
+					"-c",
+					"commit.gpgSign=false",
+					"commit",
+					"--no-verify",
+					"-m",
+					`Publish archive\n\nArchive-Publication-Job: ${context.job.id}\nArchive-Publication-Revision: ${context.job.revision}`,
+				],
+				operation: "commit generated files",
+			});
+			commitId = await inspectGit(checkout, ["rev-parse", "HEAD"]);
+			await verifyPublisherCommit(context, commitId, {
+				...context.job,
+				commitId,
+			});
+		}
+	}
+	await context.recordCommit(commitId);
+	await context.updateStage("pushing");
+	// Re-fetch immediately before push; allow only this one recognized commit.
+	const remote = await fetchPublicationBranch(context);
+	const head = await inspectGit(checkout, ["rev-parse", "HEAD"]);
+	if (
+		head !== commitId ||
+		!(await containsCommit(checkout, remote.commit, commitId))
+	)
+		throw new Error("Remote or local history changed before push");
+	const outgoing = (
+		await inspectGit(checkout, ["rev-list", `${remote.commit}..HEAD`])
+	)
+		.split("\n")
+		.filter(Boolean);
+	if (outgoing.length > 1 || outgoing.some((commit) => commit !== commitId))
+		throw new Error("Unrecognized outgoing commits block publication push");
+	await runGit({
+		checkout,
+		args: [
+			"-c",
+			"remote.origin.mirror=false",
+			"push",
+			"--porcelain",
+			"--no-follow-tags",
+			"--no-recurse-submodules",
+			"--no-verify",
+			"origin",
+			`${commitId}:refs/heads/${context.config.branch}`,
+		],
+		operation: "push",
+		timeout: 30000,
+	});
+	await context.log("Publication pushed to origin");
+	return { kind: "pushed", commitId };
 };

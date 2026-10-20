@@ -218,11 +218,11 @@ test.skipIf(!databaseUrl)(
 			// Recovery creates no job; only a later explicit reservation starts a retry.
 			const retry = await reservePublicationJob({
 				database: restarted,
-				request: { requestedBy: "new-admin", retryJobId: reservation.job.id },
+				request: { requestedBy: "new-admin", retryJobId: queued.id },
 				config,
 			});
 			leases.push(retry.lease);
-			expect(retry.job.retryJobId).toBe(reservation.job.id);
+			expect(retry.job.retryJobId).toBe(queued.id);
 			expect(retry.job.outcome).toBe("running");
 			await retry.lease.release();
 		} finally {

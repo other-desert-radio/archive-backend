@@ -73,11 +73,35 @@ export const readPublicationJobRecord = async (
 };
 
 export const readPublicationStatus = (
-	_database: Kysely<Database>,
-	_config: PublicationConfig,
-): Promise<PublicationStatus> => {
-	throw new Error("Not implemented: readPublicationStatus");
-};
+	database: Kysely<Database>,
+	config: PublicationConfig,
+): Promise<PublicationStatus> =>
+	database
+		.transaction()
+		.setIsolationLevel("repeatable read")
+		.setAccessMode("read only")
+		.execute(async (transaction) => {
+			const state = await transaction
+				.selectFrom("archive_publication_state")
+				.select(["revision", "published_revision"])
+				.where("id", "=", 1)
+				.executeTakeFirstOrThrow();
+			const row = await transaction
+				.selectFrom("archive_publication_jobs")
+				.selectAll()
+				.orderBy("created_at", "desc")
+				.orderBy("id", "desc")
+				.limit(1)
+				.executeTakeFirst();
+			return {
+				enabled: config.enabled,
+				branch: config.branch,
+				revision: state.revision,
+				publishedRevision: state.published_revision,
+				pending: BigInt(state.revision) > BigInt(state.published_revision),
+				...(row === undefined ? {} : { latestJob: publicationJob(row) }),
+			};
+		});
 
 /**
  * Read metadata and ordered logs from one snapshot. Missing jobs return undefined;
@@ -166,6 +190,16 @@ export class PublicationBusyError extends Error {
 	}
 }
 
+export class PublicationRequestError extends Error {
+	constructor(
+		message: string,
+		readonly statusCode: 400 | 409 | 503,
+	) {
+		super(message);
+		this.name = "PublicationRequestError";
+	}
+}
+
 /** Reserve durably under the publisher lock; caller must release in finally. */
 export const reservePublicationJob = async ({
 	database,
@@ -176,7 +210,8 @@ export const reservePublicationJob = async ({
 	request: PublicationStart;
 	config: PublicationConfig;
 }): Promise<{ lease: PublicationLease; job: PublicationJob }> => {
-	if (!config.enabled) throw new Error("Archive publication is disabled");
+	if (!config.enabled)
+		throw new PublicationRequestError("Archive publication is disabled", 503);
 	const lease = await acquirePublicationLease(database);
 	if (lease === undefined) throw new PublicationBusyError();
 	try {
@@ -187,6 +222,40 @@ export const reservePublicationJob = async ({
 			.limit(1)
 			.executeTakeFirst();
 		if (running !== undefined) throw new PublicationBusyError();
+		const latest = await lease.database
+			.selectFrom("archive_publication_jobs")
+			.selectAll()
+			.orderBy("created_at", "desc")
+			.orderBy("id", "desc")
+			.limit(1)
+			.executeTakeFirst();
+		if (request.retryJobId !== undefined) {
+			if (
+				latest?.id !== request.retryJobId ||
+				(latest.outcome !== "failed" && latest.outcome !== "interrupted")
+			)
+				throw new PublicationRequestError(
+					"Retry must identify the latest failed or interrupted publication",
+					409,
+				);
+			if (
+				latest.repository !== config.repository ||
+				latest.branch !== config.branch ||
+				latest.checkout_path !== config.checkoutPath
+			)
+				throw new PublicationRequestError(
+					"Retry target differs from the interrupted publication",
+					409,
+				);
+		} else if (
+			latest?.outcome === "failed" ||
+			latest?.outcome === "interrupted"
+		) {
+			throw new PublicationRequestError(
+				"Explicit Retry is required for the latest publication",
+				409,
+			);
+		}
 		const job = await createPublicationJob({ lease, request, config });
 		return { lease, job };
 	} catch (error) {
@@ -422,12 +491,62 @@ export const pruneCompletedPublicationJobs = async (
 };
 
 /** Atomically complete/acknowledge and retain the latest 20 completed jobs. */
-export const completePublicationJob = (
-	_lease: PublicationLease,
-	_jobId: string,
-	_completion: PublicationCompletion,
+export const completePublicationJob = async (
+	lease: PublicationLease,
+	jobId: string,
+	completion: PublicationCompletion,
 ): Promise<void> => {
-	throw new Error("Not implemented: completePublicationJob");
+	const successful =
+		completion.outcome === "succeeded" || completion.outcome === "no-change";
+	if (
+		successful !== (completion.acknowledgedRevision !== undefined) ||
+		(successful && completion.error !== undefined)
+	)
+		throw new Error("Invalid publication completion acknowledgement");
+	await lease.database.transaction().execute(async (transaction) => {
+		const job = await transaction
+			.selectFrom("archive_publication_jobs")
+			.selectAll()
+			.where("id", "=", jobId)
+			.where("outcome", "=", "running")
+			.forUpdate()
+			.executeTakeFirstOrThrow();
+		if (
+			completion.commitId !== undefined &&
+			completion.commitId !== job.commit_id
+		)
+			throw new Error(
+				"Completion commit differs from the recorded publication commit",
+			);
+		if (successful) {
+			if (
+				job.revision === null ||
+				job.revision !== completion.acknowledgedRevision
+			)
+				throw new Error(
+					"Only the captured publication revision can be acknowledged",
+				);
+			await transaction
+				.updateTable("archive_publication_state")
+				.set({
+					published_revision: sql`greatest(published_revision, ${job.revision}::bigint)`,
+				})
+				.where("id", "=", 1)
+				.where("revision", ">=", job.revision)
+				.returning("id")
+				.executeTakeFirstOrThrow();
+		}
+		await transaction
+			.updateTable("archive_publication_jobs")
+			.set({
+				outcome: completion.outcome,
+				completed_at: sql`CURRENT_TIMESTAMP`,
+				error: completion.error ?? null,
+			})
+			.where("id", "=", jobId)
+			.execute();
+		await pruneCompletedPublicationJobs({ ...lease, database: transaction });
+	});
 };
 
 /** Run under a fresh startup lease before admitting work; never retry automatically. */

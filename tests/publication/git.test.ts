@@ -12,7 +12,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import {
+	commitAndPushPublication,
 	type PublicationGitContext,
+	reconcilePublicationGit,
 	synchronizePublicationCheckout,
 	validatePublicationCheckout,
 } from "../../src/publication/index.js";
@@ -83,6 +85,8 @@ const fixture = async ({ commit = true }: { commit?: boolean } = {}) => {
 			outcome: "running",
 			stage: "validating",
 		},
+		recordCommit: async () => {},
+		updateStage: async () => {},
 		log: async (message) => {
 			logs.push(message);
 		},
@@ -242,12 +246,12 @@ test("a missing remote branch or unavailable remote fails without moving local H
 	const before = await git("rev-parse", "HEAD");
 	await git("--git-dir", remote, "update-ref", "-d", "refs/heads/publish-dev");
 	await expect(synchronizePublicationCheckout(context)).rejects.toThrow(
-		"fetch",
+		"missing from origin",
 	);
 	expect(await git("rev-parse", "HEAD")).toBe(before);
 	await rm(remote, { recursive: true, force: true });
 	await expect(synchronizePublicationCheckout(context)).rejects.toThrow(
-		"fetch",
+		"remote branch",
 	);
 	expect(await git("rev-parse", "HEAD")).toBe(before);
 	expect(
@@ -482,4 +486,140 @@ test("linked worktrees are rejected because they share repository administration
 			},
 		}),
 	).rejects.toThrow("own .git directory");
+});
+
+test("publication commits generated additions and deletions while preserving unrelated work", async () => {
+	const { checkout, context, git, remote } = await remoteFixture();
+	await mkdir(path.join(checkout, "src/res/djs"), { recursive: true });
+	await writeFile(path.join(checkout, "src/res/djs/old.json"), "old\n");
+	await git("add", "src/res/djs/old.json");
+	await git("commit", "-m", "Existing generated document");
+	await git("push", "origin", "publish-dev");
+	await rm(path.join(checkout, "src/res/djs/old.json"));
+	await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
+	await writeFile(path.join(checkout, "README.md"), "unrelated local edits\n");
+	await writeFile(path.join(checkout, "notes.txt"), "untracked notes\n");
+	const recorded: string[] = [];
+	const stages: string[] = [];
+	const publishing = {
+		...context,
+		job: { ...context.job, revision: "7" },
+		recordCommit: async (id: string) => {
+			recorded.push(id);
+		},
+		updateStage: async (
+			stage: Parameters<PublicationGitContext["updateStage"]>[0],
+		) => {
+			stages.push(stage);
+		},
+	};
+	const result = await commitAndPushPublication(publishing, { kind: "ready" });
+	expect(result.kind).toBe("pushed");
+	const head = await git("rev-parse", "HEAD");
+	expect(recorded).toEqual([head]);
+	expect(stages).toEqual(["committing", "pushing"]);
+	expect(
+		await git("diff-tree", "--no-commit-id", "--name-status", "-r", "HEAD"),
+	).toBe("D\tsrc/res/djs/old.json\nA\tsrc/res/shows.json");
+	expect(
+		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
+	).toBe(head);
+	expect(await readFile(path.join(checkout, "README.md"), "utf8")).toBe(
+		"unrelated local edits\n",
+	);
+	expect(await readFile(path.join(checkout, "notes.txt"), "utf8")).toBe(
+		"untracked notes\n",
+	);
+	expect(await git("show", "-s", "--format=%B", "HEAD")).toContain(
+		`Archive-Publication-Job: ${context.job.id}`,
+	);
+});
+
+test("publication refuses unrelated staged work without committing or changing its index", async () => {
+	const { checkout, context, git, remote } = await remoteFixture();
+	const before = await git("rev-parse", "HEAD");
+	await writeFile(path.join(checkout, "README.md"), "staged by operator\n");
+	await git("add", "README.md");
+	const index = await readFile(path.join(checkout, ".git/index"));
+	await expect(
+		commitAndPushPublication(
+			{ ...context, job: { ...context.job, revision: "7" } },
+			{ kind: "ready" },
+		),
+	).rejects.toThrow("Staged work");
+	expect(await readFile(path.join(checkout, ".git/index"))).toEqual(index);
+	expect(await git("rev-parse", "HEAD")).toBe(before);
+	expect(
+		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
+	).toBe(before);
+});
+
+test("recovery discovers a trailer commit after durable commit recording fails and resumes only that push", async () => {
+	const { checkout, context, git, remote } = await remoteFixture();
+	const before = await git("rev-parse", "HEAD");
+	await mkdir(path.join(checkout, "src/res"), { recursive: true });
+	await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
+	const previous = { ...context.job, revision: "8" };
+	await expect(
+		commitAndPushPublication(
+			{
+				...context,
+				job: previous,
+				recordCommit: async () => {
+					throw new Error("database interrupted");
+				},
+			},
+			{ kind: "ready" },
+		),
+	).rejects.toThrow("database interrupted");
+	const created = await git("rev-parse", "HEAD");
+	expect(created).not.toBe(before);
+	expect(
+		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
+	).toBe(before);
+	const records: string[] = [];
+	const retry = {
+		...context,
+		job: { ...context.job, id: crypto.randomUUID(), revision: "8" },
+		recordCommit: async (id: string) => {
+			records.push(id);
+		},
+	};
+	const recovery = await reconcilePublicationGit(retry, previous);
+	expect(recovery).toEqual({ kind: "resume-push", commitId: created });
+	expect(await commitAndPushPublication(retry, recovery)).toEqual({
+		kind: "pushed",
+		commitId: created,
+	});
+	expect(records).toEqual([created]);
+	expect(
+		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
+	).toBe(created);
+	expect(
+		await reconcilePublicationGit(
+			{ ...retry, job: { ...retry.job, id: crypto.randomUUID() } },
+			{ ...previous, commitId: created },
+		),
+	).toEqual({ kind: "already-pushed", commitId: created });
+});
+
+test("recovery rejects an unrecognized outgoing commit without pushing or rewriting it", async () => {
+	const { checkout, context, git, remote } = await remoteFixture();
+	const remoteBefore = await git(
+		"--git-dir",
+		remote,
+		"rev-parse",
+		"refs/heads/publish-dev",
+	);
+	await writeFile(path.join(checkout, "operator.txt"), "manual commit\n");
+	await git("add", "operator.txt");
+	await git("commit", "-m", "Operator work");
+	const localBefore = await git("rev-parse", "HEAD");
+	await expect(
+		reconcilePublicationGit(context, { ...context.job, revision: "9" }),
+	).rejects.toThrow("Unrecognized outgoing commits");
+	expect(await git("rev-parse", "HEAD")).toBe(localBefore);
+	expect(
+		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
+	).toBe(remoteBefore);
 });

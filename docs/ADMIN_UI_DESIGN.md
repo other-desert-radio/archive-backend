@@ -594,3 +594,25 @@ access is not required to use the established local components.
 - [DJ table, node 174:762](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=174-762)
 - [DJ onboarding, node 207:1052](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=207-1052)
 - [Tags, node 205:890](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=205-890)
+
+### Archive publication
+
+Only admins request publication state or see its control at the right of the
+management header. Pending changes show Publish; a running job shows Publishing…
+and failed or interrupted jobs show Retry. Disabled publication and successful,
+clean state hide the control. The title and control fit 390px and 320px headers.
+
+The shared message modal confirms pending changes and names the target branch.
+Close receives initial focus; Escape, backdrop, and Close restore focus to the
+opener. The underlying shell is inert. Closing never cancels a server job.
+Progress shows the current stage and a keyboard-scrollable, live publication
+log; truncated history is explicit. Failures preserve feedback and require an
+explicit Retry publication action. Confirmation has no diff preview.
+
+The authenticated fetch stream refreshes durable status and logs on reconnect;
+page refresh and reopening observe the existing job without starting another.
+Completion leaves an open modal visible even after its header control
+disappears. Success means the archive reached GitHub; deployment can still be
+running. `integration-tests/publication-ui.spec.ts` mocks mutations and covers
+confirmation, progress, closure/reopening, refresh, retry, editor isolation, and
+phone widths.

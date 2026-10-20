@@ -1,24 +1,63 @@
+import { fileURLToPath } from "node:url";
 import { sql } from "kysely";
 import { buildApp } from "./app.js";
 import { auth } from "./auth/auth.js";
-import { db } from "./db/db.js";
+import { db, pool } from "./db/db.js";
+import {
+	createPublicationNotifications,
+	createPublicationRunner,
+	type PublicationNotifications,
+	type PublicationRunner,
+	readPublicationConfig,
+} from "./publication/index.js";
 
 const port = Number(process.env.PORT ?? 43827);
-const app = buildApp(auth);
+let app: ReturnType<typeof buildApp> | undefined;
+let runner: PublicationRunner | undefined;
+let notifications: PublicationNotifications | undefined;
 
-app.addHook("onClose", async () => {
-	await db.destroy();
-});
+const close = async () => {
+	try {
+		await notifications?.close();
+	} finally {
+		try {
+			await runner?.close();
+		} finally {
+			await db.destroy();
+		}
+	}
+};
 
 const start = async () => {
 	// health check on the database
 	await sql`select 1`.execute(db);
+	const config = readPublicationConfig(
+		process.env,
+		fileURLToPath(new URL("../", import.meta.url)),
+	);
+	runner = await createPublicationRunner(db, config);
+	notifications = await createPublicationNotifications(pool);
+	app = buildApp(auth, { config, runner, notifications });
+	app.addHook("onClose", close);
 	const address = await app.listen({ host: "0.0.0.0", port });
 	app.log.info(`Web server running at ${address}`);
 };
 
 start().catch(async (error: unknown) => {
-	app.log.error(error);
-	await app.close();
+	if (app !== undefined) {
+		app.log.error(error);
+		await app.close();
+	} else {
+		console.error("Unable to start archive backend", error);
+		await close();
+	}
 	process.exit(1);
 });
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+	process.once(signal, () => {
+		void app?.close().catch(() => {
+			process.exitCode = 1;
+		});
+	});
+}
