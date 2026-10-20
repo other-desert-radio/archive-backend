@@ -19,7 +19,9 @@ export const PublicationControl = ({
 	return (
 		<button
 			type="button"
-			className={styles.control}
+			className={[styles.control, clean ? styles.clean : undefined]
+				.filter(Boolean)
+				.join(" ")}
 			onClick={onOpen}
 			aria-haspopup="dialog"
 		>

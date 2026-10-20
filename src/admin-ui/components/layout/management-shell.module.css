@@ -126,18 +126,29 @@
 	vertical-align: top;
 }
 
-.account {
-	display: grid;
-	gap: 10px;
-	margin-top: 24px;
-	overflow-wrap: anywhere;
-	font-size: 12px;
-}
-.account button {
+.accountButton {
+	flex-shrink: 0;
+	width: 42px;
+	height: 42px;
+	padding: 0;
+	border: 0;
 	border-radius: 0;
-	text-align: left;
-	font-size: 12px;
-	min-height: 42px;
+	color: inherit;
+	background: transparent;
+	font: inherit;
+	font-size: 24px;
+	line-height: 1;
+}
+.accountButton:hover {
+	color: #000;
+	background: #eee;
+}
+.accountButton:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 3px;
+}
+.accountPanel {
+	overflow-wrap: anywhere;
 }
 
 .headerTitle {
@@ -155,5 +166,11 @@
 		line-height: 1.4;
 		max-width: 175px;
 		text-align: left;
+	}
+}
+
+@media (max-width: 360px) {
+	.headerTitle {
+		font-size: 9px;
 	}
 }
