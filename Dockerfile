@@ -10,6 +10,6 @@ COPY vite.config.ts ./vite.config.ts
 RUN bun run admin:build
 
 ENV NODE_ENV=production
-EXPOSE 3000
+EXPOSE 43827
 
 CMD ["bun", "run", "start"]
