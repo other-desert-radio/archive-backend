@@ -1,3 +1,5 @@
+ignores:
+  - test-results/**
 config:
   MD024: false
   MD025: false

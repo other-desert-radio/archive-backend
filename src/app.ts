@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { adminRoutes } from "./admin/admin.js";
+import type { PublicationRouteDependencies } from "./admin/routes/publication/index.js";
 import { accountRoutes } from "./auth/account-routes.js";
 import type { auth } from "./auth/auth.js";
 import { authRoutes } from "./auth/routes.js";
@@ -8,7 +9,10 @@ import { PrettyLogStream } from "./utils/pretty-log-stream.js";
 
 type BetterAuth = typeof auth;
 
-export const buildApp = (auth: BetterAuth) => {
+export const buildApp = (
+	auth: BetterAuth,
+	publication?: Omit<PublicationRouteDependencies, "auth" | "database">,
+) => {
 	const app = Fastify({
 		disableRequestLogging: true,
 		logger: {
@@ -28,7 +32,7 @@ export const buildApp = (auth: BetterAuth) => {
 	});
 
 	app.get("/health", async () => ({ status: "ok" }));
-	app.register(adminRoutes(auth));
+	app.register(adminRoutes(auth, db, publication));
 	app.register(authRoutes(auth));
 	app.register(accountRoutes(auth, db));
 

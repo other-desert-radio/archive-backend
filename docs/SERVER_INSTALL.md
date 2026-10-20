@@ -5,9 +5,10 @@ PostgreSQL, and host Bun for migrations and initial administrator creation. Run
 the commands as a dedicated deployment user that owns the checkouts, except
 where `sudo` is shown. Examples use Ubuntu/Debian package names.
 
-This guide describes the current branch's manual setup. Archive publication is
-not implemented on `main`; preparing its checkout and credentials below is
-optional and does not enable automatic publication.
+This guide covers manual host setup. Follow the
+[server setup command](DEVELOPMENT.md#server-setup-command) for application and
+publication provisioning after installing prerequisites and configuring
+credentials.
 
 ## 1. Install prerequisites and Bun
 
@@ -175,45 +176,23 @@ Use **Users** to create additional accounts or perform password resets. See
 [administrator and login behavior](DEVELOPMENT.md#initial-administrator-and-browser-login)
 for role and session details.
 
-## 6. Prepare the archive-site publication checkout
+## 6. Archive publication setup
 
-Keep this checkout separate from the backend, with neither nested in the other:
+Before building or starting the API in step 4, follow the
+[publication checkout and SSH instructions](DEVELOPMENT.md#prepare-the-dedicated-checkout-and-ssh-files).
+Compose requires the dedicated checkout, deploy key, and verified known-hosts
+file even when publication is disabled. Set the runtime UID/GID to the service
+account that owns those files. Keep credentials outside the backend repository;
+the container reads them under `/run/archive-ssh`.
 
-```sh
-cd ~/apps
-git -c core.sshCommand="ssh -i $HOME/.ssh/archive_site_deploy -o IdentitiesOnly=yes -o BatchMode=yes" clone --branch main git@github.com:other-desert-radio/archive-site.git clean-archive-site
-cd ~/apps/clean-archive-site
-git config core.sshCommand "ssh -i $HOME/.ssh/archive_site_deploy -o IdentitiesOnly=yes -o BatchMode=yes"
-git config user.name "Archive Publisher"
-git config user.email "archive-publisher@users.noreply.github.com"
-git ls-remote origin
-git push --dry-run origin HEAD:main
-```
-
-The dry run checks the push path without updating the remote; an actual
-publication can still be subject to branch rules. Use your preferred automation
-commit identity if different.
-
-For the future publication integration, the intended configuration is shown
-below. These settings are not read by the application on `main`:
-
-```dotenv
-ARCHIVE_SITE_REPOSITORY=git@github.com:other-desert-radio/archive-site.git
-ARCHIVE_CHECKOUT_PATH=../clean-archive-site
-ARCHIVE_CONTAINER_CHECKOUT_PATH=/archive-site
-ARCHIVE_PUBLISH_BRANCH=main
-ARCHIVE_PUBLISH_ENABLED=false
-```
-
-The current Compose file does not mount this checkout or SSH credentials, pass
-publication settings, or enable the runner. Future container integration must
-provide Git/SSH tooling, the checkout, and read-only mounts for the dedicated
-private key and verified `known_hosts`, readable by the runtime user. The host
-`core.sshCommand` above contains a host path; configure an appropriate key path
-inside the container when that integration is added. Do not bake keys into the
-image. See [export behavior](ARCHIVE_EXPORT.md) for the existing standalone
-export operation. Publication configuration and runner wiring belong to the
-separate publication branch.
+For server publication, set `ARCHIVE_PUBLISH_BRANCH=main`, configure the
+publisher identity, and enable the runner as described in the
+[server setup instructions](DEVELOPMENT.md#server-setup-command). The setup
+command can perform dependency installation, checkout preparation, reviewed
+migrations, container startup, and readiness checks in place of the manual
+commands in step 4. It does not publish content or create the initial admin. See
+[publication operation and recovery](DEVELOPMENT.md#publication-operation-and-recovery)
+for publishing and troubleshooting.
 
 ## Updates and backups
 

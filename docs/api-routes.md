@@ -481,3 +481,34 @@ before Show creation. Removed source tags are excluded; manually added titles
 retain normal Show tag creation. Missing URLs on selected new source tags
 require a refresh. Tag creation and Show creation are separate requests: a
 failed Show save can leave an unassigned tag, which is reused on retry.
+
+## Archive publication
+
+Publication endpoints require an administrator session; editors receive `403`.
+They share the admin session, required-password-change, and same-origin mutation
+boundary. Publication success means pushed to GitHub, without waiting for Pages.
+
+- `GET /api/admin/publication` returns `enabled`, target `branch`,
+  decimal-string `revision` and `publishedRevision`, `pending`, and optional
+  `latestJob`.
+- `POST /api/admin/publication` accepts `{}` or `{ retryJobId }`, reserves a
+  durable job, and returns `202` with its metadata. Disabled publishing returns
+  `503`, concurrent starts return `409`, invalid input returns `400`, and
+  unknown retry jobs return `404`. Retry requires a failed or interrupted job.
+  Closing a browser or modal does not cancel execution.
+- `GET /api/admin/publication/jobs/:jobId` returns
+  `{ job, logs, logsTruncated }`, with ordered, sanitized log lines. Unknown
+  jobs return `404`.
+- `GET /api/admin/publication/events` streams SSE `data` messages containing
+  `{ type: "status", status }` and `{ type: "job", detail }`. Every connection
+  reads durable state, so reconnect needs no event cursor. PostgreSQL
+  notifications prompt reads after archive/job/log transactions commit; a
+  two-second durable polling fallback tolerates notification outages. Sessions
+  and administrator permission are revalidated on reads; revoked or expired
+  sessions close the stream. Heartbeat comments keep idle connections alive.
+
+Unexpected publication failures are logged and return an operation-specific
+`500` message with recovery guidance and a request ID for server-log lookup.
+Stream failures close the connection for browser reconnection. Revisions remain
+decimal strings throughout JSON to preserve bigint precision. No endpoint
+accepts Git commands, repository paths, or branch overrides from clients.

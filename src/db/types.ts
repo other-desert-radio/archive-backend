@@ -1,6 +1,13 @@
 import type { ColumnType, Generated } from "kysely";
+import type {
+	PublicationOutcome,
+	PublicationStage,
+} from "../publication/types.js";
 
 export type Database = {
+	archive_publication_state: ArchivePublicationStateTable;
+	archive_publication_jobs: ArchivePublicationJobsTable;
+	archive_publication_logs: ArchivePublicationLogsTable;
 	djs: DJsTable;
 	shows: ShowsTable;
 	tags: TagsTable;
@@ -13,6 +20,37 @@ export type Database = {
 	account: BetterAuthAccountTable;
 	verification: BetterAuthVerificationTable;
 	rateLimit: BetterAuthRateLimitTable;
+};
+
+/** PostgreSQL bigint values are returned as decimal strings by pg. */
+export type ArchivePublicationStateTable = {
+	id: Generated<number>;
+	revision: Generated<string>;
+	published_revision: Generated<string>;
+};
+
+export type ArchivePublicationJobsTable = {
+	id: string;
+	requested_by: string;
+	created_at: Generated<Date>;
+	completed_at: Date | null;
+	repository: string;
+	checkout_path: string;
+	branch: string;
+	retry_job_id: string | null;
+	stage: Generated<PublicationStage>;
+	outcome: Generated<"running" | PublicationOutcome>;
+	revision: string | null;
+	commit_id: string | null;
+	error: string | null;
+};
+
+/** Sequence 0 is reserved for the truncation notice. */
+export type ArchivePublicationLogsTable = {
+	job_id: string;
+	sequence: number;
+	created_at: Generated<Date>;
+	message: string;
 };
 
 export type MixcloudImportTable = {

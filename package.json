@@ -16,7 +16,7 @@
 		"db:seed:djs": "./scripts/seed-djs",
 		"db:seed:shows": "./scripts/seed-shows",
 		"db:delete:shows": "./scripts/delete-shows",
-		"db:export:archive": "./scripts/export-archive",
+		"publish-locally": "./scripts/publish-locally",
 		"db:delete:djs": "./scripts/delete-djs",
 		"db:delete:mixcloud-imports": "./scripts/delete-mixcloud-imports",
 		"format": "./scripts/format",

@@ -18,10 +18,13 @@
 	top: 0;
 	left: 0;
 	z-index: 3;
-	display: grid;
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding-inline: 20px;
 	width: 100%;
 	height: var(--management-header-height);
-	place-items: center;
+	align-items: center;
 	color: #fff;
 	background: #000;
 	font-size: 1rem;
@@ -135,4 +138,22 @@
 	text-align: left;
 	font-size: 12px;
 	min-height: 42px;
+}
+
+.headerTitle {
+	min-width: 0;
+	flex: 1;
+	text-align: center;
+}
+@media (max-width: 450px) {
+	.header {
+		padding-inline: 12px;
+		gap: 8px;
+	}
+	.headerTitle {
+		font-size: 11px;
+		line-height: 1.4;
+		max-width: 175px;
+		text-align: left;
+	}
 }

@@ -267,3 +267,56 @@ failed-save retry, post-commit reload failure, stale reload protection, and
 390px/320px action reachability. Persistence and concurrency remain covered by
 `tests/db/import-show.test.ts` against an explicitly supplied disposable
 database.
+
+### Archive publication coverage
+
+Publication tests never use the regular archive database or push to GitHub.
+Database suites require an explicit disposable URL; otherwise their
+PostgreSQL-dependent cases skip. Point these variables only at a disposable
+PostgreSQL instance, not the application's `DATABASE_URL`:
+
+| Environment variable                      | Test responsibility                                                                                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUBLICATION_MIGRATION_TEST_DATABASE_URL` | Revision migration, six-table statement triggers, notifications, rollback/reapply, concurrent writers, and bigint precision                          |
+| `PUBLICATION_STORE_TEST_DATABASE_URL`     | Durable jobs, bounded sanitized logs, retention, advisory locks, concurrent-start rejection, interruption, and committed job/log notifications       |
+| `ARCHIVE_EXPORT_TEST_DATABASE_URL`        | Export-only CLI compatibility and repeatable-read revision/document snapshots under concurrent archive edits                                         |
+| `PUBLICATION_RUNNER_TEST_DATABASE_URL`    | End-to-end runner against a disposable schema and temporary bare Git remote; successful publication, failure, acknowledgement, and explicit recovery |
+
+The database fixtures create uniquely named schemas and remove their own schemas
+after completion. Git fixtures use temporary checkouts and local bare remotes.
+Never substitute a production checkout or a GitHub remote. Logs stored in the
+database must contain sanitized output rather than raw credentials or unfiltered
+Git stderr. Generated DJ directories are wholly exporter-owned; unrelated assets
+outside those directories remain untouched and uncommitted.
+
+Focused commands, after exporting only the disposable test URLs above:
+
+```bash
+bun test tests/db/publication-migration.test.ts tests/db/export-archive.test.ts
+bun test tests/publication tests/admin/publication.test.ts
+```
+
+`tests/admin/publication.test.ts` exercises authorization, decimal revision
+serialization, status/detail/start responses, concurrent starts, disabled
+publication, invalid input, same-origin protection, SSE initial state, access
+revocation, and stream shutdown. The real notification test in
+`tests/publication/notifications.test.ts` combines committed PostgreSQL changes
+with authenticated HTTP SSE and reconnect reads. Git and setup tests cover
+checkout safety, local identity, pending-work preservation, fast-forward
+synchronization, and publication/recovery using temporary repositories.
+
+`integration-tests/publication-ui.spec.ts` uses routed session and publication
+responses to verify the admin header and shared modal at desktop, 390px, and
+320px. It covers confirmation, progress/log display, close/reopen and refresh
+reconnection, explicit retry and retained failure information, editor exclusion,
+and expired-session sign-in behavior. It does not constitute a real GitHub push
+or a Pages deployment test. Serve a built admin UI, then run:
+
+```bash
+E2E_BASE_URL=http://127.0.0.1:43827 bunx playwright test integration-tests/publication-ui.spec.ts --workers=1
+```
+
+A real push to `publish-dev` is a separately reviewed acceptance step. A
+successful publisher job means GitHub accepted the push (or generated output was
+already current); deployment completion belongs to the separate archive-site
+Pages workflow, which deploys only `main`.

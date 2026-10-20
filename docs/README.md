@@ -31,6 +31,9 @@ import files into agent context. Reuse already-read, unchanged guidance.
   units
 - Starting local development or using data/backup tools →
   [DEVELOPMENT.md](DEVELOPMENT.md): setup, seeds/deletes, backup/restore
+- Configuring server publication →
+  [DEVELOPMENT.md](DEVELOPMENT.md#prepare-the-dedicated-checkout-and-ssh-files):
+  persistent checkout, Git identity, deploy keys, and recovery
 - Installing on a server → [SERVER_INSTALL.md](SERVER_INSTALL.md): Bun, Docker,
   environment, migrations, initial admin, and Git deploy keys
 - Changing Mixcloud refresh/tracking/import transactions →

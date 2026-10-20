@@ -1,7 +1,7 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"files": {
-		"includes": ["**", "!dist", "!test-results"]
+		"includes": ["**", "!dist", "!test-results", "!src/res/mixcloud.json"]
 	},
 	"formatter": {
 		"enabled": true,

@@ -1,6 +1,11 @@
 import { type ReactNode, useState } from "react";
 import type { AccountUser } from "../../loaders/auth.js";
 import { ChangePasswordModal } from "../auth/index.js";
+import {
+	PublicationControl,
+	PublicationModal,
+	usePublication,
+} from "../publication/index.js";
 import styles from "./management-shell.module.css";
 
 type ManagementShellProps = {
@@ -21,18 +26,28 @@ export const ManagementShell = ({
 	user,
 	onLogout,
 }: ManagementShellProps) => {
+	const publication = usePublication(user?.role === "admin");
+	const [publishing, setPublishing] = useState(false);
 	const [changing, setChanging] = useState(false);
 	const [error, setError] = useState<string>();
 	const [pending, setPending] = useState(false);
 	return (
 		<div className={styles.layout}>
-			<header className={styles.header} inert={changing}>
-				OTHER DESERT RADIO / MANAGEMENT
+			<header className={styles.header} inert={changing || publishing}>
+				<span className={styles.headerTitle}>
+					OTHER DESERT RADIO / MANAGEMENT
+				</span>
+				{user?.role === "admin" && (
+					<PublicationControl
+						publication={publication}
+						onOpen={() => setPublishing(true)}
+					/>
+				)}
 			</header>
 			<aside
 				className={styles.sidebar}
 				aria-label="Admin navigation"
-				inert={changing}
+				inert={changing || publishing}
 			>
 				<nav>
 					<p>DATABASE</p>
@@ -120,9 +135,15 @@ export const ManagementShell = ({
 					)}
 				</nav>
 			</aside>
-			<section className={styles.content} inert={changing}>
+			<section className={styles.content} inert={changing || publishing}>
 				{children}
 			</section>
+			{publishing && (
+				<PublicationModal
+					publication={publication}
+					onClose={() => setPublishing(false)}
+				/>
+			)}
 			{changing && <ChangePasswordModal onClose={() => setChanging(false)} />}
 		</div>
 	);

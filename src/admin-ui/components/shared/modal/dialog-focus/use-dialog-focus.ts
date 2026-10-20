@@ -3,9 +3,12 @@ import { type RefObject, useEffect, useRef } from "react";
 const getFocusableElements = (panel: HTMLElement) =>
 	Array.from(
 		panel.querySelectorAll<HTMLElement>(
-			'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+			'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), summary, [href], [tabindex]:not([tabindex="-1"])',
 		),
-	).filter((element) => !element.hasAttribute("hidden"));
+	).filter(
+		(element) =>
+			!element.hasAttribute("hidden") && element.getClientRects().length > 0,
+	);
 
 type Options = {
 	panelRef: RefObject<HTMLElement | null>;

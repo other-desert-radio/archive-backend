@@ -9,6 +9,10 @@ import { db as defaultDb } from "../db/db.js";
 import { clientDescription } from "./logging.js";
 import { djRoutes } from "./routes/djs/index.js";
 import { mixcloudImportRoutes } from "./routes/mixcloud-imports/index.js";
+import {
+	type PublicationRouteDependencies,
+	publicationRoutes,
+} from "./routes/publication/index.js";
 import { showRoutes } from "./routes/shows/index.js";
 import { adminStatusRoutes } from "./routes/status.js";
 import { tagRoutes } from "./routes/tags/index.js";
@@ -35,6 +39,7 @@ type AdminUiRoute = {
 const adminApiRoutes = (
 	auth: BetterAuth,
 	database: TypedDatabase,
+	publication?: Omit<PublicationRouteDependencies, "auth" | "database">,
 ): FastifyPluginAsync => {
 	return async (app) => {
 		app.addHook("onRequest", accountAccessGuard(auth));
@@ -74,6 +79,8 @@ const adminApiRoutes = (
 			},
 		});
 		await app.register(userRoutes(auth, database));
+		if (publication !== undefined)
+			await app.register(publicationRoutes({ auth, database, ...publication }));
 		await app.register(adminStatusRoutes);
 		await app.register(djRoutes(database));
 		await app.register(showRoutes(database));
@@ -139,9 +146,10 @@ const contentTypeFor = (filePath: string): string => {
 export const adminRoutes = (
 	auth: BetterAuth,
 	database: TypedDatabase = defaultDb,
+	publication?: Omit<PublicationRouteDependencies, "auth" | "database">,
 ): FastifyPluginAsync => {
 	return async (app) => {
-		await app.register(adminApiRoutes(auth, database), {
+		await app.register(adminApiRoutes(auth, database, publication), {
 			prefix: "/api/admin",
 		});
 		await app.register(adminUiRoutes, { prefix: "/admin" });

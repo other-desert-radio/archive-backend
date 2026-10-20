@@ -1,0 +1,426 @@
+#!/usr/bin/env bun
+/**
+ * Guided setup for an existing archive server.
+ *
+ * BEFORE RUNNING
+ * Install Bun, Git, OpenSSH, Docker, and Docker Compose on the host. Create
+ * .env from .env.example with production credentials and a public HTTPS origin.
+ * Existing credential paths may be supplied, or leave both SSH paths empty for
+ * guided key generation, GitHub registration, and verified host-key setup.
+ * Private keys live outside this repository and their contents are never printed.
+ *
+ * USAGE
+ *   ./scripts/setup-server                 Explain and confirm each command.
+ *   ./scripts/setup-server --migrate       Also apply all pending migrations.
+ *   ./scripts/setup-server --yes           Run without interactive prompts.
+ * Flags can be combined. Piped/automated execution requires --yes explicitly.
+ *
+ * WHAT HAPPENS
+ * 1. Validate environment settings and SSH mount sources before running commands.
+ * 2. Check host tools, Docker access, and Compose configuration.
+ * 3. Install locked dependencies and prepare the publication checkout.
+ * 4. Build the API image and start PostgreSQL, waiting for readiness.
+ * 5. Apply migrations only when --migrate was supplied. Back up and review first.
+ * 6. Validate database schema, mounted checkout, and SSH remote read access.
+ * 7. Start the API and check its internal health endpoint.
+ *
+ * OPERATIONS AND RECOVERY
+ * Commands stop on the first failure. Earlier changes are not rolled back:
+ * dependencies, built images, checkout changes, and running containers may remain.
+ * Correct the reported problem and rerun; existing configuration is preserved.
+ * Without --migrate, an outdated database fails readiness before API startup.
+ * An API that was already running is not stopped on failure or cancellation.
+ *
+ * Setup does not publish content, install host packages,
+ * configure DNS/TLS, or create an administrator. SSH read access cannot prove
+ * write permission; grant that separately when provisioning the deploy key.
+ * After setup, configure HTTPS routing and use scripts/create-admin as needed.
+ * See docs/DEVELOPMENT.md (Server setup command) for the deployment runbook.
+ */
+import { setupPublicationCredentials } from "./lib/index.ts";
+import { spawnSync } from "node:child_process";
+import { createInterface } from "node:readline/promises";
+import { statSync, unlinkSync } from "node:fs";
+import path from "node:path";
+import { parseEnv } from "node:util";
+
+const root = path.resolve(import.meta.dir, "..");
+const args = process.argv.slice(2);
+if (args.includes("--help")) {
+  console.log(
+    "Usage: scripts/setup-server [--migrate] [--yes]\nExplain each step and wait for Enter; type q to stop.\nPrepare .env; leave SSH paths empty for guided deploy-key generation.\n--migrate applies all pending database migrations; back up existing databases first.\n--yes skips command prompts; credential registration/trust still requires a terminal.",
+  );
+  process.exit(0);
+}
+const fail = (message) => {
+  throw new Error(message);
+};
+try {
+  if (args.some((arg) => arg !== "--migrate" && arg !== "--yes"))
+    fail("Usage: scripts/setup-server [--migrate] [--yes]");
+  if (
+    !args.includes("--yes") &&
+    (!process.stdin.isTTY || !process.stdout.isTTY)
+  )
+    fail(
+      "Interactive setup requires a terminal. Use --yes for unattended setup.",
+    );
+  console.log(
+    "Server setup: configuration → host checks → checkout → database → API.\nEach command is explained before it runs. Completed changes remain if you stop.",
+  );
+  console.log(
+    "\nValidating .env, production settings, and SSH credential files locally…",
+  );
+  const dotenv = Bun.file(path.join(root, ".env"));
+  if (!(await dotenv.exists()))
+    fail("Missing .env. Copy .env.example and configure server values first.");
+  const environment = { ...parseEnv(await dotenv.text()), ...process.env };
+  for (const name of [
+    "PORT",
+    "POSTGRES_PORT",
+    "POSTGRES_DB",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "ARCHIVE_PUBLISH_BRANCH",
+    "ARCHIVE_PUBLISH_ENABLED",
+    "ARCHIVE_GIT_NAME",
+    "ARCHIVE_GIT_EMAIL",
+    "ARCHIVE_RUNTIME_UID",
+    "ARCHIVE_RUNTIME_GID",
+  ]) {
+    if (!environment[name]?.trim())
+      fail(`Set ${name} in .env before server setup.`);
+  }
+  if (
+    environment.BETTER_AUTH_SECRET ===
+      "local-development-secret-do-not-use-in-production" ||
+    environment.BETTER_AUTH_SECRET.length < 32
+  )
+    fail("Set a unique BETTER_AUTH_SECRET of at least 32 characters.");
+  if (environment.POSTGRES_PASSWORD === "archive_dev")
+    fail("Replace the example POSTGRES_PASSWORD before server setup.");
+  const origin = new URL(environment.BETTER_AUTH_URL);
+  if (
+    origin.protocol !== "https:" ||
+    ["localhost", "127.0.0.1", "::1", "[::1]"].includes(origin.hostname)
+  )
+    fail("BETTER_AUTH_URL must use the public HTTPS server origin.");
+  if (environment.ARCHIVE_PUBLISH_ENABLED !== "true")
+    fail("Set ARCHIVE_PUBLISH_ENABLED=true to prepare server publication.");
+  for (const name of ["ARCHIVE_GIT_NAME", "ARCHIVE_GIT_EMAIL"]) {
+    environment[name] = environment[name].trim();
+    if (/[\x00-\x1f\x7f]/.test(environment[name]))
+      fail(`${name} must not contain control characters.`);
+  }
+  for (const name of ["ARCHIVE_RUNTIME_UID", "ARCHIVE_RUNTIME_GID"]) {
+    if (
+      !/^[1-9][0-9]*$/.test(environment[name]) ||
+      Number(environment[name]) > 2147483647
+    )
+      fail(
+        `${name} must be a positive non-root numeric ID matching the host checkout owner.`,
+      );
+  }
+  await setupPublicationCredentials({
+    root,
+    environment,
+    interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+    ask: async (question) => {
+      const prompt = createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      try {
+        return await prompt.question(question);
+      } finally {
+        prompt.close();
+      }
+    },
+    print: console.log,
+  });
+  // Validate mount sources before Docker can create or write anything.
+  for (const [name, fallback] of [
+    ["ARCHIVE_DEPLOY_KEY_PATH", "../archive-publication-ssh/id_ed25519"],
+    ["ARCHIVE_KNOWN_HOSTS_PATH", "../archive-publication-ssh/known_hosts"],
+  ]) {
+    const file = path.resolve(root, environment[name] ?? fallback);
+    let info;
+    try {
+      info = statSync(file);
+    } catch {
+      fail(
+        `${name} must point to an existing file. Provision SSH credentials and verified host keys first.`,
+      );
+    }
+    if (!info.isFile() || info.size === 0)
+      fail(`${name} must point to a nonempty file.`);
+    const relative = path.relative(root, file);
+    if (relative !== ".." && !relative.startsWith(`..${path.sep}`))
+      fail(
+        `${name} must be outside the backend repository and Docker build context.`,
+      );
+    if (name === "ARCHIVE_DEPLOY_KEY_PATH" && (info.mode & 0o077) !== 0)
+      fail("Private deploy key permissions must be 0600 or stricter.");
+    if (
+      name === "ARCHIVE_DEPLOY_KEY_PATH" &&
+      info.uid !== Number(environment.ARCHIVE_RUNTIME_UID)
+    )
+      fail(
+        "The deploy key owner must match ARCHIVE_RUNTIME_UID so the non-root container can read its private key. Use the dedicated service account's key.",
+      );
+    environment[name] = file;
+  }
+  // Explanations are kept beside the runner so every external command uses the
+  // same guided interaction, failure handling, and secret-safe output policy.
+  const explanations = {
+    "Checking Git":
+      "Verify Git is installed for publication checkout management.",
+    "Checking SSH":
+      "Verify OpenSSH is installed for authenticated repository access.",
+    "Checking unattended SSH key":
+      "Verify the configured private key can be unlocked without a passphrase or host SSH agent. Its contents are never printed.",
+    "Checking Docker Compose": "Verify the Docker Compose plugin is available.",
+    "Checking Docker daemon":
+      "Verify this user can reach the running Docker daemon.",
+    "Validating Compose configuration":
+      "Validate resolved Compose settings without printing credentials.",
+    "Installing locked dependencies":
+      "Install the exact dependencies recorded in the lockfile on this host.",
+    "Preparing publication checkout":
+      "Run setup-archive-publication to prepare the dedicated checkout and Git identity using the configured SSH credentials.",
+    "Building API image":
+      "Build the API container image from this repository. This can take several minutes.",
+    "Starting PostgreSQL":
+      "Start PostgreSQL with its persistent data volume and wait up to 60 seconds for readiness. Existing data is retained.",
+    "Applying explicitly requested migrations":
+      "Apply ALL pending database migrations. Continue only after reviewing migrations and backing up existing data; these changes are not automatically rolled back.",
+    "Checking container write ownership":
+      "Create a temporary file through the container, verify its host UID/GID, and remove it. Also check write access to existing generated-output and Git directories.",
+    "Checking publication database and mounted checkout":
+      "Use the API image and real mounts to verify the publication schema and checkout safeguards before API startup.",
+    "Checking publication SSH and remote read access":
+      "Read the remote HEAD with strict SSH host verification. This checks read access; it does not verify repository write permission.",
+    "Starting API":
+      "Start or recreate the API service with the built image and wait up to 60 seconds for readiness.",
+    "Checking API health":
+      "Request /health inside the running API container. Public HTTPS routing must still be configured separately.",
+  };
+  const recovery = {
+    "Checking container write ownership":
+      "The container cannot write as the host checkout owner. Check ARCHIVE_RUNTIME_UID/GID, existing output ownership, and Docker user-namespace mappings. Rebuild after changing runtime IDs; repair existing file ownership separately.",
+    "Checking unattended SSH key":
+      "The private key is encrypted, invalid, or unreadable. Use a dedicated unencrypted publication key in ARCHIVE_DEPLOY_KEY_PATH; do not remove the passphrase from your everyday development key.",
+    "Preparing publication checkout":
+      "Check the configured branch, origin, and commit identity. Preserve pending work before switching branches.",
+    "Checking publication database and mounted checkout":
+      "Check the reported current/target branch and container identity settings. If publication tables are missing, review migrations and rerun with --migrate.",
+    "Checking publication SSH and remote read access":
+      "GitHub authentication or remote access failed. Confirm ARCHIVE_DEPLOY_KEY_PATH is the intended key and add its matching public key as a deploy key on ARCHIVE_SITE_REPOSITORY, with write access. Check the verified known_hosts file and network access as well.",
+  };
+  let step = 0;
+  const run = async (command, commandArgs, label, capture = false) => {
+    console.log(`\n[Step ${++step}] ${label}\n${explanations[label]}`);
+    if (!args.includes("--yes")) {
+      const prompt = createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      try {
+        const answer = await prompt.question(
+          "Press Enter to continue, or type q to stop: ",
+        );
+        if (answer.trim() !== "")
+          fail(
+            "Setup cancelled before this step. Completed changes remain in place.",
+          );
+      } finally {
+        prompt.close();
+      }
+    }
+    const result = spawnSync(command, commandArgs, {
+      cwd: root,
+      env: environment,
+      stdio: capture ? ["ignore", "pipe", "pipe"] : "inherit",
+      encoding: "utf8",
+    });
+    if (result.error || result.status !== 0)
+      fail(
+        `${label} failed. ${recovery[label] ?? "Resolve the reported problem and rerun scripts/setup-server."}`,
+      );
+    return result.stdout;
+  };
+  const compose = (commandArgs, label, capture = false) =>
+    run("docker", ["compose", ...commandArgs], label, capture);
+  await run("git", ["--version"], "Checking Git", true);
+  await run("ssh", ["-V"], "Checking SSH", true);
+  await run(
+    "ssh-keygen",
+    ["-y", "-P", "", "-f", environment.ARCHIVE_DEPLOY_KEY_PATH],
+    "Checking unattended SSH key",
+    true,
+  );
+  await compose(["version"], "Checking Docker Compose", true);
+  await run("docker", ["info"], "Checking Docker daemon", true);
+  await compose(
+    ["config", "--quiet"],
+    "Validating Compose configuration",
+    true,
+  );
+  await run(
+    "bun",
+    ["install", "--frozen-lockfile"],
+    "Installing locked dependencies",
+  );
+  await run(
+    "bun",
+    ["scripts/setup-archive-publication"],
+    "Preparing publication checkout",
+  );
+  await compose(["build", "api"], "Building API image");
+  await compose(
+    ["up", "-d", "--wait", "--wait-timeout", "60", "postgres"],
+    "Starting PostgreSQL",
+  );
+  if (args.includes("--migrate"))
+    await compose(
+      ["run", "--rm", "--no-deps", "api", "bun", "src/db/migrate.ts", "latest"],
+      "Applying explicitly requested migrations",
+    );
+  const hostCheckout = path.resolve(
+    root,
+    environment.ARCHIVE_CHECKOUT_PATH ?? "../clean-archive-site",
+  );
+  const checkoutOwner = statSync(hostCheckout);
+  if (
+    checkoutOwner.uid !== Number(environment.ARCHIVE_RUNTIME_UID) ||
+    checkoutOwner.gid !== Number(environment.ARCHIVE_RUNTIME_GID)
+  )
+    fail(
+      "ARCHIVE_RUNTIME_UID/GID must match the host checkout owner. Repair existing ownership or configure the service account IDs, then rebuild.",
+    );
+  const probeName = `.publication-owner-check-${crypto.randomUUID()}`;
+  const hostProbe = path.join(hostCheckout, probeName);
+  const containerCheckout =
+    environment.ARCHIVE_CONTAINER_CHECKOUT_PATH ?? "/archive-site";
+  try {
+    await compose(
+      [
+        "run",
+        "--rm",
+        "--no-deps",
+        "api",
+        "bun",
+        "-e",
+        `
+import {accessSync, constants, existsSync, writeFileSync} from 'node:fs';
+import path from 'node:path';
+const checkout = ${JSON.stringify(containerCheckout)};
+for (const relative of ['.', '.git', '.git/objects', '.git/refs', 'src/res', 'src/res/djs', 'public/assets', 'public/assets/djs']) {
+ const directory = path.join(checkout, relative);
+ if (existsSync(directory)) accessSync(directory, constants.W_OK);
+}
+writeFileSync(path.join(checkout, ${JSON.stringify(probeName)}), 'ownership probe', {flag: 'wx'});
+`,
+      ],
+      "Checking container write ownership",
+      true,
+    );
+    const owner = statSync(hostProbe);
+    if (owner.uid !== checkoutOwner.uid || owner.gid !== checkoutOwner.gid)
+      fail(
+        "Container-created files have different host ownership. Check Docker user namespaces and ARCHIVE_RUNTIME_UID/GID before publishing.",
+      );
+  } finally {
+    try {
+      unlinkSync(hostProbe);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+  // Run in the API image using its real DB, mount paths, and Git safeguards.
+  // Keep this probe inside the built image so its database configuration and
+  // filesystem permissions match those of the service we are about to start.
+  const check = `
+import { execFileSync } from 'node:child_process';
+import { db } from './src/db/db.ts';
+import { readPublicationConfig } from './src/publication/config.ts';
+import { readPublicationStatus } from './src/publication/store.ts';
+import { validatePublicationCheckout } from './src/publication/git.ts';
+try {
+ const config = readPublicationConfig(process.env, '/app');
+ if (!config.enabled) throw new Error('Publication is disabled inside the container. Pass ARCHIVE_PUBLISH_ENABLED=true through Compose.');
+ if (!config.gitIdentity) throw new Error('Missing container commit identity. Pass ARCHIVE_GIT_NAME and ARCHIVE_GIT_EMAIL through Compose.');
+ await readPublicationStatus(db, config);
+ const job = {id: 'setup-validation', requestedBy: 'setup', createdAt: new Date().toISOString(), target: {repository: config.repository, checkoutPath: config.checkoutPath, branch: config.branch}, outcome: 'running', stage: 'validating'};
+ await validatePublicationCheckout({config, job, log: async message => console.log(message), recordCommit: async () => {}, updateStage: async () => {}});
+ const gitEnvironment = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')));
+ for (const identity of ['GIT_AUTHOR_IDENT', 'GIT_COMMITTER_IDENT']) {
+  execFileSync('git', ['-c', 'safe.directory=' + config.checkoutPath, '-c', 'core.hooksPath=/dev/null', '-c', 'user.name=' + config.gitIdentity.name, '-c', 'user.email=' + config.gitIdentity.email, '-C', config.checkoutPath, 'var', identity], {env: {...gitEnvironment, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null'}, stdio: ['ignore', 'pipe', 'pipe']});
+ }
+ console.log('Container publication author: ' + config.gitIdentity.name + ' <' + config.gitIdentity.email + '>');
+} catch (error) {
+ console.error('Server readiness check failed. Check the configured checkout and database migrations. Use scripts/setup-server --migrate after reviewing pending migrations.');
+ console.error(error instanceof Error && !('stderr' in error) ? error.message : 'Unable to resolve container Git author/committer identity from ARCHIVE_GIT_NAME and ARCHIVE_GIT_EMAIL.');
+ process.exitCode = 1;
+} finally { await db.destroy(); }
+`;
+  await compose(
+    ["run", "--rm", "--no-deps", "api", "bun", "-e", check],
+    "Checking publication database and mounted checkout",
+  );
+  const checkout =
+    environment.ARCHIVE_CONTAINER_CHECKOUT_PATH ?? "/archive-site";
+  await compose(
+    [
+      "run",
+      "--rm",
+      "--no-deps",
+      "-e",
+      "GIT_CONFIG_NOSYSTEM=1",
+      "-e",
+      "GIT_CONFIG_GLOBAL=/dev/null",
+      "-e",
+      "GIT_TERMINAL_PROMPT=0",
+      "-e",
+      "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o StrictHostKeyChecking=yes",
+      "api",
+      "git",
+      "-c",
+      `safe.directory=${checkout}`,
+      "-c",
+      "core.hooksPath=/dev/null",
+      "-C",
+      checkout,
+      "ls-remote",
+      "origin",
+      "HEAD",
+    ],
+    "Checking publication SSH and remote read access",
+    true,
+  );
+  await compose(
+    ["up", "-d", "--wait", "--wait-timeout", "60", "api"],
+    "Starting API",
+  );
+  await compose(
+    [
+      "exec",
+      "-T",
+      "api",
+      "bun",
+      "-e",
+      "const response = await fetch('http://127.0.0.1:' + process.env.PORT + '/health'); if (!response.ok) process.exit(1);",
+    ],
+    "Checking API health",
+  );
+  console.log(
+    "Server ready. Configure HTTPS routing to the API port, and provision the initial admin with scripts/create-admin if needed. No publication was started.",
+  );
+} catch (error) {
+  console.error(
+    error instanceof Error ? error.message : "Server setup failed.",
+  );
+  process.exitCode = 1;
+}

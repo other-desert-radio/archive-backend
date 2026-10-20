@@ -17,26 +17,38 @@ exported files.
   rules.
 - Better Auth owns users, sessions, accounts, and verification, not archive
   CRUD. Accounts have admin/editor roles; both manage archive resources, while
-  only admins manage accounts. Public sign-up is disabled. The Admin plugin is
-  used by trusted server code for account management; its browser routes are
-  blocked.
+  only admins manage accounts and publish the archive. Public sign-up is
+  disabled. The Admin plugin is used by trusted server code for account
+  management; its browser routes are blocked.
 - `src/admin/routes/`: resource APIs with injected database access.
 - `src/admin-ui/pages/`: orchestration; components/loaders separate presentation
   and data access. [UI guidance](ADMIN_UI_DESIGN.md) owns those boundaries.
 - `src/db/migrations/` and `src/db/types.ts`: actual schema and typed wiring;
   [database guidance](DATABASES.md) explains invariants and migration decisions.
+- `src/publication/`: durable jobs, revision snapshots, advisory-lock ownership,
+  safe Git publication/recovery, and notifications. Jobs continue independently
+  of browser connections. Credentials belong to the runtime, outside the image.
 - `src/db/export-archive.ts`: JSON/WebP export with the
   [public asset contract](ARCHIVE_EXPORT.md).
 
 ## Deployment boundaries
 
-DigitalOcean Droplet hosting and publication to the Astro GitHub Pages
-repository are product intent, not a verified deployment runbook. No tracked CI
-deployment workflow exists. Inspect `Dockerfile`, `compose.yml`, and
-`.env.example` for current runtime configuration; use the manual
-[server installation guide](SERVER_INSTALL.md) for setup and follow
-[development operations](DEVELOPMENT.md) for startup, explicit reviewed
-migrations, backups, and restores.
+The API exports generated assets into a dedicated persistent archive-site
+checkout and pushes recognized publisher commits without force. PostgreSQL
+stores revisions, jobs, stages, and bounded logs. An advisory lock serializes
+publication, and an authenticated event stream lets admins reconnect to durable
+state. A pushed commit is the success boundary; the separate archive-site Pages
+workflow deploys only `main`. Local publication uses `publish-dev`.
+
+Inspect `Dockerfile`, `compose.yml`, and `.env.example` for runtime
+configuration. Use the manual [server installation guide](SERVER_INSTALL.md) for
+host setup. Follow [development operations](DEVELOPMENT.md) for startup,
+explicit reviewed migrations, backups, restores, and publication SSH setup. The
+container installs Git/SSH but mounts a dedicated write deploy key and verified
+host keys at runtime; neither credentials nor checkout contents are baked into
+the image. The API runs as a non-root service account whose numeric UID/GID
+match the host checkout owner; development uses the developer’s IDs and servers
+use a dedicated service account. SSH mounts live under `/run/archive-ssh`.
 
 Keep secrets outside Git; preserve an existing `.env`, and update `.env.example`
 when required variables change. Better Auth requires `BETTER_AUTH_SECRET` and

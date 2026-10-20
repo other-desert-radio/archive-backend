@@ -167,6 +167,22 @@ CREATE TABLE show_djs (
 The foreign keys ensure that every show_id and dj_id in Show_DJs refers to an
 existing show or DJ, preventing orphaned relationships.
 
+## Archive publication state
+
+```text
+archive_publication_state: id (always 1) | revision (bigint) | published_revision (bigint)
+```
+
+This single row tracks whether archive changes are waiting to be published. It
+starts at revision 1 and published_revision 0, so the archive starts pending.
+Pending means revision > published_revision.
+
+Write statements on DJs, Shows, Tags, Show_DJs, Show_Tags, and DJ_Tags advance
+the revision, including statements affecting no rows. Cascading relationship
+deletes can advance it further. Changes roll back with the writing transaction;
+`archive_publication_changed` notifications arrive only after commit. The
+publisher will record the captured revision after successful publication.
+
 ## Mixcloud import
 
 The planned `./scripts/import-mixcloud` imports data from Mixcloud and may be

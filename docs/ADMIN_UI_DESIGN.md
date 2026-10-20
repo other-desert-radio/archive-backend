@@ -594,3 +594,37 @@ access is not required to use the established local components.
 - [DJ table, node 174:762](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=174-762)
 - [DJ onboarding, node 207:1052](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=207-1052)
 - [Tags, node 205:890](https://www.figma.com/design/BzM2IkYW1taFeepxrz8ue0/Other-Desert-Radio?node-id=205-890)
+
+### Archive publication
+
+Only admins request publication state or see its control at the right of the
+management header. The header is 66px tall, leaving 12px above and below its
+42px publication control. Reload status uses square corners. Pending changes
+show publish changes; a running job shows Publishing… and failed, interrupted,
+or unavailable status keeps the publish changes label. Clean state keeps the
+control visible with the label “all changes pushed”. Pending changes remain
+visible when publishing is disabled; the modal explains the server setting
+needed to enable it. The title and control fit 390px and 320px headers.
+
+The shared message modal confirms pending changes with “Publish latest changes
+to github.” and names the target branch. Publication uses a centered Publish
+action, a borderless Close action with 2px vertical padding and a 4px gap
+underneath, and a top-right X. A previous successful result is hidden when new
+changes are pending. Close receives initial focus; Escape, backdrop, and Close
+restore focus to the opener. The underlying shell is inert. Closing never
+cancels a server job. The publication panel is up to 864px wide with 16px
+viewport margins. Progress shows the current stage; Publication log is collapsed
+by default and expands through a keyboard-accessible disclosure. Expanded logs
+scroll independently and update live; truncated history is explicit. Retained
+retry attempts appear oldest first with a blank line between attempts, including
+after reopening or refreshing. Failures preserve feedback and require an
+explicit Retry publication action. Confirmation has no diff preview.
+
+The authenticated fetch stream refreshes durable status and logs on reconnect;
+page refresh and reopening observe the existing job without starting another.
+Completion leaves an open modal visible. Its message reads “Last published” with
+the successful job’s completion month, day, and time in the browser’s local time
+zone. Success means the archive reached GitHub; deployment can still be running.
+`integration-tests/publication-ui.spec.ts` mocks mutations and covers
+confirmation, progress, closure/reopening, refresh, retry, editor isolation, and
+phone widths.

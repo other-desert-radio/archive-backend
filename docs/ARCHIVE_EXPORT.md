@@ -5,8 +5,8 @@ For schema invariants, see [DATABASES.md](DATABASES.md).
 
 ## Output layout
 
-The backend stores archive data in PostgreSQL. `bun run db:export:archive`
-writes the following assets to the configured Astro frontend directories:
+The backend stores archive data in PostgreSQL. `bun run publish-locally` writes
+the following assets to the configured Astro frontend directories:
 
 - `src/res/djs_brief.json`, the compact DJ index;
 - `src/res/djs/{id}.json`, one detail document per DJ;
@@ -22,11 +22,30 @@ entity tables.
 
 ## Export rules
 
+The exporter owns the entire `src/res/djs/` and `public/assets/djs/` directories
+and replaces their contents on each export, including stale files. Keep manually
+maintained assets outside those directories. It also owns the three top-level
+generated JSON files; other files such as `src/res/mixcloud.json` and
+`public/assets/logo.svg` remain untouched and outside publication commits.
+
 The exporter produces the asset layout above. Original design intent lives in
 [historical notes](../human_docs/databases_human.md); this document owns the
 current contract. All arrays are ordered deterministically: DJ indexes by title
 then ID, tags by ID, and relationship IDs numerically ascending. The command
 logs its nested progress, including each generated JSON and image file.
+
+Archive reads use one read-only, repeatable-read transaction for all six archive
+tables. Concurrent committed edits cannot mix different versions of DJs, Shows,
+Tags, relationships, or images in a single export. Documents are built inside
+that transaction, then files are written after it completes. A failed read
+leaves existing output untouched; filesystem failures during writing can still
+leave partial output.
+
+The publisher's `readPublicationSnapshot` reads the singleton revision first,
+then loads the archive documents in that same transaction. Changes committed
+after the snapshot remain pending for a later publication. Snapshot reads do not
+acknowledge revisions or write files. The standalone exporter uses the same
+document loader without requiring the publication-state table.
 
 `tags.json` is the canonical tag dictionary. Every other exported document uses
 the `tagIds` field rather than duplicating tag titles and colors. The Astro
@@ -61,6 +80,38 @@ stable even if internal database column names change. Astro frontend code must
 prefix file and asset paths with `import.meta.env.BASE_URL`, rather than
 assuming the site is deployed at `/`.
 
-Inspect the absolute `ARCHIVE_RESOURCE_DIRECTORY` and `ARCHIVE_ASSET_DIRECTORY`
-constants in `src/db/export-archive.ts` before exporting: they target the
-sibling Astro site, not this backend’s `dist/`.
+`scripts/publish-locally` replaces the former `scripts/export-archive` launcher;
+the package command is now `publish-locally`. It exports only: it does not
+commit, push, or acknowledge publication revisions, and does not require a Git
+checkout. It preserves the existing progress output and unrelated assets.
+
+Set `ARCHIVE_CHECKOUT_PATH` to choose the destination checkout. Relative paths
+resolve from this backend repository root, regardless of the launcher's working
+directory. JSON goes to `<checkout>/src/res` and images to
+`<checkout>/public/assets`. The checkout must be separate from the backend. When
+unset, this standalone command retains the sibling `../archive-site`
+destination; the server publisher's separate default is `../clean-archive-site`.
+The tracked `.env.example` explicitly selects `../clean-archive-site`, so
+copying that setting overrides the standalone fallback. Other publication
+settings do not affect this export-only command. The reusable `export-archive`
+module owns snapshot reads, document building, and file writing; its tests use
+the same name.
+
+The CLI acceptance test in `tests/db/export-archive.test.ts` uses
+`ARCHIVE_EXPORT_TEST_DATABASE_URL` pointing at disposable PostgreSQL, creates a
+temporary schema and output directory, and verifies export and unchanged
+publication revisions. A separate snapshot test interleaves committed edits
+between reads, checks matching revision/documents and fresh subsequent reads,
+and verifies recovery after read failures. Both skip when the variable is unset.
+
+## Server publication
+
+The admin publisher uses this same exporter after safely synchronizing its
+dedicated checkout. It stages only generated JSON and DJ image paths, including
+deletions, commits changed output with a job identifier, and pushes without
+force. It acknowledges only the captured revision after success or a no-change
+result; newer edits remain pending. Unrelated assets and edits remain outside
+the generated-file commit. Durable jobs allow explicit recovery after restart or
+a lost response from the Git remote. See
+[publication operations](DEVELOPMENT.md#publication-operation-and-recovery) for
+setup, branch selection, and retry procedures.

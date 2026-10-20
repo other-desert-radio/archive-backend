@@ -35,6 +35,158 @@ removes dependent association rows. Mixcloud tracking uses `ON DELETE SET NULL`
 and a trigger to retain source rows and clear their import timestamps; see the
 [tracking deletion contract](MIXCLOUD_IMPORT.md#consistency-and-deletion).
 
+## Archive publication revisions
+
+Migration `0029_add_archive_publication_state` creates the singleton
+`archive_publication_state` row (`id = 1`). Its bigint `revision` starts at 1
+and `published_revision` at 0, so an existing archive starts pending. Pending
+means `revision > published_revision`. PostgreSQL bigint values remain decimal
+strings in application types and JSON to avoid numeric precision loss.
+
+Statement-level triggers on `djs`, `shows`, `tags`, `show_djs`, `show_tags`, and
+`dj_tags` increment the revision after each INSERT, UPDATE, DELETE, or TRUNCATE
+statement. This conservatively includes no-op updates and statements affecting
+zero rows; revisions are change signals, not row counts or export diffs.
+Cascading relationship writes may advance it further. Authentication and
+Mixcloud tracking writes do not directly advance archive revisions.
+
+Each trigger emits `archive_publication_changed` with the decimal revision as
+its payload. The revision update and notification belong to the writing
+transaction: rollback preserves the prior revision and emits no notification;
+listeners receive notifications only after commit. Concurrent archive writers
+serialize on the singleton row. Notifications are hints to re-read durable
+state. Rollback of the migration removes its triggers, function, and state table
+while preserving archive records. API startup does not apply it.
+
+## Durable publication jobs
+
+Migration `0030_add_archive_publication_jobs` creates
+`archive_publication_jobs`. Each job stores a UUID, requester ID, creation and
+completion timestamps, target repository/checkout/branch, optional retry job ID,
+stage, outcome, captured bigint revision, commit ID, and optional error. Targets
+are copied into each job so recovery can identify its original destination after
+configuration changes. Requester and retry IDs have no foreign keys: deleting an
+account or later pruning history must not erase job identity.
+
+New jobs start at `queued`/`running`. Database checks restrict stages and
+outcomes, require a completion timestamp for terminal outcomes, and prevent
+completion timestamps/errors on running jobs. Successful/no-change outcomes
+require a captured revision and no error; pushed success also requires a commit
+ID. Creation order is indexed by timestamp and ID.
+
+Storage currently supports metadata creation/read, running-job stage updates,
+and one-time capture of revision and commit ID. Bigint revisions remain decimal
+strings; response timestamps use ISO strings and absent nullable fields are
+omitted. Commit recording requires a captured revision and a full hexadecimal
+Git object ID. Captured revisions and commits cannot be overwritten, and
+completed jobs reject progress updates. Missing/ineligible jobs fail writes
+rather than silently reporting success.
+
+The runner completes jobs and acknowledges only their captured revision in the
+same transaction, then prunes history. Failure never acknowledges publication;
+newer archive revisions remain pending. Metadata writes do not advance archive
+revisions. Interruption recovery and the authenticated APIs are wired at
+startup. Rolling back `0030` drops job history while preserving archive tables
+and the singleton revision row; roll back the dependent log migration first.
+
+### Publication admission and lock ownership
+
+`acquirePublicationLease` pins one database connection with Kysely's connection
+callback and takes the PostgreSQL session advisory lock `(1095910216, 1)`
+(`ARCH`, publication lock 1). It returns undefined when another session holds
+the lock. The callback stays open until `release()` unlocks and returns the
+connection to the pool. Repeated release calls await the same cleanup and do not
+unlock a later lease. Acquisition rejects transaction handles: job creation and
+progress must commit durably while the session lock remains held.
+
+`reservePublicationJob` is the admission entry point for the runner. It rejects
+disabled publication, acquires the lease, checks for any durable running job,
+and only then inserts a queued job. Contention or an existing running row throws
+`PublicationBusyError`; database errors propagate. Rejected reservations release
+their lease. A successful reservation returns both job and lease; its caller
+must release in `finally` after execution. Use the connection on the lease for
+publication database work, and never reuse that handle after release.
+`createPublicationJob` remains a low-level insert, not an admission entry point.
+
+The lock spans job execution without a long database transaction. PostgreSQL
+releases session locks on disconnect, but the durable running row still blocks a
+new reservation until interruption recovery handles it. Retrying requires the
+latest failed/interrupted job ID and an unchanged target; callers cannot bypass
+failure recovery by starting a fresh job. Tests use independent one-connection
+pools to verify contention, durable job visibility, repeated release, and
+cleanup after rejected reservations.
+
+### Abandoned-job interruption
+
+Before admitting jobs after startup, the runner acquires a fresh publication
+lease and call `interruptAbandonedPublications`. The store tracks active lease
+objects; fabricated or released leases cannot perform recovery. Another backend
+holding the publication lock prevents acquisition, so startup must defer
+recovery while that publisher is active. Call recovery before reserving work,
+never against a job executing under the caller's own lease.
+
+Recovery changes all leftover `running` jobs to `interrupted`, records the
+completion timestamp, and saves a fixed message explaining that explicit Retry
+is required. It preserves their stage, target, captured revision, commit ID,
+requester, retry identity, and logs. It neither touches Git nor acknowledges
+publication revisions, and it creates no job. Existing terminal jobs remain
+unchanged except for normal history retention.
+
+Interruption and pruning to the latest 10 completed jobs share one transaction;
+failure rolls both back. Repeating recovery does not rewrite interruption
+timestamps. The caller retains and releases the lease normally. Recovery never
+automatically retries a publication.
+
+### Publication logs and retention
+
+Migration `0031_add_archive_publication_logs` creates a separate log table:
+
+```text
+archive_publication_jobs.id
+    |
+    +-- archive_publication_logs
+          job_id      uuid, foreign key with ON DELETE CASCADE
+          sequence    integer >= 0
+          created_at  timestamptz, default CURRENT_TIMESTAMP
+          message     text
+          primary key (job_id, sequence)
+```
+
+`appendPublicationLog` sanitizes complete messages before persistence: it strips
+terminal controls, normalizes line endings, removes blank lines, redacts
+recognized credentials/private-key blocks, and replaces caller-supplied secret
+values. Callers must supply deployment secrets and avoid logging sensitive raw
+command output; pattern matching cannot identify every arbitrary secret.
+Sanitization returns separate text lines, suitable for text rendering rather
+than HTML. Errors on the job record are separate from this log sanitizer.
+
+Appending locks the running job row for the transaction, allocates increasing
+sequences, inserts lines, and trims overflow atomically. Missing or completed
+jobs reject appends. The storage function retains at most 2,000 lines per job.
+After overflow it keeps the latest 1,999 lines plus one persistent truncation
+notice at sequence 0. Normal lines start at 1, and trimming does not renumber
+them. The row lock serializes concurrent appends without acquiring the publisher
+advisory lock used for job reservation/execution.
+
+`readPublicationJob` reads metadata and ordered logs in one read-only,
+repeatable-read snapshot. It returns `logsTruncated` when sequence 0 exists;
+missing jobs return undefined. This durable history lets progress views reload
+after closure or reconnection. `pruneCompletedPublicationJobs` retains the
+newest 10 completed jobs by completion time, creation time, and ID descending,
+while preserving every running job. Deleting old jobs cascades to their logs. It
+is a single atomic statement and can participate in the later completion
+transaction; completion and interruption invoke it automatically. Rolling back
+`0031` removes logs while preserving job metadata.
+
+The focused test in `tests/publication/store.test.ts` requires
+`PUBLICATION_STORE_TEST_DATABASE_URL` for disposable PostgreSQL and otherwise
+skips. It creates a temporary schema and verifies persistence through another
+connection, schema constraints, transaction rollback, and migration
+rollback/reapply without changing archive revision state. It also verifies log
+sanitization, concurrent append ordering, the exact line bound, overflow, atomic
+append failures, retention rollback/cascades, and consistent detail snapshots.
+Pure sanitization tests run without a database.
+
 ## Authentication tables
 
 Better Auth owns its authentication tables separately from archive entities.
