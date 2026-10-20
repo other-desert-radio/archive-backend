@@ -2,11 +2,13 @@
 
 ## Current checkpoint
 
-Stage 2: user requested the next chunk. Typed backend, route, stream-client, and
-UI contracts now exist with explicit unfinished stubs. They are disconnected
-from live routes and startup. Awaiting scaffolding review before unit 1.
-Existing application behavior and the export launcher remain unchanged. The
-launcher rename is deferred to implementation unit 2.
+User approved the existing scaffolding, but found the combined backend/API/UI
+checkpoint too large. Continue with one small responsibility per review, using
+the revised development workflow. Existing stubs are provisional; review and
+refine only those needed for the current unit rather than expanding them all.
+They remain disconnected from live routes and startup. Existing application
+behavior and the export launcher remain unchanged. The launcher rename is
+deferred to implementation unit 2.
 
 ## Agreed scope
 
@@ -23,26 +25,47 @@ revisions. Preserve unrelated Git work and assets; leave
 - [x] Agree file structure, then create only approved placeholders.
 - [x] Explicitly request scaffolding; establish contracts and unfinished stubs
       off live routes/startup and verify structure.
-- [ ] User review of scaffolding.
-- [ ] Unit 1: revision migration and triggers.
-- [ ] Unit 2: checkout configuration, launcher rename, snapshot export.
-- [ ] Unit 3: durable jobs, bounded logs, locking, interruption handling.
-- [ ] Unit 4: Git synchronization, publication, recovery.
-- [ ] Unit 5: status and publication APIs.
-- [ ] Unit 6: notifications and authenticated SSE.
-- [ ] Unit 7: header control.
-- [ ] Unit 8: confirmation/progress/reconnect/retry modal.
-- [ ] Unit 9: setup, Docker/SSH, operational documentation.
-- [ ] Unit 10: integrated acceptance.
+- [x] User review of existing scaffolding.
+- [ ] Revision state migration and transactional triggers, with rollback tests.
+- [ ] Checkout configuration and path validation.
+- [ ] Export-only launcher rename and configured destinations.
+- [ ] Consistent-snapshot archive reading.
+- [ ] Durable job schema and persistence.
+- [ ] Sanitized bounded logs and completed-job retention.
+- [ ] Advisory-lock ownership and concurrent-start rejection.
+- [ ] Abandoned-job interruption handling.
+- [ ] Git checkout/repository/branch safety validation.
+- [ ] Git fetch and fast-forward synchronization.
+- [ ] Generated-path staging, commit, and non-force push.
+- [ ] Interrupted commit/push reconciliation.
+- [ ] Runner orchestration and captured-revision acknowledgement.
+- [ ] Admin-only status and job-detail reads.
+- [ ] Admin-only publication/retry start endpoint.
+- [ ] PostgreSQL notification listener and reconnect behavior.
+- [ ] Authenticated SSE and durable-state resynchronization.
+- [ ] Browser publication client and reconnectable state.
+- [ ] Responsive admin-only header control.
+- [ ] Confirmation modal and explicit publication submission.
+- [ ] Accessible progress/log view and modal reopen behavior.
+- [ ] Failure/retry and refresh reconnection behavior.
+- [ ] Safe checkout/identity/branch setup script.
+- [ ] Docker Git/SSH installation and runtime checkout/credential mounts.
+- [ ] Operational documentation review.
+- [ ] Integrated acceptance, including desktop, 390px, and 320px.
 
-Each implementation unit requires approval before starting the next. Use
-disposable databases and temporary Git remotes for tests. Browser acceptance
-must cover desktop, 390px, and 320px. Real GitHub push requires separate review.
+Each implementation unit requires approval before starting the next. Use the
+structure/scaffolding checkpoints within that unit when new files or contracts
+are needed; do not repeat a feature-wide scaffolding pass. Include focused tests
+and authoritative documentation updates with the behavior they describe. Split
+any listed unit further if it becomes difficult to review. Use disposable
+databases and temporary Git remotes for tests. Browser acceptance must cover
+desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Approve scaffolding before implementing unit 1 (revision migration/triggers).
-Migration files deliberately remain comment-only: the runner discovers exported
-migrations automatically. Shell, CSS, and test placeholders remain unfinished;
-no tests assert stub behavior. Follow
-[development modes](../../DEVELOPMENT.md#development-modes).
+Next implementation checkpoint: revision state migration and transactional
+triggers only, with disposable-database verification. This documentation update
+does not start that implementation. Migration files deliberately remain
+comment-only: the runner discovers exported migrations automatically. Shell,
+CSS, and test placeholders remain unfinished; no tests assert stub behavior.
+Follow [development modes](../../DEVELOPMENT.md#development-modes).

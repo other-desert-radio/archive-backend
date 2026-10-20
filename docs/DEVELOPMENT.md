@@ -34,12 +34,28 @@ without restarting planning. “Skip ahead and finish the rest” switches the
 remaining work to one-shot; any explicit switch applies immediately to this
 task.
 
+Chunked work means one small, reviewable responsibility at a time, including
+structure and scaffolding. Do not scaffold an entire feature across database,
+backend, API, and UI in one checkpoint. A shared feature name or a passing type
+check does not make those changes one reviewable unit. Split a chunk when its
+contracts or behavior require separate explanations to assess.
+
+For substantial features, agree a brief sequence of responsibilities first, then
+apply structure → scaffolding → implementation to each responsibility in turn.
+Show the detailed file tree and introduce contracts only for the current unit
+and its necessary dependencies. Complete and review that unit before starting
+the next; do not create speculative stubs for later layers. Closely coupled
+changes may share a checkpoint when they can be understood and verified
+together. A request such as “next chunk” advances one agreed checkpoint, not all
+remaining scaffolding or a whole application layer.
+
 ### Stage 1 — File structure
 
 Inspect relevant code and architecture first; identify reusable
-modules/functions. Propose the smallest file set and show a concise tree marked
-`[new]` and `[modified]`. Explain each file's responsibility, dependencies, and
-data-flow direction, including which existing modules will be reused.
+modules/functions for the current unit. Propose the smallest file set and show a
+concise tree marked `[new]` and `[modified]`. Explain each file's
+responsibility, dependencies, and data-flow direction, including which existing
+modules will be reused.
 
 Create only the agreed new files, empty or with a short responsibility comment;
 if the proposed file set is not agreed, get agreement before creating it.
@@ -55,9 +71,11 @@ both.
 ### Stage 2 — Types and scaffolding
 
 Follow [TypeScript conventions](TYPESCRIPT.md), including `type` aliases rather
-than new interfaces. Establish public contracts, meaningful typed parameters and
-returns, named imports/exports, and module or class declarations only where
-justified. Use concise comments to explain responsibilities and connections.
+than new interfaces. Scope scaffolding to the current unit; defer backend, API,
+and UI contracts belonging to later units. Establish public contracts,
+meaningful typed parameters and returns, named imports/exports, and module or
+class declarations only where justified. Use concise comments to explain
+responsibilities and connections.
 
 Show minimal entry points/call sites connecting stubs. An orchestration skeleton
 may call those stubs to illustrate flow, but must contain no business logic.
