@@ -12,6 +12,13 @@ const archiveTables = [
 
 /** Start pending, and track archive write statements in their own transaction. */
 export async function up(db: Kysely<Database>): Promise<void> {
+	/*
+	 * Six archive tables -- write statement --> revision + 1
+	 *                                           |
+	 *                      COMMIT --> NOTIFY archive_publication_changed
+	 *                      ROLLBACK --> revision and notification cancelled
+	 * Pending: revision > published_revision (initially 1 > 0)
+	 */
 	await db.schema
 		.createTable("archive_publication_state")
 		.addColumn("id", "integer", (column) =>

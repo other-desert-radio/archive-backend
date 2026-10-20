@@ -15,8 +15,9 @@ snapshot export, conservative Git synchronization/recovery, authenticated live
 progress, and a reconnectable confirmation modal. Local publication targets
 `publish-dev`; server publication targets `main`. Success means pushed to
 GitHub. Standalone `publish-locally` exports without committing or acknowledging
-revisions. Preserve unrelated Git work and assets; leave
-`human_docs/databases_human.md` unchanged.
+revisions. Preserve unrelated Git work and assets. The user subsequently
+requested a brief publication-state entry in `human_docs/databases_human.md`;
+that specific update is included alongside the authoritative database reference.
 
 ## Review gates
 
