@@ -33,7 +33,8 @@ exported files.
 DigitalOcean Droplet hosting and publication to the Astro GitHub Pages
 repository are product intent, not a verified deployment runbook. No tracked CI
 deployment workflow exists. Inspect `Dockerfile`, `compose.yml`, and
-`.env.example` for current runtime configuration; follow
+`.env.example` for current runtime configuration; use the manual
+[server installation guide](SERVER_INSTALL.md) for setup and follow
 [development operations](DEVELOPMENT.md) for startup, explicit reviewed
 migrations, backups, and restores.
 

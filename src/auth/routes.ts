@@ -19,6 +19,7 @@ export const authRoutes =
 			method: ["GET", "POST"],
 			url: "/api/auth/*",
 			async handler(request, reply) {
+				reply.header("x-request-id", request.id);
 				const pathname = new URL(request.url, authOrigin).pathname;
 				if (publicEndpoints.get(pathname) !== request.method)
 					return reply.code(404).send({ error: "Not Found" });
@@ -37,18 +38,22 @@ export const authRoutes =
 						new Request(new URL(pathname, authOrigin), init),
 					);
 					response.headers.forEach((value, key) => {
-						if (key !== "set-cookie") reply.header(key, value);
+						if (key !== "set-cookie" && key !== "x-request-id")
+							reply.header(key, value);
 					});
 					const cookies = response.headers.getSetCookie();
 					if (cookies.length) reply.header("set-cookie", cookies);
 					request.log[response.ok ? "info" : "warn"](
-						`[Authentication] request completed -- endpoint: ${pathname}, status: ${response.status}`,
+						`[Authentication] request completed -- endpoint: ${pathname}, status: ${response.status}, reference: ${request.id}${response.status >= 500 ? "; check authentication/database configuration and applied migrations" : ""}`,
 					);
 					return reply
 						.code(response.status)
 						.send(response.body ? await response.text() : null);
 				} catch (error: unknown) {
-					request.log.error({ err: error }, "[Authentication] request failed");
+					request.log.error(
+						{ err: error },
+						`[Authentication] request failed -- endpoint: ${pathname}, reference: ${request.id}`,
+					);
 					return reply
 						.code(500)
 						.send({ error: "Internal authentication error" });
