@@ -5,7 +5,7 @@ import type {
 } from "../src/publication/index.js";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:43827";
-test.use({ baseURL });
+test.use({ baseURL, timezoneId: "America/Los_Angeles" });
 const job: PublicationJob = {
 	id: "test-job",
 	requestedBy: "admin",
@@ -88,7 +88,7 @@ for (const width of [1440, 390, 320]) {
 		);
 		const publish = page
 			.getByRole("dialog")
-			.getByRole("button", { name: "publish changes", exact: true });
+			.getByRole("button", { name: "Publish", exact: true });
 		const close = page.getByRole("button", { name: "Close", exact: true });
 		const panel = await page.getByRole("dialog").boundingBox();
 		const action = await publish.boundingBox();
@@ -117,7 +117,7 @@ for (const width of [1440, 390, 320]) {
 		).toBeFocused();
 		await page
 			.getByRole("dialog")
-			.getByRole("button", { name: "publish changes", exact: true })
+			.getByRole("button", { name: "Publish", exact: true })
 			.click();
 		await expect(page.getByRole("dialog")).toContainText(
 			"Current stage: exporting",
@@ -152,10 +152,20 @@ for (const width of [1440, 390, 320]) {
 			...status,
 			pending: false,
 			publishedRevision: "2",
-			latestJob: { ...job, outcome: "succeeded", completedAt: job.createdAt },
+			latestJob: {
+				...job,
+				outcome: "succeeded",
+				completedAt: "2026-10-20T20:30:00Z",
+			},
 		};
 		await expect(page.getByRole("dialog")).toContainText("Archive published", {
 			timeout: 10000,
+		});
+		await expect(page.getByRole("dialog")).toContainText(
+			"Last published October 20 1:30 PM",
+		);
+		await page.screenshot({
+			path: `/tmp/publication-last-published-${width}.png`,
 		});
 		await expect(
 			page.getByRole("button", { name: "Publishing…", exact: true }),
@@ -401,7 +411,7 @@ for (const enabled of [true, false]) {
 			await expect(
 				page
 					.getByRole("dialog")
-					.getByRole("button", { name: "publish changes", exact: true }),
+					.getByRole("button", { name: "Publish", exact: true }),
 			).toBeEnabled();
 		} else {
 			await expect(page.getByRole("dialog")).toContainText(
@@ -413,7 +423,7 @@ for (const enabled of [true, false]) {
 			await expect(
 				page
 					.getByRole("dialog")
-					.getByRole("button", { name: "publish changes", exact: true }),
+					.getByRole("button", { name: "Publish", exact: true }),
 			).toHaveCount(0);
 		}
 		expect(posts).toBe(0);

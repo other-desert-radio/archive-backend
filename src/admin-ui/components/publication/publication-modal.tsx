@@ -38,6 +38,10 @@ export const PublicationModal = ({
 					: clean
 						? "All changes pushed"
 						: "Publish archive?";
+	const publishedAt = complete ? new Date(job.completedAt) : undefined;
+	const lastPublished = publishedAt
+		? `Last published ${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(publishedAt)} ${new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).format(publishedAt)}`
+		: "There are no pending archive changes to publish.";
 	const description = disabled
 		? "Archive changes are pending, but publishing is disabled on this server. Set ARCHIVE_PUBLISH_ENABLED=true and restart the server to enable publication."
 		: running
@@ -45,7 +49,7 @@ export const PublicationModal = ({
 			: failed
 				? "Review the logs below, then retry when you are ready."
 				: complete && !status?.pending
-					? "The archive was pushed to GitHub. Site deployment may still be running."
+					? lastPublished
 					: clean
 						? "There are no pending archive changes to publish."
 						: "Publish latest changes to github.";
@@ -66,7 +70,7 @@ export const PublicationModal = ({
 								? "Starting…"
 								: failed
 									? "Retry publication"
-									: "publish changes",
+									: "Publish",
 							disabled: starting || loading,
 							onClick: () =>
 								void publication.start(failed ? job?.id : undefined),
