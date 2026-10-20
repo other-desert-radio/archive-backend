@@ -3,43 +3,69 @@ import { lstat, realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { isMatching } from "ts-pattern";
+import { isMatching, P } from "ts-pattern";
 import { readArchiveCheckoutPath } from "./config.js";
 import type { PublicationConfig, PublicationJob } from "./types.js";
 
 const executeFile = promisify(execFile);
 
-/** Local inspection only; do not inherit Git repository/config redirection. */
-const inspectGit = async (
-	checkout: string,
-	args: string[],
-): Promise<string> => {
+/** Use argv, fixed safeguards, and sanitized errors for local and network commands. */
+const runGit = async ({
+	checkout,
+	args,
+	operation = "inspect",
+	timeout = 10000,
+}: {
+	checkout: string;
+	args: string[];
+	operation?: string;
+	timeout?: number;
+}): Promise<string> => {
 	const environment = Object.fromEntries(
 		Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
 	);
 	try {
 		const { stdout } = await executeFile(
 			"git",
-			["--no-optional-locks", "-C", checkout, ...args],
+			[
+				"--no-optional-locks",
+				"-c",
+				"core.hooksPath=/dev/null",
+				"-c",
+				"core.fsmonitor=false",
+				"-c",
+				"submodule.recurse=false",
+				"-c",
+				"maintenance.auto=false",
+				"-c",
+				"gc.auto=0",
+				"-C",
+				checkout,
+				...args,
+			],
 			{
 				env: {
 					...environment,
 					GIT_CONFIG_NOSYSTEM: "1",
 					GIT_CONFIG_GLOBAL: "/dev/null",
 					GIT_TERMINAL_PROMPT: "0",
+					GIT_SSH_COMMAND: "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes",
 					LC_ALL: "C",
 				},
 				encoding: "utf8",
-				timeout: 10000,
+				timeout,
 				maxBuffer: 1024 * 1024,
 			},
 		);
 		return stdout.trim();
 	} catch {
 		// Git stderr may contain credential-bearing local configuration.
-		throw new Error("Unable to inspect publication checkout with Git");
+		throw new Error(`Unable to ${operation} publication checkout with Git`);
 	}
 };
+
+const inspectGit = (checkout: string, args: string[]): Promise<string> =>
+	runGit({ checkout, args });
 
 const entryAt = async (file: string) => {
 	try {
@@ -178,10 +204,72 @@ export const reconcilePublicationGit = (
 	throw new Error("Not implemented: reconcilePublicationGit");
 };
 
-export const synchronizePublicationCheckout = (
-	_context: PublicationGitContext,
+/** Fetch one branch and permit only a fast-forward, preserving local work on failure. */
+export const synchronizePublicationCheckout = async (
+	context: PublicationGitContext,
 ): Promise<void> => {
-	throw new Error("Not implemented: synchronizePublicationCheckout");
+	await validatePublicationCheckout(context);
+	const checkout = context.config.checkoutPath;
+	if (
+		(await inspectGit(checkout, ["diff", "--cached", "--name-only", "-z"])) !==
+			"" ||
+		(await inspectGit(checkout, ["ls-files", "--unmerged", "-z"])) !== ""
+	) {
+		throw new Error(
+			"Resolve staged or unmerged changes before synchronizing publication",
+		);
+	}
+	const remoteRef = `refs/remotes/origin/${context.config.branch}`;
+	await runGit({
+		checkout,
+		args: [
+			"fetch",
+			"--no-tags",
+			"--no-recurse-submodules",
+			"--no-write-fetch-head",
+			"--no-auto-maintenance",
+			"--refmap=",
+			"origin",
+			`refs/heads/${context.config.branch}:${remoteRef}`,
+		],
+		operation: "fetch",
+		timeout: 30000,
+	});
+	await context.log("Fetched publication branch");
+	const remoteCommit = await inspectGit(checkout, [
+		"rev-parse",
+		"--verify",
+		`${remoteRef}^{commit}`,
+	]);
+	const counts = (
+		await inspectGit(checkout, [
+			"rev-list",
+			"--left-right",
+			"--count",
+			`HEAD...${remoteCommit}`,
+		])
+	).split(/\s+/);
+	if (!isMatching([P.string.regex(/^\d+$/), P.string.regex(/^\d+$/)], counts))
+		throw new Error("Unable to compare publication branch history");
+	if (counts[0] !== "0")
+		throw new Error(
+			"Publication checkout has local commits; reconcile them before synchronizing",
+		);
+	if (counts[1] === "0") {
+		await context.log(
+			"Checkout already matches the fetched publication branch",
+		);
+		return;
+	}
+	await runGit({
+		checkout,
+		args: ["merge", "--ff-only", "--no-autostash", "--no-edit", remoteCommit],
+		operation: "fast-forward",
+	});
+	await validatePublicationCheckout(context);
+	await context.log(
+		"Fast-forwarded checkout to the fetched publication branch",
+	);
 };
 
 export const commitAndPushPublication = (

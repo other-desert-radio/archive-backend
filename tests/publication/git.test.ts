@@ -13,6 +13,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import {
 	type PublicationGitContext,
+	synchronizePublicationCheckout,
 	validatePublicationCheckout,
 } from "../../src/publication/index.js";
 
@@ -88,6 +89,171 @@ const fixture = async ({ commit = true }: { commit?: boolean } = {}) => {
 	};
 	return { directory, checkout, git, context, logs };
 };
+
+const remoteFixture = async () => {
+	const base = await fixture();
+	const remote = path.join(base.directory, "remote.git");
+	const writer = path.join(base.directory, "writer");
+	await base.git("init", "--bare", remote);
+	await base.git("remote", "set-url", "origin", remote);
+	await base.git("push", "--set-upstream", "origin", "publish-dev");
+	await base.git("clone", "--branch", "publish-dev", remote, writer);
+	const upstream = (...args: string[]) =>
+		base.git(
+			"-C",
+			writer,
+			"-c",
+			"user.name=Publication Test",
+			"-c",
+			"user.email=publication@example.test",
+			"-c",
+			"core.hooksPath=/dev/null",
+			...args,
+		);
+	const advance = async (
+		file = "upstream.txt",
+		content = "remote change\n",
+	) => {
+		await writeFile(path.join(writer, file), content);
+		await upstream("add", "--", file);
+		await upstream("commit", "-m", "Upstream update");
+		await upstream("push", "origin", "publish-dev");
+		return upstream("rev-parse", "HEAD");
+	};
+	const context: PublicationGitContext = {
+		...base.context,
+		config: { ...base.context.config, repository: remote },
+		job: {
+			...base.context.job,
+			target: { ...base.context.job.target, repository: remote },
+		},
+	};
+	return { ...base, context, remote, writer, upstream, advance };
+};
+
+test("synchronization fetches and fast-forwards only the configured branch while preserving unrelated edits", async () => {
+	const { checkout, context, git, advance, logs, remote } =
+		await remoteFixture();
+	const remoteHead = await advance();
+	await writeFile(path.join(checkout, "README.md"), "local unstaged work\n");
+	await writeFile(path.join(checkout, "untracked.txt"), "keep me\n");
+	await git("config", "merge.autoStash", "true");
+	const hooks = path.join(checkout, ".git/custom-hooks");
+	await mkdir(hooks);
+	await writeFile(
+		path.join(hooks, "post-merge"),
+		"#!/bin/sh\necho ran > hook-ran.txt\n",
+		{ mode: 0o755 },
+	);
+	await git("config", "core.hooksPath", hooks);
+	await synchronizePublicationCheckout(context);
+	expect(await git("rev-parse", "HEAD")).toBe(remoteHead);
+	expect(await git("rev-parse", "refs/remotes/origin/publish-dev")).toBe(
+		remoteHead,
+	);
+	expect(await readFile(path.join(checkout, "upstream.txt"), "utf8")).toBe(
+		"remote change\n",
+	);
+	expect(await readFile(path.join(checkout, "README.md"), "utf8")).toBe(
+		"local unstaged work\n",
+	);
+	expect(await readFile(path.join(checkout, "untracked.txt"), "utf8")).toBe(
+		"keep me\n",
+	);
+	expect(await Bun.file(path.join(checkout, "hook-ran.txt")).exists()).toBe(
+		false,
+	);
+	expect(await git("stash", "list")).toBe("");
+	expect(
+		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
+	).toBe(remoteHead);
+	expect(logs).toContain(
+		"Fast-forwarded checkout to the fetched publication branch",
+	);
+	await synchronizePublicationCheckout(context);
+	expect(logs.at(-1)).toBe(
+		"Checkout already matches the fetched publication branch",
+	);
+});
+
+test("staged changes reject synchronization before fetch without changing index or files", async () => {
+	const { checkout, context, git, advance } = await remoteFixture();
+	const before = await git("rev-parse", "refs/remotes/origin/publish-dev");
+	await advance();
+	await writeFile(path.join(checkout, "README.md"), "staged work\n");
+	await git("add", "README.md");
+	const index = await readFile(path.join(checkout, ".git/index"));
+	await expect(synchronizePublicationCheckout(context)).rejects.toThrow(
+		"staged or unmerged",
+	);
+	expect(await readFile(path.join(checkout, ".git/index"))).toEqual(index);
+	expect(await git("rev-parse", "HEAD")).toBe(before);
+	expect(await git("rev-parse", "refs/remotes/origin/publish-dev")).toBe(
+		before,
+	);
+	expect(await readFile(path.join(checkout, "README.md"), "utf8")).toBe(
+		"staged work\n",
+	);
+});
+
+test("ahead and diverged histories preserve local commits and reject automatic synchronization", async () => {
+	const { checkout, context, git, advance } = await remoteFixture();
+	await writeFile(path.join(checkout, "local.txt"), "local commit\n");
+	await git("add", "local.txt");
+	await git("commit", "-m", "Unrecognized local commit");
+	const localHead = await git("rev-parse", "HEAD");
+	await expect(synchronizePublicationCheckout(context)).rejects.toThrow(
+		"local commits",
+	);
+	const remoteHead = await advance();
+	await expect(synchronizePublicationCheckout(context)).rejects.toThrow(
+		"local commits",
+	);
+	expect(await git("rev-parse", "HEAD")).toBe(localHead);
+	expect(await git("rev-parse", "refs/remotes/origin/publish-dev")).toBe(
+		remoteHead,
+	);
+	expect(await readFile(path.join(checkout, "local.txt"), "utf8")).toBe(
+		"local commit\n",
+	);
+});
+
+test("conflicting unstaged or untracked files are never overwritten or autostashed", async () => {
+	for (const tracked of [true, false]) {
+		const { checkout, context, git, advance } = await remoteFixture();
+		const before = await git("rev-parse", "HEAD");
+		const file = tracked ? "README.md" : "new-file.txt";
+		await advance(file);
+		await writeFile(path.join(checkout, file), "keep conflicting edit\n");
+		await git("config", "merge.autoStash", "true");
+		await expect(synchronizePublicationCheckout(context)).rejects.toThrow(
+			"fast-forward",
+		);
+		expect(await git("rev-parse", "HEAD")).toBe(before);
+		expect(await readFile(path.join(checkout, file), "utf8")).toBe(
+			"keep conflicting edit\n",
+		);
+		expect(await git("stash", "list")).toBe("");
+	}
+});
+
+test("a missing remote branch or unavailable remote fails without moving local HEAD", async () => {
+	const { directory, context, git, remote } = await remoteFixture();
+	const before = await git("rev-parse", "HEAD");
+	await git("--git-dir", remote, "update-ref", "-d", "refs/heads/publish-dev");
+	await expect(synchronizePublicationCheckout(context)).rejects.toThrow(
+		"fetch",
+	);
+	expect(await git("rev-parse", "HEAD")).toBe(before);
+	await rm(remote, { recursive: true, force: true });
+	await expect(synchronizePublicationCheckout(context)).rejects.toThrow(
+		"fetch",
+	);
+	expect(await git("rev-parse", "HEAD")).toBe(before);
+	expect(
+		await Bun.file(path.join(directory, "checkout/README.md")).text(),
+	).toBe("original\n");
+});
 
 test("checkout validation is local and preserves staged, unstaged, and untracked work", async () => {
 	const { checkout, git, context, logs } = await fixture();

@@ -249,6 +249,32 @@ fetch/fast-forward, and interrupted-work reconciliation belong to later units;
 passing validation alone does not authorize a push. Tests use temporary local
 repositories and never contact GitHub.
 
+### Publication synchronization
+
+`synchronizePublicationCheckout` validates the checkout, rejects staged/unmerged
+changes, and fetches only the configured branch from origin into its explicit
+remote-tracking ref. It does not fetch tags, recurse into submodules, or run
+automatic maintenance. Fetch can update local objects and the tracking ref; it
+never pushes or changes the local branch by itself. A missing branch or
+unavailable remote fails with a fixed error, without raw Git stderr.
+
+After fetch, any local commits (ahead or diverged history) block synchronization
+for later explicit reconciliation. If local HEAD already matches the fetched
+commit, synchronization finishes without changing files. Otherwise Git performs
+only `merge --ff-only --no-autostash` against the captured fetched commit, then
+revalidates checkout/output safety. Hooks and filesystem-monitor commands are
+disabled. Unrelated unstaged/untracked edits remain when compatible with that
+fast-forward; conflicting work causes failure rather than overwrite or stash.
+Staged work must be resolved before synchronization.
+
+Git subprocesses use argument arrays and fixed errors/log messages. SSH uses
+batch mode and strict host-key checking; verified known-hosts and credentials
+must be provisioned by the later runtime setup. Fetch has a 30-second timeout;
+local commands have a 10-second timeout. Global/system Git configuration and
+inherited Git redirection are ignored as in checkout inspection. Temporary bare
+remotes cover synchronization tests without GitHub access. Publisher-commit
+reconciliation, export, commit/push, and runner wiring remain separate units.
+
 ## Local dummy data
 
 `bun run db:seed:djs` and `bun run db:seed:shows` each insert five standalone

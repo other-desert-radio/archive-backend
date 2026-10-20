@@ -2,10 +2,9 @@
 
 ## Current checkpoint
 
-Abandoned-job interruption was approved by the request for the next chunk.
-Read-only Git checkout/repository/branch and output-path validation now awaits
-review. It remains off live runner/startup. Continue with one responsibility per
-review.
+Checkout safety validation was approved by the request for the next chunk. Git
+fetch/fast-forward synchronization is implemented and awaits review. It remains
+off live runner/startup. Continue with one responsibility per review.
 
 ## Agreed scope
 
@@ -44,8 +43,9 @@ that specific update is included alongside the authoritative database reference.
 - [x] Abandoned-job interruption handling.
 - [x] User review of abandoned-job interruption handling.
 - [x] Git checkout/repository/branch safety validation.
-- [ ] User review of checkout safety validation.
-- [ ] Git fetch and fast-forward synchronization.
+- [x] User review of checkout safety validation.
+- [x] Git fetch and fast-forward synchronization.
+- [ ] User review of Git synchronization.
 - [ ] Generated-path staging, commit, and non-force push.
 - [ ] Interrupted commit/push reconciliation.
 - [ ] Runner orchestration and captured-revision acknowledgement.
@@ -73,19 +73,19 @@ desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Review `validatePublicationCheckout` and its temporary-repository tests. It
-checks the saved target, canonical checkout/backend separation, dedicated clone,
-committed branch, exact effective fetch/push origin, Git operation markers, and
-output symlink boundaries. Inspection ignores Git environment redirection and
-global/system configuration and never emits raw Git stderr. It does not mutate
-Git/files or contact a remote; dirty/outgoing commit policy stays deferred.
+Review `synchronizePublicationCheckout` and shared Git subprocess safeguards.
+Synchronization validates identity/paths, rejects staged/unmerged changes,
+fetches the configured branch, rejects local ahead/diverged history, and permits
+only fast-forward without autostashing. Compatible local edits survive; a
+conflict preserves files and HEAD. Post-update validation catches unsafe paths
+introduced by the fetched commit. No code pushes or acknowledges revisions.
 
-Sixteen Git/config tests passed with 95 assertions. They verify preserved index,
-staged/unstaged/untracked files, ignored inherited redirection, unsafe paths,
-branch/remote mismatches, unfinished operations, and linked worktrees. No
+Thirteen Git tests passed with 70 assertions using temporary checkouts and bare
+local remotes. Coverage includes compatible local edits, disabled hooks and
+autostash, staged rejection before fetch, ahead/diverged histories, conflicting
+files, and missing/unavailable remotes. Existing validation tests also pass. No
 regular checkout, database, or GitHub remote was modified.
 
-After approval, implement Git fetch and fast-forward synchronization only.
-Interrupted-work reconciliation, generated-path commits/push, and live runner
-integration remain unfinished. Follow
-[development modes](../../DEVELOPMENT.md#development-modes).
+After approval, implement generated-path staging, commit, and non-force push
+only. Interrupted-work reconciliation and live runner integration remain
+unfinished. Follow [development modes](../../DEVELOPMENT.md#development-modes).
