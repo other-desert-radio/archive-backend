@@ -5,9 +5,9 @@ PostgreSQL, and host Bun for migrations and initial administrator creation. Run
 the commands as a dedicated deployment user that owns the checkouts, except
 where `sudo` is shown. Examples use Ubuntu/Debian package names.
 
-This guide describes the current branch's manual setup. Archive publication
-runner/startup and Compose integration are still pending; preparing its checkout
-and credentials does not enable automatic publication.
+This guide describes the current branch's manual setup. Archive publication is
+not implemented on `main`; preparing its checkout and credentials below is
+optional and does not enable automatic publication.
 
 ## 1. Install prerequisites and Bun
 
@@ -112,10 +112,8 @@ Edit `.env` before starting the stack:
   directly, so a hexadecimal secret from `openssl rand -hex 32` is convenient.
 - Confirm `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PORT`, and `PORT`. Defaults
   are database `archive`, user `admin`, PostgreSQL port `5432`, and API port
-  `43827`. Leave optional trusted origins empty unless additional browser
-  origins are needed.
-- Set `ARCHIVE_PUBLISH_BRANCH=main` for server publication and
-  `ARCHIVE_PUBLISH_ENABLED=false` while the runner integration is pending.
+  `3000`. Leave optional trusted origins empty unless additional browser origins
+  are needed.
 
 Host migration/admin commands connect to localhost using the PostgreSQL settings
 in `.env`. If `DATABASE_URL` is set in the shell, it takes precedence: ensure it
@@ -123,7 +121,7 @@ targets this server's intended database. Compose supplies its own internal
 database URL to the API.
 
 Configure an HTTPS reverse proxy or Cloudflare Tunnel to the API port. For a
-tunnel, the local origin is `http://localhost:43827`; `BETTER_AUTH_URL` remains
+tunnel, the local origin is `http://localhost:3000`; `BETTER_AUTH_URL` remains
 the public HTTPS origin. Compose currently publishes the API and database ports
 on all host interfaces. Restrict database access and direct API access with the
 server firewall or reviewed Compose binding changes.
@@ -151,7 +149,7 @@ Build and start the API after migrating:
 
 ```sh
 scripts/build-container
-curl --fail http://localhost:43827/health
+curl --fail http://localhost:3000/health
 docker compose logs --tail=100 api
 ```
 
@@ -196,7 +194,8 @@ The dry run checks the push path without updating the remote; an actual
 publication can still be subject to branch rules. Use your preferred automation
 commit identity if different.
 
-Set these values in the backend `.env`:
+For the future publication integration, the intended configuration is shown
+below. These settings are not read by the application on `main`:
 
 ```dotenv
 ARCHIVE_SITE_REPOSITORY=git@github.com:other-desert-radio/archive-site.git
@@ -212,9 +211,9 @@ provide Git/SSH tooling, the checkout, and read-only mounts for the dedicated
 private key and verified `known_hosts`, readable by the runtime user. The host
 `core.sshCommand` above contains a host path; configure an appropriate key path
 inside the container when that integration is added. Do not bake keys into the
-image. See
-[publication configuration](DEVELOPMENT.md#archive-publication-configuration)
-and [export behavior](ARCHIVE_EXPORT.md) for current supported operations.
+image. See [export behavior](ARCHIVE_EXPORT.md) for the existing standalone
+export operation. Publication configuration and runner wiring belong to the
+separate publication branch.
 
 ## Updates and backups
 
@@ -225,3 +224,58 @@ release, install its locked dependencies, review/apply migrations, rebuild with
 `scripts/build-container`, and verify health and browser login again. Do not use
 `docker compose down --volumes` for routine updates; it deletes database
 storage.
+
+## Troubleshooting session checks
+
+The admin page calls `GET /api/auth/get-session` before showing sign-in. A JSON
+`null` response with HTTP 200 means signed out and is normal. The error screen
+means that request failed or returned an unreadable/unexpected response;
+creating an administrator does not fix a transport or session-service failure.
+
+Inspect the request in the browser's Network panel. Note the HTTP status,
+content type, and `x-request-id` response header (also shown as a reference in
+the error screen when available). Do not share cookies or session response
+bodies; they can contain credentials or personal data.
+
+Follow API logs while clicking **Retry**:
+
+```sh
+docker compose logs --follow --tail=100 api
+```
+
+`docker compose -f compose.yml logs --follow api` is the equivalent with an
+explicit Compose file; `-f` on `docker compose` selects a file, while `--follow`
+on `logs` follows output. Run against the same Compose project used to deploy.
+Authentication logs include the endpoint, status, and reference for matching the
+browser request.
+
+Compare a direct local request with the public route (substitute your origin):
+
+```sh
+curl -i http://localhost:3000/api/auth/get-session
+curl -i https://YOUR_PUBLIC_HOST/api/auth/get-session
+```
+
+Without cookies, both should normally return HTTP 200 with JSON `null`.
+
+- **No API log for Retry, or HTML instead of JSON:** check that the proxy/tunnel
+  routes `/api/` as well as `/admin/` to this API, and that the public hostname
+  reaches the intended deployment. A static-site fallback can return HTML with
+  HTTP 200. Compare direct and public responses before changing application
+  code.
+- **HTTP 502/503:** check API container health and proxy upstream host/port.
+- **HTTP 500:** match the reference in authentication logs; check database
+  connectivity, applied authentication migrations, and the runtime environment.
+  `/health` alone does not prove the authentication schema is current.
+- **HTTP 429:** wait a minute before retrying. Requests behind a proxy can share
+  the current server-side rate-limit identity; do not repeatedly reload or
+  disable rate limits to diagnose it.
+- **Network failure:** check browser connectivity, TLS, DNS, and proxy
+  reachability.
+
+`BETTER_AUTH_URL` must be the public HTTPS origin, while the proxy's upstream
+can use local HTTP on the configured API port. After changing `.env`, recreate
+the API with `docker compose up -d --force-recreate api`; a plain restart does
+not reload Compose environment values. If the browser still shows the old
+generic error after deploying this change, check that the image was rebuilt and
+the browser/proxy is serving the new admin bundle.

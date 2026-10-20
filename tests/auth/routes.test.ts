@@ -3,6 +3,56 @@ import Fastify from "fastify";
 import { authRoutes } from "../../src/auth/routes.js";
 
 describe("Better Auth Fastify route", () => {
+	test("correlates session failures with logs without logging response secrets", async () => {
+		const logs: string[] = [];
+		const app = Fastify({
+			logger: {
+				stream: {
+					write: (line: string) => {
+						logs.push(line);
+					},
+				},
+			},
+		});
+		await app.register(
+			authRoutes({
+				handler: async () =>
+					new Response("private upstream body", {
+						status: 500,
+						headers: { "x-request-id": "untrusted-upstream" },
+					}),
+			}),
+		);
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/auth/get-session",
+		});
+		const reference = response.headers["x-request-id"];
+		expect(reference).toBeString();
+		expect(reference).not.toBe("untrusted-upstream");
+		expect(logs.join("")).toContain(`reference: ${reference}`);
+		expect(logs.join("")).toContain("status: 500");
+		expect(logs.join("")).not.toContain("private upstream body");
+		await app.close();
+	});
+	test("returns a request reference on unexpected handler exceptions", async () => {
+		const app = Fastify({ logger: false });
+		await app.register(
+			authRoutes({
+				handler: async () => {
+					throw new Error("test failure");
+				},
+			}),
+		);
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/auth/get-session",
+		});
+		expect(response.statusCode).toBe(500);
+		expect(response.headers["x-request-id"]).toBeString();
+		expect(response.json()).toEqual({ error: "Internal authentication error" });
+		await app.close();
+	});
 	test("forwards requests and responses through /api/auth", async () => {
 		let receivedRequest: Request | undefined;
 		const app = Fastify({ logger: false });

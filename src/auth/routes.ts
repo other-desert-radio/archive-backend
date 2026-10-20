@@ -43,7 +43,9 @@ export const authRoutes =
 					});
 					const cookies = response.headers.getSetCookie();
 					if (cookies.length) reply.header("set-cookie", cookies);
-					request.log[response.ok ? "info" : "warn"](
+					request.log[
+						response.status >= 500 ? "error" : response.ok ? "info" : "warn"
+					](
 						`[Authentication] request completed -- endpoint: ${pathname}, status: ${response.status}, reference: ${request.id}${response.status >= 500 ? "; check authentication/database configuration and applied migrations" : ""}`,
 					);
 					return reply
