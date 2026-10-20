@@ -55,7 +55,9 @@ export const MixcloudToolbar = ({
 							: "These shows were automatically parsed and their DJs are onboarded. They're ready to review and import."
 					}
 					aria-haspopup="dialog"
-					disabled={!status || isRefreshing || isImportOpen}
+					disabled={
+						!status || status[value] === 0 || isRefreshing || isImportOpen
+					}
 					onClick={() => onOpenImport?.(value)}
 				>
 					{label}
