@@ -2,9 +2,9 @@
 
 ## Current checkpoint
 
-Advisory locking/admission was approved by the request for the next chunk.
-Abandoned-job interruption is implemented and awaits review. It requires a fresh
-active lease and remains off live startup. Continue with one responsibility per
+Abandoned-job interruption was approved by the request for the next chunk.
+Read-only Git checkout/repository/branch and output-path validation now awaits
+review. It remains off live runner/startup. Continue with one responsibility per
 review.
 
 ## Agreed scope
@@ -42,8 +42,9 @@ that specific update is included alongside the authoritative database reference.
 - [x] Advisory-lock ownership and concurrent-start rejection.
 - [x] User review of advisory locking and admission.
 - [x] Abandoned-job interruption handling.
-- [ ] User review of abandoned-job interruption handling.
-- [ ] Git checkout/repository/branch safety validation.
+- [x] User review of abandoned-job interruption handling.
+- [x] Git checkout/repository/branch safety validation.
+- [ ] User review of checkout safety validation.
 - [ ] Git fetch and fast-forward synchronization.
 - [ ] Generated-path staging, commit, and non-force push.
 - [ ] Interrupted commit/push reconciliation.
@@ -72,20 +73,19 @@ desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Review `interruptAbandonedPublications` and active-lease tracking. Recovery must
-run under a freshly acquired startup lease before reserving jobs. It marks
-running jobs interrupted with a fixed explicit-retry message, preserves recovery
-metadata/logs, and prunes completed history in the same transaction. Fabricated
-and released leases are rejected. It never starts jobs, touches Git, or
-acknowledges publication revisions; startup invocation is still deferred.
+Review `validatePublicationCheckout` and its temporary-repository tests. It
+checks the saved target, canonical checkout/backend separation, dedicated clone,
+committed branch, exact effective fetch/push origin, Git operation markers, and
+output symlink boundaries. Inspection ignores Git environment redirection and
+global/system configuration and never emits raw Git stderr. It does not mutate
+Git/files or contact a remote; dirty/outgoing commit policy stays deferred.
 
-Five focused storage tests passed with 138 assertions against disposable
-PostgreSQL, including lease guards, preserving pushing/queued jobs and terminal
-history, transaction rollback on retention failure, unchanged archive revision
-state, idempotent recovery, and an explicit subsequent retry reservation. No
-regular database was changed.
+Sixteen Git/config tests passed with 95 assertions. They verify preserved index,
+staged/unstaged/untracked files, ignored inherited redirection, unsafe paths,
+branch/remote mismatches, unfinished operations, and linked worktrees. No
+regular checkout, database, or GitHub remote was modified.
 
-After approval, implement Git checkout/repository/branch safety validation only.
-Retry eligibility, completion/acknowledgement, runner orchestration, and live
-API integration remain unfinished. Follow
+After approval, implement Git fetch and fast-forward synchronization only.
+Interrupted-work reconciliation, generated-path commits/push, and live runner
+integration remain unfinished. Follow
 [development modes](../../DEVELOPMENT.md#development-modes).

@@ -221,6 +221,34 @@ must satisfy the reader's conservative Git name checks. Errors identify the
 setting without echoing its value. Reading configuration performs no filesystem,
 Git, database, or network operations.
 
+### Publication checkout safety
+
+The publication validator is implemented independently of the unfinished runner.
+It inspects the checkout locally without fetching, writing files, changing the
+index, or contacting a remote. It requires an existing dedicated normal clone,
+the repository root on the configured branch with a committed HEAD, and one
+origin fetch URL and one effective push URL matching the configured repository
+exactly. Linked worktrees, submodule checkouts, and symlinked `.git` directories
+are rejected. The current configuration must match the job's saved target.
+
+Checkout paths are resolved through symlinks before checking separation from the
+backend. Existing output ancestors and managed DJ directories must be real
+directories; existing managed JSON destinations must be regular files. Symlinks
+at those paths are rejected so exports cannot escape the checkout. Missing
+output directories/files are allowed because the exporter creates them. Merge,
+rebase, cherry-pick, revert, bisect, and sequencer markers block validation
+without removing or changing them.
+
+Inspection ignores inherited `GIT_*` environment variables and global/system Git
+configuration. Local URL rewrites are reflected in effective origin checks. Git
+command failures use a generic error rather than exposing raw stderr or
+credential-bearing configuration. Success emits a fixed validation log line.
+Staged, unstaged, and untracked edits are preserved and do not by themselves
+fail this identity/path check. Dirty-file policy, outgoing-commit recognition,
+fetch/fast-forward, and interrupted-work reconciliation belong to later units;
+passing validation alone does not authorize a push. Tests use temporary local
+repositories and never contact GitHub.
+
 ## Local dummy data
 
 `bun run db:seed:djs` and `bun run db:seed:shows` each insert five standalone
