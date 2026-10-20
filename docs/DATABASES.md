@@ -82,11 +82,11 @@ Git object ID. Captured revisions and commits cannot be overwritten, and
 completed jobs reject progress updates. Missing/ineligible jobs fail writes
 rather than silently reporting success.
 
-This layer does not yet complete/acknowledge jobs or recover after restart.
-Those units remain separate and the store is not wired into routes or startup.
-Job writes do not change archive publication revisions. Rolling back `0030`
-drops job history while preserving archive tables and the singleton revision
-row; roll back the dependent log migration first.
+This layer does not yet complete/acknowledge jobs. Interruption recovery is
+available as an explicit store operation; the store is not wired into routes or
+startup. Job writes do not change archive publication revisions. Rolling back
+`0030` drops job history while preserving archive tables and the singleton
+revision row; roll back the dependent log migration first.
 
 ### Publication admission and lock ownership
 
@@ -109,10 +109,31 @@ lease for publication database work, and never reuse that handle after release.
 
 The lock spans job execution without a long database transaction. PostgreSQL
 releases session locks on disconnect, but the durable running row still blocks a
-new reservation until interruption recovery handles it. Automatic recovery,
+new reservation until interruption recovery handles it. Startup integration,
 retry eligibility validation, and live runner/API integration remain deferred.
 Tests use independent one-connection pools to verify contention, durable job
 visibility, repeated release, and cleanup after rejected reservations.
+
+### Abandoned-job interruption
+
+Before admitting jobs after startup, the future runner must acquire a fresh
+publication lease and call `interruptAbandonedPublications`. The store tracks
+active lease objects; fabricated or released leases cannot perform recovery.
+Another backend holding the publication lock prevents acquisition, so startup
+must defer recovery while that publisher is active. Call recovery before
+reserving work, never against a job executing under the caller's own lease.
+
+Recovery changes all leftover `running` jobs to `interrupted`, records the
+completion timestamp, and saves a fixed message explaining that explicit Retry
+is required. It preserves their stage, target, captured revision, commit ID,
+requester, retry identity, and logs. It neither touches Git nor acknowledges
+publication revisions, and it creates no job. Existing terminal jobs remain
+unchanged except for normal history retention.
+
+Interruption and pruning to the latest 20 completed jobs share one transaction;
+failure rolls both back. Repeating recovery does not rewrite interruption
+timestamps. The caller retains and releases the lease normally. Startup wiring
+and retry eligibility checks remain deferred to their later units.
 
 ### Publication logs and retention
 

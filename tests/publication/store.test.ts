@@ -15,6 +15,7 @@ import {
 	appendPublicationLog,
 	capturePublicationRevision,
 	createPublicationJob,
+	interruptAbandonedPublications,
 	PublicationBusyError,
 	type PublicationConfig,
 	type PublicationLease,
@@ -34,6 +35,205 @@ const config: PublicationConfig = {
 	checkoutPath: "/archive-site",
 	branch: "publish-dev",
 };
+
+test.skipIf(!databaseUrl)(
+	"startup interruption requires an owned lease, preserves recovery metadata, and never retries",
+	async () => {
+		const schema = `publication_restart_${crypto.randomUUID().replaceAll("-", "")}`;
+		const connect = () =>
+			new Kysely<Database>({
+				dialect: new PostgresDialect({
+					pool: new Pool({
+						connectionString: databaseUrl,
+						options: `-c search_path=${schema}`,
+					}),
+				}),
+			});
+		const previous = connect();
+		const restarted = connect();
+		const leases: PublicationLease[] = [];
+		const own = async (database: Kysely<Database>) => {
+			const lease = await acquirePublicationLease(database);
+			if (lease === undefined) throw new Error("Expected startup lease");
+			leases.push(lease);
+			return lease;
+		};
+		try {
+			await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(previous);
+			await previous.transaction().execute(up);
+			await previous.transaction().execute(createLogs);
+			await sql`CREATE TABLE archive_publication_state (id integer, revision bigint, published_revision bigint)`.execute(
+				previous,
+			);
+			await sql`INSERT INTO archive_publication_state VALUES (1, 9, 3)`.execute(
+				previous,
+			);
+			const reservation = await reservePublicationJob({
+				database: previous,
+				request: { requestedBy: "original-admin" },
+				config,
+			});
+			leases.push(reservation.lease);
+			await capturePublicationRevision(
+				reservation.lease,
+				reservation.job.id,
+				"7",
+			);
+			await recordPublicationCommit(
+				reservation.lease,
+				reservation.job.id,
+				"a".repeat(40),
+			);
+			await updatePublicationStage(
+				reservation.lease,
+				reservation.job.id,
+				"pushing",
+			);
+			await appendPublicationLog(
+				reservation.lease,
+				reservation.job.id,
+				"Commit created; push not confirmed",
+			);
+			const queued = await createPublicationJob({
+				lease: reservation.lease,
+				request: { requestedBy: "queued-admin" },
+				config,
+			});
+			await reservation.lease.database
+				.insertInto("archive_publication_jobs")
+				.values(
+					Array.from({ length: 21 }, () => ({
+						id: crypto.randomUUID(),
+						requested_by: "historical-admin",
+						repository: config.repository,
+						checkout_path: config.checkoutPath,
+						branch: config.branch,
+						retry_job_id: null,
+						revision: null,
+						commit_id: null,
+						error: "Earlier failure",
+						outcome: "failed" as const,
+						created_at: new Date("2026-01-01T00:00:00Z"),
+						completed_at: new Date("2026-01-02T00:00:00Z"),
+					})),
+				)
+				.execute();
+			const before = await readPublicationJob(
+				reservation.lease.database,
+				reservation.job.id,
+			);
+			expect(await acquirePublicationLease(restarted)).toBeUndefined();
+			await expect(
+				interruptAbandonedPublications({
+					database: restarted,
+					release: () => restarted.destroy(),
+				}),
+			).rejects.toThrow("active publication lease");
+			expect(
+				(await readPublicationJobRecord(restarted, reservation.job.id))
+					?.outcome,
+			).toBe("running");
+			await reservation.lease.release();
+			await expect(
+				interruptAbandonedPublications(reservation.lease),
+			).rejects.toThrow("active publication lease");
+			await expect(
+				reservePublicationJob({
+					database: restarted,
+					request: { requestedBy: "new-admin" },
+					config,
+				}),
+			).rejects.toBeInstanceOf(PublicationBusyError);
+			// A failure after UPDATE must roll back interruption together with retention.
+			const failingDatabase = restarted.withPlugin({
+				transformQuery: ({ node }) => {
+					if (node.kind === "DeleteQueryNode")
+						throw new Error("retention unavailable");
+					return node;
+				},
+				transformResult: async ({ result }) => result,
+			});
+			const failingLease = await own(failingDatabase);
+			await expect(
+				interruptAbandonedPublications(failingLease),
+			).rejects.toThrow("retention unavailable");
+			await failingLease.release();
+			expect(await readPublicationJob(restarted, reservation.job.id)).toEqual(
+				before,
+			);
+			const recovery = await own(restarted);
+			await interruptAbandonedPublications(recovery);
+			const after = await readPublicationJob(
+				recovery.database,
+				reservation.job.id,
+			);
+			expect(after?.job).toMatchObject({
+				...before?.job,
+				outcome: "interrupted",
+				error: "Publication interrupted by backend restart. Retry explicitly.",
+			});
+			expect(after?.job).toHaveProperty("completedAt");
+			expect(after?.logs).toEqual(before?.logs);
+			expect(after?.logsTruncated).toBe(before?.logsTruncated);
+			expect(
+				(await readPublicationJobRecord(recovery.database, queued.id))?.outcome,
+			).toBe("interrupted");
+			expect(
+				(
+					await recovery.database
+						.selectFrom("archive_publication_jobs")
+						.selectAll()
+						.where("outcome", "=", "failed")
+						.execute()
+				).every(
+					(row) =>
+						row.error === "Earlier failure" &&
+						row.completed_at?.toISOString() === "2026-01-02T00:00:00.000Z",
+				),
+			).toBe(true);
+			expect(
+				await recovery.database
+					.selectFrom("archive_publication_jobs")
+					.select("id")
+					.execute(),
+			).toHaveLength(20);
+			expect(
+				await recovery.database
+					.selectFrom("archive_publication_jobs")
+					.select("id")
+					.where("outcome", "=", "running")
+					.execute(),
+			).toEqual([]);
+			expect(
+				await recovery.database
+					.selectFrom("archive_publication_state")
+					.selectAll()
+					.execute(),
+			).toEqual([{ id: 1, revision: "9", published_revision: "3" }]);
+			await interruptAbandonedPublications(recovery);
+			expect(
+				await readPublicationJob(recovery.database, reservation.job.id),
+			).toEqual(after);
+			await recovery.release();
+			// Recovery creates no job; only a later explicit reservation starts a retry.
+			const retry = await reservePublicationJob({
+				database: restarted,
+				request: { requestedBy: "new-admin", retryJobId: reservation.job.id },
+				config,
+			});
+			leases.push(retry.lease);
+			expect(retry.job.retryJobId).toBe(reservation.job.id);
+			expect(retry.job.outcome).toBe("running");
+			await retry.lease.release();
+		} finally {
+			await Promise.all(leases.map((lease) => lease.release()));
+			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(
+				previous,
+			);
+			await Promise.all([previous.destroy(), restarted.destroy()]);
+		}
+	},
+);
 
 test.skipIf(!databaseUrl)(
 	"publication leases pin connections, reject concurrent starts, and release on failed reservations",

@@ -11,6 +11,8 @@ import type {
 	PublicationStart,
 	PublicationStatus,
 } from "./types.js";
+
+const activePublicationLeases = new WeakSet<PublicationLease>();
 /** Dedicated connection owns the session advisory lock until release. */
 export type PublicationLease = {
 	/** Use only until release; never retain or query this handle after releasing it. */
@@ -134,13 +136,16 @@ export const acquirePublicationLease = (
 				return;
 			}
 			await new Promise<void>((finish) => {
-				resolve({
+				const lease: PublicationLease = {
 					database: connection,
 					release: async () => {
+						activePublicationLeases.delete(lease);
 						finish();
 						await connectionTask;
 					},
-				});
+				};
+				activePublicationLeases.add(lease);
+				resolve(lease);
 			});
 			const unlocked = await sql<{
 				released: boolean;
@@ -425,10 +430,30 @@ export const completePublicationJob = (
 	throw new Error("Not implemented: completePublicationJob");
 };
 
-export const interruptAbandonedPublications = (
-	_lease: PublicationLease,
+/** Run under a fresh startup lease before admitting work; never retry automatically. */
+export const interruptAbandonedPublications = async (
+	lease: PublicationLease,
 ): Promise<void> => {
-	throw new Error("Not implemented: interruptAbandonedPublications");
+	if (!activePublicationLeases.has(lease))
+		throw new Error(
+			"Interruption recovery requires an active publication lease",
+		);
+	await lease.database.transaction().execute(async (transaction) => {
+		if (!activePublicationLeases.has(lease))
+			throw new Error(
+				"Publication lease was released before interruption recovery",
+			);
+		await transaction
+			.updateTable("archive_publication_jobs")
+			.set({
+				outcome: "interrupted",
+				completed_at: sql`CURRENT_TIMESTAMP`,
+				error: "Publication interrupted by backend restart. Retry explicitly.",
+			})
+			.where("outcome", "=", "running")
+			.execute();
+		await pruneCompletedPublicationJobs({ ...lease, database: transaction });
+	});
 };
 
 import { stripVTControlCharacters } from "node:util";

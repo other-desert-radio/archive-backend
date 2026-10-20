@@ -2,9 +2,10 @@
 
 ## Current checkpoint
 
-Logs/retention was approved by the request for the next chunk. Session advisory
-leases and durable reservation admission now await review. They remain off live
-routes/startup. Continue with one responsibility per review.
+Advisory locking/admission was approved by the request for the next chunk.
+Abandoned-job interruption is implemented and awaits review. It requires a fresh
+active lease and remains off live startup. Continue with one responsibility per
+review.
 
 ## Agreed scope
 
@@ -39,8 +40,9 @@ that specific update is included alongside the authoritative database reference.
 - [x] Sanitized bounded logs and completed-job retention.
 - [x] User review of logs and retention implementation.
 - [x] Advisory-lock ownership and concurrent-start rejection.
-- [ ] User review of advisory locking and admission.
-- [ ] Abandoned-job interruption handling.
+- [x] User review of advisory locking and admission.
+- [x] Abandoned-job interruption handling.
+- [ ] User review of abandoned-job interruption handling.
 - [ ] Git checkout/repository/branch safety validation.
 - [ ] Git fetch and fast-forward synchronization.
 - [ ] Generated-path staging, commit, and non-force push.
@@ -70,20 +72,20 @@ desktop, 390px, and 320px. Real GitHub push requires separate review.
 
 ## Next action
 
-Review connection-pinned advisory leases and `reservePublicationJob` in the
-publication store. The latter is the runner's future admission entry point;
-`createPublicationJob` remains a low-level insert. Successful reservations
-retain the lock until the caller releases in finally. Disabled publication, lock
-contention, and durable running rows reject starts; failed reservations release
-the connection. The lock is session-scoped, not a long transaction.
+Review `interruptAbandonedPublications` and active-lease tracking. Recovery must
+run under a freshly acquired startup lease before reserving jobs. It marks
+running jobs interrupted with a fixed explicit-retry message, preserves recovery
+metadata/logs, and prunes completed history in the same transaction. Fabricated
+and released leases are rejected. It never starts jobs, touches Git, or
+acknowledges publication revisions; startup invocation is still deferred.
 
-Four focused storage tests passed with 119 assertions against disposable
-PostgreSQL. Coverage includes independent one-connection pool contention, one
-winner in a start race, committed job visibility before release, repeated
-release, rejected-start cleanup, stale-running-row protection, and retained
-log/history behavior. No regular database was changed.
+Five focused storage tests passed with 138 assertions against disposable
+PostgreSQL, including lease guards, preserving pushing/queued jobs and terminal
+history, transaction rollback on retention failure, unchanged archive revision
+state, idempotent recovery, and an explicit subsequent retry reservation. No
+regular database was changed.
 
-After approval, implement abandoned-job interruption handling only. Retry
-eligibility, completion/acknowledgement, runner orchestration, and live API
-integration remain unfinished. Follow
+After approval, implement Git checkout/repository/branch safety validation only.
+Retry eligibility, completion/acknowledgement, runner orchestration, and live
+API integration remain unfinished. Follow
 [development modes](../../DEVELOPMENT.md#development-modes).
