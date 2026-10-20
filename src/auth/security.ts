@@ -14,6 +14,17 @@ export const requireSameOrigin = async (
 		(origin && !trustedAuthOrigins.includes(origin)) ||
 		(!origin && request.headers.cookie)
 	) {
+		const safeOrigin = (value: string | undefined): string => {
+			if (!value) return "missing";
+			try {
+				return new URL(value).origin;
+			} catch {
+				return "invalid";
+			}
+		};
+		request.log.warn(
+			`[Authentication] request origin rejected -- method: ${request.method}, url: ${request.url}, origin: ${safeOrigin(origin)}, expected: ${trustedAuthOrigins.join(", ")}, reference: ${request.id}`,
+		);
 		reply.code(403).send({ error: "Request origin is not allowed" });
 	}
 };
