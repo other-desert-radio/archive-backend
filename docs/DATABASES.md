@@ -82,18 +82,62 @@ Git object ID. Captured revisions and commits cannot be overwritten, and
 completed jobs reject progress updates. Missing/ineligible jobs fail writes
 rather than silently reporting success.
 
-This layer does not yet admit concurrent starts, acquire locks, append logs,
-complete/acknowledge jobs, prune history, or recover after restart. Those units
-remain separate and the store is not wired into routes or startup. Metadata
-reads are separate from the unfinished job-detail reader with logs. Job writes
-do not change archive publication revisions. Rolling back `0030` drops job
-history while preserving archive tables and the singleton revision row.
+This layer does not yet admit concurrent starts, acquire the publisher advisory
+lock, complete/acknowledge jobs, or recover after restart. Those units remain
+separate and the store is not wired into routes or startup. Job writes do not
+change archive publication revisions. Rolling back `0030` drops job history
+while preserving archive tables and the singleton revision row; roll back the
+dependent log migration first.
+
+### Publication logs and retention
+
+Migration `0031_add_archive_publication_logs` creates a separate log table:
+
+```text
+archive_publication_jobs.id
+    |
+    +-- archive_publication_logs
+          job_id      uuid, foreign key with ON DELETE CASCADE
+          sequence    integer >= 0
+          created_at  timestamptz, default CURRENT_TIMESTAMP
+          message     text
+          primary key (job_id, sequence)
+```
+
+`appendPublicationLog` sanitizes complete messages before persistence: it strips
+terminal controls, normalizes line endings, removes blank lines, redacts
+recognized credentials/private-key blocks, and replaces caller-supplied secret
+values. Callers must supply deployment secrets and avoid logging sensitive raw
+command output; pattern matching cannot identify every arbitrary secret.
+Sanitization returns separate text lines, suitable for text rendering rather
+than HTML. Errors on the job record are separate from this log sanitizer.
+
+Appending locks the running job row for the transaction, allocates increasing
+sequences, inserts lines, and trims overflow atomically. Missing or completed
+jobs reject appends. The storage function retains at most 2,000 lines per job.
+After overflow it keeps the latest 1,999 lines plus one persistent truncation
+notice at sequence 0. Normal lines start at 1, and trimming does not renumber
+them. The row lock serializes concurrent appends without acquiring the later
+publisher advisory lock.
+
+`readPublicationJob` reads metadata and ordered logs in one read-only,
+repeatable-read snapshot. It returns `logsTruncated` when sequence 0 exists;
+missing jobs return undefined. This durable history lets progress views reload
+after closure or reconnection. `pruneCompletedPublicationJobs` retains the
+newest 20 completed jobs by completion time, creation time, and ID descending,
+while preserving every running job. Deleting old jobs cascades to their logs. It
+is a single atomic statement and can participate in the later completion
+transaction; automatic invocation remains deferred. Rolling back `0031` removes
+logs while preserving job metadata.
 
 The focused test in `tests/publication/store.test.ts` requires
 `PUBLICATION_STORE_TEST_DATABASE_URL` for disposable PostgreSQL and otherwise
 skips. It creates a temporary schema and verifies persistence through another
 connection, schema constraints, transaction rollback, and migration
-rollback/reapply without changing archive revision state.
+rollback/reapply without changing archive revision state. It also verifies log
+sanitization, concurrent append ordering, the exact line bound, overflow, atomic
+append failures, retention rollback/cascades, and consistent detail snapshots.
+Pure sanitization tests run without a database.
 
 ## Authentication tables
 

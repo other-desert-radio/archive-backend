@@ -7,6 +7,7 @@ import type {
 export type Database = {
 	archive_publication_state: ArchivePublicationStateTable;
 	archive_publication_jobs: ArchivePublicationJobsTable;
+	archive_publication_logs: ArchivePublicationLogsTable;
 	djs: DJsTable;
 	shows: ShowsTable;
 	tags: TagsTable;
@@ -42,6 +43,14 @@ export type ArchivePublicationJobsTable = {
 	revision: string | null;
 	commit_id: string | null;
 	error: string | null;
+};
+
+/** Sequence 0 is reserved for the truncation notice. */
+export type ArchivePublicationLogsTable = {
+	job_id: string;
+	sequence: number;
+	created_at: Generated<Date>;
+	message: string;
 };
 
 export type MixcloudImportTable = {
