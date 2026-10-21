@@ -422,7 +422,8 @@ files; setting only `ARCHIVE_KNOWN_HOSTS_PATH` leaves the private-key mount at
 its default path. An `invalid mount config for type "bind"` error names the
 missing host path: provision that file or update its corresponding `.env`
 setting. The setup script prepares the checkout, not these SSH files. After
-updating the paths, rerun `scripts/build-container`.
+updating the paths, rerun
+`docker compose -f compose.yml -f compose.remote.yml up -d --build`.
 
 The base `compose.yml` mounts only the checkout. Remote mode adds
 `compose.remote.yml`, which mounts the two credential files read-only into
@@ -452,8 +453,9 @@ another publisher or an interactive editing workflow.
 ### Publication operation and recovery
 
 Apply reviewed database migrations before starting publication, then build and
-start the API with `scripts/build-container`. The build helpers select
-`compose.remote.yml` automatically in remote mode. Manual remote startup uses
+start the local API with `scripts/build-container`. The build helpers use the
+base Compose file without inspecting publication settings. For remote startup,
+use `scripts/setup-server` or explicitly select the SSH overlay with
 `docker compose -f compose.yml -f compose.remote.yml up -d --build`. Publication
 is restricted to authenticated admins. The header appears for pending archive
 revisions; confirming Publish starts a durable server job. Closing or refreshing

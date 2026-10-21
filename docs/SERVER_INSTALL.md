@@ -149,7 +149,7 @@ reviewed, `scripts/run-migrations` applies them together. See
 Build and start the API after migrating:
 
 ```sh
-scripts/build-container
+docker compose -f compose.yml -f compose.remote.yml up -d --build
 curl --fail http://localhost:3000/health
 docker compose logs --tail=100 api
 ```
@@ -181,10 +181,11 @@ for role and session details.
 Before building or starting the API in step 4, follow the
 [publication checkout and SSH instructions](DEVELOPMENT.md#prepare-the-dedicated-checkout-and-ssh-files).
 Remote mode requires the dedicated checkout, deploy key, and verified
-known-hosts file. Use the `compose.remote.yml` overlay for SSH mounts; the build
-helper and server setup command select it for remote mode. Set the runtime
-UID/GID to the service account that owns those files. Keep credentials outside
-the backend repository; the container reads them under `/run/archive-ssh`.
+known-hosts file. Use the `compose.remote.yml` overlay for SSH mounts; the
+server setup command selects it explicitly. Local build helpers use only the
+base Compose file. Set the runtime UID/GID to the service account that owns
+those files. Keep credentials outside the backend repository; the container
+reads them under `/run/archive-ssh`.
 
 For server publication, set `ARCHIVE_PUBLISH_MODE=remote` and
 `ARCHIVE_PUBLISH_BRANCH=main`, configure the publisher identity, and prepare the
@@ -202,9 +203,9 @@ Before updating, back up the database using the
 [existing backup and restore instructions](DEVELOPMENT.md#database-backups-and-restores).
 Preserve `.env`, SSH keys, and the PostgreSQL volume. Fetch the intended
 release, install its locked dependencies, review/apply migrations, rebuild with
-`scripts/build-container`, and verify health and browser login again. Do not use
-`docker compose down --volumes` for routine updates; it deletes database
-storage.
+`docker compose -f compose.yml -f compose.remote.yml up -d --build`, and verify
+health and browser login again. Do not use `docker compose down --volumes` for
+routine updates; it deletes database storage.
 
 ## Troubleshooting session checks
 

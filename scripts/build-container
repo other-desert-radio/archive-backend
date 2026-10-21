@@ -6,9 +6,5 @@ if [[ ! -f .env ]]; then
 	exit 1
 fi
 
-# Read .env using the same parser as the application, without shell evaluation.
-mode=$(bun -e 'const {parseEnv}=require("node:util"); const env=parseEnv(await Bun.file(".env").text()); console.log((process.env.ARCHIVE_PUBLISH_MODE ?? env.ARCHIVE_PUBLISH_MODE ?? "local").trim())')
-compose_files=(-f compose.yml)
-if [[ "$mode" == remote ]]; then compose_files+=(-f compose.remote.yml); fi
-docker compose "${compose_files[@]}" up --build -d
-docker compose "${compose_files[@]}" ps
+docker compose up --build -d
+docker compose ps
