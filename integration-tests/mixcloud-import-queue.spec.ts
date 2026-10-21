@@ -163,7 +163,7 @@ test("both launchers queue all pending category rows in ID order regardless of s
 	await expect(sourceId(page)).toHaveText("Source 2");
 	await expect(
 		page.getByRole("button", { name: "Back to start", exact: true }),
-	).toBeVisible();
+	).toBeHidden();
 	await page.getByRole("button", { name: "Next Show" }).click();
 	await expect(sourceId(page)).toHaveText("Source 9");
 	await page.getByRole("button", { name: "Close", exact: true }).click();
@@ -200,7 +200,7 @@ test("Cancel closes the session without advancing or importing", async ({
 	await expect(sourceId(page)).toHaveText("Source 2");
 	await expect(
 		page.getByRole("button", { name: "Back to start", exact: true }),
-	).toBeVisible();
+	).toBeHidden();
 	expect(state.posts).toBe(0);
 });
 
@@ -246,6 +246,9 @@ test("Next preserves counts, category progress resumes independently after reloa
 		.click();
 	await expect(sourceId(page)).toHaveText("Source 4");
 	await expect(
+		page.getByRole("button", { name: "Back to start", exact: true }),
+	).toBeHidden();
+	await expect(
 		page.getByRole("heading", { name: "Import Show 1/2", exact: true }),
 	).toBeVisible();
 	expect(state.posts).toBe(0);
@@ -263,7 +266,7 @@ for (const repeated of [false, true])
 		await expect(sourceId(page)).toHaveText("Source 9");
 		await expect(
 			page.getByRole("button", { name: "Back to start", exact: true }),
-		).toBeVisible();
+		).toBeHidden();
 		await expect(save(page)).toBeEnabled();
 		await save(page).click();
 		await expect(page.getByRole("dialog")).toBeHidden();
@@ -291,7 +294,7 @@ test("dirty Cancel and arrow require confirmation; reverting clears dirty state"
 }) => {
 	await launch(page);
 	await expect(save(page)).toBeEnabled();
-	for (const action of ["Cancel", "Next Show", "Back to start"]) {
+	for (const action of ["Cancel", "Next Show"]) {
 		await page.getByLabel("title", { exact: true }).fill("Draft");
 		const button = page.getByRole("button", { name: action, exact: true });
 		await button.click();
@@ -307,6 +310,12 @@ test("dirty Cancel and arrow require confirmation; reverting clears dirty state"
 	await page.getByRole("button", { name: "Discard changes" }).click();
 	await expect(sourceId(page)).toHaveText("Source 9");
 	await page.getByLabel("title", { exact: true }).fill("Changed");
+	await page
+		.getByRole("button", { name: "Back to start", exact: true })
+		.click();
+	await expect(page.getByRole("alertdialog")).toBeVisible();
+	await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+	await expect(sourceId(page)).toHaveText("Source 9");
 	await page.getByLabel("title", { exact: true }).fill("Ready 9");
 	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(page.getByRole("dialog")).toBeHidden();
@@ -361,7 +370,7 @@ test("a committed Save advances despite reload failure and retains local trackin
 	await expect(sourceId(page)).toHaveText("Source 9");
 	await expect(
 		page.getByRole("button", { name: "Back to start", exact: true }),
-	).toBeVisible();
+	).toBeHidden();
 	await expect(page.getByRole("dialog").getByRole("alert")).toHaveCount(0);
 	await page.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(page.getByRole("alert")).toContainText("Show imported, but");
@@ -413,7 +422,7 @@ for (const width of [390, 320])
 		await next.focus();
 		await page.keyboard.press("Tab");
 		await expect(
-			page.getByRole("button", { name: "Back to start", exact: true }),
+			page.getByRole("button", { name: "Close", exact: true }),
 		).toBeFocused();
 		await page.keyboard.press("Shift+Tab");
 		await expect(next).toBeFocused();
@@ -616,7 +625,7 @@ test("row Import opens only that pending show and removes its action after savin
 	await expect(sourceId(page)).toHaveText("Source 4");
 	await expect(
 		page.getByRole("button", { name: "Back to start", exact: true }),
-	).toBeVisible();
+	).toBeHidden();
 	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(action).toBeFocused();
 	await action.click();

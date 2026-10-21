@@ -70,8 +70,13 @@ export const MixcloudImportQueue = ({
 		<ImportShowModal
 			row={row}
 			position={`${index + 1}/${items.length}`}
-			onBackToStart={() =>
-				setIndex(items.findIndex((item) => !importedIds.includes(item.id)))
+			onBackToStart={
+				previousIndex === -1
+					? undefined
+					: () =>
+							setIndex(
+								items.findIndex((item) => !importedIds.includes(item.id)),
+							)
 			}
 			onClose={onClose}
 			onSkip={advance}
