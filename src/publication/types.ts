@@ -1,6 +1,20 @@
 /** Decimal strings preserve PostgreSQL bigint revisions in JSON. */
 export type PublicationRevision = string;
 export type PublicationMode = "local" | "remote";
+/** Saved destination; local Git metadata describes the checkout when available. */
+export type PublicationTarget =
+	| {
+			mode: "local";
+			checkoutPath: string;
+			repository?: string;
+			branch?: string;
+	  }
+	| {
+			mode: "remote";
+			checkoutPath: string;
+			repository: string;
+			branch: string;
+	  };
 /** Mode-aware configuration; local exports require only a destination path. */
 export type PublicationModeConfig =
 	| { mode: "local"; checkoutPath: string }

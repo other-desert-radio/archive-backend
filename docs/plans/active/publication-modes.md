@@ -6,8 +6,9 @@
   responsibility.
 - Replace ARCHIVE_PUBLISH_ENABLED with ARCHIVE_PUBLISH_MODE=local|remote;
   default local.
-- Local mode writes exporter-owned assets into ARCHIVE_CHECKOUT_PATH without Git
-  operations; unrelated edits are allowed.
+- Local mode writes exporter-owned assets into ARCHIVE_CHECKOUT_PATH; unrelated
+  edits are allowed. Read-only Git inspection may capture the actual current
+  branch and optional origin URL. Never fetch, synchronize, commit, or push.
 - Successful local writes acknowledge the captured revision; concurrent edits
   remain pending.
 - Remote publication retains commit/push and recovery behavior. Switching modes
@@ -116,3 +117,35 @@ Biome pass. No Git refactor stubs remain. The original local/remote publication
 feature is still incomplete; next propose persisted mode/target tracking
 structure and continue the original staged workflow. The one-pass authorization
 applied to the remaining Git restructuring requested in this review.
+
+## Current unit: publication-mode persistence
+
+The user approved recording local repository and branch metadata. The checkout
+path identifies the local destination; Git inspection should record the actual
+checked-out branch and optional origin URL, not the configured remote-publish
+branch. Missing origin, detached HEAD, or a non-Git destination must not prevent
+local export. Remote fields remain required for remote jobs.
+
+Agreed schema direction: add mode to archive_publication_jobs (existing jobs
+remain remote), allow nullable repository/branch metadata for local jobs, and
+require a commit ID only for remote success. Add nullable published_target JSONB
+to archive_publication_state to associate published_revision with its
+destination and detect mode/destination switches. Local target comparison should
+include the actual branch when present. Optional origin metadata describes the
+local checkout; it does not turn local export into remote publication.
+
+Structure and scaffolding requested. Added explicit up/down migration stubs and
+PublicationTarget in src/publication/types.ts, the shared dependency for
+persisted target JSON and later job contracts. Local target has optional
+repository/branch; remote requires both. The test file remains a responsibility
+comment until there is executable behavior. Existing database row types stay
+aligned with the current schema until implementation; nullable-column mapping
+changes belong to that step.
+
+No database changes have been made. Migration up/down explicitly throw and are
+not ready to apply. Down will reject rollback while local jobs exist rather than
+silently discard or relabel their history. Later implementation will update
+src/db/types.ts, affected row mapping, and docs/DATABASES.md together.
+
+Await scaffolding review before migration implementation, following
+[Development modes](../../DEVELOPMENT.md#development-modes).
