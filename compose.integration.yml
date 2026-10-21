@@ -23,6 +23,8 @@ services:
       BETTER_AUTH_URL: http://127.0.0.1:${INTEGRATION_API_PORT:-3001}
       BETTER_AUTH_TRUSTED_ORIGINS: http://api:3000
       INTEGRATION_AUTH_SEED: disposable
+      ARCHIVE_PUBLISH_MODE: local
+      ARCHIVE_CHECKOUT_PATH: /tmp/archive-site-integration
     depends_on:
       postgres:
         condition: service_healthy

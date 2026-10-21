@@ -24,34 +24,35 @@ export const PublicationModal = ({
 	const running = job?.outcome === "running";
 	const failed = job?.outcome === "failed" || job?.outcome === "interrupted";
 	const complete = job?.outcome === "succeeded" || job?.outcome === "no-change";
-	const canStart = status?.enabled && (failed || (!running && status.pending));
+	const canStart =
+		status !== undefined && (failed || (!running && status.pending));
+	const local = status?.mode === "local";
 	const clean = status !== undefined && !status.pending && !running && !failed;
-	const disabled = status?.enabled === false && !clean;
-	const title = disabled
-		? "Publishing is disabled"
-		: running
-			? "Publishing archive"
-			: failed
-				? "Publication needs attention"
-				: complete && !status?.pending
-					? "Archive published"
-					: clean
-						? "All changes pushed"
-						: "Publish archive?";
+	const title = running
+		? "Publishing archive"
+		: failed
+			? "Publication needs attention"
+			: complete && !status?.pending
+				? "Archive published"
+				: clean
+					? local
+						? "All changes saved locally"
+						: "All changes pushed"
+					: "Publish archive?";
 	const publishedAt = complete ? new Date(job.completedAt) : undefined;
 	const lastPublished = publishedAt
 		? `Last published ${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(publishedAt)} ${new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).format(publishedAt)}`
 		: "There are no pending archive changes to publish.";
-	const description = disabled
-		? "Archive changes are pending, but publishing is disabled on this server. Set ARCHIVE_PUBLISH_ENABLED=true and restart the server to enable publication."
-		: running
-			? "Publication continues when you close this window."
-			: failed
-				? "Review the logs below, then retry when you are ready."
-				: complete && !status?.pending
-					? lastPublished
-					: clean
-						? "There are no pending archive changes to publish."
+	const description = running
+		? "Publication continues when you close this window."
+		: failed
+			? "Review the logs below, then retry when you are ready."
+			: complete && !status?.pending
+				? lastPublished
+				: clean
+					? "There are no pending archive changes to publish."
+					: local
+						? "Write latest changes to your local archive checkout."
 						: "Publish latest changes to github.";
 	return (
 		<MessageModal
@@ -89,10 +90,23 @@ export const PublicationModal = ({
 		>
 			<div className={styles.body}>
 				{status && (
-					<p>
-						Target branch:{" "}
-						<strong className={styles.branch}>{status.branch}</strong>
-					</p>
+					<div>
+						<p>
+							{local ? "Local checkout:" : "Remote repository:"}{" "}
+							<strong className={styles.branch}>
+								{local ? status.target.checkoutPath : status.target.repository}
+							</strong>
+						</p>
+						<p>
+							{local ? "Current branch:" : "Target branch:"}{" "}
+							<strong className={styles.branch}>
+								{status.target.branch ?? "No branch metadata"}
+							</strong>
+						</p>
+						{local && status.target.repository && (
+							<p>Origin: {status.target.repository}</p>
+						)}
+					</div>
 				)}
 				{loading && <p role="status">Loading publication status…</p>}
 				{!connected && !loading && (

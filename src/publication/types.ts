@@ -1,12 +1,34 @@
 /** Decimal strings preserve PostgreSQL bigint revisions in JSON. */
 export type PublicationRevision = string;
-export type PublicationConfig = {
-	enabled: boolean;
-	repository: string;
-	checkoutPath: string;
-	branch: string;
-	gitIdentity?: { name: string; email: string };
-};
+export type PublicationMode = "local" | "remote";
+/** Saved destination; local Git metadata describes the checkout when available. */
+export type PublicationTarget =
+	| {
+			mode: "local";
+			checkoutPath: string;
+			repository?: string;
+			branch?: string;
+	  }
+	| {
+			mode: "remote";
+			checkoutPath: string;
+			repository: string;
+			branch: string;
+	  };
+/** Local publication uses the existing checkout; remote publication adds Git settings. */
+export type PublicationConfig =
+	| { mode: "local"; checkoutPath: string }
+	| {
+			mode: "remote";
+			checkoutPath: string;
+			repository: string;
+			branch: string;
+			gitIdentity?: { name: string; email: string };
+	  };
+export type RemotePublicationConfig = Extract<
+	PublicationConfig,
+	{ mode: "remote" }
+>;
 export type PublicationStage =
 	| "queued"
 	| "validating"
@@ -24,7 +46,7 @@ export type PublicationJobBase = {
 	id: string;
 	requestedBy: string;
 	createdAt: string;
-	target: Pick<PublicationConfig, "repository" | "checkoutPath" | "branch">;
+	target: PublicationTarget;
 	retryJobId?: string;
 	revision?: PublicationRevision;
 	commitId?: string;
@@ -50,8 +72,8 @@ export type PublicationJobDetail = {
 	logsTruncated: boolean;
 };
 export type PublicationStatus = {
-	enabled: boolean;
-	branch: string;
+	mode: PublicationMode;
+	target: PublicationTarget;
 	revision: PublicationRevision;
 	publishedRevision: PublicationRevision;
 	pending: boolean;

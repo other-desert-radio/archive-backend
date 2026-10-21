@@ -84,7 +84,8 @@ try {
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL",
     "ARCHIVE_PUBLISH_BRANCH",
-    "ARCHIVE_PUBLISH_ENABLED",
+    "ARCHIVE_PUBLISH_MODE",
+    "ARCHIVE_CHECKOUT_PATH",
     "ARCHIVE_GIT_NAME",
     "ARCHIVE_GIT_EMAIL",
     "ARCHIVE_RUNTIME_UID",
@@ -107,8 +108,8 @@ try {
     ["localhost", "127.0.0.1", "::1", "[::1]"].includes(origin.hostname)
   )
     fail("BETTER_AUTH_URL must use the public HTTPS server origin.");
-  if (environment.ARCHIVE_PUBLISH_ENABLED !== "true")
-    fail("Set ARCHIVE_PUBLISH_ENABLED=true to prepare server publication.");
+  if (environment.ARCHIVE_PUBLISH_MODE !== "remote")
+    fail("Set ARCHIVE_PUBLISH_MODE=remote to prepare server publication.");
   for (const name of ["ARCHIVE_GIT_NAME", "ARCHIVE_GIT_EMAIL"]) {
     environment[name] = environment[name].trim();
     if (/[\x00-\x1f\x7f]/.test(environment[name]))
@@ -252,7 +253,7 @@ try {
     return result.stdout;
   };
   const compose = (commandArgs, label, capture = false) =>
-    run("docker", ["compose", ...commandArgs], label, capture);
+    run("docker", ["compose", "-f", "compose.yml", "-f", "compose.remote.yml", ...commandArgs], label, capture);
   await run("git", ["--version"], "Checking Git", true);
   await run("ssh", ["-V"], "Checking SSH", true);
   await run(
@@ -290,7 +291,7 @@ try {
     );
   const hostCheckout = path.resolve(
     root,
-    environment.ARCHIVE_CHECKOUT_PATH ?? "../clean-archive-site",
+    environment.ARCHIVE_CHECKOUT_PATH,
   );
   const checkoutOwner = statSync(hostCheckout);
   if (
@@ -347,13 +348,13 @@ import { execFileSync } from 'node:child_process';
 import { db } from './src/db/db.ts';
 import { readPublicationConfig } from './src/publication/config.ts';
 import { readPublicationStatus } from './src/publication/store.ts';
-import { validatePublicationCheckout } from './src/publication/git.ts';
+import { validatePublicationCheckout } from './src/publication/git/index.ts';
 try {
  const config = readPublicationConfig(process.env, '/app');
- if (!config.enabled) throw new Error('Publication is disabled inside the container. Pass ARCHIVE_PUBLISH_ENABLED=true through Compose.');
+ if (config.mode !== 'remote') throw new Error('Server publication requires ARCHIVE_PUBLISH_MODE=remote through Compose.');
  if (!config.gitIdentity) throw new Error('Missing container commit identity. Pass ARCHIVE_GIT_NAME and ARCHIVE_GIT_EMAIL through Compose.');
  await readPublicationStatus(db, config);
- const job = {id: 'setup-validation', requestedBy: 'setup', createdAt: new Date().toISOString(), target: {repository: config.repository, checkoutPath: config.checkoutPath, branch: config.branch}, outcome: 'running', stage: 'validating'};
+ const job = {id: 'setup-validation', requestedBy: 'setup', createdAt: new Date().toISOString(), target: {mode: 'remote', repository: config.repository, checkoutPath: config.checkoutPath, branch: config.branch}, outcome: 'running', stage: 'validating'};
  await validatePublicationCheckout({config, job, log: async message => console.log(message), recordCommit: async () => {}, updateStage: async () => {}});
  const gitEnvironment = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')));
  for (const identity of ['GIT_AUTHOR_IDENT', 'GIT_COMMITTER_IDENT']) {

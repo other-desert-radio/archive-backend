@@ -1,6 +1,14 @@
 import { expect, test } from "bun:test";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+	chmod,
+	mkdir,
+	mkdtemp,
+	readFile,
+	rm,
+	symlink,
+	writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -10,6 +18,7 @@ import { up as revisions } from "../../src/db/migrations/0029_add_archive_public
 import { up as jobs } from "../../src/db/migrations/0030_add_archive_publication_jobs.js";
 import { up as logs } from "../../src/db/migrations/0031_add_archive_publication_logs.js";
 import { up as notifications } from "../../src/db/migrations/0032_notify_publication_jobs.js";
+import { up as publicationModes } from "../../src/db/migrations/0033_add_publication_modes.js";
 import type { Database } from "../../src/db/types.js";
 import {
 	acquirePublicationLease,
@@ -19,6 +28,7 @@ import {
 	type PublicationConfig,
 	type PublicationRunner,
 	readPublicationJob,
+	readPublicationStatus,
 	reservePublicationJob,
 } from "../../src/publication/index.js";
 
@@ -90,10 +100,16 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 	INSERT INTO tags VALUES (1, 'Original Tag', '#cccccc', NULL, NULL);
 	INSERT INTO show_djs VALUES (1, 1);
 	INSERT INTO show_tags VALUES (1, 1)`.execute(database);
-	for (const migration of [revisions, jobs, logs, notifications])
+	for (const migration of [
+		revisions,
+		jobs,
+		logs,
+		notifications,
+		publicationModes,
+	])
 		await database.transaction().execute(migration);
 	const config: PublicationConfig = {
-		enabled: true,
+		mode: "remote",
 		repository: remote,
 		checkoutPath: checkout,
 		branch: "publish-dev",
@@ -106,8 +122,11 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 		directory,
 		checkout,
 		remote,
-		create: async (source = database) => {
-			const runner = await createPublicationRunner(source, config);
+		create: async (
+			source = database,
+			publicationConfig: PublicationConfig = config,
+		) => {
+			const runner = await createPublicationRunner(source, publicationConfig);
 			runners.push(runner);
 			return runner;
 		},
@@ -129,6 +148,159 @@ const settled = async (database: Kysely<Database>, id: string) => {
 	}
 	throw new Error("Publication did not finish");
 };
+
+test.skipIf(!databaseUrl)(
+	"local publication exports on the current branch without fetch, push, or index changes; mode and branch switches stay pending",
+	async () => {
+		const f = await fixture();
+		const originalPath = process.env.PATH;
+		try {
+			await f.git("switch", "-c", "feature/local-export");
+			// An unreachable origin proves export needs no remote connectivity.
+			await f.git(
+				"remote",
+				"set-url",
+				"origin",
+				"/unavailable/publication-remote",
+			);
+			await writeFile(path.join(f.checkout, "notes.txt"), "staged work");
+			await f.git("add", "notes.txt");
+			await writeFile(path.join(f.checkout, "notes.txt"), "unstaged work");
+			const head = await f.git("rev-parse", "HEAD");
+			const index = await readFile(path.join(f.checkout, ".git/index"));
+			const bin = path.join(f.directory, "bin");
+			await mkdir(bin);
+			const realGit = Bun.which("git");
+			if (!realGit) throw new Error("Git is required for this test");
+			const commandLog = path.join(f.directory, "git-commands.jsonl");
+			await writeFile(
+				path.join(bin, "git"),
+				`#!${process.execPath}
+import {appendFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+const args = process.argv.slice(2);
+appendFileSync(${JSON.stringify(commandLog)}, JSON.stringify(args) + '\\n');
+const result = spawnSync(${JSON.stringify(realGit)}, args, {stdio: 'inherit'});
+process.exit(result.status ?? 1);
+`,
+			);
+			await chmod(path.join(bin, "git"), 0o755);
+			process.env.PATH = `${bin}:${originalPath}`;
+			const local: PublicationConfig = {
+				mode: "local",
+				checkoutPath: f.checkout,
+			};
+			const runner = await f.create(f.database, local);
+			const start = await runner.start({ requestedBy: "admin" });
+			const done = await settled(f.database, start.id);
+			expect(done.job.outcome).toBe("succeeded");
+			expect(done.job.commitId).toBeUndefined();
+			expect(done.job.target).toEqual({
+				...local,
+				branch: "feature/local-export",
+				repository: "/unavailable/publication-remote",
+			});
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				false,
+			);
+			const commands: string[][] = (await readFile(commandLog, "utf8"))
+				.trim()
+				.split("\n")
+				.map((line) => JSON.parse(line));
+			expect(commands.length).toBeGreaterThan(0);
+			for (const args of commands) {
+				// Every invocation must be one of the three local metadata reads.
+				expect(
+					args.includes("rev-parse") ||
+						args.includes("symbolic-ref") ||
+						(args.includes("remote") && args.includes("get-url")),
+				).toBe(true);
+			}
+			process.env.PATH = originalPath;
+			expect(await f.git("rev-parse", "HEAD")).toBe(head);
+			expect(await readFile(path.join(f.checkout, ".git/index"))).toEqual(
+				index,
+			);
+			expect(await readFile(path.join(f.checkout, "notes.txt"), "utf8")).toBe(
+				"unstaged work",
+			);
+			expect(
+				await Bun.file(path.join(f.checkout, "src/res/djs/99.json")).exists(),
+			).toBe(false);
+			expect(
+				await Bun.file(
+					path.join(f.checkout, "public/assets/djs/1_small.webp"),
+				).exists(),
+			).toBe(true);
+			expect(
+				JSON.parse(
+					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				)[0].title,
+			).toBe("Original Tag");
+			expect((await readPublicationStatus(f.database, f.config)).pending).toBe(
+				true,
+			);
+			await f.git("switch", "-c", "feature/another");
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				true,
+			);
+		} finally {
+			if (originalPath === undefined) delete process.env.PATH;
+			else process.env.PATH = originalPath;
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"local export supports non-Git destinations and retries validation failures without clearing pending changes",
+	async () => {
+		const f = await fixture();
+		try {
+			await rm(path.join(f.checkout, ".git"), { recursive: true });
+			const local: PublicationConfig = {
+				mode: "local",
+				checkoutPath: f.checkout,
+			};
+			const outside = path.join(f.directory, "outside.json");
+			await writeFile(outside, "keep me");
+			await symlink(outside, path.join(f.checkout, "src/res/shows.json"));
+			const runner = await f.create(f.database, local);
+			const start = await runner.start({ requestedBy: "admin" });
+			const failed = await settled(f.database, start.id);
+			expect(failed.job.outcome).toBe("failed");
+			if (failed.job.outcome !== "running")
+				expect(failed.job.error).toContain("without symlinks");
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				true,
+			);
+			expect(await readFile(outside, "utf8")).toBe("keep me");
+			await expect(runner.start({ requestedBy: "admin" })).rejects.toThrow(
+				"Explicit Retry",
+			);
+			const remote = await f.create();
+			await expect(
+				remote.start({ requestedBy: "admin", retryJobId: start.id }),
+			).rejects.toThrow("Retry target differs");
+			await rm(path.join(f.checkout, "src/res/shows.json"));
+			const retry = await runner.start({
+				requestedBy: "admin",
+				retryJobId: start.id,
+			});
+			expect((await settled(f.database, retry.id)).job.outcome).toBe(
+				"succeeded",
+			);
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				false,
+			);
+			expect(retry.target).toEqual(local);
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
 
 test.skipIf(!databaseUrl)(
 	"runner publishes generated changes/deletions, captures a consistent revision, and handles no-change",
@@ -257,6 +429,21 @@ test.skipIf(!databaseUrl)(
 				.updateTable("tags")
 				.set({ title: "Newer edit" })
 				.execute();
+			// Work locally between remote failure and retry. Returning to remote
+			// must still find its own failed job, not lose it behind local history.
+			const localConfig: PublicationConfig = {
+				mode: "local",
+				checkoutPath: f.checkout,
+			};
+			const localRunner = await f.create(f.database, localConfig);
+			const localJob = await localRunner.start({ requestedBy: "admin" });
+			expect((await settled(f.database, localJob.id)).job.outcome).toBe(
+				"succeeded",
+			);
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob?.id,
+			).toBe(first.id);
+			await localRunner.close();
 			await rm(hook);
 			runner = await f.create();
 			const retry = await runner.start({

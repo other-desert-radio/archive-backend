@@ -9,6 +9,7 @@ import {
 	up as createLogs,
 	down as dropLogs,
 } from "../../src/db/migrations/0031_add_archive_publication_logs.js";
+import { up as publicationModes } from "../../src/db/migrations/0033_add_publication_modes.js";
 import type { Database } from "../../src/db/types.js";
 import {
 	acquirePublicationLease,
@@ -30,7 +31,7 @@ import {
 
 const databaseUrl = process.env.PUBLICATION_STORE_TEST_DATABASE_URL;
 const config: PublicationConfig = {
-	enabled: true,
+	mode: "remote",
 	repository: "git@github.com:other-desert-radio/archive-site.git",
 	checkoutPath: "/archive-site",
 	branch: "publish-dev",
@@ -68,6 +69,7 @@ test.skipIf(!databaseUrl)(
 			await sql`INSERT INTO archive_publication_state VALUES (1, 9, 3)`.execute(
 				previous,
 			);
+			await previous.transaction().execute(publicationModes);
 			const reservation = await reservePublicationJob({
 				database: previous,
 				request: { requestedBy: "original-admin" },
@@ -209,7 +211,14 @@ test.skipIf(!databaseUrl)(
 					.selectFrom("archive_publication_state")
 					.selectAll()
 					.execute(),
-			).toEqual([{ id: 1, revision: "9", published_revision: "3" }]);
+			).toEqual([
+				{
+					id: 1,
+					revision: "9",
+					published_revision: "3",
+					published_target: null,
+				},
+			]);
 			await interruptAbandonedPublications(recovery);
 			expect(
 				await readPublicationJob(recovery.database, reservation.job.id),
@@ -276,6 +285,10 @@ test.skipIf(!databaseUrl)(
 			// A failed try-lock returns its connection to a one-connection pool.
 			expect((await sql`SELECT 1`.execute(second)).rows).toHaveLength(1);
 			await lease.database.transaction().execute(up);
+			await sql`CREATE TABLE archive_publication_state (id integer, revision bigint, published_revision bigint)`.execute(
+				lease.database,
+			);
+			await lease.database.transaction().execute(publicationModes);
 			expect(
 				(
 					await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
@@ -293,13 +306,6 @@ test.skipIf(!databaseUrl)(
 					"outside a transaction",
 				);
 			});
-			await expect(
-				reservePublicationJob({
-					database: first,
-					request: { requestedBy: "admin" },
-					config: { ...config, enabled: false },
-				}),
-			).rejects.toThrow("disabled");
 			await expect(
 				reservePublicationJob({
 					database: first,
@@ -440,6 +446,10 @@ test.skipIf(!databaseUrl)(
 		try {
 			await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(database);
 			await database.transaction().execute(up);
+			await sql`CREATE TABLE IF NOT EXISTS archive_publication_state (id integer, revision bigint, published_revision bigint)`.execute(
+				database,
+			);
+			await database.transaction().execute(publicationModes);
 			await expect(
 				database.transaction().execute(async (transaction) => {
 					await createLogs(transaction);
@@ -721,6 +731,10 @@ test.skipIf(!databaseUrl)(
 				).rows,
 			).toEqual([{ table: null }]);
 			await database.transaction().execute(up);
+			await sql`CREATE TABLE IF NOT EXISTS archive_publication_state (id integer, revision bigint, published_revision bigint)`.execute(
+				database,
+			);
+			await database.transaction().execute(publicationModes);
 			const job = await createPublicationJob({
 				lease,
 				request: { requestedBy: "admin-id" },
@@ -865,14 +879,24 @@ test.skipIf(!databaseUrl)(
 					.select("id")
 					.execute(),
 			).toHaveLength(2);
+			await database.schema
+				.alterTable("archive_publication_state")
+				.dropColumn("published_target")
+				.execute();
 			await database.transaction().execute(down);
 			expect(
 				await database
 					.selectFrom("archive_publication_state")
 					.selectAll()
 					.execute(),
-			).toEqual(before);
+			).toEqual(
+				before.map(({ published_target: _publishedTarget, ...state }) => state),
+			);
 			await database.transaction().execute(up);
+			await sql`CREATE TABLE IF NOT EXISTS archive_publication_state (id integer, revision bigint, published_revision bigint)`.execute(
+				database,
+			);
+			await database.transaction().execute(publicationModes);
 			expect(
 				await database
 					.selectFrom("archive_publication_jobs")

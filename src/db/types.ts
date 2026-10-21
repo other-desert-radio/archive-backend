@@ -1,7 +1,9 @@
 import type { ColumnType, Generated } from "kysely";
 import type {
+	PublicationMode,
 	PublicationOutcome,
 	PublicationStage,
+	PublicationTarget,
 } from "../publication/types.js";
 
 export type Database = {
@@ -27,6 +29,7 @@ export type ArchivePublicationStateTable = {
 	id: Generated<number>;
 	revision: Generated<string>;
 	published_revision: Generated<string>;
+	published_target: Generated<PublicationTarget | null>;
 };
 
 export type ArchivePublicationJobsTable = {
@@ -34,9 +37,10 @@ export type ArchivePublicationJobsTable = {
 	requested_by: string;
 	created_at: Generated<Date>;
 	completed_at: Date | null;
-	repository: string;
+	mode: Generated<PublicationMode>;
+	repository: string | null;
 	checkout_path: string;
-	branch: string;
+	branch: string | null;
 	retry_job_id: string | null;
 	stage: Generated<PublicationStage>;
 	outcome: Generated<"running" | PublicationOutcome>;

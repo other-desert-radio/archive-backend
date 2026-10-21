@@ -27,7 +27,6 @@ export const archiveExportDirectories = ({
 	const checkoutPath = readArchiveCheckoutPath({
 		environment,
 		repositoryRoot,
-		fallback: "../archive-site",
 	});
 	return {
 		resourceDirectory: path.join(checkoutPath, "src/res"),

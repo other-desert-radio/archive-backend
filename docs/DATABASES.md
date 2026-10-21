@@ -39,9 +39,11 @@ and a trigger to retain source rows and clear their import timestamps; see the
 
 Migration `0029_add_archive_publication_state` creates the singleton
 `archive_publication_state` row (`id = 1`). Its bigint `revision` starts at 1
-and `published_revision` at 0, so an existing archive starts pending. Pending
-means `revision > published_revision`. PostgreSQL bigint values remain decimal
-strings in application types and JSON to avoid numeric precision loss.
+and `published_revision` at 0, so an existing archive starts pending. Migration
+`0033_add_publication_modes` adds nullable `published_target` JSONB. Pending
+means the revision advanced or the current target differs from the acknowledged
+target; an unknown target remains pending. PostgreSQL bigint values remain
+decimal strings in application types and JSON to avoid numeric precision loss.
 
 Statement-level triggers on `djs`, `shows`, `tags`, `show_djs`, `show_tags`, and
 `dj_tags` increment the revision after each INSERT, UPDATE, DELETE, or TRUNCATE
@@ -72,7 +74,10 @@ New jobs start at `queued`/`running`. Database checks restrict stages and
 outcomes, require a completion timestamp for terminal outcomes, and prevent
 completion timestamps/errors on running jobs. Successful/no-change outcomes
 require a captured revision and no error; pushed success also requires a commit
-ID. Creation order is indexed by timestamp and ID.
+ID for remote jobs. Migration `0033` adds `mode` (`local` or `remote`,
+defaulting existing rows to `remote`) and makes repository/branch nullable for
+local metadata. Local success requires no commit ID. Creation order is indexed
+by timestamp and ID.
 
 Storage currently supports metadata creation/read, running-job stage updates,
 and one-time capture of revision and commit ID. Bigint revisions remain decimal
@@ -83,11 +88,20 @@ completed jobs reject progress updates. Missing/ineligible jobs fail writes
 rather than silently reporting success.
 
 The runner completes jobs and acknowledges only their captured revision in the
-same transaction, then prunes history. Failure never acknowledges publication;
-newer archive revisions remain pending. Metadata writes do not advance archive
-revisions. Interruption recovery and the authenticated APIs are wired at
-startup. Rolling back `0030` drops job history while preserving archive tables
-and the singleton revision row; roll back the dependent log migration first.
+same transaction, saving the target in `published_target`, then prunes history.
+Failure never acknowledges publication; newer archive revisions remain pending.
+Metadata writes do not advance archive revisions. Interruption recovery and the
+authenticated APIs are wired at startup. Rolling back `0030` drops job history
+while preserving archive tables and the singleton revision row; roll back the
+dependent log migration first.
+
+Migration `0033` backfills the acknowledged remote target only when retained
+successful history matches `published_revision`; otherwise it remains unknown.
+The JSON object contains `mode`, `checkoutPath`, and optional local repository
+and branch metadata; remote targets require both. SQL checks validate its shape.
+Rollback preserves remote history and refuses while local jobs or a local
+acknowledged target exist, rather than discarding or relabeling them. Apply and
+roll back explicitly; startup never migrates.
 
 ### Publication admission and lock ownership
 
@@ -99,22 +113,24 @@ connection to the pool. Repeated release calls await the same cleanup and do not
 unlock a later lease. Acquisition rejects transaction handles: job creation and
 progress must commit durably while the session lock remains held.
 
-`reservePublicationJob` is the admission entry point for the runner. It rejects
-disabled publication, acquires the lease, checks for any durable running job,
-and only then inserts a queued job. Contention or an existing running row throws
-`PublicationBusyError`; database errors propagate. Rejected reservations release
-their lease. A successful reservation returns both job and lease; its caller
-must release in `finally` after execution. Use the connection on the lease for
-publication database work, and never reuse that handle after release.
-`createPublicationJob` remains a low-level insert, not an admission entry point.
+`reservePublicationJob` is the admission entry point for the runner. It acquires
+the lease, checks for any durable running job, and only then inserts a queued
+job. Contention or an existing running row throws `PublicationBusyError`;
+database errors propagate. Rejected reservations release their lease. A
+successful reservation returns both job and lease; its caller must release in
+`finally` after execution. Use the connection on the lease for publication
+database work, and never reuse that handle after release. `createPublicationJob`
+remains a low-level insert, not an admission entry point.
 
 The lock spans job execution without a long database transaction. PostgreSQL
 releases session locks on disconnect, but the durable running row still blocks a
 new reservation until interruption recovery handles it. Retrying requires the
-latest failed/interrupted job ID and an unchanged target; callers cannot bypass
-failure recovery by starting a fresh job. Tests use independent one-connection
-pools to verify contention, durable job visibility, repeated release, and
-cleanup after rejected reservations.
+latest failed/interrupted job ID for that target and an unchanged destination;
+callers cannot bypass failure recovery by starting a fresh job for the same
+target. A different mode/destination can start fresh; explicit retries cannot
+cross targets. Tests use independent one-connection pools to verify contention,
+durable job visibility, repeated release, and cleanup after rejected
+reservations.
 
 ### Abandoned-job interruption
 

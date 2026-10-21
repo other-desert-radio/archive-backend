@@ -263,24 +263,22 @@ test.skipIf(!exportDatabaseUrl)(
 	},
 );
 
-test("export destinations retain the sibling default and honor checkout configuration", () => {
-	expect(
+test("export destinations require a checkout and honor its configuration", () => {
+	expect(() =>
 		archiveExportDirectories({
 			environment: {},
+			repositoryRoot: "/work/backend",
+		}),
+	).toThrow("ARCHIVE_CHECKOUT_PATH");
+
+	expect(
+		archiveExportDirectories({
+			environment: { ARCHIVE_CHECKOUT_PATH: "../archive-site" },
 			repositoryRoot: "/work/backend",
 		}),
 	).toEqual({
 		resourceDirectory: "/work/archive-site/src/res",
 		assetDirectory: "/work/archive-site/public/assets",
-	});
-	expect(
-		archiveExportDirectories({
-			environment: { ARCHIVE_CHECKOUT_PATH: "../clean-archive-site" },
-			repositoryRoot: "/work/backend",
-		}),
-	).toEqual({
-		resourceDirectory: "/work/clean-archive-site/src/res",
-		assetDirectory: "/work/clean-archive-site/public/assets",
 	});
 	expect(
 		archiveExportDirectories({

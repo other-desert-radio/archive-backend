@@ -486,16 +486,16 @@ failed Show save can leave an unassigned tag, which is reused on retry.
 
 Publication endpoints require an administrator session; editors receive `403`.
 They share the admin session, required-password-change, and same-origin mutation
-boundary. Publication success means pushed to GitHub, without waiting for Pages.
+boundary. Local publication success means assets were written to the checkout;
+remote success means pushed to GitHub, without waiting for Pages.
 
-- `GET /api/admin/publication` returns `enabled`, target `branch`,
-  decimal-string `revision` and `publishedRevision`, `pending`, and optional
-  `latestJob`.
+- `GET /api/admin/publication` returns `mode`, `target`, decimal-string
+  `revision` and `publishedRevision`, `pending`, and optional `latestJob`.
 - `POST /api/admin/publication` accepts `{}` or `{ retryJobId }`, reserves a
-  durable job, and returns `202` with its metadata. Disabled publishing returns
-  `503`, concurrent starts return `409`, invalid input returns `400`, and
-  unknown retry jobs return `404`. Retry requires a failed or interrupted job.
-  Closing a browser or modal does not cancel execution.
+  durable job, and returns `202` with its metadata. Concurrent starts return
+  `409`, invalid input returns `400`, and unknown retry jobs return `404`. Retry
+  requires a failed or interrupted job. Closing a browser or modal does not
+  cancel execution.
 - `GET /api/admin/publication/jobs/:jobId` returns
   `{ job, logs, logsTruncated }`, with ordered, sanitized log lines. Unknown
   jobs return `404`.
@@ -506,6 +506,13 @@ boundary. Publication success means pushed to GitHub, without waiting for Pages.
   two-second durable polling fallback tolerates notification outages. Sessions
   and administrator permission are revalidated on reads; revoked or expired
   sessions close the stream. Heartbeat comments keep idle connections alive.
+
+Job `target` and status `target` include `mode` and `checkoutPath`. Remote
+targets include repository and branch; local targets include the actual branch
+and origin when available. Local publication never fetches, commits, or pushes.
+Changing mode or destination makes publication pending for the new target;
+retries cannot cross targets. Failed jobs from a different target do not block a
+fresh publication. Successful jobs acknowledge only their captured revision.
 
 Unexpected publication failures are logged and return an operation-specific
 `500` message with recovery guidance and a request ID for server-log lookup.

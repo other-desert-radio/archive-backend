@@ -189,15 +189,15 @@ with `docker compose down`.
 
 The admin-only publisher uses these settings. The export-only
 `bun run publish-locally` command reads `ARCHIVE_CHECKOUT_PATH`; see
-[the export guide](ARCHIVE_EXPORT.md) for its standalone fallback and asset
-ownership rules.
+[the export guide](ARCHIVE_EXPORT.md) for its destination and asset ownership
+rules.
 
 ```dotenv
 ARCHIVE_SITE_REPOSITORY=git@github.com:other-desert-radio/archive-site.git
-ARCHIVE_CHECKOUT_PATH=../clean-archive-site
+ARCHIVE_CHECKOUT_PATH=../archive-site
 ARCHIVE_CONTAINER_CHECKOUT_PATH=/archive-site
 ARCHIVE_PUBLISH_BRANCH=publish-dev
-ARCHIVE_PUBLISH_ENABLED=true
+ARCHIVE_PUBLISH_MODE=local
 ```
 
 The application reads `ARCHIVE_CHECKOUT_PATH` only. Relative paths resolve from
@@ -208,21 +208,33 @@ must be separate from the backend, with neither containing the other. This
 configuration check is lexical; filesystem, symlink, repository, and actual
 branch validation run before publication.
 
-Unset settings default to the repository, checkout, and branch above, with
-publishing **disabled**. The example explicitly enables it. Local publication
-targets `publish-dev`; configure `main` on the server. Enablement accepts only
-`true` or `false`. Values are trimmed; blank settings and embedded control
-characters are rejected, including when publishing is disabled. Repository
-settings accept SCP-style SSH, `ssh://`, or `https://` remotes without embedded
-passwords, query strings, or fragments; HTTPS usernames are also rejected.
-Branch names use letters, numbers, underscores, dots, slashes, or hyphens and
-must satisfy the reader's conservative Git name checks. Errors identify the
-setting without echoing its value. Reading configuration performs no filesystem,
-Git, database, or network operations.
+`ARCHIVE_PUBLISH_MODE` accepts `local` (the default) or `remote`. The former
+`ARCHIVE_PUBLISH_ENABLED` setting is no longer read. Local mode uses the
+existing `ARCHIVE_CHECKOUT_PATH` (required, with no fallback): it validates the
+destination, writes generated assets, and acknowledges the captured revision. It
+allows unrelated staged, unstaged, and untracked edits and never fetches,
+synchronizes branches, commits, or pushes. Read-only Git inspection records the
+actual current branch and optional origin; a missing remote, detached HEAD, or
+non-Git destination does not block export. Remote-only settings are ignored in
+local mode.
+
+Remote mode uses the repository and branch defaults above. Configure `main` on
+the server. Values are trimmed; blank relevant settings and embedded control
+characters are rejected. Remote repositories accept SCP-style SSH, `ssh://`, or
+`https://` URLs without embedded passwords, query strings, or fragments; HTTPS
+usernames are rejected. Branch names follow conservative Git name checks.
+Reading configuration performs no filesystem, Git, database, or network
+operations.
+
+The status indicator clears only after successful publication of its captured
+snapshot. Edits committed during export remain pending. Switching mode,
+destination, or local branch makes that destination pending even without new
+archive edits. Local retries export a fresh snapshot to repair partial output;
+remote retries retain recognized commit/push recovery.
 
 ### Publication checkout safety
 
-The publication validator inspects the checkout locally without fetching,
+The remote publication validator inspects the checkout locally without fetching,
 writing files, changing the index, or contacting a remote. It requires an
 existing dedicated normal clone, the repository root on the configured branch
 with a committed HEAD, and one origin fetch URL and one effective push URL
@@ -284,7 +296,7 @@ reconciliation precedes a fresh export and commit/push.
 Install Bun, Git, OpenSSH, and Docker with Compose on the host. Configure an
 untracked `.env` with the public HTTPS `BETTER_AUTH_URL`, a unique
 `BETTER_AUTH_SECRET` (at least 32 characters), a non-example database password,
-`ARCHIVE_PUBLISH_ENABLED=true`, `ARCHIVE_PUBLISH_BRANCH=main`, and explicit
+`ARCHIVE_PUBLISH_MODE=remote`, `ARCHIVE_PUBLISH_BRANCH=main`, and explicit
 `ARCHIVE_GIT_NAME` / `ARCHIVE_GIT_EMAIL` for publication commits. Set
 `ARCHIVE_RUNTIME_UID` and `ARCHIVE_RUNTIME_GID` to the numeric owner of the
 checkout and deploy key (`id -u` / `id -g` for that service account). Leave
@@ -333,11 +345,11 @@ prove that the deploy key has repository write permission; grant that permission
 when provisioning the key. Setup does not publish or retry a publication. The
 SSH key is checked for unattended use without a passphrase or host agent before
 checkout preparation; use a dedicated publication key rather than weakening a
-development key. The container readiness check requires publishing to be enabled
-and resolves author and committer identity from its environment without creating
-a commit. Branch mismatches name both the checkout branch and configured
-publication branch. Remote-authentication failures explain how to verify the
-configured key and repository deploy-key access.
+development key. The container readiness check requires remote mode and resolves
+author and committer identity from its environment without creating a commit.
+Branch mismatches name both the checkout branch and configured publication
+branch. Remote-authentication failures explain how to verify the configured key
+and repository deploy-key access.
 
 Without `--migrate`, missing publication tables fail readiness with migration
 guidance. Failed readiness or migration checks stop before API startup; an
@@ -360,18 +372,20 @@ Run setup from the backend after installing Bun and Git and copying
 ```
 
 The script loads the backend `.env` with exported environment values taking
-precedence. It clones the configured repository when the destination is absent,
-otherwise validates its root and origin. It selects an existing target branch,
-or creates the target from its remote tracking branch; when neither exists it
-fetches remote `main` and creates the local target there. Local setup defaults
-to `publish-dev`. Set `ARCHIVE_PUBLISH_BRANCH=main` on the server. Setup never
-pushes, commits, resets, stashes, or deletes work. A dirty checkout on another
-branch or an unfinished Git operation requires manual resolution. Dirty work on
-the target branch is preserved; setup success does not guarantee it is safe to
-publish. `ARCHIVE_GIT_NAME` and `ARCHIVE_GIT_EMAIL` supply the publisher commit
-identity inside Docker through Compose. The publisher applies them per commit,
-so a fresh checkout needs no manual Git configuration. Setup also writes these
-values locally in the checkout; outside Compose, existing local identity may be
+precedence. In local mode it validates the existing destination without Git
+mutations or network access. In remote mode it clones the configured repository
+when the destination is absent, otherwise validates its root and origin. It
+selects an existing target branch, or creates the target from its remote
+tracking branch; when neither exists it fetches remote `main` and creates the
+local target there. Remote setup defaults to `publish-dev`. Set
+`ARCHIVE_PUBLISH_BRANCH=main` on the server. Setup never pushes, commits,
+resets, stashes, or deletes work. A dirty checkout on another branch or an
+unfinished Git operation requires manual resolution. Dirty work on the target
+branch is preserved; setup success does not guarantee it is safe to publish.
+`ARCHIVE_GIT_NAME` and `ARCHIVE_GIT_EMAIL` supply the publisher commit identity
+inside Docker through Compose. The publisher applies them per commit, so a fresh
+checkout needs no manual Git configuration. Setup also writes these values
+locally in the checkout; outside Compose, existing local identity may be
 retained by leaving both unset. If either is supplied, both must be nonempty. Do
 not depend on global Git identity/configuration, which publication ignores.
 Publisher Git commands trust only the configured checkout through a per-command
@@ -408,27 +422,29 @@ files; setting only `ARCHIVE_KNOWN_HOSTS_PATH` leaves the private-key mount at
 its default path. An `invalid mount config for type "bind"` error names the
 missing host path: provision that file or update its corresponding `.env`
 setting. The setup script prepares the checkout, not these SSH files. After
-updating the paths, rerun `docker compose up -d --build`.
+updating the paths, rerun
+`docker compose -f compose.yml -f compose.remote.yml up -d --build`.
 
-Compose bind-mounts the checkout persistently and the two credential files
-read-only into `/run/archive-ssh/id_ed25519` and `/run/archive-ssh/known_hosts`.
-The image’s SSH configuration uses these paths. The API runs as the non-root
-`bun` service account, built with `ARCHIVE_RUNTIME_UID` / `ARCHIVE_RUNTIME_GID`
-(both default to 1000). Missing bind sources fail instead of silently creating
-empty directories; prepare them even when running this Compose file with
-publishing disabled. The application sees only the mounted
-`ARCHIVE_CONTAINER_CHECKOUT_PATH` under its normal `ARCHIVE_CHECKOUT_PATH`
-setting. Host-relative bind paths resolve from the backend Compose project
-directory. Credentials are never copied into the image. The checkout and private
-key must be owned by the configured runtime UID; the checkout group must match
-the runtime GID. Use your own IDs locally and a dedicated service account on
-servers. Rebuild the image after changing IDs. Setup checks write access to
-generated-output and Git directories, creates a temporary file through the
-container, verifies its host-side owner, and removes it. This detects
-incompatible rootless/user-namespace mappings before API startup. Existing files
-created by an earlier root runtime need a one-time ownership repair; setup
-reports the mismatch and does not recursively chown or discard checkout work.
-Keep SSH files read-only to the container.
+The base `compose.yml` mounts only the checkout. Remote mode adds
+`compose.remote.yml`, which mounts the two credential files read-only into
+`/run/archive-ssh/id_ed25519` and `/run/archive-ssh/known_hosts`. The image’s
+SSH configuration uses these paths. The API runs as the non-root `bun` service
+account, built with `ARCHIVE_RUNTIME_UID` / `ARCHIVE_RUNTIME_GID` (both default
+to 1000). Missing bind sources fail instead of silently creating empty
+directories. Local mode requires only the existing checkout directory; remote
+mode requires the checkout and both SSH files. The application sees only the
+mounted `ARCHIVE_CONTAINER_CHECKOUT_PATH` under its normal
+`ARCHIVE_CHECKOUT_PATH` setting. Host-relative bind paths resolve from the
+backend Compose project directory. Credentials are never copied into the image.
+The checkout and private key must be owned by the configured runtime UID; the
+checkout group must match the runtime GID. Use your own IDs locally and a
+dedicated service account on servers. Rebuild the image after changing IDs.
+Setup checks write access to generated-output and Git directories, creates a
+temporary file through the container, verifies its host-side owner, and removes
+it. This detects incompatible rootless/user-namespace mappings before API
+startup. Existing files created by an earlier root runtime need a one-time
+ownership repair; setup reports the mismatch and does not recursively chown or
+discard checkout work. Keep SSH files read-only to the container.
 
 Back up the database and dedicated checkout together; job recovery relies on
 retained Git objects and durable job records. Do not share this checkout with
@@ -436,17 +452,21 @@ another publisher or an interactive editing workflow.
 
 ### Publication operation and recovery
 
-Apply the reviewed database migrations before enabling publication, then build
-and start the API with `docker compose up -d --build`. Publication is restricted
-to authenticated admins. The header appears for pending archive revisions;
-confirming Publish starts a durable server job. Closing or refreshing the page
-does not cancel it. Reopen the control to view progress and retained logs.
-Editors cannot read publication status, logs, or invoke jobs.
+Apply reviewed database migrations before starting publication, then build and
+start the local API with `scripts/build-container`. The build helpers use the
+base Compose file without inspecting publication settings. For remote startup,
+use `scripts/setup-server` or explicitly select the SSH overlay with
+`docker compose -f compose.yml -f compose.remote.yml up -d --build`. Publication
+is restricted to authenticated admins. The header appears for pending archive
+revisions; confirming Publish starts a durable server job. Closing or refreshing
+the page does not cancel it. Reopen the control to view progress and retained
+logs. Editors cannot read publication status, logs, or invoke jobs.
 
-A successful job means the generated files were pushed to GitHub, or already
-matched the remote result. It does not mean the site deployment completed. The
-archive-site Pages workflow deploys `main` only; pushes to local `publish-dev`
-are reviewable publication tests and do not deploy Pages.
+A successful local job means generated assets were written to the configured
+checkout. A successful remote job means generated files were pushed to GitHub,
+or already matched the remote result. It does not mean the site deployment
+completed. The archive-site Pages workflow deploys `main` only; pushes to local
+`publish-dev` are reviewable publication tests and do not deploy Pages.
 `bun run publish-locally` remains an export-only diagnostic command and never
 acknowledges pending revisions. A real push to `publish-dev` is a separately
 reviewed acceptance operation; automated tests use local temporary remotes.
