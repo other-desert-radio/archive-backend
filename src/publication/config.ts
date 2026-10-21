@@ -1,6 +1,18 @@
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { isMatching, match, P } from "ts-pattern";
-import type { PublicationConfig } from "./types.js";
+import type { PublicationConfig, PublicationModeConfig } from "./types.js";
+
+/**
+ * Parse local/remote settings without filesystem, Git, database, or network I/O.
+ * Defaults to local; invalid relevant settings throw setting-specific errors.
+ * Kept off startup until mode-aware execution is integrated.
+ */
+export const readPublicationModeConfig = (
+	_environment: NodeJS.ProcessEnv,
+	_repositoryRoot: string,
+): PublicationModeConfig => {
+	throw new Error("Not implemented: readPublicationModeConfig");
+};
 
 const setting = ({
 	environment,

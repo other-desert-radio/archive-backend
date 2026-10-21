@@ -1,5 +1,17 @@
 /** Decimal strings preserve PostgreSQL bigint revisions in JSON. */
 export type PublicationRevision = string;
+export type PublicationMode = "local" | "remote";
+/** Mode-aware configuration; local exports require only a destination path. */
+export type PublicationModeConfig =
+	| { mode: "local"; checkoutPath: string }
+	| {
+			mode: "remote";
+			checkoutPath: string;
+			repository: string;
+			branch: string;
+			gitIdentity?: { name: string; email: string };
+	  };
+/** Existing runner contract, retained until mode-aware execution is integrated. */
 export type PublicationConfig = {
 	enabled: boolean;
 	repository: string;
