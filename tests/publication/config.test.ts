@@ -1,7 +1,99 @@
 import { expect, test } from "bun:test";
-import { readPublicationConfig } from "../../src/publication/index.js";
+import {
+	readPublicationConfig,
+	readPublicationModeConfig,
+} from "../../src/publication/index.js";
 
 const root = "/work/archive-backend";
+
+test("mode configuration defaults to local with the existing checkout fallback", () => {
+	expect(readPublicationModeConfig({}, root)).toEqual({
+		mode: "local",
+		checkoutPath: "/work/clean-archive-site",
+	});
+});
+
+test("local mode reuses the existing checkout setting and ignores Git settings", () => {
+	expect(
+		readPublicationModeConfig(
+			{
+				ARCHIVE_PUBLISH_MODE: " local ",
+				ARCHIVE_CHECKOUT_PATH: " ../existing-site ",
+				ARCHIVE_SITE_REPOSITORY: "invalid",
+				ARCHIVE_PUBLISH_BRANCH: "invalid..branch",
+				ARCHIVE_GIT_NAME: "",
+				ARCHIVE_PUBLISH_ENABLED: "invalid",
+			},
+			root,
+		),
+	).toEqual({ mode: "local", checkoutPath: "/work/existing-site" });
+});
+
+test("mode configuration rejects invalid modes without exposing their values", () => {
+	for (const mode of ["", " ", "disabled", "LOCAL", "true", "bad\nvalue"]) {
+		expect(() =>
+			readPublicationModeConfig({ ARCHIVE_PUBLISH_MODE: mode }, root),
+		).toThrow("ARCHIVE_PUBLISH_MODE");
+	}
+});
+
+test("both publication modes require a valid, separate destination", () => {
+	for (const mode of ["local", "remote"]) {
+		expect(() =>
+			readPublicationModeConfig({ ARCHIVE_PUBLISH_MODE: mode }, "relative"),
+		).toThrow("root must be absolute");
+		for (const checkoutPath of [
+			"",
+			"bad\nvalue",
+			".",
+			"./generated",
+			"..",
+			"/",
+		]) {
+			expect(() =>
+				readPublicationModeConfig(
+					{ ARCHIVE_PUBLISH_MODE: mode, ARCHIVE_CHECKOUT_PATH: checkoutPath },
+					root,
+				),
+			).toThrow("ARCHIVE_CHECKOUT_PATH");
+		}
+	}
+});
+
+test("remote mode normalizes Git settings independently of the legacy enable flag", () => {
+	expect(
+		readPublicationModeConfig(
+			{
+				ARCHIVE_PUBLISH_MODE: " remote ",
+				ARCHIVE_PUBLISH_ENABLED: "invalid",
+				ARCHIVE_CHECKOUT_PATH: "/archive-site",
+				ARCHIVE_SITE_REPOSITORY: " https://github.com/example/archive.git ",
+				ARCHIVE_PUBLISH_BRANCH: " main ",
+				ARCHIVE_GIT_NAME: " Publisher ",
+				ARCHIVE_GIT_EMAIL: " publisher@example.test ",
+			},
+			root,
+		),
+	).toEqual({
+		mode: "remote",
+		checkoutPath: "/archive-site",
+		repository: "https://github.com/example/archive.git",
+		branch: "main",
+		gitIdentity: { name: "Publisher", email: "publisher@example.test" },
+	});
+	for (const [name, value] of [
+		["ARCHIVE_SITE_REPOSITORY", "file:///archive"],
+		["ARCHIVE_PUBLISH_BRANCH", "a..b"],
+		["ARCHIVE_GIT_NAME", "Publisher"],
+	]) {
+		expect(() =>
+			readPublicationModeConfig(
+				{ ARCHIVE_PUBLISH_MODE: "remote", [name]: value },
+				root,
+			),
+		).toThrow(name === "ARCHIVE_GIT_NAME" ? "ARCHIVE_GIT_EMAIL" : name);
+	}
+});
 
 test("publication defaults are disabled with a dedicated sibling checkout", () => {
 	expect(readPublicationConfig({}, root)).toEqual({

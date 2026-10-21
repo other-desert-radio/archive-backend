@@ -22,8 +22,9 @@
       config.test.ts.
 - [x] User reviews structure and requests configuration scaffolding.
 - [x] Scaffold configuration contracts.
-- [ ] User reviews configuration scaffolding.
-- [ ] Implement and verify configuration unit; review.
+- [x] User reviews configuration scaffolding.
+- [x] Implement configuration reader and focused tests.
+- [ ] User reviews completed configuration unit.
 - [ ] Publication execution and persistence unit, with staged review.
 - [ ] Admin UI unit, with staged review and visual acceptance.
 - [ ] Development integration: Compose, setup scripts, env examples, local .env,
@@ -38,14 +39,21 @@ tests/publication/config.test.ts for validation. No new source module is
 necessary. Tests stay unchanged until the configuration reader has executable
 behavior.
 
-Added PublicationMode, a discriminated PublicationModeConfig, and an explicit
-readPublicationModeConfig stub. Local configuration contains only mode and
+Added PublicationMode, a discriminated PublicationModeConfig, and an implemented
+readPublicationModeConfig reader. Local configuration contains only mode and
 checkoutPath; remote configuration additionally contains repository, branch, and
 optional commit identity. The existing reader and runner contract remain active
 so startup continues working. The existing publication index exports the
 scaffold through its existing barrel exports.
 
-Next: wait for scaffolding approval before implementing the reader, following
-[Development modes](../../DEVELOPMENT.md#development-modes). Read TypeScript and
-testing guidance for this checkpoint; do not scaffold later layers. The new
-reader throws until implementation and is not called by startup.
+Local mode reuses ARCHIVE_CHECKOUT_PATH and its existing fallback; no additional
+path setting is introduced. It ignores remote-only settings. Remote mode reuses
+the existing reader's validation with the old enable flag overridden internally;
+the mode-aware reader ignores that legacy flag. This temporary reuse will be
+removed when the runner adopts mode-aware configuration. Startup still uses the
+legacy reader, so this checkpoint does not change live publication behavior.
+
+Next: review this unit, then propose the structure for execution and
+persistence, following
+[Development modes](../../DEVELOPMENT.md#development-modes). Do not advance to
+execution or persistence implementation without its staged review.

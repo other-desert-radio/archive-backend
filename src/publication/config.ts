@@ -8,13 +8,42 @@ import type { PublicationConfig, PublicationModeConfig } from "./types.js";
  * Kept off startup until mode-aware execution is integrated.
  */
 export const readPublicationModeConfig = (
-	_environment: NodeJS.ProcessEnv,
-	_repositoryRoot: string,
+	environment: NodeJS.ProcessEnv,
+	repositoryRoot: string,
 ): PublicationModeConfig => {
-	throw new Error("Not implemented: readPublicationModeConfig");
+	if (!isAbsolute(repositoryRoot))
+		throw new Error("Backend repository root must be absolute");
+	const mode = readEnvSetting({
+		environment,
+		name: "ARCHIVE_PUBLISH_MODE",
+		fallback: "local",
+	});
+	switch (mode) {
+		case "local":
+			return {
+				mode,
+				checkoutPath: readArchiveCheckoutPath({ environment, repositoryRoot }),
+			};
+		case "remote": {
+			// Reuse existing remote validation during the staged runner migration.
+			const config = readPublicationConfig(
+				{ ...environment, ARCHIVE_PUBLISH_ENABLED: "true" },
+				repositoryRoot,
+			);
+			return {
+				mode,
+				checkoutPath: config.checkoutPath,
+				repository: config.repository,
+				branch: config.branch,
+				...(config.gitIdentity ? { gitIdentity: config.gitIdentity } : {}),
+			};
+		}
+		default:
+			throw new Error("ARCHIVE_PUBLISH_MODE must be local or remote");
+	}
 };
 
-const setting = ({
+const readEnvSetting = ({
 	environment,
 	name,
 	fallback,
@@ -109,7 +138,7 @@ export const readArchiveCheckoutPath = ({
 		throw new Error("Backend repository root must be absolute");
 	const checkoutPath = resolve(
 		repositoryRoot,
-		setting({ environment, name: "ARCHIVE_CHECKOUT_PATH", fallback }),
+		readEnvSetting({ environment, name: "ARCHIVE_CHECKOUT_PATH", fallback }),
 	);
 	if (
 		containsPath(repositoryRoot, checkoutPath) ||
@@ -129,7 +158,7 @@ export const readPublicationConfig = (
 ): PublicationConfig => {
 	if (!isAbsolute(repositoryRoot))
 		throw new Error("Backend repository root must be absolute");
-	const enabled = setting({
+	const enabled = readEnvSetting({
 		environment,
 		name: "ARCHIVE_PUBLISH_ENABLED",
 		fallback: "false",
@@ -137,7 +166,7 @@ export const readPublicationConfig = (
 	if (!isMatching(P.union("true", "false"), enabled)) {
 		throw new Error("ARCHIVE_PUBLISH_ENABLED must be true or false");
 	}
-	const repository = setting({
+	const repository = readEnvSetting({
 		environment,
 		name: "ARCHIVE_SITE_REPOSITORY",
 		fallback: "git@github.com:other-desert-radio/archive-site.git",
@@ -146,7 +175,7 @@ export const readPublicationConfig = (
 		throw new Error(
 			"ARCHIVE_SITE_REPOSITORY must be an SSH or HTTPS remote without embedded passwords",
 		);
-	const branch = setting({
+	const branch = readEnvSetting({
 		environment,
 		name: "ARCHIVE_PUBLISH_BRANCH",
 		fallback: "publish-dev",
@@ -160,12 +189,12 @@ export const readPublicationConfig = (
 		environment.ARCHIVE_GIT_NAME !== undefined ||
 		environment.ARCHIVE_GIT_EMAIL !== undefined
 			? {
-					name: setting({
+					name: readEnvSetting({
 						environment,
 						name: "ARCHIVE_GIT_NAME",
 						fallback: "",
 					}),
-					email: setting({
+					email: readEnvSetting({
 						environment,
 						name: "ARCHIVE_GIT_EMAIL",
 						fallback: "",
