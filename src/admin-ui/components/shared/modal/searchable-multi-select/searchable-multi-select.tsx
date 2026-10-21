@@ -23,6 +23,7 @@ type SearchableMultiSelectProps = {
 	onRetry?: () => void;
 	helper?: ReactNode;
 	highlightEmptySelection?: boolean;
+	hideSearchHelp?: boolean;
 };
 /** A searchable relationship combobox with removable chips and inline completion. */
 export const SearchableMultiSelect = ({
@@ -36,6 +37,7 @@ export const SearchableMultiSelect = ({
 	onRetry,
 	helper,
 	highlightEmptySelection = false,
+	hideSearchHelp = false,
 }: SearchableMultiSelectProps) => {
 	const isMissingSelection =
 		highlightEmptySelection && !isLoading && selectedIds.length === 0;
@@ -160,7 +162,14 @@ export const SearchableMultiSelect = ({
 											: undefined
 									}
 									aria-label={`Search ${label}`}
-									aria-describedby={`${id}-search-help${helper ? ` ${id}-help` : ""}`}
+									aria-describedby={
+										[
+											!hideSearchHelp && `${id}-search-help`,
+											helper && `${id}-help`,
+										]
+											.filter(Boolean)
+											.join(" ") || undefined
+									}
 									onScroll={(event) =>
 										setScrollLeft(event.currentTarget.scrollLeft)
 									}
@@ -241,9 +250,11 @@ export const SearchableMultiSelect = ({
 						)}
 					</fieldset>
 				)}
-				<p id={`${id}-search-help`} className={styles.helper}>
-					Type to search. Press Tab to accept the gray completion.
-				</p>
+				{!hideSearchHelp && (
+					<p id={`${id}-search-help`} className={styles.helper}>
+						Type to search. Press Tab to accept the gray completion.
+					</p>
+				)}
 				{helper && (
 					<div id={`${id}-help`} className={styles.helper}>
 						{helper}

@@ -63,3 +63,9 @@
 .withTrailing .trailing {
 	display: flex;
 }
+
+.invalid input {
+	color: #ff2c2c;
+	border-color: #ff2c2c;
+	caret-color: #ff2c2c;
+}

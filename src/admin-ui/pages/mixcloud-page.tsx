@@ -340,11 +340,7 @@ export const MixcloudPage = () => {
 			{session !== undefined && (
 				<MixcloudImportQueue
 					items={session.items}
-					remainingCount={
-						session.singleRow
-							? 1
-							: pendingMixcloudImports(rows, session.category).length
-					}
+					category={session.singleRow ? undefined : session.category}
 					onClose={closeImport}
 					onImported={onImported}
 				/>

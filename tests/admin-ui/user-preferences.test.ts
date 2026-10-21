@@ -52,3 +52,29 @@ describe("admin user preferences", () => {
 		expect(unsupported.getResourceViewMode("djs")).toBe("table");
 	});
 });
+
+test("persists Mixcloud categories independently across preference instances", () => {
+	const storage = createStorage();
+	const preferences = new UserPreferences(() => storage);
+	preferences.setResourceViewMode("djs", "grid");
+	preferences.setMixcloudPosition("auto_parsed", 9);
+	preferences.setMixcloudPosition("unparsable", 6);
+	const reloaded = new UserPreferences(() => storage);
+	expect(reloaded.getMixcloudPosition("auto_parsed")).toBe(9);
+	expect(reloaded.getMixcloudPosition("unparsable")).toBe(6);
+	reloaded.setMixcloudPosition("auto_parsed", undefined);
+	expect(reloaded.getMixcloudPosition("auto_parsed")).toBeUndefined();
+	expect(reloaded.getMixcloudPosition("unparsable")).toBe(6);
+	expect(reloaded.getResourceViewMode("djs")).toBe("grid");
+});
+test("ignores invalid Mixcloud cursor data and tolerates unavailable storage", () => {
+	for (const id of ["9", -1, 1.5, null]) {
+		const preferences = new UserPreferences(() =>
+			createStorage(JSON.stringify({ mixcloud_auto_parsed: id })),
+		);
+		expect(preferences.getMixcloudPosition("auto_parsed")).toBeUndefined();
+	}
+	const preferences = new UserPreferences(() => undefined);
+	preferences.setMixcloudPosition("unparsable", 6);
+	expect(preferences.getMixcloudPosition("unparsable")).toBeUndefined();
+});

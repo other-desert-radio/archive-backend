@@ -1,3 +1,7 @@
+.unmatchedDJs {
+	color: #ff2c2c;
+}
+
 .status {
 	grid-column: 1 / -1;
 	font-size: var(--modal-helper-size);
@@ -9,4 +13,8 @@
 	min-height: var(--modal-control-height);
 	border-radius: 0;
 	font: inherit;
+}
+
+.position {
+	font-weight: normal;
 }

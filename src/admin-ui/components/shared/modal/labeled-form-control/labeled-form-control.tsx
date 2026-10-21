@@ -43,7 +43,9 @@ export const LabeledFormControl = ({
 	trailingContent,
 	error,
 }: LabeledFormControlProps) => (
-	<div className={`${styles.field} ${textarea ? styles.multiline : ""}`}>
+	<div
+		className={`${styles.field} ${textarea ? styles.multiline : ""} ${error === undefined ? "" : styles.invalid}`}
+	>
 		<label htmlFor={id}>{label}</label>
 		<div>
 			{textarea ? (

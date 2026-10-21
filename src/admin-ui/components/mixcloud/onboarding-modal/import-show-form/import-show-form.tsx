@@ -25,8 +25,8 @@ import {
 export type ImportShowFormProps = {
 	/** Source record for this form instance; remount the form when its ID changes. */
 	row: MixcloudImportAdminRow;
-	/** Pending queue count, including the current Show and skipped Shows. */
-	remainingCount: number;
+	onBackToStart?: (() => void) | undefined;
+	position?: string;
 	/** Ends the import session after the modal's unsaved-change guard. */
 	onClose: () => void;
 	/** Advances without importing the current Show. */
@@ -44,7 +44,8 @@ export type ImportShowFormProps = {
  */
 export const ImportShowForm = ({
 	row,
-	remainingCount,
+	onBackToStart,
+	position,
 	onClose,
 	onSkip,
 	onPrevious,
@@ -146,12 +147,24 @@ export const ImportShowForm = ({
 		<OnboardingModal
 			isOpen
 			title="Import Show"
+			titleSuffix={
+				position === undefined ? undefined : (
+					<span className={styles.position}> {position}</span>
+				)
+			}
 			submitLabel="Import"
 			submittingLabel="Importing…"
 			cancelLabel="Cancel"
 			onClose={onClose}
 			hasUnsavedChanges={hasUnsavedChanges}
-			headerContent={<span>{remainingCount} remaining</span>}
+			headerAction={
+				onBackToStart === undefined
+					? undefined
+					: {
+							label: "Back to start",
+							onClick: onBackToStart,
+						}
+			}
 			previousNavigationAction={{
 				label: "Previous Show",
 				onClick: onPrevious ?? (() => {}),
@@ -195,8 +208,14 @@ export const ImportShowForm = ({
 				fields={fields}
 				setFields={setFields}
 				idPrefix="import-show"
+				dateError={
+					row.date_source !== "title" || row.derived_date === undefined
+						? "Unable to parse date automatically"
+						: undefined
+				}
 			/>
 			<ShowRelationshipFields
+				hideDJSearchHelp={unmatchedDJs.length > 0}
 				highlightEmptyDJs
 				fields={fields}
 				setFields={setFields}
@@ -210,11 +229,11 @@ export const ImportShowForm = ({
 				loadTagOptions={loadTagOptions}
 				djHelper={
 					unmatchedDJs.length > 0 ? (
-						<>
+						<span className={styles.unmatchedDJs}>
 							<strong>Unmatched DJs: {unmatchedDJs.join(", ")}</strong>
 							<br />
 							you'll need to onboard this DJ separately first
-						</>
+						</span>
 					) : undefined
 				}
 			/>

@@ -40,7 +40,7 @@ const Fixture = () => {
 			{open && row && (
 				<ImportShowModal
 					row={row}
-					remainingCount={2}
+					position="1/2"
 					onClose={() => setOpen(false)}
 					onSkip={() => setIndex(1)}
 					onImported={(show) => {
