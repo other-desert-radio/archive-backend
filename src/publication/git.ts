@@ -6,10 +6,17 @@ import { promisify } from "node:util";
 import { isMatching, P } from "ts-pattern";
 import { validatePublicationDestination } from "./checkout.js";
 import type {
-	PublicationConfig,
-	PublicationJob,
-	PublicationStage,
-} from "./types.js";
+	PublicationGitContext,
+	PublicationGitResult,
+	PublicationRecovery,
+} from "./git/types.js";
+import type { PublicationConfig, PublicationJob } from "./types.js";
+
+export type {
+	PublicationGitContext,
+	PublicationGitResult,
+	PublicationRecovery,
+} from "./git/types.js";
 
 const executeFile = promisify(execFile);
 
@@ -91,20 +98,6 @@ const entryAt = async (file: string) => {
 		throw new Error("Unable to inspect publication checkout paths");
 	}
 };
-export type PublicationGitContext = {
-	config: PublicationConfig;
-	job: PublicationJob;
-	log: (message: string) => Promise<void>;
-	recordCommit: (commitId: string) => Promise<void>;
-	updateStage: (stage: PublicationStage) => Promise<void>;
-};
-export type PublicationGitResult =
-	| { kind: "no-change" }
-	| { kind: "pushed"; commitId: string };
-export type PublicationRecovery =
-	| { kind: "ready" }
-	| { kind: "resume-push"; commitId: string }
-	| { kind: "already-pushed"; commitId: string };
 
 /** Validate identity and output boundaries without changing files or contacting remotes. */
 export const validatePublicationCheckout = async ({

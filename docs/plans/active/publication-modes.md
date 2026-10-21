@@ -80,3 +80,26 @@ Next: await review of this completed unit before proposing persisted mode/target
 tracking structure, following
 [Development modes](../../DEVELOPMENT.md#development-modes). Later units cover
 runner integration and UI/development integration, each with staged review.
+
+## Git refactor requested during review
+
+The user requested smaller Git modules and comments explaining the flows before
+continuing publication-mode integration. Approved structure: replace git.ts with
+git/index.ts, types.ts, commands.ts, validation.ts, remote.ts, commits.ts, and
+recovery.ts. Preserve public exports and existing behavior; use direct internal
+imports to avoid barrel cycles. Keep filesystem validation in checkout.ts.
+
+First extraction unit: shared Git types and command execution only. Created
+git/types.ts and git/commands.ts with responsibility comments after structure
+confirmation. Scaffolding now moves shared context/result/recovery types into
+git/types.ts and re-exports them from git.ts to preserve existing imports.
+git/commands.ts declares runGit and inspectGit with explicit not-implemented
+errors. These stubs have no callers; the existing command helpers remain active
+in git.ts. No later-unit files are created yet. Await scaffolding review before
+moving command implementation and connecting callers, following
+[Development modes](../../DEVELOPMENT.md#development-modes).
+
+Later extractions: checkout validation; remote operations/synchronization;
+commit verification and commit/push; interrupted-job recovery; final directory
+barrel replacing git.ts. Add comments at flow entry points and recovery/safety
+boundaries. Run existing Git tests to confirm behavior remains unchanged.
