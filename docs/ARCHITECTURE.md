@@ -28,6 +28,10 @@ exported files.
 - `src/publication/`: durable jobs, revision snapshots, advisory-lock ownership,
   safe Git publication/recovery, and notifications. Jobs continue independently
   of browser connections. Credentials belong to the runtime, outside the image.
+- `src/publication/git/`: command safeguards, checkout validation, remote
+  synchronization, generated-file commit/push, and interrupted-job recovery in
+  separate modules. Its index exports the runner-facing operations; internal
+  modules import each other directly to avoid barrel cycles.
 - `src/db/export-archive.ts`: JSON/WebP export with the
   [public asset contract](ARCHIVE_EXPORT.md).
 

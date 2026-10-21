@@ -347,7 +347,7 @@ import { execFileSync } from 'node:child_process';
 import { db } from './src/db/db.ts';
 import { readPublicationConfig } from './src/publication/config.ts';
 import { readPublicationStatus } from './src/publication/store.ts';
-import { validatePublicationCheckout } from './src/publication/git.ts';
+import { validatePublicationCheckout } from './src/publication/git/index.ts';
 try {
  const config = readPublicationConfig(process.env, '/app');
  if (!config.enabled) throw new Error('Publication is disabled inside the container. Pass ARCHIVE_PUBLISH_ENABLED=true through Compose.');

@@ -12,7 +12,7 @@ import {
 	reconcilePublicationGit,
 	synchronizePublicationCheckout,
 	validatePublicationCheckout,
-} from "./git.js";
+} from "./git/index.js";
 import {
 	acquirePublicationLease,
 	appendPublicationLog,

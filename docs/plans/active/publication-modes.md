@@ -93,13 +93,26 @@ First extraction unit: shared Git types and command execution only. Created
 git/types.ts and git/commands.ts with responsibility comments after structure
 confirmation. Scaffolding now moves shared context/result/recovery types into
 git/types.ts and re-exports them from git.ts to preserve existing imports.
-git/commands.ts declares runGit and inspectGit with explicit not-implemented
-errors. These stubs have no callers; the existing command helpers remain active
-in git.ts. No later-unit files are created yet. Await scaffolding review before
-moving command implementation and connecting callers, following
-[Development modes](../../DEVELOPMENT.md#development-modes).
+Command scaffolding approved and implemented. runGit and inspectGit now live in
+git/commands.ts; git.ts imports them directly. Removed the original command
+definitions and execution imports. Added comments explaining inherited Git
+override filtering, shared execution safeguards, and inspection callers.
+Defaults, arguments, identity handling, and sanitized failures are unchanged.
 
-Later extractions: checkout validation; remote operations/synchronization;
-commit verification and commit/push; interrupted-job recovery; final directory
-barrel replacing git.ts. Add comments at flow entry points and recovery/safety
-boundaries. Run existing Git tests to confirm behavior remains unchanged.
+The user then authorized completing all remaining Git extractions in one pass.
+Completed validation.ts, remote.ts, commits.ts, recovery.ts, and index.ts;
+removed the old git.ts. Updated the publication barrel, runner, and server setup
+imports. Adjusted the validator's module-relative backend root for its new
+directory. Shared Git path parsing lives in commands.ts; generated-path rules
+and commit verification live in commits.ts and are reused by recovery. Public
+exports stay limited to the existing runner-facing operations and types.
+
+Added flow comments for validation, normal synchronization, generated-path
+staging, durable commit recording before push, and interrupted-job recovery.
+Updated the architecture reference with the new module ownership.
+
+Verification: all 51 focused Git/destination/setup tests pass; typecheck and
+Biome pass. No Git refactor stubs remain. The original local/remote publication
+feature is still incomplete; next propose persisted mode/target tracking
+structure and continue the original staged workflow. The one-pass authorization
+applied to the remaining Git restructuring requested in this review.
