@@ -1,9 +1,12 @@
+import type { MixcloudImportCategory } from "../utils/mixcloud-import-status.js";
 import type { ResourceViewMode } from "./components/shared/resource-views/index.js";
 
 type BrowserStorage = Pick<Storage, "getItem" | "setItem">;
 export type ResourceViewPreference = "djs" | "shows" | "tags";
 
 type StoredUserPreferences = Partial<{
+	mixcloud_auto_parsed: number;
+	mixcloud_unparsable: number;
 	djsViewMode: ResourceViewMode;
 	showsViewMode: ResourceViewMode;
 	tagsViewMode: ResourceViewMode;
@@ -30,6 +33,30 @@ export class UserPreferences {
 			| BrowserStorage
 			| undefined = getBrowserStorage,
 	) {}
+
+	getMixcloudPosition(category: MixcloudImportCategory): number | undefined {
+		const id = this.read()[`mixcloud_${category}`];
+		return typeof id === "number" && Number.isSafeInteger(id) && id > 0
+			? id
+			: undefined;
+	}
+
+	setMixcloudPosition(
+		category: MixcloudImportCategory,
+		id: number | undefined,
+	): void {
+		try {
+			this.getStorage()?.setItem(
+				storageKey,
+				JSON.stringify({
+					...this.read(),
+					[`mixcloud_${category}`]: id,
+				}),
+			);
+		} catch {
+			// Browsing remains available when browser storage cannot be written.
+		}
+	}
 
 	getResourceViewMode(resource: ResourceViewPreference): ResourceViewMode {
 		const storedMode = this.read()[`${resource}ViewMode`];

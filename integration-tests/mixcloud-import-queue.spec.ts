@@ -161,7 +161,9 @@ test("both launchers queue all pending category rows in ID order regardless of s
 	await page.getByRole("button", { name: /^ID / }).click();
 	await launch(page);
 	await expect(sourceId(page)).toHaveText("Source 2");
-	await expect(page.getByText("2 remaining", { exact: true })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Back to start", exact: true }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Next Show" }).click();
 	await expect(sourceId(page)).toHaveText("Source 9");
 	await page.getByRole("button", { name: "Close", exact: true }).click();
@@ -196,27 +198,57 @@ test("Cancel closes the session without advancing or importing", async ({
 	).toBeFocused();
 	await launch(page);
 	await expect(sourceId(page)).toHaveText("Source 2");
-	await expect(page.getByText("2 remaining", { exact: true })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Back to start", exact: true }),
+	).toBeVisible();
 	expect(state.posts).toBe(0);
 });
 
-test("Next preserves counts, skipped rows return on reopen, and Cancel closes", async ({
+test("Next preserves counts, category progress resumes independently after reload, and Cancel closes", async ({
 	page,
 }) => {
 	await launch(page);
 	await expect(save(page)).toBeEnabled();
 	await page.getByRole("button", { name: "Next Show", exact: true }).click();
 	await expect(sourceId(page)).toHaveText("Source 9");
-	await expect(page.getByText("2 remaining", { exact: true })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Back to start", exact: true }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(page.getByRole("dialog")).toBeHidden();
 	await expect(
 		page.getByRole("button", { name: /^ready for import/ }),
 	).toBeFocused();
 	await launch(page);
-	await expect(sourceId(page)).toHaveText("Source 2");
+	await expect(sourceId(page)).toHaveText("Source 9");
+	await expect(
+		page.getByRole("heading", { name: "Import Show 2/2", exact: true }),
+	).toBeVisible();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await page.getByRole("button", { name: /^needs review/ }).click();
+	await expect(sourceId(page)).toHaveText("Source 4");
+	await expect(
+		page.getByRole("heading", { name: "Import Show 1/2", exact: true }),
+	).toBeVisible();
+	await page.getByRole("button", { name: "Next Show", exact: true }).click();
+	await expect(sourceId(page)).toHaveText("Source 6");
+	await page.reload();
+	await launch(page);
+	await expect(sourceId(page)).toHaveText("Source 9");
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await page.getByRole("button", { name: /^needs review/ }).click();
+	await expect(sourceId(page)).toHaveText("Source 6");
+	await expect(
+		page.getByRole("heading", { name: "Import Show 2/2", exact: true }),
+	).toBeVisible();
+	await page
+		.getByRole("button", { name: "Back to start", exact: true })
+		.click();
+	await expect(sourceId(page)).toHaveText("Source 4");
+	await expect(
+		page.getByRole("heading", { name: "Import Show 1/2", exact: true }),
+	).toBeVisible();
 	expect(state.posts).toBe(0);
-	expect(state.listReads).toBe(1);
 });
 
 for (const repeated of [false, true])
@@ -229,7 +261,9 @@ for (const repeated of [false, true])
 		await expect(save(page)).toBeEnabled();
 		await save(page).click();
 		await expect(sourceId(page)).toHaveText("Source 9");
-		await expect(page.getByText("1 remaining", { exact: true })).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: "Back to start", exact: true }),
+		).toBeVisible();
 		await expect(save(page)).toBeEnabled();
 		await save(page).click();
 		await expect(page.getByRole("dialog")).toBeHidden();
@@ -257,7 +291,7 @@ test("dirty Cancel and arrow require confirmation; reverting clears dirty state"
 }) => {
 	await launch(page);
 	await expect(save(page)).toBeEnabled();
-	for (const action of ["Cancel", "Next Show"]) {
+	for (const action of ["Cancel", "Next Show", "Back to start"]) {
 		await page.getByLabel("title", { exact: true }).fill("Draft");
 		const button = page.getByRole("button", { name: action, exact: true });
 		await button.click();
@@ -325,7 +359,9 @@ test("a committed Save advances despite reload failure and retains local trackin
 	state.failReload = true;
 	await save(page).click();
 	await expect(sourceId(page)).toHaveText("Source 9");
-	await expect(page.getByText("1 remaining", { exact: true })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Back to start", exact: true }),
+	).toBeVisible();
 	await expect(page.getByRole("dialog").getByRole("alert")).toHaveCount(0);
 	await page.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(page.getByRole("alert")).toContainText("Show imported, but");
@@ -377,7 +413,7 @@ for (const width of [390, 320])
 		await next.focus();
 		await page.keyboard.press("Tab");
 		await expect(
-			page.getByRole("button", { name: "Close", exact: true }),
+			page.getByRole("button", { name: "Back to start", exact: true }),
 		).toBeFocused();
 		await page.keyboard.press("Shift+Tab");
 		await expect(next).toBeFocused();
@@ -578,7 +614,9 @@ test("row Import opens only that pending show and removes its action after savin
 	const action = row.getByRole("button", { name: "Import", exact: true });
 	await action.click();
 	await expect(sourceId(page)).toHaveText("Source 4");
-	await expect(page.getByText("1 remaining", { exact: true })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Back to start", exact: true }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(action).toBeFocused();
 	await action.click();
@@ -587,4 +625,44 @@ test("row Import opens only that pending show and removes its action after savin
 	await expect(page.getByRole("dialog")).toBeHidden();
 	await expect(action).toHaveCount(0);
 	expect(state.posts).toBe(1);
+});
+
+test("review date and unmatched DJ warnings share red styling at desktop and phone widths", async ({
+	page,
+}) => {
+	state.rows = [
+		{ ...review(4), decoded_djs: ["Peacetime Product"] },
+		review(6),
+	];
+	await page.reload();
+	await page.getByRole("button", { name: /^needs review/ }).click();
+	const date = page.locator("#import-show-date");
+	const warning = page.getByText("Unable to parse date automatically", {
+		exact: true,
+	});
+	const unmatched = page.getByText("Unmatched DJs: Peacetime Product", {
+		exact: true,
+	});
+	await expect(warning).toBeVisible();
+	await expect(unmatched).toBeVisible();
+	await expect(
+		page.getByText("Type to search. Press Tab to accept the gray completion.", {
+			exact: true,
+		}),
+	).toBeHidden();
+	await expect(page.getByRole("heading").locator("span")).toHaveCSS(
+		"font-weight",
+		"400",
+	);
+	await expect(date).toHaveCSS("border-top-color", "rgb(255, 44, 44)");
+	await expect(date).toHaveCSS("color", "rgb(255, 44, 44)");
+	await expect(warning).toHaveCSS("color", "rgb(255, 44, 44)");
+	await expect(unmatched).toHaveCSS("color", "rgb(255, 44, 44)");
+	for (const width of [1280, 390, 320]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.screenshot({ path: `/tmp/mixcloud-progress-${width}.png` });
+		await expect(
+			page.getByRole("heading", { name: "Import Show 1/2", exact: true }),
+		).toBeVisible();
+	}
 });

@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { MixcloudImportCategory } from "../../../../../utils/mixcloud-import-status.js";
 import type { MixcloudImportAdminRow } from "../../../../loaders/mixcloud-imports.js";
 import type { ShowsAdminRow } from "../../../../loaders/shows.js";
+import { userPreferences } from "../../../../user-preferences.js";
 import { ImportShowModal } from "../import-show-modal/index.js";
 
 type Props = {
+	category?: MixcloudImportCategory | undefined;
 	/** Ordered pending rows captured when the parent opens this import session. */
 	items: MixcloudImportAdminRow[];
-	/** Live category count, including the current row and skipped pending rows. */
-	remainingCount: number;
 	/** Ends the session; the parent owns dismissal and launcher focus restoration. */
 	onClose: () => void;
 	/** Reports a committed import so the parent can update rows/counts and reload. */
@@ -25,11 +26,19 @@ type Props = {
  */
 export const MixcloudImportQueue = ({
 	items,
-	remainingCount,
+	category,
 	onClose,
 	onImported,
 }: Props) => {
-	const [index, setIndex] = useState(0);
+	const [index, setIndex] = useState(() => {
+		const savedId =
+			category === undefined
+				? undefined
+				: userPreferences.getMixcloudPosition(category);
+		const savedIndex =
+			savedId === undefined ? 0 : items.findIndex((item) => item.id >= savedId);
+		return savedIndex < 0 ? 0 : savedIndex;
+	});
 	// Track committed rows locally because the session snapshot retains them.
 	const [importedIds, setImportedIds] = useState<number[]>([]);
 	// Retain the last eligible index before the cursor, including skipped rows.
@@ -41,19 +50,29 @@ export const MixcloudImportQueue = ({
 		-1,
 	);
 	const row = items[index];
+	useEffect(() => {
+		if (category !== undefined && row !== undefined)
+			userPreferences.setMixcloudPosition(category, row.id);
+	}, [category, row]);
 	if (row === undefined) return null;
 	// Only scan forward; reaching the end closes even if skipped rows remain.
 	const advance = () => {
 		const nextIndex = items.findIndex(
 			(item, itemIndex) => itemIndex > index && !importedIds.includes(item.id),
 		);
-		if (nextIndex === -1) onClose();
-		else setIndex(nextIndex);
+		if (nextIndex === -1) {
+			if (category !== undefined)
+				userPreferences.setMixcloudPosition(category, undefined);
+			onClose();
+		} else setIndex(nextIndex);
 	};
 	return (
 		<ImportShowModal
 			row={row}
-			remainingCount={remainingCount}
+			position={`${index + 1}/${items.length}`}
+			onBackToStart={() =>
+				setIndex(items.findIndex((item) => !importedIds.includes(item.id)))
+			}
 			onClose={onClose}
 			onSkip={advance}
 			onPrevious={

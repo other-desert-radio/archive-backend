@@ -23,6 +23,8 @@ type OnboardingModalProps = {
 	isCovered?: boolean;
 	hasUnsavedChanges?: boolean;
 	title: string;
+	titleSuffix?: ReactNode;
+	headerAction?: ModalAction | undefined;
 	onClose: () => void;
 	onSubmit: () => Promise<void>;
 	submitLabel?: string;
@@ -45,6 +47,8 @@ export const OnboardingModal = ({
 	isCovered = false,
 	hasUnsavedChanges = false,
 	title,
+	titleSuffix,
+	headerAction,
 	onClose,
 	onSubmit,
 	submitLabel = "Submit",
@@ -162,9 +166,24 @@ export const OnboardingModal = ({
 						className={`${styles.panel} ${fillAvailableHeight ? styles.stableHeight : ""}`}
 					>
 						<div className={styles.header}>
-							<h2 id="onboarding-modal-title">{title}</h2>
+							<h2 id="onboarding-modal-title">
+								{title}
+								{titleSuffix}
+							</h2>
 							<div className={styles.headerActions}>
 								{headerContent}
+								{headerAction !== undefined && (
+									<button
+										type="button"
+										className={`${styles.cancel} ${styles.headerAction}`}
+										disabled={
+											headerAction.disabled || isSubmitting || isCovered
+										}
+										onClick={() => requestAction(headerAction.onClick)}
+									>
+										{headerAction.label}
+									</button>
+								)}
 								<button
 									type="button"
 									className={styles.close}

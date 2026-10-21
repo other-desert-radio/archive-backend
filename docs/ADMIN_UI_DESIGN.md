@@ -184,7 +184,8 @@ produce the existing validation feedback.
 
 When the source date was not parsed from the title (including an upload-date
 fallback), show the red helper “Unable to parse date automatically” beneath the
-date input. This source warning does not block manual date correction or import.
+date input, with the input border and its text in the same red as the DJ
+warning. This source warning does not block manual date correction or import.
 
 The dashed MIXCLOUD DATA section displays only name, url, created_time,
 duration, and mixcloud_tag_json. Its height follows content, timestamps use UTC,
@@ -193,17 +194,19 @@ longest field name; phone labels stack and long URLs wrap.
 
 Initial resolution selects unique exact DJ names ignoring case and surrounding
 whitespace, and canonical tag titles from source keys. Unmatched DJ names appear
-in red in the selector helper, together with the onboarding guidance. Matched
-Mixcloud keys use the database tag title exactly and its colored chip.
-Unresolved keys use their original `mixcloud_tags` source names without
-lowercasing or slug conversion; existing title matches reuse the canonical name
-and color. Remaining new names use the existing red unknown-tag chips and
-creation caption, and Save creates them through ordinary Show creation. Missing
-source names block Save with refresh guidance rather than creating tags from
-keys. Opening selections update the baseline without resetting typed metadata or
-tag drafts. Save waits for both resolution and tag options; Retry preserves
-edits. Source changes remount the keyed form, resetting selectors, errors,
-helpers, and baseline while ignoring stale requests.
+in red in the selector helper, together with the onboarding guidance. Hide the
+“Type to search. Press Tab to accept the gray completion.” instructions while
+unmatched source DJs are present. Matched Mixcloud keys use the database tag
+title exactly and its colored chip. Unresolved keys use their original
+`mixcloud_tags` source names without lowercasing or slug conversion; existing
+title matches reuse the canonical name and color. Remaining new names use the
+existing red unknown-tag chips and creation caption, and Save creates them
+through ordinary Show creation. Missing source names block Save with refresh
+guidance rather than creating tags from keys. Opening selections update the
+baseline without resetting typed metadata or tag drafts. Save waits for both
+resolution and tag options; Retry preserves edits. Source changes remount the
+keyed form, resetting selectors, errors, helpers, and baseline while ignoring
+stale requests.
 
 The submit button reads “Import”, changing to “Importing…” while submitting. The
 form calls the ordinary creation loader with `mixcloud_import_id` and reports
@@ -447,13 +450,21 @@ shows a brief message dialog. The buttons use dialog-launch semantics rather
 than toggles.
 
 Remaining count includes current and skipped pending rows. Save decreases it;
-Next Show advances without writes or count changes. Skipped rows return when
-reopening. Cancel closes the import session without importing or advancing.
-Cancel and navigation guard dirty edits using the shared confirmation.
-Successful 201 and already-imported 200 responses advance, and the last session
-item closes automatically. Closing restores focus to the launching category
-button after the background becomes interactive. The resource view is inert
-while a dialog is open, and Refresh Mixcloud is disabled.
+Next Show advances without writes or count changes. The title displays the
+current position/total in regular weight beside “Import Show”. A “Back to start”
+header button replaces the remaining count and returns to the first pending
+show, using the same dirty-edit confirmation as other navigation. Each category
+independently remembers the current source ID in browser preferences, including
+after dismissal, navigation away, and page reload. Reopening resumes that
+pending source; if it is gone, use the next higher pending ID or the first
+pending row. Previous can revisit skipped rows. Reaching the end resets that
+category to the beginning for its next opening. Single-row imports do not change
+category progress. Cancel closes the import session without importing or
+advancing. Cancel and navigation guard dirty edits using the shared
+confirmation. Successful 201 and already-imported 200 responses advance, and the
+last session item closes automatically. Closing restores focus to the launching
+category button after the background becomes interactive. The resource view is
+inert while a dialog is open, and Refresh Mixcloud is disabled.
 
 After Save, local tracking and counts update before list/status reloads. Reload
 failures appear separately with Reload import list, preserving the committed
