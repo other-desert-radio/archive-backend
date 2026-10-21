@@ -64,20 +64,19 @@ tests/publication/checkout.test.ts. Remote Git validation will call this shared
 validator; local execution can later use it without executing Git. Re-export the
 validator from src/publication/index.ts. Retain existing remote checks.
 
-Structure approved; destination scaffolding added in checkout.ts and exported
-from index.ts. The test file contains only a responsibility comment until
-behavior is implemented. git.ts remains unchanged so remote checks stay active.
+Structure and scaffolding approved. Implemented the shared destination validator
+and connected remote validation to it. It resolves checkout/backend paths for
+separation checks, rejects missing or non-directory destinations, and rejects
+symlinked or incorrectly typed output ancestors and top-level generated JSON. It
+returns Promise<void> and throws on failure, without Git or filesystem writes.
+Remote validation retains its dedicated clone, branch, origin, and Git-state
+checks.
 
-Contract: validatePublicationDestination accepts checkoutPath and
-repositoryRoot, reads filesystem metadata, and returns Promise<void>. It
-resolves paths internally for boundary checks without returning a destination.
-It rejects inaccessible destinations, backend overlap, and unsafe output
-entries. It does not inspect or mutate Git state. The function currently throws
-an explicit not-implemented error and has no live callers.
+Verification: 32 destination/Git tests pass, including 13 filesystem-only tests
+using temporary directories without Git. Typecheck and Biome pass. The new local
+execution path is not wired yet; live publication remains remote-only.
 
-Await scaffolding approval before implementation, following
-[Development modes](../../DEVELOPMENT.md#development-modes). Next implementation
-will extract existing filesystem checks, connect remote validation to the shared
-validator, and add focused tests. Subsequent units cover persisted mode/target
-tracking, runner integration, and UI/development integration, each with staged
-review.
+Next: await review of this completed unit before proposing persisted mode/target
+tracking structure, following
+[Development modes](../../DEVELOPMENT.md#development-modes). Later units cover
+runner integration and UI/development integration, each with staged review.

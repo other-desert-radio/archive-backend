@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { isMatching, P } from "ts-pattern";
-import { readArchiveCheckoutPath } from "./config.js";
+import { validatePublicationDestination } from "./checkout.js";
 import type {
 	PublicationConfig,
 	PublicationJob,
@@ -123,22 +123,11 @@ export const validatePublicationCheckout = async ({
 			"Publication configuration no longer matches the saved job target",
 		);
 	}
-	let checkout: string;
-	let backend: string;
-	try {
-		checkout = await realpath(config.checkoutPath);
-		backend = await realpath(fileURLToPath(new URL("../../", import.meta.url)));
-	} catch {
-		throw new Error(
-			"Publication checkout must already exist and be accessible",
-		);
-	}
-	readArchiveCheckoutPath({
-		environment: { ARCHIVE_CHECKOUT_PATH: checkout },
-		repositoryRoot: backend,
+	await validatePublicationDestination({
+		checkoutPath: config.checkoutPath,
+		repositoryRoot: fileURLToPath(new URL("../../", import.meta.url)),
 	});
-	if (!(await entryAt(checkout))?.isDirectory())
-		throw new Error("Publication checkout must be a directory");
+	const checkout = await realpath(config.checkoutPath);
 	// Dedicated normal clones only: reject linked worktrees, submodules, and .git symlinks.
 	const gitDirectory = path.join(checkout, ".git");
 	const gitEntry = await entryAt(gitDirectory);
@@ -187,31 +176,6 @@ export const validatePublicationCheckout = async ({
 	]) {
 		if (await entryAt(path.join(gitDirectory, marker)))
 			throw new Error("Finish the in-progress Git operation before publishing");
-	}
-	for (const directory of [
-		"src",
-		"src/res",
-		"src/res/djs",
-		"public",
-		"public/assets",
-		"public/assets/djs",
-	]) {
-		const entry = await entryAt(path.join(checkout, directory));
-		if (entry !== undefined && (!entry.isDirectory() || entry.isSymbolicLink()))
-			throw new Error(
-				"Publication output directories must be real directories without symlinks",
-			);
-	}
-	for (const file of [
-		"src/res/djs_brief.json",
-		"src/res/shows.json",
-		"src/res/tags.json",
-	]) {
-		const entry = await entryAt(path.join(checkout, file));
-		if (entry !== undefined && (!entry.isFile() || entry.isSymbolicLink()))
-			throw new Error(
-				"Publication JSON destinations must be regular files without symlinks",
-			);
 	}
 	await log("Validated publication checkout, branch, origin, and output paths");
 };
