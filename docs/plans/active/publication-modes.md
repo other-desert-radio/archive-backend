@@ -24,7 +24,7 @@
 - [x] Scaffold configuration contracts.
 - [x] User reviews configuration scaffolding.
 - [x] Implement configuration reader and focused tests.
-- [ ] User reviews completed configuration unit.
+- [x] User reviews completed configuration unit.
 - [ ] Publication execution and persistence unit, with staged review.
 - [ ] Admin UI unit, with staged review and visual acceptance.
 - [ ] Development integration: Compose, setup scripts, env examples, local .env,
@@ -53,7 +53,31 @@ the mode-aware reader ignores that legacy flag. This temporary reuse will be
 removed when the runner adopts mode-aware configuration. Startup still uses the
 legacy reader, so this checkpoint does not change live publication behavior.
 
-Next: review this unit, then propose the structure for execution and
-persistence, following
-[Development modes](../../DEVELOPMENT.md#development-modes). Do not advance to
-execution or persistence implementation without its staged review.
+Configuration verification: 14 tests, typecheck, Biome, and docs checks passed.
+The environment helper is named readEnvSetting after user review.
+
+## Next unit: destination validation structure
+
+Split execution and persistence into smaller responsibilities. First extract
+filesystem-only validation from git.ts into src/publication/checkout.ts, with
+tests/publication/checkout.test.ts. Remote Git validation will call this shared
+validator; local execution can later use it without executing Git. Re-export the
+validator from src/publication/index.ts. Retain existing remote checks.
+
+Structure approved; destination scaffolding added in checkout.ts and exported
+from index.ts. The test file contains only a responsibility comment until
+behavior is implemented. git.ts remains unchanged so remote checks stay active.
+
+Contract: validatePublicationDestination accepts checkoutPath and
+repositoryRoot, reads filesystem metadata, and returns Promise<void>. It
+resolves paths internally for boundary checks without returning a destination.
+It rejects inaccessible destinations, backend overlap, and unsafe output
+entries. It does not inspect or mutate Git state. The function currently throws
+an explicit not-implemented error and has no live callers.
+
+Await scaffolding approval before implementation, following
+[Development modes](../../DEVELOPMENT.md#development-modes). Next implementation
+will extract existing filesystem checks, connect remote validation to the shared
+validator, and add focused tests. Subsequent units cover persisted mode/target
+tracking, runner integration, and UI/development integration, each with staged
+review.

@@ -1,3 +1,4 @@
+export * from "./checkout.js";
 export * from "./config.js";
 export * from "./git.js";
 export * from "./notifications.js";
