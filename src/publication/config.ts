@@ -1,47 +1,6 @@
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { isMatching, match, P } from "ts-pattern";
-import type { PublicationConfig, PublicationModeConfig } from "./types.js";
-
-/**
- * Parse local/remote settings without filesystem, Git, database, or network I/O.
- * Defaults to local; invalid relevant settings throw setting-specific errors.
- * Kept off startup until mode-aware execution is integrated.
- */
-export const readPublicationModeConfig = (
-	environment: NodeJS.ProcessEnv,
-	repositoryRoot: string,
-): PublicationModeConfig => {
-	if (!isAbsolute(repositoryRoot))
-		throw new Error("Backend repository root must be absolute");
-	const mode = readEnvSetting({
-		environment,
-		name: "ARCHIVE_PUBLISH_MODE",
-		fallback: "local",
-	});
-	switch (mode) {
-		case "local":
-			return {
-				mode,
-				checkoutPath: readArchiveCheckoutPath({ environment, repositoryRoot }),
-			};
-		case "remote": {
-			// Reuse existing remote validation during the staged runner migration.
-			const config = readPublicationConfig(
-				{ ...environment, ARCHIVE_PUBLISH_ENABLED: "true" },
-				repositoryRoot,
-			);
-			return {
-				mode,
-				checkoutPath: config.checkoutPath,
-				repository: config.repository,
-				branch: config.branch,
-				...(config.gitIdentity ? { gitIdentity: config.gitIdentity } : {}),
-			};
-		}
-		default:
-			throw new Error("ARCHIVE_PUBLISH_MODE must be local or remote");
-	}
-};
+import type { PublicationConfig } from "./types.js";
 
 const readEnvSetting = ({
 	environment,
@@ -124,21 +83,23 @@ const containsPath = (parent: string, child: string): boolean => {
 	);
 };
 
-/** Resolve a separate checkout; standalone exports retain their legacy default. */
+/** Resolve the explicitly configured checkout; never guess a publication destination. */
 export const readArchiveCheckoutPath = ({
 	environment,
 	repositoryRoot,
-	fallback = "../clean-archive-site",
 }: {
 	environment: NodeJS.ProcessEnv;
 	repositoryRoot: string;
-	fallback?: string;
 }): string => {
 	if (!isAbsolute(repositoryRoot))
 		throw new Error("Backend repository root must be absolute");
 	const checkoutPath = resolve(
 		repositoryRoot,
-		readEnvSetting({ environment, name: "ARCHIVE_CHECKOUT_PATH", fallback }),
+		readEnvSetting({
+			environment,
+			name: "ARCHIVE_CHECKOUT_PATH",
+			fallback: "",
+		}),
 	);
 	if (
 		containsPath(repositoryRoot, checkoutPath) ||
@@ -158,14 +119,15 @@ export const readPublicationConfig = (
 ): PublicationConfig => {
 	if (!isAbsolute(repositoryRoot))
 		throw new Error("Backend repository root must be absolute");
-	const enabled = readEnvSetting({
+	const mode = readEnvSetting({
 		environment,
-		name: "ARCHIVE_PUBLISH_ENABLED",
-		fallback: "false",
+		name: "ARCHIVE_PUBLISH_MODE",
+		fallback: "local",
 	});
-	if (!isMatching(P.union("true", "false"), enabled)) {
-		throw new Error("ARCHIVE_PUBLISH_ENABLED must be true or false");
-	}
+	if (!isMatching(P.union("local", "remote"), mode))
+		throw new Error("ARCHIVE_PUBLISH_MODE must be local or remote");
+	const checkoutPath = readArchiveCheckoutPath({ environment, repositoryRoot });
+	if (mode === "local") return { mode, checkoutPath };
 	const repository = readEnvSetting({
 		environment,
 		name: "ARCHIVE_SITE_REPOSITORY",
@@ -184,7 +146,6 @@ export const readPublicationConfig = (
 		throw new Error(
 			"ARCHIVE_PUBLISH_BRANCH must be a valid branch using letters, numbers, underscores, dots, slashes, or hyphens",
 		);
-	const checkoutPath = readArchiveCheckoutPath({ environment, repositoryRoot });
 	const gitIdentity =
 		environment.ARCHIVE_GIT_NAME !== undefined ||
 		environment.ARCHIVE_GIT_EMAIL !== undefined
@@ -202,7 +163,7 @@ export const readPublicationConfig = (
 				}
 			: undefined;
 	return {
-		enabled: enabled === "true",
+		mode,
 		repository,
 		checkoutPath,
 		branch,

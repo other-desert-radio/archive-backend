@@ -37,22 +37,26 @@ exported files.
 
 ## Deployment boundaries
 
-The API exports generated assets into a dedicated persistent archive-site
-checkout and pushes recognized publisher commits without force. PostgreSQL
-stores revisions, jobs, stages, and bounded logs. An advisory lock serializes
-publication, and an authenticated event stream lets admins reconnect to durable
-state. A pushed commit is the success boundary; the separate archive-site Pages
-workflow deploys only `main`. Local publication uses `publish-dev`.
+The API exports generated assets into a configured archive-site checkout. Local
+mode writes assets with read-only Git metadata inspection; remote mode uses a
+dedicated checkout and pushes recognized publisher commits without force.
+PostgreSQL stores revisions, jobs, stages, and bounded logs. An advisory lock
+serializes publication, and an authenticated event stream lets admins reconnect
+to durable state. A pushed commit is the success boundary; the separate
+archive-site Pages workflow deploys only `main`. Remote development publication
+defaults to `publish-dev`; local mode leaves the actual checked-out branch
+unchanged.
 
-Inspect `Dockerfile`, `compose.yml`, and `.env.example` for runtime
-configuration. Use the manual [server installation guide](SERVER_INSTALL.md) for
-host setup. Follow [development operations](DEVELOPMENT.md) for startup,
-explicit reviewed migrations, backups, restores, and publication SSH setup. The
-container installs Git/SSH but mounts a dedicated write deploy key and verified
-host keys at runtime; neither credentials nor checkout contents are baked into
-the image. The API runs as a non-root service account whose numeric UID/GID
-match the host checkout owner; development uses the developer’s IDs and servers
-use a dedicated service account. SSH mounts live under `/run/archive-ssh`.
+Inspect `Dockerfile`, `compose.yml`, `compose.remote.yml`, and `.env.example`
+for runtime configuration. Use the manual
+[server installation guide](SERVER_INSTALL.md) for host setup. Follow
+[development operations](DEVELOPMENT.md) for startup, explicit reviewed
+migrations, backups, restores, and publication SSH setup. The container installs
+Git/SSH but mounts a dedicated write deploy key and verified host keys at
+runtime; neither credentials nor checkout contents are baked into the image. The
+API runs as a non-root service account whose numeric UID/GID match the host
+checkout owner; development uses the developer’s IDs and servers use a dedicated
+service account. SSH mounts live under `/run/archive-ssh`.
 
 Keep secrets outside Git; preserve an existing `.env`, and update `.env.example`
 when required variables change. Better Auth requires `BETTER_AUTH_SECRET` and

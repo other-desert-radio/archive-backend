@@ -180,13 +180,15 @@ for role and session details.
 
 Before building or starting the API in step 4, follow the
 [publication checkout and SSH instructions](DEVELOPMENT.md#prepare-the-dedicated-checkout-and-ssh-files).
-Compose requires the dedicated checkout, deploy key, and verified known-hosts
-file even when publication is disabled. Set the runtime UID/GID to the service
-account that owns those files. Keep credentials outside the backend repository;
-the container reads them under `/run/archive-ssh`.
+Remote mode requires the dedicated checkout, deploy key, and verified
+known-hosts file. Use the `compose.remote.yml` overlay for SSH mounts; the build
+helper and server setup command select it for remote mode. Set the runtime
+UID/GID to the service account that owns those files. Keep credentials outside
+the backend repository; the container reads them under `/run/archive-ssh`.
 
-For server publication, set `ARCHIVE_PUBLISH_BRANCH=main`, configure the
-publisher identity, and enable the runner as described in the
+For server publication, set `ARCHIVE_PUBLISH_MODE=remote` and
+`ARCHIVE_PUBLISH_BRANCH=main`, configure the publisher identity, and prepare the
+runner as described in the
 [server setup instructions](DEVELOPMENT.md#server-setup-command). The setup
 command can perform dependency installation, checkout preparation, reviewed
 migrations, container startup, and readiness checks in place of the manual

@@ -114,7 +114,7 @@ export const usePublication = (enabled = true): PublicationView => {
 						setDetail((previous) =>
 							previous && previous.job.id === event.status.latestJob?.id
 								? { ...previous, job: event.status.latestJob }
-								: previous,
+								: undefined,
 						);
 					} else setDetail(event.detail);
 				},
@@ -143,7 +143,7 @@ export const usePublication = (enabled = true): PublicationView => {
 				if (mounted.current) {
 					setDetail({ job, logs: [], logsTruncated: false });
 					setStatus((previous) =>
-						previous ? { ...previous, latestJob: job } : previous,
+						previous ? { ...previous, latestJob: job } : undefined,
 					);
 				}
 				await refresh();

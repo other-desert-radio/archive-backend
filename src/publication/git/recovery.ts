@@ -18,6 +18,7 @@ export const reconcilePublicationGit = async (
 	if (previousJob === undefined) return { kind: "ready" };
 	await validatePublicationCheckout(context);
 	if (
+		previousJob.target.mode === "local" ||
 		previousJob.target.repository !== context.config.repository ||
 		previousJob.target.branch !== context.config.branch ||
 		previousJob.target.checkoutPath !== context.config.checkoutPath

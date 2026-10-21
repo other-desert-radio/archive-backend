@@ -10,6 +10,7 @@ import {
 	up as createNotifications,
 	down as dropNotifications,
 } from "../../src/db/migrations/0032_notify_publication_jobs.js";
+import { up as publicationModes } from "../../src/db/migrations/0033_add_publication_modes.js";
 import type { Database } from "../../src/db/types.js";
 import { createPublicationNotifications } from "../../src/publication/notifications.js";
 
@@ -193,8 +194,9 @@ test.skipIf(!databaseUrl)(
 				database,
 			);
 			const app = Fastify();
+			await database.transaction().execute(publicationModes);
 			const config = {
-				enabled: true,
+				mode: "remote" as const,
 				repository: values.repository,
 				checkoutPath: values.checkout_path,
 				branch: values.branch,

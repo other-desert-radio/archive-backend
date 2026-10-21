@@ -17,6 +17,12 @@ const environment = {
   ...process.env,
 };
 const config = readPublicationConfig(environment, backendRoot);
+if (config.mode === "local") {
+  const { validatePublicationDestination } = await import("../src/publication/checkout.ts");
+  await validatePublicationDestination({ checkoutPath: config.checkoutPath, repositoryRoot: backendRoot });
+  console.log("Local publication destination ready. No fetch, branch switch, commit, or push was performed.");
+  process.exit(0);
+}
 const shellQuote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
 const sshArguments = [
   "ssh",

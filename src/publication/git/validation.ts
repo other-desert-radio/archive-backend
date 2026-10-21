@@ -27,6 +27,7 @@ export const validatePublicationCheckout = async ({
 	if (!path.isAbsolute(config.checkoutPath))
 		throw new Error("Publication checkout path must be absolute");
 	if (
+		job.target.mode === "local" ||
 		job.target.repository !== config.repository ||
 		job.target.branch !== config.branch ||
 		job.target.checkoutPath !== config.checkoutPath

@@ -1,0 +1,16 @@
+# Remote-only SSH mounts. Local publication needs no deploy credentials.
+services:
+  api:
+    volumes:
+      - type: bind
+        source: "${ARCHIVE_DEPLOY_KEY_PATH:-../archive-publication-ssh/id_ed25519}"
+        target: /run/archive-ssh/id_ed25519
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: "${ARCHIVE_KNOWN_HOSTS_PATH:-../archive-publication-ssh/known_hosts}"
+        target: /run/archive-ssh/known_hosts
+        read_only: true
+        bind:
+          create_host_path: false

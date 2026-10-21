@@ -15,6 +15,7 @@ import { promisify } from "node:util";
 import {
 	commitAndPushPublication,
 	type PublicationGitContext,
+	readPublicationTarget,
 	reconcilePublicationGit,
 	synchronizePublicationCheckout,
 	validatePublicationCheckout,
@@ -66,7 +67,7 @@ const fixture = async ({ commit = true }: { commit?: boolean } = {}) => {
 		await git("commit", "-m", "Initial fixture");
 	}
 	const config = {
-		enabled: true,
+		mode: "remote" as const,
 		repository: "git@github.com:other-desert-radio/archive-site.git",
 		checkoutPath: checkout,
 		branch: "publish-dev",
@@ -94,6 +95,35 @@ const fixture = async ({ commit = true }: { commit?: boolean } = {}) => {
 	};
 	return { directory, checkout, git, context, logs };
 };
+
+test("local target metadata supports detached HEAD and no origin, and omits credential-bearing origins", async () => {
+	const { checkout, git } = await fixture();
+	const config = { mode: "local" as const, checkoutPath: checkout };
+	expect(await readPublicationTarget(config)).toMatchObject({
+		mode: "local",
+		branch: "publish-dev",
+		repository: "git@github.com:other-desert-radio/archive-site.git",
+	});
+	await git("checkout", "--detach");
+	await git("remote", "remove", "origin");
+	expect(await readPublicationTarget(config)).toEqual(config);
+	await git(
+		"remote",
+		"add",
+		"origin",
+		"https://user:secret@example.test/archive.git",
+	);
+	expect(await readPublicationTarget(config)).toEqual(config);
+	await git(
+		"remote",
+		"set-url",
+		"origin",
+		"ssh://git@example.test/archive.git",
+	);
+	expect((await readPublicationTarget(config)).repository).toBe(
+		"ssh://git@example.test/archive.git",
+	);
+});
 
 const remoteFixture = async () => {
 	const base = await fixture();

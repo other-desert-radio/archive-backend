@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { PublicationConfig } from "../types.js";
+import type { RemotePublicationConfig } from "../types.js";
 
 const executeFile = promisify(execFile);
 
@@ -16,7 +16,7 @@ export const runGit = async ({
 	args: string[];
 	operation?: string;
 	timeout?: number;
-	identity?: PublicationConfig["gitIdentity"];
+	identity?: RemotePublicationConfig["gitIdentity"];
 }): Promise<string> => {
 	// Ignore inherited Git overrides so every operation targets this checkout.
 	const environment = Object.fromEntries(

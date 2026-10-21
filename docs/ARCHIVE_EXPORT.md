@@ -89,13 +89,12 @@ Set `ARCHIVE_CHECKOUT_PATH` to choose the destination checkout. Relative paths
 resolve from this backend repository root, regardless of the launcher's working
 directory. JSON goes to `<checkout>/src/res` and images to
 `<checkout>/public/assets`. The checkout must be separate from the backend. When
-unset, this standalone command retains the sibling `../archive-site`
-destination; the server publisher's separate default is `../clean-archive-site`.
-The tracked `.env.example` explicitly selects `../clean-archive-site`, so
-copying that setting overrides the standalone fallback. Other publication
-settings do not affect this export-only command. The reusable `export-archive`
-module owns snapshot reads, document building, and file writing; its tests use
-the same name.
+unset or blank, export fails with a setting-specific error. There is no
+hardcoded checkout fallback. The tracked `.env.example` selects
+`../archive-site` for local development. Other publication settings do not
+affect this export-only command. The reusable `export-archive` module owns
+snapshot reads, document building, and file writing; its tests use the same
+name.
 
 The CLI acceptance test in `tests/db/export-archive.test.ts` uses
 `ARCHIVE_EXPORT_TEST_DATABASE_URL` pointing at disposable PostgreSQL, creates a
@@ -106,12 +105,15 @@ and verifies recovery after read failures. Both skip when the variable is unset.
 
 ## Server publication
 
-The admin publisher uses this same exporter after safely synchronizing its
-dedicated checkout. It stages only generated JSON and DJ image paths, including
-deletions, commits changed output with a job identifier, and pushes without
-force. It acknowledges only the captured revision after success or a no-change
-result; newer edits remain pending. Unrelated assets and edits remain outside
-the generated-file commit. Durable jobs allow explicit recovery after restart or
-a lost response from the Git remote. See
+The admin publisher uses this same exporter. Local mode validates its existing
+checkout and writes assets without fetch, branch changes, commit, or push. It
+records optional read-only Git metadata and acknowledges the captured revision
+after a successful write. Remote mode safely synchronizes its dedicated
+checkout. It stages only generated JSON and DJ image paths, including deletions,
+commits changed output with a job identifier, and pushes without force. It
+acknowledges only the captured revision after success or a no-change result;
+newer edits remain pending. Unrelated assets and edits remain outside the
+generated-file commit. Durable jobs allow explicit recovery after restart or a
+lost response from the Git remote. See
 [publication operations](DEVELOPMENT.md#publication-operation-and-recovery) for
 setup, branch selection, and retry procedures.

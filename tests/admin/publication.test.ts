@@ -10,12 +10,12 @@ afterEach(async () => {
 });
 const setup = async ({
 	role = "admin",
-	enabled = true,
+	mode = "remote",
 	busy = false,
 	fail = false,
 }: {
 	role?: string;
-	enabled?: boolean;
+	mode?: "local" | "remote";
 	busy?: boolean;
 	fail?: boolean;
 } = {}) => {
@@ -36,7 +36,11 @@ const setup = async ({
 		limit: () => query,
 		executeTakeFirstOrThrow: async () => {
 			if (fail) throw new Error("private database error");
-			return { revision: "9007199254740993", published_revision: "0" };
+			return {
+				revision: "9007199254740993",
+				published_revision: "0",
+				published_target: null,
+			};
 		},
 		executeTakeFirst: async () => undefined,
 	};
@@ -57,6 +61,7 @@ const setup = async ({
 		createdAt: new Date().toISOString(),
 		requestedBy: "actor",
 		target: {
+			mode: "remote" as const,
 			repository: "git@example.com:archive.git",
 			checkoutPath: "/tmp/archive",
 			branch: "publish-dev",
@@ -66,7 +71,10 @@ const setup = async ({
 	};
 	await app.register(
 		adminRoutes(auth, database, {
-			config: { enabled, ...job.target },
+			config:
+				mode === "local"
+					? { mode, checkoutPath: job.target.checkoutPath }
+					: job.target,
 			runner: {
 				start: async () => {
 					if (busy) throw new PublicationBusyError();
@@ -87,12 +95,12 @@ const setup = async ({
 };
 describe("publication routes", () => {
 	test("status preserves bigint decimal strings", async () => {
-		const { app } = await setup();
+		const { app, job } = await setup();
 		const response = await app.inject("/api/admin/publication");
 		expect(response.statusCode).toBe(200);
 		expect(response.json()).toEqual({
-			enabled: true,
-			branch: "publish-dev",
+			mode: "remote",
+			target: job.target,
 			revision: "9007199254740993",
 			publishedRevision: "0",
 			pending: true,
@@ -158,18 +166,16 @@ describe("publication routes", () => {
 			).statusCode,
 		).toBe(409);
 	});
-	test("disabled configuration rejects starts", async () => {
-		const { app } = await setup({ enabled: false });
-		expect(
-			(
-				await app.inject({
-					method: "POST",
-					url: "/api/admin/publication",
-					payload: {},
-				})
-			).statusCode,
-		).toBe(503);
+	test("local configuration accepts publication starts", async () => {
+		const { app } = await setup({ mode: "local" });
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/publication",
+			payload: {},
+		});
+		expect(response.statusCode).toBe(202);
 	});
+
 	test("rejects invalid request bodies and job identifiers", async () => {
 		const { app } = await setup();
 		for (const payload of [{ retryJobId: 12 }, { unexpected: true }, []])

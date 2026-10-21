@@ -1,6 +1,12 @@
-import { type Kysely, type Selectable, sql } from "kysely";
+import {
+	type ExpressionBuilder,
+	type Kysely,
+	type Selectable,
+	sql,
+} from "kysely";
 import { isMatching, P } from "ts-pattern";
 import type { ArchivePublicationJobsTable, Database } from "../db/types.js";
+import { readPublicationTarget, samePublicationTarget } from "./target.js";
 import type {
 	PublicationConfig,
 	PublicationJob,
@@ -10,6 +16,7 @@ import type {
 	PublicationStage,
 	PublicationStart,
 	PublicationStatus,
+	PublicationTarget,
 } from "./types.js";
 
 const activePublicationLeases = new WeakSet<PublicationLease>();
@@ -23,7 +30,23 @@ export type PublicationLease = {
 // Two-key advisory-lock namespace: ASCII "ARCH", publication lock 1.
 const publicationLockNamespace = 1095910216;
 const publicationLockId = 1;
-/** Acknowledgement is permitted only after confirmed push or verified no-change. */
+
+/** Keep each destination's retry history separate while sharing one execution lock. */
+const matchesPublicationTarget = (
+	eb: ExpressionBuilder<Database, "archive_publication_jobs">,
+	target: PublicationTarget,
+) =>
+	eb.and([
+		eb("mode", "=", target.mode),
+		eb("checkout_path", "=", target.checkoutPath),
+		target.repository === undefined
+			? eb("repository", "is", null)
+			: eb("repository", "=", target.repository),
+		target.branch === undefined
+			? eb("branch", "is", null)
+			: eb("branch", "=", target.branch),
+	]);
+/** Acknowledge only after successful local export, confirmed push, or no-change. */
 export type PublicationCompletion = {
 	outcome: PublicationOutcome;
 	commitId?: string;
@@ -34,15 +57,29 @@ export type PublicationCompletion = {
 const publicationJob = (
 	row: Selectable<ArchivePublicationJobsTable>,
 ): PublicationJob => {
+	let target: PublicationTarget;
+	if (row.mode === "local") {
+		target = {
+			mode: "local",
+			checkoutPath: row.checkout_path,
+			...(row.repository === null ? {} : { repository: row.repository }),
+			...(row.branch === null ? {} : { branch: row.branch }),
+		};
+	} else {
+		if (row.repository === null || row.branch === null)
+			throw new Error("Remote publication job has incomplete target metadata");
+		target = {
+			mode: "remote",
+			checkoutPath: row.checkout_path,
+			repository: row.repository,
+			branch: row.branch,
+		};
+	}
 	const base = {
 		id: row.id,
 		requestedBy: row.requested_by,
 		createdAt: row.created_at.toISOString(),
-		target: {
-			repository: row.repository,
-			checkoutPath: row.checkout_path,
-			branch: row.branch,
-		},
+		target,
 		stage: row.stage,
 		...(row.retry_job_id === null ? {} : { retryJobId: row.retry_job_id }),
 		...(row.revision === null ? {} : { revision: row.revision }),
@@ -72,36 +109,56 @@ export const readPublicationJobRecord = async (
 	return row === undefined ? undefined : publicationJob(row);
 };
 
-export const readPublicationStatus = (
+export const readPublicationStatus = async (
 	database: Kysely<Database>,
 	config: PublicationConfig,
-): Promise<PublicationStatus> =>
-	database
+): Promise<PublicationStatus> => {
+	const target = await readPublicationTarget(config);
+	return database
 		.transaction()
 		.setIsolationLevel("repeatable read")
 		.setAccessMode("read only")
 		.execute(async (transaction) => {
 			const state = await transaction
 				.selectFrom("archive_publication_state")
-				.select(["revision", "published_revision"])
+				.select(["revision", "published_revision", "published_target"])
 				.where("id", "=", 1)
 				.executeTakeFirstOrThrow();
 			const row = await transaction
 				.selectFrom("archive_publication_jobs")
 				.selectAll()
+				.where((eb) =>
+					eb.or([
+						eb("outcome", "=", "running"),
+						matchesPublicationTarget(eb, target),
+					]),
+				)
 				.orderBy("created_at", "desc")
 				.orderBy("id", "desc")
 				.limit(1)
 				.executeTakeFirst();
+			const latest = row === undefined ? undefined : publicationJob(row);
+			// A running job blocks every target. Terminal history for another
+			// destination must not force the current target into a retry loop.
+			const latestJob =
+				latest &&
+				(latest.outcome === "running" ||
+					samePublicationTarget(latest.target, target))
+					? latest
+					: undefined;
 			return {
-				enabled: config.enabled,
-				branch: config.branch,
+				mode: config.mode,
+				target,
 				revision: state.revision,
 				publishedRevision: state.published_revision,
-				pending: BigInt(state.revision) > BigInt(state.published_revision),
-				...(row === undefined ? {} : { latestJob: publicationJob(row) }),
+				pending:
+					state.published_target === null ||
+					!samePublicationTarget(state.published_target, target) ||
+					BigInt(state.revision) > BigInt(state.published_revision),
+				...(latestJob ? { latestJob } : {}),
 			};
 		});
+};
 
 /**
  * Read metadata and ordered logs from one snapshot. Missing jobs return undefined;
@@ -210,8 +267,6 @@ export const reservePublicationJob = async ({
 	request: PublicationStart;
 	config: PublicationConfig;
 }): Promise<{ lease: PublicationLease; job: PublicationJob }> => {
-	if (!config.enabled)
-		throw new PublicationRequestError("Archive publication is disabled", 503);
 	const lease = await acquirePublicationLease(database);
 	if (lease === undefined) throw new PublicationBusyError();
 	try {
@@ -222,14 +277,25 @@ export const reservePublicationJob = async ({
 			.limit(1)
 			.executeTakeFirst();
 		if (running !== undefined) throw new PublicationBusyError();
+		const target = await readPublicationTarget(config);
 		const latest = await lease.database
 			.selectFrom("archive_publication_jobs")
 			.selectAll()
+			.where((eb) => matchesPublicationTarget(eb, target))
 			.orderBy("created_at", "desc")
 			.orderBy("id", "desc")
 			.limit(1)
 			.executeTakeFirst();
 		if (request.retryJobId !== undefined) {
+			const requested = await readPublicationJobRecord(
+				lease.database,
+				request.retryJobId,
+			);
+			if (requested && !samePublicationTarget(requested.target, target))
+				throw new PublicationRequestError(
+					"Retry target differs from the interrupted publication",
+					409,
+				);
 			if (
 				latest?.id !== request.retryJobId ||
 				(latest.outcome !== "failed" && latest.outcome !== "interrupted")
@@ -238,25 +304,17 @@ export const reservePublicationJob = async ({
 					"Retry must identify the latest failed or interrupted publication",
 					409,
 				);
-			if (
-				latest.repository !== config.repository ||
-				latest.branch !== config.branch ||
-				latest.checkout_path !== config.checkoutPath
-			)
-				throw new PublicationRequestError(
-					"Retry target differs from the interrupted publication",
-					409,
-				);
 		} else if (
-			latest?.outcome === "failed" ||
-			latest?.outcome === "interrupted"
+			latest !== undefined &&
+			samePublicationTarget(publicationJob(latest).target, target) &&
+			(latest.outcome === "failed" || latest.outcome === "interrupted")
 		) {
 			throw new PublicationRequestError(
 				"Explicit Retry is required for the latest publication",
 				409,
 			);
 		}
-		const job = await createPublicationJob({ lease, request, config });
+		const job = await createPublicationJob({ lease, request, config, target });
 		return { lease, job };
 	} catch (error) {
 		await lease.release();
@@ -269,19 +327,23 @@ export const createPublicationJob = async ({
 	lease,
 	request,
 	config,
+	target: savedTarget,
 }: {
 	lease: PublicationLease;
 	request: PublicationStart;
 	config: PublicationConfig;
+	target?: PublicationTarget;
 }): Promise<PublicationJob> => {
+	const target = savedTarget ?? (await readPublicationTarget(config));
 	const row = await lease.database
 		.insertInto("archive_publication_jobs")
 		.values({
 			id: crypto.randomUUID(),
 			requested_by: request.requestedBy,
-			repository: config.repository,
-			checkout_path: config.checkoutPath,
-			branch: config.branch,
+			mode: target.mode,
+			repository: target.repository ?? null,
+			checkout_path: target.checkoutPath,
+			branch: target.branch ?? null,
 			retry_job_id: request.retryJobId ?? null,
 			completed_at: null,
 			revision: null,
@@ -528,7 +590,8 @@ export const completePublicationJob = async (
 			await transaction
 				.updateTable("archive_publication_state")
 				.set({
-					published_revision: sql`greatest(published_revision, ${job.revision}::bigint)`,
+					published_revision: job.revision,
+					published_target: publicationJob(job).target,
 				})
 				.where("id", "=", 1)
 				.where("revision", ">=", job.revision)

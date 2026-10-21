@@ -107,10 +107,6 @@ export const publicationRoutes =
 			},
 		);
 		app.post<PublicationStartRoute>("/publication", async (request, reply) => {
-			if (!config.enabled)
-				return reply
-					.code(503)
-					.send({ error: "Archive publication is disabled" });
 			const body: unknown = request.body ?? {};
 			if (
 				Array.isArray(body) ||
@@ -149,7 +145,7 @@ export const publicationRoutes =
 				});
 				request.log.info(
 					{ jobId: job.id },
-					`[Publication] job started -- id: ${job.id}, branch: ${config.branch}`,
+					`[Publication] job started -- id: ${job.id}, mode: ${config.mode}, branch: ${job.target.branch ?? "none"}`,
 				);
 				return reply.code(202).send(job);
 			} catch (error) {

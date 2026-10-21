@@ -61,7 +61,7 @@ const fixture = async () => {
 		BETTER_AUTH_SECRET: "test-secret-with-at-least-32-characters",
 		BETTER_AUTH_URL: "https://archive.example.test",
 		ARCHIVE_PUBLISH_BRANCH: "main",
-		ARCHIVE_PUBLISH_ENABLED: "true",
+		ARCHIVE_PUBLISH_MODE: "remote",
 		ARCHIVE_CHECKOUT_PATH: checkout,
 		ARCHIVE_RUNTIME_UID: String(process.getuid?.() ?? 1000),
 		ARCHIVE_RUNTIME_GID: String(process.getgid?.() ?? 1000),
@@ -140,7 +140,8 @@ test("server setup validates readiness before starting the API and never migrate
 	);
 	const start = result.commands.findIndex(
 		(item) =>
-			item.args.join(" ") === "compose up -d --wait --wait-timeout 60 api",
+			item.args.join(" ") ===
+			"compose -f compose.yml -f compose.remote.yml up -d --wait --wait-timeout 60 api",
 	);
 	expect(readiness).toBeGreaterThan(0);
 	expect(start).toBeGreaterThan(readiness);
@@ -190,15 +191,16 @@ test("server setup stops on migration or readiness failure without starting the 
 		expect(
 			result.commands.some(
 				(item) =>
-					item.args.join(" ") === "compose up -d --wait --wait-timeout 60 api",
+					item.args.join(" ") ===
+					"compose -f compose.yml -f compose.remote.yml up -d --wait --wait-timeout 60 api",
 			),
 		).toBe(false);
 	}
 });
 
-test("server setup rejects disabled publication, missing SSH files, and local HTTP origins", async () => {
+test("server setup rejects local publication, missing SSH files, and local HTTP origins", async () => {
 	for (const change of [
-		{ ARCHIVE_PUBLISH_ENABLED: "false" },
+		{ ARCHIVE_PUBLISH_MODE: "local" },
 		{ ARCHIVE_KNOWN_HOSTS_PATH: "/missing-server-setup-hosts" },
 		{ BETTER_AUTH_URL: "http://localhost:43827" },
 	]) {
@@ -218,7 +220,8 @@ test("server setup stops before API startup if SSH remote access fails", async (
 	expect(
 		result.commands.some(
 			(item) =>
-				item.args.join(" ") === "compose up -d --wait --wait-timeout 60 api",
+				item.args.join(" ") ===
+				"compose -f compose.yml -f compose.remote.yml up -d --wait --wait-timeout 60 api",
 		),
 	).toBe(false);
 });
@@ -289,7 +292,8 @@ test("server setup rejects mismatched checkout group before starting the API", a
 	expect(
 		result.commands.some(
 			(item) =>
-				item.args.join(" ") === "compose up -d --wait --wait-timeout 60 api",
+				item.args.join(" ") ===
+				"compose -f compose.yml -f compose.remote.yml up -d --wait --wait-timeout 60 api",
 		),
 	).toBe(false);
 });
@@ -304,7 +308,8 @@ test("server setup stops with ownership guidance when the non-root container can
 	expect(
 		result.commands.some(
 			(item) =>
-				item.args.join(" ") === "compose up -d --wait --wait-timeout 60 api",
+				item.args.join(" ") ===
+				"compose -f compose.yml -f compose.remote.yml up -d --wait --wait-timeout 60 api",
 		),
 	).toBe(false);
 });

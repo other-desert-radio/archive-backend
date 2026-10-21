@@ -8,6 +8,20 @@ import type {
 import { apiFetch } from "./api-fetch.js";
 
 const root = "/api/admin/publication";
+const targetPattern = P.union(
+	{
+		mode: "local",
+		checkoutPath: P.string,
+		repository: P.optional(P.string),
+		branch: P.optional(P.string),
+	},
+	{
+		mode: "remote",
+		checkoutPath: P.string,
+		repository: P.string,
+		branch: P.string,
+	},
+);
 const jobBasePattern = {
 	id: P.string,
 	stage: P.union(
@@ -24,7 +38,7 @@ const jobBasePattern = {
 	commitId: P.optional(P.string),
 	createdAt: P.string,
 	requestedBy: P.string,
-	target: { repository: P.string, checkoutPath: P.string, branch: P.string },
+	target: targetPattern,
 };
 const jobPattern = P.union(
 	{ ...jobBasePattern, outcome: "running" },
@@ -36,8 +50,8 @@ const jobPattern = P.union(
 	},
 );
 const statusPattern = {
-	enabled: P.boolean,
-	branch: P.string,
+	mode: P.union("local", "remote"),
+	target: targetPattern,
 	revision: P.string.regex(/^\d+$/),
 	publishedRevision: P.string.regex(/^\d+$/),
 	pending: P.boolean,

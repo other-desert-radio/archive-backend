@@ -1,12 +1,12 @@
 import type {
-	PublicationConfig,
 	PublicationJob,
 	PublicationStage,
+	RemotePublicationConfig,
 } from "../types.js";
 
 /** Runner-owned job state and persistence callbacks shared by Git flows. */
 export type PublicationGitContext = {
-	config: PublicationConfig;
+	config: RemotePublicationConfig;
 	job: PublicationJob;
 	log: (message: string) => Promise<void>;
 	recordCommit: (commitId: string) => Promise<void>;

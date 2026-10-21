@@ -15,8 +15,8 @@ export type PublicationTarget =
 			repository: string;
 			branch: string;
 	  };
-/** Mode-aware configuration; local exports require only a destination path. */
-export type PublicationModeConfig =
+/** Local publication uses the existing checkout; remote publication adds Git settings. */
+export type PublicationConfig =
 	| { mode: "local"; checkoutPath: string }
 	| {
 			mode: "remote";
@@ -25,14 +25,10 @@ export type PublicationModeConfig =
 			branch: string;
 			gitIdentity?: { name: string; email: string };
 	  };
-/** Existing runner contract, retained until mode-aware execution is integrated. */
-export type PublicationConfig = {
-	enabled: boolean;
-	repository: string;
-	checkoutPath: string;
-	branch: string;
-	gitIdentity?: { name: string; email: string };
-};
+export type RemotePublicationConfig = Extract<
+	PublicationConfig,
+	{ mode: "remote" }
+>;
 export type PublicationStage =
 	| "queued"
 	| "validating"
@@ -50,7 +46,7 @@ export type PublicationJobBase = {
 	id: string;
 	requestedBy: string;
 	createdAt: string;
-	target: Pick<PublicationConfig, "repository" | "checkoutPath" | "branch">;
+	target: PublicationTarget;
 	retryJobId?: string;
 	revision?: PublicationRevision;
 	commitId?: string;
@@ -76,8 +72,8 @@ export type PublicationJobDetail = {
 	logsTruncated: boolean;
 };
 export type PublicationStatus = {
-	enabled: boolean;
-	branch: string;
+	mode: PublicationMode;
+	target: PublicationTarget;
 	revision: PublicationRevision;
 	publishedRevision: PublicationRevision;
 	pending: boolean;

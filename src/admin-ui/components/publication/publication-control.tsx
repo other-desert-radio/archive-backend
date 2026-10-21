@@ -28,7 +28,9 @@ export const PublicationControl = ({
 			{running
 				? "Publishing…"
 				: clean
-					? "all changes pushed"
+					? status?.mode === "local"
+						? "all changes saved"
+						: "all changes pushed"
 					: "publish changes"}
 		</button>
 	);

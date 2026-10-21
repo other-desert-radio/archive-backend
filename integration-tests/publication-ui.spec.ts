@@ -11,6 +11,7 @@ const job: PublicationJob = {
 	requestedBy: "admin",
 	createdAt: "2026-10-20T00:00:00Z",
 	target: {
+		mode: "remote",
 		repository: "git@example.test:archive.git",
 		checkoutPath: "/archive",
 		branch: "publish-dev",
@@ -19,161 +20,187 @@ const job: PublicationJob = {
 	stage: "exporting",
 };
 const initial: PublicationStatus = {
-	enabled: true,
-	branch: "publish-dev",
+	mode: "remote",
+	target: job.target,
 	revision: "2",
 	publishedRevision: "1",
 	pending: true,
 };
-for (const width of [1440, 390, 320]) {
-	test(`publication confirmation and durable reconnect at ${width}px`, async ({
-		page,
-	}) => {
-		let status = { ...initial };
-		let posts = 0;
-		await page.setViewportSize({ width, height: 900 });
-		await page.route("**/api/auth/get-session", (route) =>
-			route.fulfill({
-				json: {
-					user: {
-						id: "admin",
-						email: "admin@example.test",
-						role: "admin",
-						mustChangePassword: false,
-					},
-				},
-			}),
-		);
-		await page.route("**/api/admin/djs", (route) =>
-			route.fulfill({ json: [] }),
-		);
-		await page.route("**/api/admin/tags", (route) =>
-			route.fulfill({ json: [] }),
-		);
-		await page.route("**/api/admin/publication**", async (route) => {
-			const path = new URL(route.request().url()).pathname;
-			if (path.endsWith("/events"))
-				return route.fulfill({
-					contentType: "text/event-stream",
-					body: `data: ${JSON.stringify({ type: "status", status })}\n\n`,
-				});
-			if (path.includes("/jobs/"))
-				return route.fulfill({
-					json: {
-						job: status.latestJob,
-						logs: [
-							{
-								sequence: 1,
-								timestamp: job.createdAt,
-								message: "Exporting generated archive documents",
-							},
-						],
-						logsTruncated: false,
-					},
-				});
-			if (route.request().method() === "POST") {
-				posts++;
-				status = { ...status, latestJob: job };
-				return route.fulfill({ status: 202, json: job });
-			}
-			return route.fulfill({ json: status });
-		});
-		await page.goto("/admin/#djs");
-		await page
-			.getByRole("button", { name: "publish changes", exact: true })
-			.click();
-		await expect(page.getByRole("dialog")).toContainText("publish-dev");
-		await expect(page.getByRole("dialog")).toContainText(
-			"Publish latest changes to github.",
-		);
-		const publish = page
-			.getByRole("dialog")
-			.getByRole("button", { name: "Publish", exact: true });
-		const close = page.getByRole("button", { name: "Close", exact: true });
-		const panel = await page.getByRole("dialog").boundingBox();
-		const action = await publish.boundingBox();
-		const dismiss = await close.boundingBox();
-		expect(
-			Math.abs(
-				(action?.x ?? 0) +
-					(action?.width ?? 0) / 2 -
-					((panel?.x ?? 0) + (panel?.width ?? 0) / 2),
-			),
-		).toBeLessThan(2);
-		expect(dismiss?.y).toBeGreaterThan(
-			(action?.y ?? 0) + (action?.height ?? 0),
-		);
-		await expect(close).toHaveCSS("border-top-width", "0px");
-		await page.screenshot({ path: `/tmp/publication-actions-${width}.png` });
-		await page
-			.getByRole("button", { name: "Close dialog", exact: true })
-			.click();
-		await expect(page.getByRole("dialog")).toHaveCount(0);
-		await page
-			.getByRole("button", { name: "publish changes", exact: true })
-			.click();
-		await expect(
-			page.getByRole("button", { name: "Close", exact: true }),
-		).toBeFocused();
-		await page
-			.getByRole("dialog")
-			.getByRole("button", { name: "Publish", exact: true })
-			.click();
-		await expect(page.getByRole("dialog")).toContainText(
-			"Current stage: exporting",
-		);
-		await expect(page.locator('[role="log"]')).toBeHidden();
-		const disclosure = page.locator("summary", { hasText: "Publication log" });
-		await disclosure.focus();
-		await page.keyboard.press("Enter");
-		await expect(page.getByRole("log")).toContainText("Exporting generated");
-		const panelBounds = await page.getByRole("dialog").boundingBox();
-		expect(panelBounds?.width).toBe(width === 1440 ? 864 : width - 32);
-		await page.screenshot({ path: `/tmp/publication-expanded-${width}.png` });
-		await disclosure.click();
-		await expect(page.locator('[role="log"]')).toBeHidden();
-		await disclosure.click();
-		await page.keyboard.press("Escape");
-		await expect(page.getByRole("dialog")).toHaveCount(0);
-		await page
-			.getByRole("button", { name: "Publishing…", exact: true })
-			.click();
-		expect(posts).toBe(1);
-		const bounds = await page.getByRole("dialog").boundingBox();
-		expect(bounds?.x).toBeGreaterThanOrEqual(0);
-		expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(width);
-		await page.screenshot({ path: `/tmp/publication-${width}.png` });
-		await page.reload();
-		await page
-			.getByRole("button", { name: "Publishing…", exact: true })
-			.click();
-		expect(posts).toBe(1);
-		status = {
-			...status,
-			pending: false,
-			publishedRevision: "2",
-			latestJob: {
+for (const mode of ["remote", "local"] as const) {
+	for (const width of [1440, 390, 320]) {
+		test(`publication confirmation and durable reconnect in ${mode} mode at ${width}px`, async ({
+			page,
+		}) => {
+			const activeJob: PublicationJob = {
 				...job,
-				outcome: "succeeded",
-				completedAt: "2026-10-20T20:30:00Z",
-			},
-		};
-		await expect(page.getByRole("dialog")).toContainText("Archive published", {
-			timeout: 10000,
+				target: { ...job.target, mode },
+			};
+			let status: PublicationStatus = {
+				...initial,
+				mode,
+				target: activeJob.target,
+			};
+			let posts = 0;
+			await page.setViewportSize({ width, height: 900 });
+			await page.route("**/api/auth/get-session", (route) =>
+				route.fulfill({
+					json: {
+						user: {
+							id: "admin",
+							email: "admin@example.test",
+							role: "admin",
+							mustChangePassword: false,
+						},
+					},
+				}),
+			);
+			await page.route("**/api/admin/djs", (route) =>
+				route.fulfill({ json: [] }),
+			);
+			await page.route("**/api/admin/tags", (route) =>
+				route.fulfill({ json: [] }),
+			);
+			await page.route("**/api/admin/publication**", async (route) => {
+				const path = new URL(route.request().url()).pathname;
+				if (path.endsWith("/events"))
+					return route.fulfill({
+						contentType: "text/event-stream",
+						body: `data: ${JSON.stringify({ type: "status", status })}\n\n`,
+					});
+				if (path.includes("/jobs/"))
+					return route.fulfill({
+						json: {
+							job: status.latestJob,
+							logs: [
+								{
+									sequence: 1,
+									timestamp: activeJob.createdAt,
+									message: "Exporting generated archive documents",
+								},
+							],
+							logsTruncated: false,
+						},
+					});
+				if (route.request().method() === "POST") {
+					posts++;
+					status = { ...status, latestJob: activeJob };
+					return route.fulfill({ status: 202, json: activeJob });
+				}
+				return route.fulfill({ json: status });
+			});
+			await page.goto("/admin/#djs");
+			await page
+				.getByRole("button", { name: "publish changes", exact: true })
+				.click();
+			await expect(page.getByRole("dialog")).toContainText("publish-dev");
+			await expect(page.getByRole("dialog")).toContainText(
+				mode === "local"
+					? "Write latest changes to your local archive checkout."
+					: "Publish latest changes to github.",
+			);
+			const publish = page
+				.getByRole("dialog")
+				.getByRole("button", { name: "Publish", exact: true });
+			const close = page.getByRole("button", { name: "Close", exact: true });
+			const panel = await page.getByRole("dialog").boundingBox();
+			const action = await publish.boundingBox();
+			const dismiss = await close.boundingBox();
+			expect(
+				Math.abs(
+					(action?.x ?? 0) +
+						(action?.width ?? 0) / 2 -
+						((panel?.x ?? 0) + (panel?.width ?? 0) / 2),
+				),
+			).toBeLessThan(2);
+			expect(dismiss?.y).toBeGreaterThan(
+				(action?.y ?? 0) + (action?.height ?? 0),
+			);
+			await expect(close).toHaveCSS("border-top-width", "0px");
+			await page.screenshot({
+				path: `/tmp/publication-actions-${mode}-${width}.png`,
+			});
+			await page
+				.getByRole("button", { name: "Close dialog", exact: true })
+				.click();
+			await expect(page.getByRole("dialog")).toHaveCount(0);
+			await page
+				.getByRole("button", { name: "publish changes", exact: true })
+				.click();
+			await expect(
+				page.getByRole("button", { name: "Close", exact: true }),
+			).toBeFocused();
+			await page
+				.getByRole("dialog")
+				.getByRole("button", { name: "Publish", exact: true })
+				.click();
+			await expect(page.getByRole("dialog")).toContainText(
+				"Current stage: exporting",
+			);
+			await expect(page.locator('[role="log"]')).toBeHidden();
+			const disclosure = page.locator("summary", {
+				hasText: "Publication log",
+			});
+			await disclosure.focus();
+			await page.keyboard.press("Enter");
+			await expect(page.getByRole("log")).toContainText("Exporting generated");
+			const panelBounds = await page.getByRole("dialog").boundingBox();
+			expect(panelBounds?.width).toBe(width === 1440 ? 864 : width - 32);
+			await page.screenshot({
+				path: `/tmp/publication-expanded-${mode}-${width}.png`,
+			});
+			await disclosure.click();
+			await expect(page.locator('[role="log"]')).toBeHidden();
+			await disclosure.click();
+			await page.keyboard.press("Escape");
+			await expect(page.getByRole("dialog")).toHaveCount(0);
+			await page
+				.getByRole("button", { name: "Publishing…", exact: true })
+				.click();
+			expect(posts).toBe(1);
+			const bounds = await page.getByRole("dialog").boundingBox();
+			expect(bounds?.x).toBeGreaterThanOrEqual(0);
+			expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(
+				width,
+			);
+			await page.screenshot({ path: `/tmp/publication-${mode}-${width}.png` });
+			await page.reload();
+			await page
+				.getByRole("button", { name: "Publishing…", exact: true })
+				.click();
+			expect(posts).toBe(1);
+			status = {
+				...status,
+				pending: false,
+				publishedRevision: "2",
+				latestJob: {
+					...activeJob,
+					outcome: "succeeded",
+					completedAt: "2026-10-20T20:30:00Z",
+				},
+			};
+			await expect(page.getByRole("dialog")).toContainText(
+				"Archive published",
+				{
+					timeout: 10000,
+				},
+			);
+			await expect(page.getByRole("dialog")).toContainText(
+				"Last published October 20 1:30 PM",
+			);
+			await page.screenshot({
+				path: `/tmp/publication-last-published-${mode}-${width}.png`,
+			});
+			await expect(
+				page.getByRole("button", { name: "Publishing…", exact: true }),
+			).toHaveCount(0);
+			await expect(
+				page.getByRole("button", {
+					name: mode === "local" ? "all changes saved" : "all changes pushed",
+					exact: true,
+				}),
+			).toBeVisible();
 		});
-		await expect(page.getByRole("dialog")).toContainText(
-			"Last published October 20 1:30 PM",
-		);
-		await page.screenshot({
-			path: `/tmp/publication-last-published-${width}.png`,
-		});
-		await expect(
-			page.getByRole("button", { name: "Publishing…", exact: true }),
-		).toHaveCount(0);
-		await expect(
-			page.getByRole("button", { name: "all changes pushed", exact: true }),
-		).toBeVisible();
-	});
+	}
 }
 test("editors do not request or expose publication", async ({ page }) => {
 	let requests = 0;
@@ -345,13 +372,14 @@ test("status failures keep the publish changes label", async ({ page }) => {
 	).toBeVisible();
 });
 
-for (const enabled of [true, false]) {
-	test(`archive edits reveal publication control when enabled=${enabled}`, async ({
+for (const mode of ["remote", "local"] as const) {
+	test(`archive edits reveal publication control in ${mode} mode`, async ({
 		page,
 	}) => {
 		let status = {
 			...initial,
-			enabled,
+			mode,
+			target: { ...initial.target, mode },
 			revision: "1",
 			publishedRevision: "1",
 			pending: false,
@@ -394,7 +422,10 @@ for (const enabled of [true, false]) {
 		});
 		await page.goto("/admin/#djs");
 		await expect(
-			page.getByRole("button", { name: "all changes pushed", exact: true }),
+			page.getByRole("button", {
+				name: mode === "local" ? "all changes saved" : "all changes pushed",
+				exact: true,
+			}),
 		).toBeVisible();
 		// A committed archive edit advances durable state; reconnect polling observes it.
 		status = { ...status, revision: "2", pending: true };
@@ -404,28 +435,19 @@ for (const enabled of [true, false]) {
 		await expect(page.getByRole("dialog")).not.toContainText(
 			"Result: succeeded",
 		);
-		if (enabled) {
-			await expect(page.getByRole("dialog")).toContainText(
-				"Publish latest changes to github.",
-			);
-			await expect(
-				page
-					.getByRole("dialog")
-					.getByRole("button", { name: "Publish", exact: true }),
-			).toBeEnabled();
-		} else {
-			await expect(page.getByRole("dialog")).toContainText(
-				"Publishing is disabled",
-			);
-			await expect(page.getByRole("dialog")).toContainText(
-				"ARCHIVE_PUBLISH_ENABLED=true",
-			);
-			await expect(
-				page
-					.getByRole("dialog")
-					.getByRole("button", { name: "Publish", exact: true }),
-			).toHaveCount(0);
-		}
+		await expect(page.getByRole("dialog")).toContainText(
+			mode === "local"
+				? "Write latest changes to your local archive checkout."
+				: "Publish latest changes to github.",
+		);
+		await expect(
+			page
+				.getByRole("dialog")
+				.getByRole("button", { name: "Publish", exact: true }),
+		).toBeEnabled();
+		if (mode === "local")
+			await expect(page.getByRole("dialog")).toContainText("/archive");
+
 		expect(posts).toBe(0);
 	});
 }
