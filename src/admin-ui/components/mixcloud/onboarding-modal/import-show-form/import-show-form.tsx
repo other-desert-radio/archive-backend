@@ -195,6 +195,11 @@ export const ImportShowForm = ({
 				fields={fields}
 				setFields={setFields}
 				idPrefix="import-show"
+				dateError={
+					row.date_source !== "title" || row.derived_date === undefined
+						? "Unable to parse date automatically"
+						: undefined
+				}
 			/>
 			<ShowRelationshipFields
 				highlightEmptyDJs
@@ -210,11 +215,11 @@ export const ImportShowForm = ({
 				loadTagOptions={loadTagOptions}
 				djHelper={
 					unmatchedDJs.length > 0 ? (
-						<>
+						<span className={styles.unmatchedDJs}>
 							<strong>Unmatched DJs: {unmatchedDJs.join(", ")}</strong>
 							<br />
 							you'll need to onboard this DJ separately first
-						</>
+						</span>
 					) : undefined
 				}
 			/>

@@ -182,6 +182,10 @@ date, DJs, tags, duration. Source URL and image variants enter the complete
 create-show payload without extra editable controls. Missing required images
 produce the existing validation feedback.
 
+When the source date was not parsed from the title (including an upload-date
+fallback), show the red helper “Unable to parse date automatically” beneath the
+date input. This source warning does not block manual date correction or import.
+
 The dashed MIXCLOUD DATA section displays only name, url, created_time,
 duration, and mixcloud_tag_json. Its height follows content, timestamps use UTC,
 and missing/empty values show muted None. Desktop labels reserve room for the
@@ -189,16 +193,17 @@ longest field name; phone labels stack and long URLs wrap.
 
 Initial resolution selects unique exact DJ names ignoring case and surrounding
 whitespace, and canonical tag titles from source keys. Unmatched DJ names appear
-in the selector helper. Matched Mixcloud keys use the database tag title exactly
-and its colored chip. Unresolved keys use their original `mixcloud_tags` source
-names without lowercasing or slug conversion; existing title matches reuse the
-canonical name and color. Remaining new names use the existing red unknown-tag
-chips and creation caption, and Save creates them through ordinary Show
-creation. Missing source names block Save with refresh guidance rather than
-creating tags from keys. Opening selections update the baseline without
-resetting typed metadata or tag drafts. Save waits for both resolution and tag
-options; Retry preserves edits. Source changes remount the keyed form, resetting
-selectors, errors, helpers, and baseline while ignoring stale requests.
+in red in the selector helper, together with the onboarding guidance. Matched
+Mixcloud keys use the database tag title exactly and its colored chip.
+Unresolved keys use their original `mixcloud_tags` source names without
+lowercasing or slug conversion; existing title matches reuse the canonical name
+and color. Remaining new names use the existing red unknown-tag chips and
+creation caption, and Save creates them through ordinary Show creation. Missing
+source names block Save with refresh guidance rather than creating tags from
+keys. Opening selections update the baseline without resetting typed metadata or
+tag drafts. Save waits for both resolution and tag options; Retry preserves
+edits. Source changes remount the keyed form, resetting selectors, errors,
+helpers, and baseline while ignoring stale requests.
 
 The submit button reads “Import”, changing to “Importing…” while submitting. The
 form calls the ordinary creation loader with `mixcloud_import_id` and reports
