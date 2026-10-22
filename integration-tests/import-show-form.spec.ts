@@ -67,6 +67,34 @@ test.beforeEach(async ({ page }) => {
 	await page.goto("/admin/__modal-test/");
 });
 
+test("imports opening source values without edits and dismisses a clean source without confirmation", async ({
+	page,
+}) => {
+	let payload: Record<string, unknown> | undefined;
+	await page.route("**/api/admin/create-show", async (route) => {
+		payload = route.request().postDataJSON();
+		await route.fulfill({ status: 201, json: { id: 99, ...payload } });
+	});
+	await page.getByRole("button", { name: "Open import" }).click();
+	const submit = page.getByRole("button", { name: "Import", exact: true });
+	await expect(submit).toBeEnabled();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.getByRole("alertdialog")).toHaveCount(0);
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	await page.getByRole("button", { name: "Open import" }).click();
+	await expect(submit).toBeEnabled();
+	await submit.click();
+	await expect(page.getByLabel("Imported Show")).toHaveText("Suggested title");
+	expect(payload).toMatchObject({
+		mixcloud_import_id: 7,
+		title: "Suggested title",
+		date: "2026-10-01",
+		duration: 3661,
+		djs: [1],
+		tags: ["Ambient", "New Genre"],
+	});
+});
+
 test("prefills exact matches, canonical chips, approved source data, and submits full metadata", async ({
 	page,
 }) => {

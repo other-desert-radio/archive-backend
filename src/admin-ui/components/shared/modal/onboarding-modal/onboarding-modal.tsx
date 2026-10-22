@@ -22,6 +22,7 @@ type OnboardingModalProps = {
 	fillAvailableHeight?: boolean;
 	isCovered?: boolean;
 	hasUnsavedChanges?: boolean;
+	allowUnchangedSubmit?: boolean;
 	title: string;
 	titleSuffix?: ReactNode;
 	headerAction?: ModalAction | undefined;
@@ -46,6 +47,7 @@ export const OnboardingModal = ({
 	fillAvailableHeight = false,
 	isCovered = false,
 	hasUnsavedChanges = false,
+	allowUnchangedSubmit = false,
 	title,
 	titleSuffix,
 	headerAction,
@@ -113,6 +115,7 @@ export const OnboardingModal = ({
 		onEscape: isSubmitting ? undefined : dismiss,
 	});
 	if (!isOpen) return null;
+	const isUnchangedSubmitDisabled = !hasUnsavedChanges && !allowUnchangedSubmit;
 	const submit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		if (
@@ -120,7 +123,7 @@ export const OnboardingModal = ({
 			isConfirming ||
 			submittingRef.current ||
 			isSubmitDisabled ||
-			!hasUnsavedChanges
+			isUnchangedSubmitDisabled
 		)
 			return;
 		setError(undefined);
@@ -231,7 +234,7 @@ export const OnboardingModal = ({
 									isSubmitting ||
 									isCovered ||
 									isSubmitDisabled ||
-									!hasUnsavedChanges
+									isUnchangedSubmitDisabled
 								}
 							>
 								{isSubmitting ? submittingLabel : submitLabel}

@@ -25,6 +25,26 @@ test("ordinary forms retain Submit, Cancel, Close, and no navigation", () => {
 	expect(markup).toContain(">Submit</button>");
 	expect(markup).not.toContain('aria-label="Next Show"');
 });
+test("unchanged submission is opt-in and still respects other submission locks", () => {
+	for (const props of [
+		{},
+		{ allowUnchangedSubmit: true },
+		{ allowUnchangedSubmit: true, isSubmitDisabled: true },
+		{ hasUnsavedChanges: true },
+	]) {
+		const markup = renderToStaticMarkup(
+			<OnboardingModal {...defaults} {...props}>
+				<input aria-label="title" />
+			</OnboardingModal>,
+		);
+		const submit = markup.match(/<button\b[^>]*type="submit"[^>]*>/)?.[0];
+		expect(submit).toBeDefined();
+		expect(submit?.includes('disabled=""')).toBe(
+			props.isSubmitDisabled === true ||
+				(!props.hasUnsavedChanges && !props.allowUnchangedSubmit),
+		);
+	}
+});
 test("header content and guarded optional actions render inside the dialog", () => {
 	const markup = renderToStaticMarkup(
 		<OnboardingModal

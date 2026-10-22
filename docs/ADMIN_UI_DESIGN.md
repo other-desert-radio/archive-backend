@@ -58,10 +58,10 @@ reachable.
 - Disabled controls do not apply hover effects. Mouse clicks do not introduce
   extra button focus outlines; keyboard focus remains visible with
   `:focus-visible`.
-- Form submit buttons are disabled with gray text, border, and background and no
-  pointer events when values match their opening values. Editing enables
-  submission; reverting all changes disables it again. Other submission locks
-  still apply.
+- Create/edit form submit buttons are disabled with gray text, border, and
+  background and no pointer events when values match their opening values.
+  Editing enables submission; reverting all changes disables it again. Other
+  submission locks still apply.
 - Message actions currently use square bordered buttons and gray hover
   backgrounds, with the same font and control sizing. Their semantic primary and
   secondary roles do not currently imply different visual styles.
@@ -232,13 +232,15 @@ resolution and tag options; Retry preserves edits. Source changes remount the
 keyed form, resetting selectors, errors, helpers, and baseline while ignoring
 stale requests.
 
-The submit button reads “Import”, changing to “Importing…” while submitting. The
-form calls the ordinary creation loader with `mixcloud_import_id` and reports
-successful 201 or already-imported 200 results to its caller. Category launchers
-open the corresponding pending queue. Pending Mixcloud table rows also expose an
-Import action, opening the same import modal with only that row in the session.
-Imported rows have no Import button. Row actions are disabled during source
-refresh; successful imports use the same feedback and table/count reload.
+The submit button reads “Import”, changing to “Importing…” while submitting. A
+ready source can be imported without editing its opening values. Import opts
+into `allowUnchangedSubmit`; opening values still count as clean for dismissal.
+The form calls the ordinary creation loader with `mixcloud_import_id` and
+reports successful 201 or already-imported 200 results to its caller. Category
+launchers open the corresponding pending queue. Pending Mixcloud table rows also
+expose an Import action, opening the same import modal with only that row in the
+session. Imported rows have no Import button. Row actions are disabled during
+source refresh; successful imports use the same feedback and table/count reload.
 
 ### Message modal contract
 
