@@ -154,9 +154,17 @@ Startup checks PostgreSQL connectivity; `/health` is public.
 The optional integration uses `MIXCLOUD_CLIENT_ID`, `MIXCLOUD_CLIENT_SECRET`,
 `MIXCLOUD_REDIRECT_URI`, and `MIXCLOUD_TOKEN_ENCRYPTION_KEY`. Configure all four
 together, or leave all four blank to disable it. The configuration reader
-rejects partial settings without printing their values. Configuration is not yet
-wired into startup; OAuth routes and the sign-in button follow in later
-implementation chunks.
+rejects partial settings without printing their values. Startup validates these
+settings and constructs the provider client and store once. Partial settings
+prevent startup; complete all four or clear all four. Connect and status routes
+are registered under the admin API boundary. Callback, disconnect, and the
+sign-in button follow in later implementation chunks. Review and explicitly
+apply migration `0034_add_mixcloud_connections` before using configured routes.
+
+The provider uses `oauth4webapi` for OAuth validation and grant processing, with
+its supported custom-fetch hook adapting Mixcloud's GET token exchange and token
+response format. The store persists connections in PostgreSQL; creating the
+client/store at startup does not perform network or database requests.
 
 For local development, use `http://localhost:43827/api/admin/mixcloud/callback`
 as the redirect URI. Deployment callbacks require HTTPS; HTTP is accepted only
