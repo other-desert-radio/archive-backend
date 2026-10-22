@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { sql } from "kysely";
 import type { TypedDatabase } from "../admin/routes/types.js";
+import { requestPathForLog } from "../utils/index.js";
 import { trustedAuthOrigins } from "./auth.js";
 
 /** Cookie-authenticated writes must come from the configured application. */
@@ -23,7 +24,7 @@ export const requireSameOrigin = async (
 			}
 		};
 		request.log.warn(
-			`[Authentication] request origin rejected -- method: ${request.method}, url: ${request.url}, origin: ${safeOrigin(origin)}, expected: ${trustedAuthOrigins.join(", ")}, reference: ${request.id}`,
+			`[Authentication] request origin rejected -- method: ${request.method}, url: ${requestPathForLog(request.url)}, origin: ${safeOrigin(origin)}, expected: ${trustedAuthOrigins.join(", ")}, reference: ${request.id}`,
 		);
 		reply.code(403).send({ error: "Request origin is not allowed" });
 	}

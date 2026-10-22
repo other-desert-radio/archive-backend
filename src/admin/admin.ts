@@ -6,6 +6,7 @@ import { accountAccessGuard } from "../auth/access.js";
 import type { auth } from "../auth/auth.js";
 import { requireSameOrigin } from "../auth/security.js";
 import { db as defaultDb } from "../db/db.js";
+import { requestPathForLog } from "../utils/index.js";
 import { clientDescription } from "./logging.js";
 import { djRoutes } from "./routes/djs/index.js";
 import {
@@ -53,13 +54,13 @@ const adminApiRoutes = (
 			request.log.info(
 				{
 					method: request.method,
-					url: request.url,
+					url: requestPathForLog(request.url),
 					contentType: request.headers["content-type"],
 					contentLength: request.headers["content-length"],
 					accept: request.headers.accept,
 					client: clientDescription(request),
 				},
-				`[Admin API] request received -- method: ${request.method}, url: ${request.url}`,
+				`[Admin API] request received -- method: ${request.method}, url: ${requestPathForLog(request.url)}`,
 			);
 		});
 		app.addHook("onError", async (request, reply, error) => {
@@ -67,7 +68,7 @@ const adminApiRoutes = (
 				{
 					err: error,
 					method: request.method,
-					url: request.url,
+					url: requestPathForLog(request.url),
 					statusCode: error.statusCode ?? reply.statusCode,
 					contentType: request.headers["content-type"],
 					client: clientDescription(request),
