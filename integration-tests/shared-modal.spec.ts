@@ -68,6 +68,10 @@ test("clean and dirty navigation, discard focus, and successful-save advance", a
 	await expect(
 		page.getByRole("dialog", { name: "Import fixture 4" }),
 	).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
+	await page.getByLabel("title", { exact: true }).fill("Ready to save");
 	await page.getByRole("button", { name: "Save", exact: true }).click();
 	await expect(
 		page.getByRole("dialog", { name: "Import fixture 5" }),

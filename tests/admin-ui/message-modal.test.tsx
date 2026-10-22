@@ -20,7 +20,11 @@ test("message modal renders supplied text and primary, secondary, and additional
 	expect(markup).toContain("Publish archive?");
 	expect(markup).toContain("Choose how to continue.");
 	expect(markup).toContain('role="dialog"');
-	expect(markup).toContain('data-action="primary" disabled=""');
+	const primaryButton = markup.match(
+		/<button\b[^>]*data-action="primary"[^>]*>/,
+	)?.[0];
+	expect(primaryButton).toBeDefined();
+	expect(primaryButton).toContain('disabled=""');
 	expect(markup).toContain("Go back");
 	expect(markup).toContain("Preview");
 });

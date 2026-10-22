@@ -60,6 +60,7 @@ test("@auth sign-in panel fits desktop and phones, focuses email and preserves i
 		page.getByRole("heading", { name: "Users", exact: true }),
 	).toBeVisible();
 	await expect(page).toHaveURL(/#users$/);
+	await page.getByRole("button", { name: "Account", exact: true }).click();
 	await page
 		.getByRole("button", { name: "Change password", exact: true })
 		.click();
@@ -72,6 +73,7 @@ test("@auth sign-in panel fits desktop and phones, focuses email and preserves i
 	).toBeVisible();
 	await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(dialog).toHaveCount(0);
+	await page.getByRole("button", { name: "Account", exact: true }).click();
 	await page.getByRole("button", { name: "Sign out", exact: true }).click();
 	await expect(
 		page.getByRole("heading", { name: "Sign in", exact: true }),
@@ -171,7 +173,12 @@ test("@auth administrators create, edit, reset and delete accounts through the U
 			.getByRole("button", { name: "Save", exact: true })
 			.click();
 		await expect(resetDialog).toHaveCount(0);
-		await expect(row).toContainText("password change required");
+		const passwordChangeColumn = await page
+			.getByRole("columnheader", { name: /^Password change required/ })
+			.evaluate((header) => (header as HTMLTableCellElement).cellIndex);
+		await expect(row.getByRole("cell").nth(passwordChangeColumn)).toHaveText(
+			"Yes",
+		);
 		await editor.reload();
 		await expect(
 			editor.getByRole("heading", { name: "Sign in", exact: true }),

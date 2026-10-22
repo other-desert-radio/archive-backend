@@ -572,7 +572,7 @@ for (const width of [1280, 390])
 			page.getByRole("button", { name: "Import", exact: true }),
 		).toBeEnabled();
 		const panel = page
-			.getByRole("heading", { name: "Import Show", exact: true })
+			.getByRole("heading", { name: "Import Show 1/2", exact: true })
 			.locator("../..");
 		const bounds = await panel.boundingBox();
 		expect(bounds?.height).toBeLessThan(1600);
