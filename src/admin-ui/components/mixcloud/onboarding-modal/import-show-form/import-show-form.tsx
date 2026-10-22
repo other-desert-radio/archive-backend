@@ -157,6 +157,7 @@ export const ImportShowForm = ({
 			cancelLabel="Cancel"
 			onClose={onClose}
 			hasUnsavedChanges={hasUnsavedChanges}
+			allowUnchangedSubmit
 			headerAction={
 				onBackToStart === undefined
 					? undefined
