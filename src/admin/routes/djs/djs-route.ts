@@ -270,7 +270,16 @@ export const djRoutes =
 					return reply.code(201).send(created);
 				} catch (error) {
 					if (error instanceof app.multipartErrors.RequestFileTooLargeError) {
-						request.log.warn("DJ image upload rejected: file exceeds 10 MiB");
+						const client = clientDescription(request);
+						request.log.warn(
+							{
+								statusCode: 413,
+								field: "image",
+								maxFileBytes: 10 * 1024 * 1024,
+								client,
+							},
+							`[DJ Creation] image upload rejected -- route: /api/admin/create-dj, status: 413, field: image, limit: 10 MiB, client: ${client}`,
+						);
 						return reply
 							.code(413)
 							.send({ error: "Image must not exceed 10 MiB" });
@@ -479,7 +488,16 @@ export const djRoutes =
 					return reply.code(200).send(response);
 				} catch (error) {
 					if (error instanceof app.multipartErrors.RequestFileTooLargeError) {
-						request.log.warn("DJ image upload rejected: file exceeds 10 MiB");
+						const client = clientDescription(request);
+						request.log.warn(
+							{
+								statusCode: 413,
+								field: "image",
+								maxFileBytes: 10 * 1024 * 1024,
+								client,
+							},
+							`[DJ Modification] image upload rejected -- route: /api/admin/modify-dj, status: 413, field: image, limit: 10 MiB, client: ${client}`,
+						);
 						return reply
 							.code(413)
 							.send({ error: "Image must not exceed 10 MiB" });
