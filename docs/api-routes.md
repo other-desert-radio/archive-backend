@@ -36,6 +36,28 @@ shared boundary rather than duplicating permission checks.
 
 ## Route layout
 
+### Mixcloud connection routes
+
+Admins and editors use their own archive session for these routes. Neither route
+accepts a user or session ID from the browser. Responses use
+`Cache-Control: no-store`.
+
+- `GET /api/admin/mixcloud/status` returns `{configured:false,connected:false}`
+  when disabled, `{configured:true,connected:false}` when disconnected, or
+  `{configured:true,connected:true,account:{key,displayName}}` when connected.
+  Status reads only account identity, never the stored access token.
+- `POST /api/admin/mixcloud/connect` creates a session-bound authorization
+  attempt and returns `{authorizationUrl}` for the browser to navigate to
+  Mixcloud. Normal browser origin checks apply. Disabled integrations return 503
+  with `{error:"Mixcloud is not configured"}`. Storage failures return a generic
+  500; raw database errors and generated state are excluded from route logs.
+
+The callback and disconnect routes are not implemented yet. Connect can prepare
+the consent URL but cannot complete authorization until the callback is added.
+No upload-page controls are enabled in this checkpoint.
+
+### Resource plugin registration
+
 Keep the top-level admin file responsible for the boundary and registration:
 
 ```text

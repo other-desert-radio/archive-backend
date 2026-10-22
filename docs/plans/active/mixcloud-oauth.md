@@ -100,8 +100,32 @@ expiry, ownership, concurrent replay, failed authorization, logout, session
 expiry during exchange, and disconnect races. Typecheck, scoped Biome, Markdown
 lint, and docs checks pass. Regular archive data and startup remain untouched.
 
+## Route review checkpoints
+
+- [x] Connect + status implemented and tested; awaiting review.
+- [ ] Callback + disconnect with sensitive-URL log redaction.
+
+Connect/status live beneath the shared admin session/origin boundary. Connect
+resolves user/session IDs from authenticated context, creates an attempt, and
+returns a consent URL. Status returns configuration/connection state and account
+identity only. Disabled connect returns 503. Unexpected storage errors are
+handled inside route handlers so parent error hooks cannot log query parameters.
+Responses disable caching.
+
+Startup validates optional Mixcloud configuration and constructs one injected
+client/store pair. Partial settings now fail startup; all blank disables the
+integration. Regular-database migrations have not been applied. No callback,
+disconnect route, or UI wiring has been added. Current unit has six route tests
+covering both roles, owner/session derivation, states, origin/session guards,
+secret-free replies/logs, and storage failures. Existing client/config tests,
+typecheck, scoped Biome, docs checks, and Markdown lint pass.
+
+User asked why startup injection and OAuth state are needed. Explained that
+injection supports one-time configuration and isolated tests; objects are not
+state containers, PostgreSQL is. OAuth random state binds the callback to the
+initiating session/attempt. Dependency creation could be moved closer to routes
+if desired; no change to the agreed wiring was requested.
+
 ## Next action
 
-Await user review of encryption/storage before starting protected OAuth routes.
-Do not wire storage or run migrations on the regular database in this
-checkpoint.
+Await connect/status review before implementing callback and disconnect.

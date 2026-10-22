@@ -8,6 +8,10 @@ import { requireSameOrigin } from "../auth/security.js";
 import { db as defaultDb } from "../db/db.js";
 import { clientDescription } from "./logging.js";
 import { djRoutes } from "./routes/djs/index.js";
+import {
+	type MixcloudIntegration,
+	mixcloudRoutes,
+} from "./routes/mixcloud/index.js";
 import { mixcloudImportRoutes } from "./routes/mixcloud-imports/index.js";
 import {
 	type PublicationRouteDependencies,
@@ -40,6 +44,7 @@ const adminApiRoutes = (
 	auth: BetterAuth,
 	database: TypedDatabase,
 	publication?: Omit<PublicationRouteDependencies, "auth" | "database">,
+	mixcloud?: MixcloudIntegration,
 ): FastifyPluginAsync => {
 	return async (app) => {
 		app.addHook("onRequest", accountAccessGuard(auth));
@@ -86,6 +91,9 @@ const adminApiRoutes = (
 		await app.register(showRoutes(database));
 		await app.register(tagRoutes(database));
 		await app.register(mixcloudImportRoutes(database));
+		await app.register(
+			mixcloudRoutes({ auth, ...(mixcloud ? { integration: mixcloud } : {}) }),
+		);
 	};
 };
 
@@ -147,9 +155,10 @@ export const adminRoutes = (
 	auth: BetterAuth,
 	database: TypedDatabase = defaultDb,
 	publication?: Omit<PublicationRouteDependencies, "auth" | "database">,
+	mixcloud?: MixcloudIntegration,
 ): FastifyPluginAsync => {
 	return async (app) => {
-		await app.register(adminApiRoutes(auth, database, publication), {
+		await app.register(adminApiRoutes(auth, database, publication, mixcloud), {
 			prefix: "/api/admin",
 		});
 		await app.register(adminUiRoutes, { prefix: "/admin" });

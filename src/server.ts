@@ -4,6 +4,11 @@ import { buildApp } from "./app.js";
 import { auth } from "./auth/auth.js";
 import { db, pool } from "./db/db.js";
 import {
+	createMixcloudClient,
+	createMixcloudStore,
+	readMixcloudConfig,
+} from "./mixcloud/index.js";
+import {
 	createPublicationNotifications,
 	createPublicationRunner,
 	type PublicationNotifications,
@@ -29,6 +34,13 @@ const close = async () => {
 };
 
 const start = async () => {
+	const mixcloudConfig = readMixcloudConfig(process.env);
+	const mixcloud = mixcloudConfig
+		? {
+				client: createMixcloudClient(mixcloudConfig),
+				store: createMixcloudStore(db, mixcloudConfig.tokenEncryptionKey),
+			}
+		: undefined;
 	// health check on the database
 	await sql`select 1`.execute(db);
 	const config = readPublicationConfig(
@@ -37,7 +49,7 @@ const start = async () => {
 	);
 	runner = await createPublicationRunner(db, config);
 	notifications = await createPublicationNotifications(pool);
-	app = buildApp(auth, { config, runner, notifications });
+	app = buildApp(auth, { config, runner, notifications }, mixcloud);
 	app.addHook("onClose", close);
 	const address = await app.listen({ host: "0.0.0.0", port });
 	app.log.info(`Web server running at ${address}`);
