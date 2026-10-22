@@ -20,13 +20,18 @@
       includes MIXCLOUD UPLOAD. Actual local port is 3000. Browser session
       requires login, blocking authenticated visual acceptance until a signed-in
       session is available.
-- [ ] 1a.3 Add UTILS → upload with active-link styling. Implemented and rebuilt
-      local container; awaiting user review. Typecheck, focused Biome, 16
+- [x] 1a.3 Add UTILS → upload with active-link styling. Implemented and rebuilt
+      local container; user approved with “next”. Typecheck, focused Biome, 16
       existing tests, and docs checks pass. Browser still shows login;
       authenticated visual acceptance remains open.
-- [ ] 1b.1 Create generic Banner with leading/trailing content slots.
-- [ ] 1b.2 Add responsive flex layout.
-- [ ] 1b.3 Add background and hover styling.
+- [x] 1b.1 Create generic Banner with leading/trailing content slots.
+      Scaffolding approved. Implemented leading/trailing content rendering in
+      separate wrappers; user approved with “next”. No layout or styling.
+- [x] 1b.2 Add responsive flex layout. Scaffolding approved. Implemented
+      horizontal flex, growing leading content, wrapping trailing actions, and
+      stacking at 42rem. User approved.
+- [ ] 1b.3 Add background and hover styling. Implemented 80% white background
+      and solid-white hover; awaiting review.
 - [ ] 1b.4 Place banner with signed-out text on upload page.
 - [ ] 1b.5 Add disabled sign-in button.
 
@@ -38,4 +43,5 @@ reference when behavior is implemented; run docs:check for documentation edits.
 
 ## Next action
 
-Review sidebar chunk 1a.3, then create Banner structure for 1b.1.
+Review background styling in 1b.3, then place signed-out banner in 1b.4. No live
+caller added yet; browser acceptance follows page integration.
