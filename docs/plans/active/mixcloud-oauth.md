@@ -2,8 +2,9 @@
 
 ## Decisions
 
-- Chunked development: structure, scaffolding, then implementation for each
-  unit; wait for user review before advancing stages or units.
+- User requested larger checkpoints: combine structure, scaffolding,
+  implementation, and verification within each numbered chunk. Review between
+  chunks.
 - Better Auth owns archive login; use `@fastify/oauth2` for Mixcloud
   authorization, subject to verification of its compatibility with Mixcloud's
   token response.
@@ -17,13 +18,14 @@
 
 ## Checkpoints
 
-- [ ] 1. Environment configuration: four Mixcloud settings, Compose forwarding,
+- [x] 1. Environment configuration: four Mixcloud settings, Compose forwarding,
       validation, focused tests, and configuration documentation.
   - [x] Structure: create `src/mixcloud/config.ts` responsibility shell.
   - [x] User structure review and request for scaffolding (`next`).
   - [x] Scaffolding: server-only settings type and pure reader signature.
-  - [ ] User scaffolding review.
-  - [ ] Implementation and verification.
+  - [x] User approved continuing with larger checkpoints.
+  - [x] Implementation and verification: seven focused tests, typecheck, scoped
+        Biome, documentation checks, and Markdown lint.
 - [ ] 2. Provider client: OAuth library configuration, token exchange, `/me/`,
       boundary validation, timeouts, safe failures, mocked provider tests.
 - [ ] 3. Storage: connection migration keyed by archive user, cascading
@@ -42,15 +44,15 @@
 Settings: `MIXCLOUD_CLIENT_ID`, `MIXCLOUD_CLIENT_SECRET`,
 `MIXCLOUD_REDIRECT_URI`, `MIXCLOUD_TOKEN_ENCRYPTION_KEY`. All absent disables
 the integration; partial or invalid configuration fails validation without
-exposing values. No runtime callers are added at structure stage. Implementation
-updates `.env`, `.env.example`, and `compose.yml`, adds focused configuration
-tests, and updates the existing development reference.
+exposing values. Implemented `.env`, `.env.example`, Compose forwarding,
+configuration tests, and development documentation. No runtime callers yet. The
+local client ID and callback are populated; unknown secret and encryption key
+remain blank. Existing environment values were preserved.
 
 ## Next action
 
-Await user scaffolding review before implementing chunk 1. The reader returns
-`MixcloudConfig | undefined` and currently throws an explicit unimplemented
-error; it has no live callers. The encryption key contract is a base64-encoded
-32-byte key. No environment or runtime behavior has changed. Later chunks
-receive their own detailed structure review before files or contracts are
-introduced.
+Await review of completed chunk 1, then implement chunk 2 as one checkpoint. The
+reader returns `MixcloudConfig | undefined`; the encryption key uses canonical
+base64 encoding of 32 bytes. Wire configuration into startup when integrating
+the provider/routes, after completing local credentials. No OAuth dependency or
+routes have been added yet.
