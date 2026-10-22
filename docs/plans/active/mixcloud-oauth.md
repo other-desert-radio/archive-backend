@@ -49,10 +49,28 @@ configuration tests, and development documentation. No runtime callers yet. The
 local client ID and callback are populated; unknown secret and encryption key
 remain blank. Existing environment values were preserved.
 
+## Provider review checkpoints
+
+The user requested smaller reviews within `client.ts` after the initial provider
+implementation was written. Keep the existing implementation unconnected; do not
+advance to storage or routes until provider review is complete.
+
+- [x] User reviewed contracts and authorization URL generation.
+- [x] User reviewed callback validation and token exchange; four focused tests,
+      typecheck, and scoped Biome pass.
+- [ ] Identity lookup: presented for review; four focused identity/timeout tests
+      pass.
+
+`oauth4webapi` is installed. Its supported custom-fetch hook adapts the standard
+code-grant request to Mixcloud's GET exchange and normalizes token responses.
+The library validates callback state/errors and processes the normalized token.
+No live routes or startup wiring have been added. This supersedes the earlier
+conditional choice of `@fastify/oauth2`; update the final provider documentation
+once review is complete.
+
 ## Next action
 
-Await review of completed chunk 1, then implement chunk 2 as one checkpoint. The
-reader returns `MixcloudConfig | undefined`; the encryption key uses canonical
-base64 encoding of 32 bytes. Wire configuration into startup when integrating
-the provider/routes, after completing local credentials. No OAuth dependency or
-routes have been added yet.
+Await user review of callback validation and exchange, then review identity
+lookup. Session ownership, expiry, replay protection, encryption, and
+persistence remain in the planned storage/routes units. The client alone does
+not enforce them.
