@@ -56,9 +56,10 @@ implementation was written. Keep the existing implementation unconnected; do not
 advance to storage or routes until provider review is complete.
 
 - [x] User reviewed contracts and authorization URL generation.
-- [ ] Callback validation and token exchange: presented for review; four focused
-      tests, typecheck, and scoped Biome pass.
-- [ ] Identity lookup: next checkpoint after exchange review.
+- [x] User reviewed callback validation and token exchange; four focused tests,
+      typecheck, and scoped Biome pass.
+- [ ] Identity lookup: presented for review; four focused identity/timeout tests
+      pass.
 
 `oauth4webapi` is installed. Its supported custom-fetch hook adapts the standard
 code-grant request to Mixcloud's GET exchange and normalizes token responses.
