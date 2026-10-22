@@ -12,10 +12,14 @@
 
 ## Progress
 
-- [ ] 1a.1 Create upload page titled MIXCLOUD UPLOAD using existing styling.
-      Structure approved; UploadPage scaffolded and kept off live routes.
-      Awaiting scaffolding review before implementing the title and page layout.
-- [ ] 1a.2 Connect page to #upload.
+- [x] 1a.1 Create upload page titled MIXCLOUD UPLOAD using existing styling.
+      Title-only page implemented using existing resource-view layout styles.
+      User approved with “next”.
+- [ ] 1a.2 Connect page to #upload. Implemented initial hash and hash-change
+      routing; awaiting review. Rebuilt running API container; served bundle
+      includes MIXCLOUD UPLOAD. Actual local port is 3000. Browser session
+      requires login, blocking authenticated visual acceptance until a signed-in
+      session is available.
 - [ ] 1a.3 Add UTILS → upload with active-link styling.
 - [ ] 1b.1 Create generic Banner with leading/trailing content slots.
 - [ ] 1b.2 Add responsive flex layout.
@@ -31,5 +35,5 @@ reference when behavior is implemented; run docs:check for documentation edits.
 
 ## Next action
 
-After scaffolding approval, implement only the UploadPage title and layout. No
-route, sidebar, or banner changes yet.
+Verify and review 1a.2, then add sidebar navigation in 1a.3. No sidebar or
+banner changes yet.

@@ -10,7 +10,7 @@ import { MessageModal } from "../shared/modal/index.js";
 import styles from "./management-shell.module.css";
 
 type ManagementShellProps = {
-	activeResource: "shows" | "djs" | "tags" | "mixcloud" | "users";
+	activeResource: "shows" | "djs" | "tags" | "mixcloud" | "users" | "upload";
 	children: ReactNode;
 	user?: AccountUser;
 	onLogout?: () => Promise<void>;
