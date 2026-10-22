@@ -27,6 +27,7 @@ const rows = [
 		...emptyParserFields,
 		id: 1,
 		decoded_djs_exist: true,
+		missing_djs: [] as string[],
 		data_changed: true,
 		mixcloud_tags: [{ key: "/genres/experimental/", name: "ExPeRiMeNtAl" }],
 		key: "/odr/show/",
@@ -49,6 +50,7 @@ const rows = [
 		...emptyParserFields,
 		id: 2,
 		decoded_djs_exist: true,
+		missing_djs: [] as string[],
 		data_changed: false,
 		mixcloud_tags: null,
 		key: "/odr/pending/",
@@ -510,11 +512,49 @@ describe("Mixcloud import status", () => {
 			await app.register(mixcloudImportRoutes(db));
 			const response = await app.inject("/mixcloud-import/status");
 			expect(response.statusCode).toBe(200);
-			expect(response.json()).toEqual({ auto_parsed: 1, unparsable: 3 });
+			expect(response.json()).toEqual({
+				auto_parsed: 1,
+				unparsable: 3,
+				missing_djs: [],
+			});
 			expect(queries[0]).toContain("unnest(mixcloud_import.decoded_djs)");
 			expect(queries[0]).toContain(
 				"lower(trim(djs.title)) = lower(trim(parsed.name))",
 			);
+		} finally {
+			await app.close();
+			await db.destroy();
+		}
+	});
+	test("combines missing names across review reasons and excludes imported rows", async () => {
+		const queries: string[] = [];
+		const db = database(
+			[
+				{ ...rows[1], missing_djs: [" Zed ", "Alice", " "] },
+				{
+					...rows[1],
+					date_source: "created_time",
+					missing_djs: ["alice", "Bob", "zed"],
+				},
+				{ ...rows[0], missing_djs: ["Imported DJ"] },
+			],
+			false,
+			queries,
+		);
+		const app = Fastify();
+		try {
+			await app.register(mixcloudImportRoutes(db));
+			const response = await app.inject("/mixcloud-import/status");
+			expect(response.statusCode).toBe(200);
+			expect(response.json()).toEqual({
+				auto_parsed: 0,
+				unparsable: 2,
+				missing_djs: ["Alice", "Bob", "Zed"],
+			});
+			expect(queries[0]).toContain('where "show_id" is null');
+			expect(queries[0]).toContain('order by "mixcloud_import"."id"');
+			expect(queries[0]).toContain("trim(parsed.name) <> ''");
+			expect(queries[0]).toContain("WITH ORDINALITY");
 		} finally {
 			await app.close();
 			await db.destroy();
@@ -531,7 +571,7 @@ describe("Mixcloud import status", () => {
 				expect(response.json()).toEqual(
 					fail
 						? { error: "Internal Server Error" }
-						: { auto_parsed: 0, unparsable: 0 },
+						: { auto_parsed: 0, unparsable: 0, missing_djs: [] },
 				);
 			} finally {
 				await app.close();

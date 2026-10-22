@@ -428,7 +428,16 @@ rather than raw internal errors. A reload failure after a successful refresh is
 identified separately. Shared toolbar creation controls and table Edit controls
 are optional; existing resources continue supplying them.
 
+`ResourceView` accepts an optional `banner` React node below its toolbar and
+above its results or empty state. The shared wrapper spans the resource width,
+uses a square black border and white background, and wraps long content.
+
 ### Mixcloud readiness controls
+
+The full-width banner below search lists “Missing DJs: Name, Name” from the
+status endpoint across all pending imports, independent of table search. Hide it
+when no names are missing or status is unavailable; the existing status retry
+and refresh actions reload it.
 
 The Mixcloud toolbar places “ready for import” and “needs review” immediately
 before “Refresh Mixcloud”. Nonzero counts appear in square badges: green for

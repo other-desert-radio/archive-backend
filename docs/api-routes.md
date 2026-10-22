@@ -433,18 +433,23 @@ imports or IDs. Failures return the generic `500` error.
 ### Mixcloud readiness counts
 
 Authenticated `GET /api/admin/mixcloud-import/status` returns
-`{ auto_parsed: number, unparsable: number }` for pending rows
-(`show_id IS NULL`). Ready rows have a nonblank derived title, a valid derived
-date, nonempty decoded DJ names, parser version/key, and `date_source: "title"`.
-Every decoded DJ name must also match an existing `djs.title` exactly, ignoring
-case and surrounding whitespace. Any unmatched name requires review. Both status
-and list queries compute `decoded_djs_exist` against the current DJ records; the
-list returns that boolean so the shared classifier also places these rows in the
-UI's needs-review queue. No DJ records are created. Upload-date fallbacks and
-missing suggestions require review. Counts exclude already imported rows and do
-not depend on table search. Empty queues return zero counts; database failures
-return `500 { "error": "Internal Server Error" }`. The shared
-`classifyMixcloudImport` utility keeps API counts and UI filters consistent.
+`{ auto_parsed: number, unparsable: number, missing_djs: string[] }` for pending
+rows (`show_id IS NULL`). Ready rows have a nonblank derived title, a valid
+derived date, nonempty decoded DJ names, parser version/key, and
+`date_source: "title"`. Every decoded DJ name must also match an existing
+`djs.title` exactly, ignoring case and surrounding whitespace. Any unmatched
+name requires review. Both status and list queries compute `decoded_djs_exist`
+against the current DJ records; the list returns that boolean so the shared
+classifier also places these rows in the UI's needs-review queue. No DJ records
+are created. Upload-date fallbacks and missing suggestions require review.
+Counts exclude already imported rows and do not depend on table search.
+`missing_djs` lists unmatched nonblank decoded names across pending entries,
+including entries requiring review for additional reasons. Names are trimmed,
+deduplicated ignoring case, and sorted alphabetically; the first spelling in
+import ID and decoded-name order is retained. Imported rows are excluded. Empty
+queues return zero counts and `missing_djs: []`; database failures return
+`500 { "error": "Internal Server Error" }`. The shared `classifyMixcloudImport`
+utility keeps API counts and UI filters consistent.
 
 ## Mixcloud tag key resolution
 

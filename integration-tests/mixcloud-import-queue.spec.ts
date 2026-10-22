@@ -70,6 +70,7 @@ test.beforeEach(async ({ page }) => {
 	await page.route("**/api/admin/mixcloud-import/status", (route) =>
 		route.fulfill({
 			json: {
+				missing_djs: [],
 				auto_parsed: state.rows.filter(
 					(row) => row.show_id === undefined && row.date_source === "title",
 				).length,
