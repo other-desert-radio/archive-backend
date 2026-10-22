@@ -190,7 +190,7 @@ describe("DJ creation persistence", () => {
 		const { database, state } = buildDatabase();
 		const response = await createDJ(database, {
 			title: " DJ New ",
-			bio: "First line\nSecond line",
+			bio: " \tFirst line\nSecond line\n ",
 			tags: ["Dance"],
 		});
 

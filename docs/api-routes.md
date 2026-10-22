@@ -273,6 +273,10 @@ eight documented text fields and one optional image file. Successful edits
 return `200` with the admin DJ shape; an unknown DJ returns
 `404 { "error": "Not Found" }`.
 
+Both DJ mutation routes trim `title` and `bio` before validating them. Blank or
+whitespace-only required text returns `400 { "error": "Validation error" }`
+before image processing or database writes.
+
 `GET /api/admin/djs/:id/image/small` and `GET /api/admin/djs/:id/image/large`
 return the corresponding stored WebP image using the authenticated admin
 boundary. `GET /api/admin/djs/:id/image` remains an alias for the large image.
