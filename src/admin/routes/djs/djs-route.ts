@@ -7,7 +7,7 @@ import { generateSquareWebPImages } from "../../../utils/images/index.js";
 import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
 import { clientDescription } from "../../logging.js";
 import { createTags } from "../tags/tag-service.js";
-import type { AdminApiReply, TypedDatabase } from "../types.js";
+import type { AdminApiReply, ErrorResponse, TypedDatabase } from "../types.js";
 import { normalizeCreateDJRequest } from "./normalize-create-dj-request.js";
 import { parseCreateDJMultipart } from "./parse-create-dj-multipart.js";
 import { parseModifyDJMultipart } from "./parse-modify-dj-multipart.js";
@@ -134,7 +134,7 @@ export const djRoutes =
 			serveImage(request.params.id, "large", request, reply),
 		);
 
-		app.post<{ Reply: AdminApiReply<DJJSON> }>(
+		app.post<{ Reply: AdminApiReply<DJJSON> & { 413: ErrorResponse } }>(
 			"/create-dj",
 			async (request, reply) => {
 				request.log.info(
@@ -277,6 +277,21 @@ export const djRoutes =
 					);
 					return reply.code(201).send(created);
 				} catch (error) {
+					if (error instanceof app.multipartErrors.RequestFileTooLargeError) {
+						const client = clientDescription(request);
+						request.log.warn(
+							{
+								statusCode: 413,
+								field: "image",
+								maxFileBytes: 10 * 1024 * 1024,
+								client,
+							},
+							`[DJ Creation] image upload rejected -- route: /api/admin/create-dj, status: 413, field: image, limit: 10 MiB, client: ${client}`,
+						);
+						return reply
+							.code(413)
+							.send({ error: "Image must not exceed 10 MiB" });
+					}
 					request.log.error({ err: error }, "Unable to create DJ");
 					return reply.code(500).send({
 						error: error instanceof Error ? error.message : String(error),
@@ -285,7 +300,7 @@ export const djRoutes =
 			},
 		);
 
-		app.post<{ Reply: AdminApiReply<AdminDJJSON> }>(
+		app.post<{ Reply: AdminApiReply<AdminDJJSON> & { 413: ErrorResponse } }>(
 			"/modify-dj",
 			async (request, reply) => {
 				request.log.info(
@@ -482,6 +497,21 @@ export const djRoutes =
 					);
 					return reply.code(200).send(response);
 				} catch (error) {
+					if (error instanceof app.multipartErrors.RequestFileTooLargeError) {
+						const client = clientDescription(request);
+						request.log.warn(
+							{
+								statusCode: 413,
+								field: "image",
+								maxFileBytes: 10 * 1024 * 1024,
+								client,
+							},
+							`[DJ Modification] image upload rejected -- route: /api/admin/modify-dj, status: 413, field: image, limit: 10 MiB, client: ${client}`,
+						);
+						return reply
+							.code(413)
+							.send({ error: "Image must not exceed 10 MiB" });
+					}
 					request.log.error({ err: error }, "Unable to modify DJ");
 					return reply.code(500).send({ error: "Internal Server Error" });
 				}
