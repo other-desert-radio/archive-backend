@@ -477,9 +477,4 @@ export const djRoutes =
 				}
 			},
 		);
-
-		app.post("/remove-dj", async () => {
-			// soft delete
-			return undefined;
-		});
 	};
