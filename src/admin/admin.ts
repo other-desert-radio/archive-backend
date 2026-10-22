@@ -78,7 +78,7 @@ const adminApiRoutes = (
 		});
 		await app.register(multipart, {
 			limits: {
-				fileSize: Infinity,
+				fileSize: 10 * 1024 * 1024,
 				files: 1,
 				fields: 8,
 				parts: 9,

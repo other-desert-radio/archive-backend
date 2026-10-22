@@ -279,6 +279,12 @@ boundary. `GET /api/admin/djs/:id/image` remains an alias for the large image.
 Each route returns `image/webp`, or `404 { "error": "Not Found" }` when the DJ
 or image is absent.
 
+Both DJ mutation routes cap each uploaded file at 10 MiB while reading the
+multipart stream, before image processing or database writes. Larger files
+return `413 { "error": "Image must not exceed 10 MiB" }`, including unsupported
+file types. This server limit applies to the submitted crop; original browser
+source selection is unchanged.
+
 The upload validator accepts JPEG, PNG, and WebP MIME types. The DJ admin UI
 validates and decodes a selected source before opening its crop modal, then
 sends a 1200-by-1200 WebP crop. Crop controls support drag positioning, zoom,
