@@ -38,7 +38,7 @@ shared boundary rather than duplicating permission checks.
 
 ### Mixcloud connection routes
 
-Admins and editors use their own archive session for these routes. Neither route
+Admins and editors use their own archive session for these routes. No route
 accepts a user or session ID from the browser. Responses use
 `Cache-Control: no-store`.
 
@@ -52,9 +52,27 @@ accepts a user or session ID from the browser. Responses use
   with `{error:"Mixcloud is not configured"}`. Storage failures return a generic
   500; raw database errors and generated state are excluded from route logs.
 
-The callback and disconnect routes are not implemented yet. Connect can prepare
-the consent URL but cannot complete authorization until the callback is added.
-No upload-page controls are enabled in this checkpoint.
+- `GET /api/admin/mixcloud/callback` requires the initiating archive session and
+  a single nonempty `state`. The store validates session ownership, attempt
+  expiry and single use before invoking code exchange and identity lookup, then
+  saves the encrypted connection. Provider denial or failure consumes the
+  attempt while preserving an existing connection. Success/failure uses a 303
+  redirect to `/admin/?mixcloud=OUTCOME#upload`, where OUTCOME is `connected`,
+  `denied`, `invalid_attempt`, `unavailable`, or `failed`. These markers are
+  informational; the UI must fetch status as the source of truth. No provider
+  text, credentials, or caller-supplied redirect destination is forwarded.
+  Missing/invalid archive sessions retain the shared boundary's 401/403
+  response.
+- `POST /api/admin/mixcloud/disconnect` returns `{disconnected:true}` after
+  deleting the acting user's connection and pending attempts. It is idempotent,
+  requires a trusted browser origin, and serializes with callback completion.
+  Disabled integrations return 503. This does not log out of Mixcloud or revoke
+  authorization at the provider.
+
+Mixcloud responses also use `Referrer-Policy: no-referrer`. Application, admin,
+and origin-rejection request logs record paths without query strings to exclude
+OAuth codes, state, and tokens. Raw provider and storage errors are not logged
+by the Mixcloud handlers. The upload-page controls remain a separate checkpoint.
 
 ### Resource plugin registration
 

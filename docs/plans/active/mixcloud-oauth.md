@@ -31,7 +31,7 @@
       deletion, authenticated token encryption, storage functions, session-bound
       authorization attempts with hashed state and ten-minute single-use expiry,
       database tests.
-- [ ] 4. Protected routes: connect, callback, status, disconnect; session/origin
+- [x] 4. Protected routes: connect, callback, status, disconnect; session/origin
       guards, callback validation, failure preservation, serialized disconnect
       and completion, OAuth request-log redaction, backend tests.
 - [ ] 5. Upload banner: loader, connection states, sign-in redirect, identity,
@@ -102,8 +102,8 @@ lint, and docs checks pass. Regular archive data and startup remain untouched.
 
 ## Route review checkpoints
 
-- [x] Connect + status implemented and tested; awaiting review.
-- [ ] Callback + disconnect with sensitive-URL log redaction.
+- [x] User reviewed connect + status and requested callback/disconnect.
+- [x] Callback + disconnect with sensitive-URL log redaction; awaiting review.
 
 Connect/status live beneath the shared admin session/origin boundary. Connect
 resolves user/session IDs from authenticated context, creates an attempt, and
@@ -114,11 +114,11 @@ Responses disable caching.
 
 Startup validates optional Mixcloud configuration and constructs one injected
 client/store pair. Partial settings now fail startup; all blank disables the
-integration. Regular-database migrations have not been applied. No callback,
-disconnect route, or UI wiring has been added. Current unit has six route tests
-covering both roles, owner/session derivation, states, origin/session guards,
-secret-free replies/logs, and storage failures. Existing client/config tests,
-typecheck, scoped Biome, docs checks, and Markdown lint pass.
+integration. Regular-database migrations have not been applied. UI wiring is
+still pending. Current unit has six route tests covering both roles,
+owner/session derivation, states, origin/session guards, secret-free
+replies/logs, and storage failures. Existing client/config tests, typecheck,
+scoped Biome, docs checks, and Markdown lint pass.
 
 User asked why startup injection and OAuth state are needed. Explained that
 injection supports one-time configuration and isolated tests; objects are not
@@ -126,6 +126,31 @@ state containers, PostgreSQL is. OAuth random state binds the callback to the
 initiating session/attempt. Dependency creation could be moved closer to routes
 if desired; no change to the agreed wiring was requested.
 
+## Callback/disconnect verification
+
+Callback reads raw query parameters (preserving duplicates), rejects missing or
+ambiguous state, and invokes exchange/identity inside store completion. Fixed
+303 redirect outcomes are informational markers for the later UI, which must
+reload status. Disabled callback reports unavailable; invalid archive sessions
+retain 401/403 from the shared boundary. Disconnect acts on the authenticated
+user and requires the existing origin guard. Both use no-store/no-referrer
+headers.
+
+Application/admin/origin logs now record request paths without queries using
+`requestPathForLog`. Tests capture application output and verify callback
+secrets are absent, including unauthenticated callbacks. Route tests cover
+success, replay, invalid state/duplicate codes, provider denial/failure,
+preservation, disconnect/idempotence, origin/role guards and safe redirects.
+Store concurrency and expiry remain covered by the existing isolated PostgreSQL
+tests.
+
+Verification passed: 14 Mixcloud route tests, one request-path test, 28 existing
+authentication/admin-boundary tests, typecheck, scoped Biome, docs check,
+Markdown lint and diff whitespace check. Initial root-log spying targeted the
+parent logger instead of its request child; test now captures actual application
+log output.
+
 ## Next action
 
-Await connect/status review before implementing callback and disconnect.
+Await callback/disconnect review before implementing upload-page connection
+controls. No real Mixcloud authorization or regular-database migration was run.

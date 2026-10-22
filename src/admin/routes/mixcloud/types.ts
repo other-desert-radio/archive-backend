@@ -19,3 +19,10 @@ export type MixcloudStatus =
 	| { configured: true; connected: false }
 	| { configured: true; connected: true; account: MixcloudIdentity };
 export type MixcloudConnectResponse = { authorizationUrl: string };
+export type MixcloudDisconnectResponse = { disconnected: true };
+export type MixcloudCallbackOutcome =
+	| "connected"
+	| "denied"
+	| "invalid_attempt"
+	| "unavailable"
+	| "failed";
