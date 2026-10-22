@@ -9,6 +9,7 @@
   with narrow-screen stacking, and changes from 80% white to white on hover.
 - Show only the signed-out state; disable sign-in until OAuth is implemented.
 - Defer the outer flex column and separate upload-button div until needed.
+- User switched remaining 1a/1b work to one-shot with “finish the rest”.
 
 ## Progress
 
@@ -30,12 +31,15 @@
 - [x] 1b.2 Add responsive flex layout. Scaffolding approved. Implemented
       horizontal flex, growing leading content, wrapping trailing actions, and
       stacking at 42rem. User approved.
-- [ ] 1b.3 Add background and hover styling. Implemented 80% white background
+- [x] 1b.3 Add background and hover styling. Implemented 80% white background
       and solid-white hover; awaiting review.
-- [ ] 1b.4 Place banner with signed-out text on upload page. Wired Banner into
+- [x] 1b.4 Place banner with signed-out text on upload page. Wired Banner into
       UploadPage; trailing slot empty until button chunk. Awaiting user review
       and authenticated browser acceptance.
-- [ ] 1b.5 Add disabled sign-in button.
+- [ ] 1b.5 Add disabled sign-in button. Implemented square bordered disabled
+      sign-in button; container rebuilt. Typecheck, admin build, focused Biome,
+      and docs checks pass. User visual review remains pending; browser session
+      requires login.
 
 ## Verification
 
@@ -45,5 +49,5 @@ reference when behavior is implemented; run docs:check for documentation edits.
 
 ## Next action
 
-Review background styling in 1b.3, then place signed-out banner in 1b.4. No live
-caller added yet; browser acceptance follows page integration.
+Implementation of 1a/1b is complete. Authenticated desktop and phone visual
+acceptance and final user review remain open. OAuth belongs to future 1c.

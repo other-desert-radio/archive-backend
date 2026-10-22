@@ -1,11 +1,12 @@
 import type { ReactElement } from "react";
 import { Banner } from "../components/shared/resource-views/index.js";
 import styles from "../components/shared/resource-views/resource-view/resource-view.module.css";
+import uploadStyles from "./upload-page.module.css";
 
 /** Owns the Mixcloud upload page presentation. */
 export const UploadPage = (): ReactElement => (
 	<section className={styles.view}>
-		<header className={styles.header}>
+		<header className={`${styles.header} ${uploadStyles.header}`}>
 			<h1>MIXCLOUD UPLOAD</h1>
 		</header>
 		<Banner
@@ -15,7 +16,11 @@ export const UploadPage = (): ReactElement => (
 					begin uploading a show.
 				</p>
 			}
-			trailing={undefined}
+			trailing={
+				<button type="button" className={uploadStyles.signIn} disabled>
+					sign into mixcloud
+				</button>
+			}
 		/>
 	</section>
 );
