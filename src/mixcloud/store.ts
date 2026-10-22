@@ -7,11 +7,35 @@ import { createTokenEncryption } from "./token-encryption.js";
 type Owner = { userId: string; sessionId: string };
 type AuthorizedConnection = { identity: MixcloudIdentity; accessToken: string };
 
+export type MixcloudStore = {
+	/** Read the connected account identity without exposing its token. */
+	getConnection: (userId: string) => Promise<MixcloudIdentity | undefined>;
+	/** Decrypt the token for server-side API calls; undefined means disconnected. */
+	getAccessToken: (userId: string) => Promise<string | undefined>;
+	/** Store a session-bound, ten-minute attempt; return raw state for the consent URL. */
+	createAttempt: (owner: Owner) => Promise<string>;
+	/**
+	 * Consume a valid attempt, run token exchange/identity lookup, and save the
+	 * encrypted connection while holding the user's lock. The callback must use
+	 * bounded requests and must not call this store recursively.
+	 * Returns false for an invalid attempt/session. Provider errors propagate after
+	 * consuming the attempt; database errors roll back. Existing connections survive
+	 * failures. Owner IDs must come from the authenticated archive session.
+	 */
+	completeAuthorization: (
+		owner: Owner,
+		state: string,
+		authorize: () => Promise<AuthorizedConnection>,
+	) => Promise<boolean>;
+	/** Delete the connection and pending attempts, serialized with completion. */
+	disconnect: (userId: string) => Promise<void>;
+};
+
 /** All connection mutations lock the user row, including while OAuth completes. */
 export const createMixcloudStore = (
 	database: Kysely<Database>,
 	encryptionKey: string,
-) => {
+): MixcloudStore => {
 	const encryption = createTokenEncryption(encryptionKey);
 	const hashState = (state: string) =>
 		createHash("sha256").update(state).digest("hex");

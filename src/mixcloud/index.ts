@@ -5,4 +5,4 @@ export {
 	type MixcloudIdentity,
 } from "./client.js";
 export { type MixcloudConfig, readMixcloudConfig } from "./config.js";
-export { createMixcloudStore } from "./store.js";
+export { createMixcloudStore, type MixcloudStore } from "./store.js";
