@@ -146,6 +146,8 @@ export const djRoutes =
 					}
 
 					const { image: uploadedImage, ...textRequest } = parsed.form;
+					textRequest.title = textRequest.title.trim();
+					textRequest.bio = textRequest.bio.trim();
 
 					if (!isMatching(CreateDJRequestPattern, textRequest)) {
 						request.log.warn(
@@ -295,6 +297,8 @@ export const djRoutes =
 					}
 
 					const { image: uploadedImage, ...textRequest } = parsed.form;
+					textRequest.title = textRequest.title.trim();
+					textRequest.bio = textRequest.bio.trim();
 					if (!isMatching(ModifyDJRequestPattern, textRequest)) {
 						request.log.warn(
 							"DJ modification request rejected during field validation",
