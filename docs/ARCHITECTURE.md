@@ -28,6 +28,11 @@ exported files.
 - `src/publication/`: durable jobs, revision snapshots, advisory-lock ownership,
   safe Git publication/recovery, and notifications. Jobs continue independently
   of browser connections. Credentials belong to the runtime, outside the image.
+- `src/publication/preview.ts`: short-lived, owner-scoped reviewed documents
+  held in memory for both publication modes. `preview-diff.ts` summarizes added,
+  changed, and removed names; `snapshot.ts` reads archive data and its revision
+  in one read-only transaction. The existing exporter writes reviewed documents.
+  Durable jobs and Git recovery remain owned by the runner/store.
 - `src/publication/git/`: command safeguards, checkout validation, remote
   synchronization, generated-file commit/push, and interrupted-job recovery in
   separate modules. Its index exports the runner-facing operations; internal

@@ -20,7 +20,7 @@ export type PublicationView = {
 	connected: boolean;
 	error?: string | undefined;
 	refresh: () => Promise<void>;
-	start: (retryJobId?: string) => Promise<void>;
+	start: (retryJobId?: string, previewId?: string) => Promise<boolean>;
 };
 const message = (error: unknown) =>
 	error instanceof Error
@@ -133,13 +133,13 @@ export const usePublication = (enabled = true): PublicationView => {
 		};
 	}, [enabled, refresh]);
 	const start = useCallback(
-		async (retryJobId?: string) => {
-			if (startingRef.current) return;
+		async (retryJobId?: string, previewId?: string) => {
+			if (startingRef.current) return false;
 			startingRef.current = true;
 			setStarting(true);
 			setError(undefined);
 			try {
-				const job = await startPublication(retryJobId);
+				const job = await startPublication(retryJobId, previewId);
 				if (mounted.current) {
 					setDetail({ job, logs: [], logsTruncated: false });
 					setStatus((previous) =>
@@ -147,8 +147,10 @@ export const usePublication = (enabled = true): PublicationView => {
 					);
 				}
 				await refresh();
+				return true;
 			} catch (error) {
 				if (mounted.current) setError(message(error));
+				return false;
 			} finally {
 				startingRef.current = false;
 				if (mounted.current) setStarting(false);

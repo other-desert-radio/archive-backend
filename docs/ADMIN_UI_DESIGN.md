@@ -58,6 +58,10 @@ reachable.
 - Disabled controls do not apply hover effects. Mouse clicks do not introduce
   extra button focus outlines; keyboard focus remains visible with
   `:focus-visible`.
+- Form submit buttons are disabled with gray text, border, and background and no
+  pointer events when values match their opening values. Editing enables
+  submission; reverting all changes disables it again. Other submission locks
+  still apply.
 - Message actions currently use square bordered buttons and gray hover
   backgrounds, with the same font and control sizing. Their semantic primary and
   secondary roles do not currently imply different visual styles.
@@ -656,20 +660,31 @@ in remote mode, italic gray text, and no border. The title and control fit 390px
 and 320px headers.
 
 The shared message modal confirms pending changes with “Publish latest changes
-to github.” in remote mode and names the target branch. Local mode confirms
-“Write latest changes to your local archive checkout.” and shows the checkout
-path, actual branch, and origin when available. Publication uses a centered
-Publish action, a borderless Close action with 2px vertical padding and a 4px
-gap underneath, and a top-right X. A previous successful result is hidden when
-new changes are pending. Close receives initial focus; Escape, backdrop, and
-Close restore focus to the opener. The underlying shell is inert. Closing never
-cancels a server job. The publication panel is up to 864px wide with 16px
-viewport margins. Progress shows the current stage; Publication log is collapsed
-by default and expands through a keyboard-accessible disclosure. Expanded logs
-scroll independently and update live; truncated history is explicit. Retained
-retry attempts appear oldest first with a blank line between attempts, including
-after reopening or refreshing. Failures preserve feedback and require an
-explicit Retry publication action. Confirmation has no diff preview.
+to github.” in remote mode and names the target branch. Local mode shows the
+checkout path and actual branch, with no instruction sentence or origin line.
+Publication uses a centered Publish action, a borderless Close action with 2px
+vertical padding and a 4px gap underneath, and a top-right X. A previous
+successful result is hidden when new changes are pending. Close receives initial
+focus; Escape, backdrop, and Close restore focus to the opener. The underlying
+shell is inert. Closing never cancels a server job. The publication panel is up
+to 864px wide with 16px viewport margins. Progress shows the current stage;
+Publication log uses regular font weight and is collapsed by default and expands
+through a keyboard-accessible disclosure. Expanded logs scroll independently and
+update live; truncated history is explicit. Retained retry attempts appear
+oldest first with a blank line between attempts, including after reopening or
+refreshing. Failures preserve feedback and require an explicit retry action. In
+both modes, opening the confirmation prepares a simple Pending changes summary
+before enabling Publish. Match the Mixcloud data box: a dashed border with a
+centered, regular-weight uppercase helper-size label set into its top edge. Use
+a two-column grid with Tags, Shows, and DJs in the leading column. The second
+column lists nonempty added, changed, and removed name lists, one per line. The
+action word is bold, followed by comma-separated names, for example “changed
+ambient, jazz”. Omit counts, plus signs, parentheses, and unchanged resource
+groups. Keep the two columns at phone widths and wrap long names within the
+second column. Show “No changes to publish.” when empty. Show loading while the
+summary request runs and a Refresh preview action on failure or stale
+confirmation. Local mode compares current generated checkout files and writes
+the reviewed snapshot after confirmation.
 
 The authenticated fetch stream refreshes durable status and logs on reconnect;
 page refresh and reopening observe the existing job without starting another.

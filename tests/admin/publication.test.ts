@@ -13,11 +13,13 @@ const setup = async ({
 	mode = "remote",
 	busy = false,
 	fail = false,
+	previewFailure = false,
 }: {
 	role?: string;
 	mode?: "local" | "remote";
 	busy?: boolean;
 	fail?: boolean;
+	previewFailure?: boolean;
 } = {}) => {
 	let activeRole = role;
 	const auth = {
@@ -69,6 +71,18 @@ const setup = async ({
 		stage: "queued" as const,
 		outcome: "running" as const,
 	};
+	const preview = {
+		id: "00000000-0000-0000-0000-000000000002",
+		revision: "1",
+		changes: {
+			tags: { added: [], changed: [], removed: [] },
+			shows: { added: [], changed: [], removed: [] },
+			djs: { added: [], changed: [], removed: [] },
+		},
+		expiresAt: new Date(Date.now() + 60000).toISOString(),
+	};
+	const starts: unknown[] = [];
+	const previewRequests: unknown[] = [];
 	await app.register(
 		adminRoutes(auth, database, {
 			config:
@@ -76,7 +90,13 @@ const setup = async ({
 					? { mode, checkoutPath: job.target.checkoutPath }
 					: job.target,
 			runner: {
-				start: async () => {
+				preparePreview: async (request) => {
+					previewRequests.push(request);
+					if (previewFailure) throw new Error("private repository credentials");
+					return preview;
+				},
+				start: async (request) => {
+					starts.push(request);
 					if (busy) throw new PublicationBusyError();
 					return job;
 				},
@@ -88,12 +108,90 @@ const setup = async ({
 	return {
 		app,
 		job,
+		preview,
+		starts,
+		previewRequests,
 		revoke: () => {
 			activeRole = "editor";
 		},
 	};
 };
 describe("publication routes", () => {
+	test("prepares an owned preview and forwards its ID when publishing", async () => {
+		const { app, preview, previewRequests, starts } = await setup();
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/publication/preview",
+			payload: {},
+		});
+		expect(response.statusCode).toBe(200);
+		expect(response.json()).toEqual(preview);
+		expect(previewRequests).toEqual([{ requestedBy: "actor" }]);
+		expect(response.headers["cache-control"]).toBe("private, no-store");
+		await app.inject({
+			method: "POST",
+			url: "/api/admin/publication",
+			payload: { previewId: preview.id },
+		});
+		expect(starts).toEqual([{ requestedBy: "actor", previewId: preview.id }]);
+	});
+	test("rejects invalid preview requests", async () => {
+		const { app, preview } = await setup();
+		for (const payload of [
+			[],
+			{ previewId: preview.id },
+			{ retryJobId: "invalid" },
+			{ unexpected: true },
+		])
+			expect(
+				(
+					await app.inject({
+						method: "POST",
+						url: "/api/admin/publication/preview",
+						payload,
+					})
+				).statusCode,
+			).toBe(400);
+	});
+	test("preview failures return safe actionable errors", async () => {
+		const { app } = await setup({ previewFailure: true });
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/publication/preview",
+			payload: {},
+		});
+		expect(response.statusCode).toBe(500);
+		expect(response.json().error).toContain("Request ID:");
+		expect(response.body).not.toContain("private");
+	});
+
+	for (const role of ["anonymous", "editor"])
+		test(`${role} cannot prepare previews`, async () => {
+			const { app } = await setup({ role });
+			expect(
+				(
+					await app.inject({
+						method: "POST",
+						url: "/api/admin/publication/preview",
+						payload: {},
+					})
+				).statusCode,
+			).toBe(role === "anonymous" ? 401 : 403);
+		});
+	test("preview preparation rejects cross-origin requests", async () => {
+		const { app } = await setup();
+		expect(
+			(
+				await app.inject({
+					method: "POST",
+					url: "/api/admin/publication/preview",
+					headers: { origin: "https://evil.invalid" },
+					payload: {},
+				})
+			).statusCode,
+		).toBe(403);
+	});
+
 	test("status preserves bigint decimal strings", async () => {
 		const { app, job } = await setup();
 		const response = await app.inject("/api/admin/publication");

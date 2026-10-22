@@ -115,7 +115,13 @@ export const OnboardingModal = ({
 	if (!isOpen) return null;
 	const submit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		if (isCovered || isConfirming || submittingRef.current || isSubmitDisabled)
+		if (
+			isCovered ||
+			isConfirming ||
+			submittingRef.current ||
+			isSubmitDisabled ||
+			!hasUnsavedChanges
+		)
 			return;
 		setError(undefined);
 		submittingRef.current = true;
@@ -221,7 +227,12 @@ export const OnboardingModal = ({
 							<button
 								type="submit"
 								className={styles.submit}
-								disabled={isSubmitting || isCovered || isSubmitDisabled}
+								disabled={
+									isSubmitting ||
+									isCovered ||
+									isSubmitDisabled ||
+									!hasUnsavedChanges
+								}
 							>
 								{isSubmitting ? submittingLabel : submitLabel}
 							</button>

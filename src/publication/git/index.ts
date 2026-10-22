@@ -4,9 +4,14 @@
  * The runner acknowledges the captured revision only after confirmed success.
  * Internal modules use direct imports so the public barrel creates no cycles.
  */
-export { commitAndPushPublication } from "./commits.js";
+
+export { inspectGit, pathsFromGit, readGitBytes } from "./commands.js";
+export { commitAndPushPublication, generatedPath } from "./commits.js";
 export { reconcilePublicationGit } from "./recovery.js";
-export { synchronizePublicationCheckout } from "./remote.js";
+export {
+	fetchPublicationBranch,
+	synchronizePublicationCheckout,
+} from "./remote.js";
 export type {
 	PublicationGitContext,
 	PublicationGitResult,

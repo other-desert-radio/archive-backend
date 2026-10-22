@@ -108,12 +108,35 @@ and verifies recovery after read failures. Both skip when the variable is unset.
 The admin publisher uses this same exporter. Local mode validates its existing
 checkout and writes assets without fetch, branch changes, commit, or push. It
 records optional read-only Git metadata and acknowledges the captured revision
-after a successful write. Remote mode safely synchronizes its dedicated
-checkout. It stages only generated JSON and DJ image paths, including deletions,
-commits changed output with a job identifier, and pushes without force. It
-acknowledges only the captured revision after success or a no-change result;
-newer edits remain pending. Unrelated assets and edits remain outside the
-generated-file commit. Durable jobs allow explicit recovery after restart or a
-lost response from the Git remote. See
+after a successful write. Both modes prepare a simple summary of added, changed,
+and removed names for Tags, Shows, and DJs. Local mode reads current generated
+checkout files; remote mode reads the fetched branch. Changes in metadata,
+relationships, or DJ image bytes count as changed records. Ordering and
+duplicate embedded record details are suppressed.
+
+Preparation leaves working-tree files, HEAD, and the Git index untouched.
+Remote-tracking refs can update during fetch. Local preparation works with
+non-Git destinations and makes no network requests. Unrelated checkout files
+stay outside the comparison; symlinks in managed local output are rejected.
+
+The backend retains reviewed archive documents in memory for up to 15 minutes,
+with at most eight previews per process. No temporary preview files are created.
+Confirmation validates ownership, target, database revision, and the baseline
+before creating a job. Local mode checks current generated-file contents; remote
+mode checks the fetched branch commit. Changed baselines require a fresh
+preview. The existing exporter writes the reviewed documents after confirmation,
+and newer database edits remain pending. Restart requires preparing a new
+summary.
+
+Remote retry preserves existing commit recovery: a recognized outgoing commit is
+summarized against origin and resumed; a push already on origin only needs
+acknowledgement. Newer archive edits remain pending after recovery.
+
+It stages only generated JSON and DJ image paths, including deletions, commits
+changed output with a job identifier, and pushes without force. It acknowledges
+only the captured revision after success or a no-change result; newer edits
+remain pending. Unrelated assets and edits remain outside the generated-file
+commit. Durable jobs allow explicit recovery after restart or a lost response
+from the Git remote. See
 [publication operations](DEVELOPMENT.md#publication-operation-and-recovery) for
 setup, branch selection, and retry procedures.

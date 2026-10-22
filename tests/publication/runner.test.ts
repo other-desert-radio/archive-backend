@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { execFile } from "node:child_process";
 import {
 	chmod,
@@ -27,6 +27,7 @@ import {
 	createPublicationRunner,
 	type PublicationConfig,
 	type PublicationRunner,
+	type PublicationStart,
 	readPublicationJob,
 	readPublicationStatus,
 	reservePublicationJob,
@@ -76,7 +77,16 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 		path.join(checkout, "public/assets/logo.svg"),
 		"unrelated asset\n",
 	);
-	await writeFile(path.join(checkout, "src/res/djs/99.json"), "stale");
+	await writeFile(
+		path.join(checkout, "src/res/djs/99.json"),
+		JSON.stringify({
+			id: 99,
+			title: "Removed DJ",
+			bio: "Removed",
+			tagIds: [],
+			shows: [],
+		}),
+	);
 	await writeFile(
 		path.join(checkout, "public/assets/djs/99_small.webp"),
 		"stale",
@@ -149,6 +159,20 @@ const settled = async (database: Kysely<Database>, id: string) => {
 	throw new Error("Publication did not finish");
 };
 
+const readyPreview = async (
+	runner: PublicationRunner,
+	request: PublicationStart = { requestedBy: "admin" },
+) => {
+	return runner.preparePreview(request);
+};
+const publishReviewed = async (
+	runner: PublicationRunner,
+	request: PublicationStart = { requestedBy: "admin" },
+) => {
+	const preview = await readyPreview(runner, request);
+	return runner.start({ ...request, previewId: preview.id });
+};
+
 test.skipIf(!databaseUrl)(
 	"local publication exports on the current branch without fetch, push, or index changes; mode and branch switches stay pending",
 	async () => {
@@ -191,7 +215,7 @@ process.exit(result.status ?? 1);
 				checkoutPath: f.checkout,
 			};
 			const runner = await f.create(f.database, local);
-			const start = await runner.start({ requestedBy: "admin" });
+			const start = await publishReviewed(runner);
 			const done = await settled(f.database, start.id);
 			expect(done.job.outcome).toBe("succeeded");
 			expect(done.job.commitId).toBeUndefined();
@@ -254,7 +278,7 @@ process.exit(result.status ?? 1);
 );
 
 test.skipIf(!databaseUrl)(
-	"local export supports non-Git destinations and retries validation failures without clearing pending changes",
+	"local preview rejects unsafe destinations without creating a job and supports repaired non-Git directories",
 	async () => {
 		const f = await fixture();
 		try {
@@ -267,34 +291,29 @@ test.skipIf(!databaseUrl)(
 			await writeFile(outside, "keep me");
 			await symlink(outside, path.join(f.checkout, "src/res/shows.json"));
 			const runner = await f.create(f.database, local);
-			const start = await runner.start({ requestedBy: "admin" });
-			const failed = await settled(f.database, start.id);
-			expect(failed.job.outcome).toBe("failed");
-			if (failed.job.outcome !== "running")
-				expect(failed.job.error).toContain("without symlinks");
+			await expect(readyPreview(runner)).rejects.toThrow();
+			expect(
+				(await readPublicationStatus(f.database, local)).latestJob,
+			).toBeUndefined();
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
 				true,
 			);
 			expect(await readFile(outside, "utf8")).toBe("keep me");
-			await expect(runner.start({ requestedBy: "admin" })).rejects.toThrow(
-				"Explicit Retry",
-			);
-			const remote = await f.create();
-			await expect(
-				remote.start({ requestedBy: "admin", retryJobId: start.id }),
-			).rejects.toThrow("Retry target differs");
 			await rm(path.join(f.checkout, "src/res/shows.json"));
-			const retry = await runner.start({
+			const preview = await readyPreview(runner);
+			expect(preview.changes.djs.removed).toEqual(["Removed DJ"]);
+			expect(
+				await Bun.file(path.join(f.checkout, "src/res/djs/99.json")).exists(),
+			).toBe(true);
+			const job = await runner.start({
 				requestedBy: "admin",
-				retryJobId: start.id,
+				previewId: preview.id,
 			});
-			expect((await settled(f.database, retry.id)).job.outcome).toBe(
-				"succeeded",
-			);
+			expect((await settled(f.database, job.id)).job.outcome).toBe("succeeded");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
 				false,
 			);
-			expect(retry.target).toEqual(local);
+			expect(job.target).toEqual(local);
 		} finally {
 			await f.close();
 		}
@@ -314,9 +333,7 @@ test.skipIf(!databaseUrl)(
 					if (
 						!edited &&
 						result.rows.some(
-							(row) =>
-								Object.keys(row).length === 1 &&
-								typeof row.revision === "string",
+							(row) => row.outcome === "running" && row.stage === "queued",
 						)
 					) {
 						edited = true;
@@ -329,7 +346,7 @@ test.skipIf(!databaseUrl)(
 				},
 			});
 			const runner = await f.create(source);
-			const first = await runner.start({ requestedBy: "admin" });
+			const first = await publishReviewed(runner);
 			const done = await settled(f.database, first.id);
 			expect(done.job.outcome).toBe("succeeded");
 			expect(done.job.revision).toBe("1");
@@ -372,12 +389,12 @@ test.skipIf(!databaseUrl)(
 			expect(await f.git("show", "-s", "--format=%B", "HEAD")).toContain(
 				`Archive-Publication-Job: ${first.id}`,
 			);
-			const second = await runner.start({ requestedBy: "admin" });
+			const second = await publishReviewed(runner);
 			expect((await settled(f.database, second.id)).job.outcome).toBe(
 				"succeeded",
 			);
 			const head = await f.git("rev-parse", "HEAD");
-			const third = await runner.start({ requestedBy: "admin" });
+			const third = await publishReviewed(runner);
 			expect((await settled(f.database, third.id)).job.outcome).toBe(
 				"no-change",
 			);
@@ -409,7 +426,7 @@ test.skipIf(!databaseUrl)(
 			const hook = path.join(f.remote, "hooks/pre-receive");
 			await writeFile(hook, "#!/bin/sh\nexit 1\n", { mode: 0o755 });
 			let runner = await f.create();
-			const first = await runner.start({ requestedBy: "admin" });
+			const first = await publishReviewed(runner);
 			const failed = await settled(f.database, first.id);
 			expect(failed.job.outcome).toBe("failed");
 			expect(failed.job.commitId).toBe(await f.git("rev-parse", "HEAD"));
@@ -436,7 +453,7 @@ test.skipIf(!databaseUrl)(
 				checkoutPath: f.checkout,
 			};
 			const localRunner = await f.create(f.database, localConfig);
-			const localJob = await localRunner.start({ requestedBy: "admin" });
+			const localJob = await publishReviewed(localRunner);
 			expect((await settled(f.database, localJob.id)).job.outcome).toBe(
 				"succeeded",
 			);
@@ -446,7 +463,7 @@ test.skipIf(!databaseUrl)(
 			await localRunner.close();
 			await rm(hook);
 			runner = await f.create();
-			const retry = await runner.start({
+			const retry = await publishReviewed(runner, {
 				requestedBy: "admin",
 				retryJobId: first.id,
 			});
@@ -471,7 +488,7 @@ test.skipIf(!databaseUrl)(
 			expect(
 				(await readPublicationJob(f.database, retry.id))?.job.outcome,
 			).toBe("interrupted");
-			const again = await runner.start({
+			const again = await publishReviewed(runner, {
 				requestedBy: "admin",
 				retryJobId: retry.id,
 			});
@@ -534,4 +551,342 @@ test.skipIf(!databaseUrl)(
 			await f.close();
 		}
 	},
+);
+
+test.skipIf(!databaseUrl)(
+	"preview exposes readable changes only to its owner and leaves checkout and index untouched",
+	async () => {
+		const f = await fixture();
+		try {
+			const runner = await f.create();
+			const head = await f.git("rev-parse", "HEAD");
+			const status = await f.git("status", "--porcelain=v1");
+			const index = await readFile(path.join(f.checkout, ".git/index"));
+			const original = await readFile(
+				path.join(f.checkout, "src/res/djs/99.json"),
+			);
+			const preview = await readyPreview(runner);
+			expect(preview.changes.djs.removed).toEqual(["Removed DJ"]);
+			expect(preview.changes.djs.added).toEqual(["Runner DJ"]);
+			await expect(
+				runner.start({ requestedBy: "another-admin", previewId: preview.id }),
+			).rejects.toThrow("fresh preview");
+			expect(await f.git("rev-parse", "HEAD")).toBe(head);
+			expect(await f.git("status", "--porcelain=v1")).toBe(status);
+			expect(await readFile(path.join(f.checkout, ".git/index"))).toEqual(
+				index,
+			);
+			expect(
+				await readFile(path.join(f.checkout, "src/res/djs/99.json")),
+			).toEqual(original);
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob,
+			).toBeUndefined();
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"missing, foreign and expired previews cannot create publication jobs",
+	async () => {
+		const f = await fixture();
+		try {
+			const runner = await f.create();
+			await expect(runner.start({ requestedBy: "admin" })).rejects.toThrow(
+				"fresh preview",
+			);
+			await expect(
+				runner.start({ requestedBy: "admin", previewId: crypto.randomUUID() }),
+			).rejects.toThrow("fresh preview");
+			const preview = await readyPreview(runner);
+			await expect(
+				runner.start({ requestedBy: "another-admin", previewId: preview.id }),
+			).rejects.toThrow("fresh preview");
+			const clock = spyOn(Date, "now").mockReturnValue(
+				Date.parse(preview.expiresAt) + 1,
+			);
+			try {
+				await expect(
+					runner.start({ requestedBy: "admin", previewId: preview.id }),
+				).rejects.toThrow("fresh preview");
+			} finally {
+				clock.mockRestore();
+			}
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob,
+			).toBeUndefined();
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"database edits and remote branch movement invalidate a reviewed preview before job creation",
+	async () => {
+		const f = await fixture();
+		try {
+			const runner = await f.create();
+			const preview = await readyPreview(runner);
+			await f.database
+				.updateTable("tags")
+				.set({ title: "Edited after review" })
+				.execute();
+			await expect(
+				runner.start({ requestedBy: "admin", previewId: preview.id }),
+			).rejects.toThrow("Archive data changed");
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob,
+			).toBeUndefined();
+			const refreshed = await readyPreview(runner);
+			await f.git("commit", "--allow-empty", "-m", "External branch update");
+			await f.git("push", "origin", "publish-dev");
+			await expect(
+				runner.start({ requestedBy: "admin", previewId: refreshed.id }),
+			).rejects.toThrow("Target branch changed");
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob,
+			).toBeUndefined();
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"invalid baseline data produces a failed preview without touching the checkout or creating a job",
+	async () => {
+		const f = await fixture();
+		try {
+			await writeFile(path.join(f.checkout, "src/res/tags.json"), "{ invalid");
+			await f.git("add", "src/res/tags.json");
+			await f.git("commit", "-m", "Malformed archive baseline");
+			await f.git("push", "origin", "publish-dev");
+			const runner = await f.create();
+			await expect(
+				runner.preparePreview({ requestedBy: "admin" }),
+			).rejects.toThrow();
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob,
+			).toBeUndefined();
+			expect(
+				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+			).toBe("{ invalid");
+			expect(await f.git("status", "--porcelain=v1")).toBe("");
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"shutdown rejects further previews and publication without changing the checkout",
+	async () => {
+		const f = await fixture();
+		try {
+			const runner = await f.create();
+			const preview = await readyPreview(runner);
+			const head = await f.git("rev-parse", "HEAD");
+			const index = await readFile(path.join(f.checkout, ".git/index"));
+			await runner.close();
+			await expect(
+				runner.preparePreview({ requestedBy: "admin" }),
+			).rejects.toThrow("closing");
+			await expect(
+				runner.start({ requestedBy: "admin", previewId: preview.id }),
+			).rejects.toThrow("closing");
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob,
+			).toBeUndefined();
+			expect(await f.git("rev-parse", "HEAD")).toBe(head);
+			expect(await readFile(path.join(f.checkout, ".git/index"))).toEqual(
+				index,
+			);
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"local previews reject changed database and changed destination content before creating jobs",
+	async () => {
+		const f = await fixture();
+		try {
+			const local: PublicationConfig = {
+				mode: "local",
+				checkoutPath: f.checkout,
+			};
+			const runner = await f.create(f.database, local);
+			const first = await readyPreview(runner);
+			await f.database
+				.updateTable("tags")
+				.set({ title: "New database title" })
+				.execute();
+			await expect(
+				runner.start({ requestedBy: "admin", previewId: first.id }),
+			).rejects.toThrow("Archive data changed");
+			expect(
+				(await readPublicationStatus(f.database, local)).latestJob,
+			).toBeUndefined();
+			const second = await readyPreview(runner);
+			await writeFile(path.join(f.checkout, "src/res/tags.json"), "[]\n");
+			await expect(
+				runner.start({ requestedBy: "admin", previewId: second.id }),
+			).rejects.toThrow("changed");
+			expect(
+				(await readPublicationStatus(f.database, local)).latestJob,
+			).toBeUndefined();
+			const third = await readyPreview(runner);
+			// Unrelated edits do not change the generated archive baseline.
+			await writeFile(
+				path.join(f.checkout, "notes.txt"),
+				"unrelated local work",
+			);
+			const job = await runner.start({
+				requestedBy: "admin",
+				previewId: third.id,
+			});
+			expect((await settled(f.database, job.id)).job.outcome).toBe("succeeded");
+			expect(await readFile(path.join(f.checkout, "notes.txt"), "utf8")).toBe(
+				"unrelated local work",
+			);
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"local publication installs the reviewed snapshot while edits committed after confirmation stay pending",
+	async () => {
+		const f = await fixture();
+		try {
+			let edited = false;
+			const source = f.database.withPlugin({
+				transformQuery: ({ node }) => node,
+				transformResult: async ({ result }) => {
+					if (
+						!edited &&
+						result.rows.some(
+							(row) => row.outcome === "running" && row.stage === "queued",
+						)
+					) {
+						edited = true;
+						await f.database
+							.updateTable("tags")
+							.set({ title: "Concurrent local edit" })
+							.execute();
+					}
+					return result;
+				},
+			});
+			const local: PublicationConfig = {
+				mode: "local",
+				checkoutPath: f.checkout,
+			};
+			const runner = await f.create(source, local);
+			const preview = await readyPreview(runner);
+			expect(preview.revision).toBe("1");
+			const job = await runner.start({
+				requestedBy: "admin",
+				previewId: preview.id,
+			});
+			expect((await settled(f.database, job.id)).job).toMatchObject({
+				outcome: "succeeded",
+				revision: "1",
+			});
+			expect(
+				JSON.parse(
+					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				)[0].title,
+			).toBe("Original Tag");
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				true,
+			);
+			expect(
+				await f.database
+					.selectFrom("archive_publication_state")
+					.selectAll()
+					.executeTakeFirstOrThrow(),
+			).toMatchObject({ revision: "2", published_revision: "1" });
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"local failed publication retries with a fresh reviewed snapshot",
+	async () => {
+		const f = await fixture();
+		try {
+			let changed = false;
+			const outside = path.join(f.directory, "outside.json");
+			await writeFile(outside, "preserve outside");
+			const source = f.database.withPlugin({
+				transformQuery: ({ node }) => node,
+				transformResult: async ({ result }) => {
+					if (
+						!changed &&
+						result.rows.some(
+							(row) => row.outcome === "running" && row.stage === "queued",
+						)
+					) {
+						changed = true;
+						await symlink(outside, path.join(f.checkout, "src/res/shows.json"));
+					}
+					return result;
+				},
+			});
+			const local: PublicationConfig = {
+				mode: "local",
+				checkoutPath: f.checkout,
+			};
+			const runner = await f.create(source, local);
+			const first = await publishReviewed(runner);
+			expect((await settled(f.database, first.id)).job.outcome).toBe("failed");
+			expect(await readFile(outside, "utf8")).toBe("preserve outside");
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				true,
+			);
+			await rm(path.join(f.checkout, "src/res/shows.json"));
+			await f.database
+				.updateTable("tags")
+				.set({ title: "Fresh retry title" })
+				.execute();
+			const remote = await f.create();
+			await expect(
+				remote.start({ requestedBy: "admin", retryJobId: first.id }),
+			).rejects.toThrow("Retry target differs");
+			const retry = await publishReviewed(runner, {
+				requestedBy: "admin",
+				retryJobId: first.id,
+			});
+			expect((await settled(f.database, retry.id)).job).toMatchObject({
+				outcome: "succeeded",
+				revision: "2",
+			});
+			expect(
+				JSON.parse(
+					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				)[0].title,
+			).toBe("Fresh retry title");
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				false,
+			);
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
 );

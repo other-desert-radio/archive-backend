@@ -81,6 +81,12 @@
 		transform 120ms ease,
 		box-shadow 120ms ease;
 }
+.submit:disabled {
+	color: #999;
+	border-color: #ccc;
+	background: #efefef;
+	pointer-events: none;
+}
 .cancel {
 	display: block;
 	margin: 10px auto 0;
