@@ -4,6 +4,7 @@ import { Kysely, PostgresDialect, sql } from "kysely";
 import { Pool } from "pg";
 import { tagRoutes } from "../../src/admin/routes/tags/index.js";
 import { createTag } from "../../src/admin/routes/tags/tag-service.js";
+import { up as addPublication } from "../../src/db/migrations/0029_add_archive_publication_state.js";
 import { down, up } from "../../src/db/migrations/0035_unique_tag_titles.js";
 import type { Database } from "../../src/db/types.js";
 
@@ -28,6 +29,18 @@ test.skipIf(!databaseUrl)(
 			await sql`CREATE TABLE tags (id serial PRIMARY KEY, "createdAt" timestamptz NOT NULL DEFAULT now(), title text NOT NULL, color text, reviewed boolean NOT NULL DEFAULT false, mixcloud_key text UNIQUE, mixcloud_url text)`.execute(
 				db,
 			);
+			for (const table of [
+				"djs",
+				"shows",
+				"show_djs",
+				"show_tags",
+				"dj_tags",
+			]) {
+				await sql`CREATE TABLE ${sql.id(table)} (id serial PRIMARY KEY)`.execute(
+					db,
+				);
+			}
+			await db.transaction().execute(addPublication);
 			await sql`INSERT INTO tags (title, color) VALUES (' House ', '#123456'), ('house', '#abcdef')`.execute(
 				db,
 			);
@@ -82,13 +95,77 @@ test.skipIf(!databaseUrl)(
 			expect((await db.selectFrom("tags").selectAll().execute()).length).toBe(
 				3,
 			);
+			// A writer holding the publication row must be able to create B while
+			// another writer is already trying B. The old AFTER trigger deadlocks.
+			let notifyFirst = () => {};
+			let releaseFirst = () => {};
+			let reportSecond = (_pid: number) => {};
+			const firstReady = new Promise<void>((resolve) => {
+				notifyFirst = resolve;
+			});
+			const resumeFirst = new Promise<void>((resolve) => {
+				releaseFirst = resolve;
+			});
+			const secondPid = new Promise<number>((resolve) => {
+				reportSecond = resolve;
+			});
+			const firstWriter = db.transaction().execute(async (transaction) => {
+				await createTag(transaction, { title: "Lock order A" });
+				notifyFirst();
+				await resumeFirst;
+				return createTag(transaction, { title: "Lock order B" });
+			});
+			await firstReady;
+			const secondWriter = db.transaction().execute(async (transaction) => {
+				const { rows } = await sql<{
+					pid: number;
+				}>`SELECT pg_backend_pid() AS pid`.execute(transaction);
+				const pid = rows[0]?.pid;
+				if (pid === undefined) throw new Error("Missing backend PID");
+				reportSecond(pid);
+				return createTag(transaction, { title: "Lock order B" });
+			});
+			const pid = await secondPid;
+			let blocked = false;
+			try {
+				for (let attempt = 0; attempt < 100; attempt++) {
+					const { rows } = await sql<{
+						blocked: boolean;
+					}>`SELECT wait_event_type = 'Lock' AS blocked FROM pg_stat_activity WHERE pid = ${pid}`.execute(
+						db,
+					);
+					if (rows[0]?.blocked) {
+						blocked = true;
+						break;
+					}
+					await new Promise((resolve) => setTimeout(resolve, 20));
+				}
+			} finally {
+				releaseFirst();
+			}
+			const [firstTag, secondTag] = await Promise.all([
+				firstWriter,
+				secondWriter,
+			]);
+			expect(blocked).toBe(true);
+			expect(firstTag.id).toBe(secondTag.id);
 			// Legacy tabs/nonbreaking spaces receive the same identity as trimmed API input.
 			await sql`INSERT INTO tags (title) VALUES (${"\t\u00a0Legacy\ufeff"})`.execute(
 				db,
 			);
+			const revisionBeforeRejectedWrite = await db
+				.selectFrom("archive_publication_state")
+				.selectAll()
+				.executeTakeFirstOrThrow();
 			await expect(
 				sql`INSERT INTO tags (title) VALUES ('legacy')`.execute(db),
 			).rejects.toThrow();
+			expect(
+				await db
+					.selectFrom("archive_publication_state")
+					.selectAll()
+					.executeTakeFirstOrThrow(),
+			).toEqual(revisionBeforeRejectedWrite);
 			await app.register(tagRoutes(db));
 			const edits = await Promise.all(
 				[1, 2].map((id) =>
@@ -121,6 +198,14 @@ test.skipIf(!databaseUrl)(
 			expect(loser?.color).toBe(loser?.id === 1 ? "#123456" : "#abcdef");
 			expect(loser?.reviewed).toBe(false);
 			await db.transaction().execute(down);
+			const trigger = await sql<{
+				definition: string;
+			}>`SELECT pg_get_triggerdef(oid) AS definition FROM pg_trigger WHERE tgrelid = 'tags'::regclass AND tgname = 'archive_publication_revision'`.execute(
+				db,
+			);
+			expect(trigger.rows[0]?.definition).toContain(
+				"AFTER INSERT OR DELETE OR UPDATE OR TRUNCATE",
+			);
 			await sql`INSERT INTO tags (title) VALUES ('collision')`.execute(db);
 		} finally {
 			await app.close();

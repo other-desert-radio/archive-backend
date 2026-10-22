@@ -90,8 +90,11 @@ target; an unknown target remains pending. PostgreSQL bigint values remain
 decimal strings in application types and JSON to avoid numeric precision loss.
 
 Statement-level triggers on `djs`, `shows`, `tags`, `show_djs`, `show_tags`, and
-`dj_tags` increment the revision after each INSERT, UPDATE, DELETE, or TRUNCATE
-statement. This conservatively includes no-op updates and statements affecting
+`dj_tags` increment the revision for each INSERT, UPDATE, DELETE, or TRUNCATE
+statement. After migration `0035`, the tag trigger runs before the statement to
+acquire the publication lock before tag uniqueness locks; the other five
+triggers run after their statements. Revision changes remain transactional in
+both cases. This conservatively includes no-op updates and statements affecting
 zero rows; revisions are change signals, not row counts or export diffs.
 Cascading relationship writes may advance it further. Authentication and
 Mixcloud tracking writes do not directly advance archive revisions.
@@ -345,7 +348,10 @@ enforces unique titles after trimming JavaScript whitespace and lowercasing in
 PostgreSQL. Apply it before running the updated application. It fails without
 changing data when duplicate titles exist, with a diagnostic listing each group
 of conflicting tag IDs; resolve their titles and relationships deliberately and
-retry. It never merges or deletes tags. Rollback removes only the index.
+retry. It never merges or deletes tags. Tag write statements advance the
+existing publication revision before acquiring tag row or uniqueness locks,
+keeping concurrent imports in the same lock order. Rollback removes the index
+and restores the publication trigger to run after each tag write.
 
 Tags created with an automatically generated color are unreviewed; tags created
 with an explicit color are marked reviewed. Automatic colors use hue 0–360°,

@@ -163,7 +163,6 @@ export const tagRoutes =
 							.selectFrom("tags")
 							.select("id")
 							.where("id", "=", id)
-							.forUpdate()
 							.executeTakeFirst();
 						if (target === undefined) return { status: "missing" } as const;
 						const duplicate = await match(normalized)
@@ -192,7 +191,8 @@ export const tagRoutes =
 							.set(normalized.values)
 							.where("id", "=", id)
 							.returningAll()
-							.executeTakeFirstOrThrow();
+							.executeTakeFirst();
+						if (tag === undefined) return { status: "missing" } as const;
 						return { status: "saved", tag } as const;
 					});
 				if (result.status !== "saved") {

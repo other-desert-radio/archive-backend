@@ -11,7 +11,11 @@ const original = {
 	mixcloud_key: "old",
 	mixcloud_url: "https://example.test/old",
 };
-const setup = async (role: string | null = "admin", fail = false) => {
+const setup = async (
+	role: string | null = "admin",
+	fail = false,
+	deleteBeforeUpdate = false,
+) => {
 	const rows = [
 		structuredClone(original),
 		{ ...original, id: 2, title: " House " },
@@ -54,7 +58,12 @@ const setup = async (role: string | null = "admin", fail = false) => {
 									return query;
 								},
 								returningAll: () => query,
-								executeTakeFirstOrThrow: async () => {
+								executeTakeFirst: async () => {
+									if (deleteBeforeUpdate)
+										rows.splice(
+											rows.findIndex((row) => row.id === id),
+											1,
+										);
 									const row = rows.find((row) => row.id === id);
 									Object.assign(row ?? {}, values);
 									if (fail) throw new Error("database failure");
@@ -432,4 +441,16 @@ describe("Tag update API", () => {
 				await app.close();
 			}
 		});
+});
+
+test("a tag deleted after the initial read returns 404", async () => {
+	const { app, rows } = await setup("admin", false, true);
+	try {
+		const response = await edit(app, payload);
+		expect(response.statusCode).toBe(404);
+		expect(response.json()).toEqual({ error: "Not Found" });
+		expect(rows.map((row) => row.id)).toEqual([2]);
+	} finally {
+		await app.close();
+	}
 });
