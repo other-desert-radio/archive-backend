@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { sql } from "kysely";
 import { isMatching } from "ts-pattern";
 import type { DJJSON } from "../../../json-transformers/index.js";
 import { transformDJs } from "../../../json-transformers/index.js";
@@ -35,8 +36,13 @@ export const djRoutes =
 								"createdAt",
 								"title",
 								"bio",
-								"image_small",
-								"image_large",
+								// The transformer needs presence only; keep photo bytes out of list reads.
+								sql<Buffer | null>`case when image_small is null then null else ''::bytea end`.as(
+									"image_small",
+								),
+								sql<Buffer | null>`case when image_large is null then null else ''::bytea end`.as(
+									"image_large",
+								),
 								"socials",
 								"showTitle",
 								"showDescription",
