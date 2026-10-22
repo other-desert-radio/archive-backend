@@ -11,5 +11,16 @@
 	font: inherit;
 	font-weight: bold;
 	background: transparent;
+	cursor: pointer;
+}
+
+.signIn:hover:not(:disabled) {
+	background: #eee;
+}
+.signIn:disabled {
 	cursor: default;
+}
+.signIn:focus-visible {
+	outline: 2px solid #000;
+	outline-offset: 3px;
 }

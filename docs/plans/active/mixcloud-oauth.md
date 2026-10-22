@@ -150,7 +150,22 @@ Markdown lint and diff whitespace check. Initial root-log spying targeted the
 parent logger instead of its request child; test now captures actual application
 log output.
 
+## Upload controls verification
+
+User requested the final UI chunk. Implemented the connection loader and upload
+banner controls, response validation, safe consent navigation, connection
+identity, disconnect, pending states, callback notices, and reload/retry. Five
+loader tests pass. Three Playwright scenarios pass at 1440/390/320px covering
+consent navigation, return, identity, keyboard disconnect, cancellation, and
+recovery from status errors. Agent-browser screenshots inspected for
+disconnected/connected layouts at desktop and phone widths. Browser
+authentication and Mixcloud endpoints were mocked; no archive records or
+provider accounts were changed. Build/typecheck/lint/docs checks pass. User
+review and real-provider smoke test remain outstanding.
+
 ## Next action
 
-Await callback/disconnect review before implementing upload-page connection
-controls. No real Mixcloud authorization or regular-database migration was run.
+User reviews completed UI and performs real Mixcloud authorization with
+configured credentials. Regular-database migration has not been applied by this
+task. Do not mark real-provider validation or user review complete without that
+input.
