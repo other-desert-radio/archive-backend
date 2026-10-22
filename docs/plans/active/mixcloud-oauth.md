@@ -20,8 +20,10 @@
 - [ ] 1. Environment configuration: four Mixcloud settings, Compose forwarding,
       validation, focused tests, and configuration documentation.
   - [x] Structure: create `src/mixcloud/config.ts` responsibility shell.
-  - [ ] User structure review and request for scaffolding.
-  - [ ] Scaffolding, user review, implementation, and verification.
+  - [x] User structure review and request for scaffolding (`next`).
+  - [x] Scaffolding: server-only settings type and pure reader signature.
+  - [ ] User scaffolding review.
+  - [ ] Implementation and verification.
 - [ ] 2. Provider client: OAuth library configuration, token exchange, `/me/`,
       boundary validation, timeouts, safe failures, mocked provider tests.
 - [ ] 3. Storage: connection migration keyed by archive user, cascading
@@ -46,6 +48,9 @@ tests, and updates the existing development reference.
 
 ## Next action
 
-Await user structure review and request to scaffold chunk 1. No environment or
-runtime behavior has changed. Later chunks receive their own detailed structure
-review before files or contracts are introduced.
+Await user scaffolding review before implementing chunk 1. The reader returns
+`MixcloudConfig | undefined` and currently throws an explicit unimplemented
+error; it has no live callers. The encryption key contract is a base64-encoded
+32-byte key. No environment or runtime behavior has changed. Later chunks
+receive their own detailed structure review before files or contracts are
+introduced.
