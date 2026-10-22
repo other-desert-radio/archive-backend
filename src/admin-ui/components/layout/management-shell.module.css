@@ -67,7 +67,7 @@
 	padding-bottom: 0.5rem;
 	border-bottom: 2px solid #fff;
 }
-.sidebar p + p {
+.sidebar .navigationSection {
 	margin-top: 2.5rem;
 }
 .sidebar ul {

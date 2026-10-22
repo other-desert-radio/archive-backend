@@ -179,6 +179,18 @@ export const ManagementShell = ({
 							</li>
 						)}
 					</ul>
+					<p className={styles.navigationSection}>UTILS</p>
+					<ul>
+						<li>
+							<a
+								href="#upload"
+								className={styleWhenActive(activeResource, "upload")}
+								aria-current={activeResource === "upload" ? "page" : undefined}
+							>
+								⤷ upload
+							</a>
+						</li>
+					</ul>
 				</nav>
 			</aside>
 			<section className={styles.content} inert={blocked}>

@@ -82,6 +82,9 @@ indent. The DATABASE label has a 2px solid white bottom border, `0.5rem` padding
 below its text, and a `1rem` gap below it. Active, hovered, and keyboard-focused
 links are bold without moving surrounding items.
 
+The UTILS section follows DATABASE with a 2.5rem gap and contains the upload
+link to `#upload`. It uses the same heading and active-link treatment.
+
 Keep resource orchestration separate from shared presentation and lifecycle
 logic. Extract repeated responsibilities into focused components or hooks; avoid
 a generic form framework or components with many unrelated mode flags.
