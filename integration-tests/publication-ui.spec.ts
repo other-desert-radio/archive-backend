@@ -721,3 +721,129 @@ for (const mode of ["remote", "local"] as const) {
 		expect(publications).toBe(1);
 	});
 }
+
+for (const viewport of [
+	{ width: 1440, height: 900 },
+	{ width: 390, height: 844 },
+	{ width: 320, height: 568 },
+]) {
+	test(`large pending changes scroll inside the list at ${viewport.width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await page.route("**/api/auth/get-session", (route) =>
+			route.fulfill({
+				json: {
+					user: {
+						id: "admin",
+						email: "admin@example.test",
+						role: "admin",
+						mustChangePassword: false,
+					},
+				},
+			}),
+		);
+		await page.route("**/api/admin/djs", (route) =>
+			route.fulfill({ json: [] }),
+		);
+		await page.route("**/api/admin/tags", (route) =>
+			route.fulfill({ json: [] }),
+		);
+		const status = {
+			...initial,
+			mode: "local",
+			target: { ...initial.target, mode: "local" },
+		};
+		await page.addInitScript((status) => {
+			const originalFetch = window.fetch;
+			window.fetch = (input, init) => {
+				if (String(input).endsWith("/api/admin/publication/events"))
+					return Promise.resolve(
+						new Response(
+							new ReadableStream({
+								start(controller) {
+									controller.enqueue(
+										new TextEncoder().encode(
+											`data: ${JSON.stringify({ type: "status", status })}\n\n`,
+										),
+									);
+								},
+							}),
+							{ headers: { "Content-Type": "text/event-stream" } },
+						),
+					);
+				return originalFetch(input, init);
+			};
+		}, status);
+		const names = Array.from(
+			{ length: 200 },
+			(_, index) => `Evening broadcast ${index + 1}`,
+		);
+		await page.route("**/api/admin/publication", (route) =>
+			route.fulfill({ json: status }),
+		);
+		await page.route("**/api/admin/publication/preview", (route) =>
+			route.fulfill({
+				json: {
+					...readyPreview,
+					changes: {
+						tags: { added: names, changed: [], removed: [] },
+						shows: { added: [], changed: names, removed: [] },
+						djs: { added: [], changed: [], removed: names },
+					},
+				},
+			}),
+		);
+		await page.goto("/admin/#djs");
+		await page
+			.getByRole("button", { name: "publish changes", exact: true })
+			.click();
+		const list = page.getByRole("region", {
+			name: "Pending changes list",
+			exact: true,
+		});
+		const dialog = page.getByRole("dialog");
+		await expect(list).toContainText("Evening broadcast 200");
+		const dimensions = await list.evaluate((element) => ({
+			scrollHeight: element.scrollHeight,
+			height: element.clientHeight,
+			overflow: element.scrollWidth > element.clientWidth,
+		}));
+		expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.height);
+		expect(dimensions.height).toBeGreaterThan(0);
+		expect(dimensions.overflow).toBe(false);
+		await list.hover();
+		await page.mouse.wheel(0, 400);
+		await expect
+			.poll(() => list.evaluate((element) => element.scrollTop))
+			.toBeGreaterThan(0);
+		await list.evaluate((element) => {
+			element.scrollTop = 0;
+		});
+		await list.focus();
+		await page.keyboard.press("PageDown");
+		await expect
+			.poll(() => list.evaluate((element) => element.scrollTop))
+			.toBeGreaterThan(0);
+		const panel = await dialog.evaluate((element) => ({
+			scroll: element.scrollTop,
+			scrollHeight: element.scrollHeight,
+			height: element.clientHeight,
+			overflow: element.scrollWidth > element.clientWidth,
+		}));
+		expect(panel.scroll).toBe(0);
+		expect(panel.scrollHeight).toBeLessThanOrEqual(panel.height);
+		expect(panel.overflow).toBe(false);
+		for (const name of ["Publish", "Close"]) {
+			const action = dialog.getByRole("button", { name, exact: true });
+			await expect(action).toBeVisible();
+			const bounds = await action.boundingBox();
+			expect((bounds?.y ?? 0) + (bounds?.height ?? 0)).toBeLessThanOrEqual(
+				viewport.height,
+			);
+		}
+		await page.screenshot({
+			path: `/tmp/publication-large-list-${viewport.width}.png`,
+		});
+	});
+}
