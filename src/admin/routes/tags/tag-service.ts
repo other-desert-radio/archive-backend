@@ -1,5 +1,6 @@
-import type { Kysely, Selectable, Transaction } from "kysely";
+import { type Kysely, type Selectable, sql, type Transaction } from "kysely";
 import { isMatching, P } from "ts-pattern";
+import { normalizedTagTitle } from "../../../db/normalized-tag-title.js";
 import type { Database, TagsTable } from "../../../db/types.js";
 import { generateTagColor, undefinedOrEmpty } from "../../../utils/index.js";
 
@@ -102,6 +103,11 @@ export const createTag = async (
 				? null
 				: normalized.mixcloud_url,
 		})
+		.onConflict((conflict) =>
+			conflict.expression(normalizedTagTitle).doUpdateSet({
+				title: sql`tags.title`,
+			}),
+		)
 		.returning([
 			"id",
 			"title",

@@ -56,6 +56,7 @@ const buildDatabase = (failOn?: string) => {
 									id = value;
 									return query;
 								},
+								onConflict: () => query,
 								returning: () => query,
 								executeTakeFirst: async () => {
 									if (failOn === "shows") throw new Error("update failed");
@@ -93,6 +94,7 @@ const buildDatabase = (failOn?: string) => {
 									values = input;
 									return query;
 								},
+								onConflict: () => query,
 								returning: () => query,
 								executeTakeFirstOrThrow: async () => {
 									if (failOn === table) throw new Error("insert failed");

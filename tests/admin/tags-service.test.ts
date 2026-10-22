@@ -33,6 +33,7 @@ const buildDatabase = (initialTags: object[] = []) => {
 						values = input;
 						return builder;
 					},
+					onConflict: () => builder,
 					returning: () => builder,
 					executeTakeFirstOrThrow: async () => {
 						const tag = { id: nextId++, ...values };

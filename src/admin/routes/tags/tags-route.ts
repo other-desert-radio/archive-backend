@@ -217,12 +217,23 @@ export const tagRoutes =
 				);
 				return reply.code(200).send(modified);
 			} catch (error) {
-				if (error instanceof TagEditValidationError) {
+				if (
+					error instanceof TagEditValidationError ||
+					(error instanceof Error &&
+						"code" in error &&
+						error.code === "23505" &&
+						"constraint" in error &&
+						error.constraint === "tags_normalized_title_unique")
+				) {
+					const message =
+						error instanceof TagEditValidationError
+							? error.message
+							: "Another tag already uses this title. Choose a different title.";
 					request.log.warn(
 						{ tagId: id },
-						`[Tag Editing] rejected -- id: ${id}, reason: ${error.message}`,
+						`[Tag Editing] rejected -- id: ${id}, reason: ${message}`,
 					);
-					return reply.code(400).send({ error: error.message });
+					return reply.code(400).send({ error: message });
 				}
 				request.log.error(
 					{ err: error, tagId: id },

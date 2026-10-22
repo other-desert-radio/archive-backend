@@ -340,12 +340,18 @@ mixcloud_url text
 ```
 
 Tags represent genres or other archive labels. Tag title normalization and
-conflict handling follow the [API conventions](api-routes.md); do not assume a
-database uniqueness constraint. Tags created with an automatically generated
-color are unreviewed; tags created with an explicit color are marked reviewed.
-Automatic colors use hue 0–360°, saturation 84–96%, and lightness 62–77%,
-persisted as lowercase `#rrggbb`. Reused tags retain their stored colors and
-review status; existing records are not recolored.
+conflict handling follow the [API conventions](api-routes.md). Migration `0035`
+enforces unique titles after trimming JavaScript whitespace and lowercasing in
+PostgreSQL. Apply it before running the updated application. It fails without
+changing data when duplicate titles exist, with a diagnostic listing each group
+of conflicting tag IDs; resolve their titles and relationships deliberately and
+retry. It never merges or deletes tags. Rollback removes only the index.
+
+Tags created with an automatically generated color are unreviewed; tags created
+with an explicit color are marked reviewed. Automatic colors use hue 0–360°,
+saturation 84–96%, and lightness 62–77%, persisted as lowercase `#rrggbb`.
+Reused tags retain their stored colors and review status; existing records are
+not recolored.
 
 `mixcloud_key` and `mixcloud_url` are optional source metadata for the matching
 Mixcloud genre, for example `/genres/experimental/` and
