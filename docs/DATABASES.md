@@ -344,14 +344,16 @@ mixcloud_url text
 
 Tags represent genres or other archive labels. Tag title normalization and
 conflict handling follow the [API conventions](api-routes.md). Migration `0035`
-enforces unique titles after trimming JavaScript whitespace and lowercasing in
-PostgreSQL. Apply it before running the updated application. It fails without
-changing data when duplicate titles exist, with a diagnostic listing each group
-of conflicting tag IDs; resolve their titles and relationships deliberately and
-retry. It never merges or deletes tags. Tag write statements advance the
-existing publication revision before acquiring tag row or uniqueness locks,
-keeping concurrent imports in the same lock order. Rollback removes the index
-and restores the publication trigger to run after each tag write.
+requires nonblank titles stored without leading or trailing JavaScript
+whitespace and enforces uniqueness on `lower(title)`. API creation and editing
+trim submitted titles before persistence; a database check rejects untrimmed
+direct writes. Apply the migration before running the updated application.
+Existing untrimmed, blank, or duplicate titles stop it with the affected IDs;
+correct those records deliberately and retry. It never rewrites, merges, or
+deletes tags. Tag write statements advance the existing publication revision
+before acquiring tag row or uniqueness locks, keeping concurrent imports in the
+same lock order. Rollback removes the title check and unique index and restores
+the publication trigger to run after each tag write.
 
 Tags created with an automatically generated color are unreviewed; tags created
 with an explicit color are marked reviewed. Automatic colors use hue 0–360°,

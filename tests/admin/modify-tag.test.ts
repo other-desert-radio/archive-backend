@@ -13,7 +13,7 @@ const original = {
 };
 const setup = async (
 	role: string | null = "admin",
-	fail = false,
+	fail: boolean | Error = false,
 	deleteBeforeUpdate = false,
 ) => {
 	const rows = [
@@ -66,7 +66,10 @@ const setup = async (
 										);
 									const row = rows.find((row) => row.id === id);
 									Object.assign(row ?? {}, values);
-									if (fail) throw new Error("database failure");
+									if (fail)
+										throw fail instanceof Error
+											? fail
+											: new Error("database failure");
 									return row;
 								},
 							};
@@ -452,5 +455,24 @@ test("a tag deleted after the initial read returns 404", async () => {
 		expect(rows.map((row) => row.id)).toEqual([2]);
 	} finally {
 		await app.close();
+	}
+});
+
+test("only the normalized title uniqueness failure is a client validation error", async () => {
+	for (const [code, constraint, status] of [
+		["23505", "tags_normalized_title_unique", 400],
+		["23505", "tags_mixcloud_key_unique", 500],
+		["42P01", "tags_normalized_title_unique", 500],
+	] as const) {
+		const { app, rows } = await setup(
+			"admin",
+			Object.assign(new Error("database failure"), { code, constraint }),
+		);
+		try {
+			expect((await edit(app, payload)).statusCode).toBe(status);
+			expect(rows[0]).toEqual(original);
+		} finally {
+			await app.close();
+		}
 	}
 });

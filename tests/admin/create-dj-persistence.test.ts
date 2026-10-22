@@ -64,6 +64,7 @@ const buildDatabase = (initialTags: TagRow[] = [], failOn?: string) => {
 								},
 								onConflict: () => builder,
 								returning: () => builder,
+								executeTakeFirst: async () => builder.executeTakeFirstOrThrow(),
 								executeTakeFirstOrThrow: async () => {
 									if (failOn === table) throw new Error("insert failed");
 									if (table === "tags") {

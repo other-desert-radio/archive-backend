@@ -41,7 +41,7 @@ test.skipIf(!databaseUrl)(
 				);
 			}
 			await db.transaction().execute(addPublication);
-			await sql`INSERT INTO tags (title, color) VALUES (' House ', '#123456'), ('house', '#abcdef')`.execute(
+			await sql`INSERT INTO tags (title, color) VALUES ('House', '#123456'), ('house', '#abcdef')`.execute(
 				db,
 			);
 			const before = await db
@@ -68,6 +68,25 @@ test.skipIf(!databaseUrl)(
 				.set({ title: "Ambient" })
 				.where("id", "=", 2)
 				.execute();
+			await sql`INSERT INTO tags (title) VALUES (${"\t\u00a0Legacy\ufeff"})`.execute(
+				db,
+			);
+			const beforeWhitespaceCheck = await db
+				.selectFrom("tags")
+				.selectAll()
+				.orderBy("id")
+				.execute();
+			await expect(db.transaction().execute(up)).rejects.toThrow(
+				"Untrimmed or blank tag titles",
+			);
+			expect(
+				await db.selectFrom("tags").selectAll().orderBy("id").execute(),
+			).toEqual(beforeWhitespaceCheck);
+			await db
+				.updateTable("tags")
+				.set({ title: "Legacy" })
+				.where("id", "=", 3)
+				.execute();
 			await db.transaction().execute(up);
 			// Delay writes so concurrent callers pass the read-before-write check.
 			await sql`CREATE FUNCTION slow_tag_write() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(0.1); RETURN NEW; END $$`.execute(
@@ -93,10 +112,24 @@ test.skipIf(!databaseUrl)(
 			expect(new Set(created.map((tag) => tag.id)).size).toBe(1);
 			for (const tag of created) expect(tag).toEqual(created[0]);
 			expect((await db.selectFrom("tags").selectAll().execute()).length).toBe(
-				3,
+				4,
 			);
 			// A writer holding the publication row must be able to create B while
 			// another writer is already trying B. The old AFTER trigger deadlocks.
+			await sql`CREATE TABLE tag_update_probe (count integer NOT NULL)`.execute(
+				db,
+			);
+			await sql`INSERT INTO tag_update_probe VALUES (0)`.execute(db);
+			await sql`CREATE FUNCTION count_tag_update() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN UPDATE tag_update_probe SET count = count + 1; RETURN NULL; END $$`.execute(
+				db,
+			);
+			await sql`CREATE TRIGGER count_tag_update AFTER UPDATE ON tags FOR EACH STATEMENT EXECUTE FUNCTION count_tag_update()`.execute(
+				db,
+			);
+			const revisionBeforeRace = await db
+				.selectFrom("archive_publication_state")
+				.select("revision")
+				.executeTakeFirstOrThrow();
 			let notifyFirst = () => {};
 			let releaseFirst = () => {};
 			let reportSecond = (_pid: number) => {};
@@ -149,16 +182,40 @@ test.skipIf(!databaseUrl)(
 			]);
 			expect(blocked).toBe(true);
 			expect(firstTag.id).toBe(secondTag.id);
-			// Legacy tabs/nonbreaking spaces receive the same identity as trimmed API input.
-			await sql`INSERT INTO tags (title) VALUES (${"\t\u00a0Legacy\ufeff"})`.execute(
-				db,
-			);
+			expect(secondTag).toEqual(firstTag);
+			const revisionAfterRace = await db
+				.selectFrom("archive_publication_state")
+				.select("revision")
+				.executeTakeFirstOrThrow();
+			expect(
+				BigInt(revisionAfterRace.revision) -
+					BigInt(revisionBeforeRace.revision),
+			).toBe(3n);
+			expect(
+				(
+					await sql<{
+						count: number;
+					}>`SELECT count FROM tag_update_probe`.execute(db)
+				).rows[0]?.count,
+			).toBe(0);
+			expect(
+				await createTag(db, { title: " LOCK ORDER B ", color: "#ffffff" }),
+			).toEqual(firstTag);
+			expect(
+				await db
+					.selectFrom("archive_publication_state")
+					.select("revision")
+					.executeTakeFirstOrThrow(),
+			).toEqual(revisionAfterRace);
+			// Direct writes must respect the same trimmed, nonblank storage contract.
 			const revisionBeforeRejectedWrite = await db
 				.selectFrom("archive_publication_state")
 				.selectAll()
 				.executeTakeFirstOrThrow();
 			await expect(
-				sql`INSERT INTO tags (title) VALUES ('legacy')`.execute(db),
+				sql`INSERT INTO tags (title) VALUES (${"\t\u00a0Invalid\ufeff"})`.execute(
+					db,
+				),
 			).rejects.toThrow();
 			expect(
 				await db
@@ -166,6 +223,9 @@ test.skipIf(!databaseUrl)(
 					.selectAll()
 					.executeTakeFirstOrThrow(),
 			).toEqual(revisionBeforeRejectedWrite);
+			await expect(
+				sql`INSERT INTO tags (title) VALUES ('')`.execute(db),
+			).rejects.toThrow();
 			await app.register(tagRoutes(db));
 			const edits = await Promise.all(
 				[1, 2].map((id) =>
@@ -206,7 +266,9 @@ test.skipIf(!databaseUrl)(
 			expect(trigger.rows[0]?.definition).toContain(
 				"AFTER INSERT OR DELETE OR UPDATE OR TRUNCATE",
 			);
-			await sql`INSERT INTO tags (title) VALUES ('collision')`.execute(db);
+			await sql`INSERT INTO tags (title) VALUES ('collision'), (' Rollback trailing ')`.execute(
+				db,
+			);
 		} finally {
 			await app.close();
 			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(db);

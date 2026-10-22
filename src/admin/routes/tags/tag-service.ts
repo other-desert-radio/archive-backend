@@ -1,6 +1,5 @@
 import { type Kysely, type Selectable, sql, type Transaction } from "kysely";
 import { isMatching, P } from "ts-pattern";
-import { normalizedTagTitle } from "../../../db/normalized-tag-title.js";
 import type { Database, TagsTable } from "../../../db/types.js";
 import { generateTagColor, undefinedOrEmpty } from "../../../utils/index.js";
 
@@ -90,35 +89,50 @@ export const createTag = async (
 
 	if (existingTag !== undefined) return toCreatedTag(existingTag);
 
-	const createdTag = await database
-		.insertInto("tags")
-		.values({
-			title,
-			color: color ?? generateTagColor(),
-			reviewed,
-			mixcloud_key: undefinedOrEmpty(normalized.mixcloud_key)
-				? null
-				: normalized.mixcloud_key,
-			mixcloud_url: undefinedOrEmpty(normalized.mixcloud_url)
-				? null
-				: normalized.mixcloud_url,
-		})
-		.onConflict((conflict) =>
-			conflict.expression(normalizedTagTitle).doUpdateSet({
-				title: sql`tags.title`,
-			}),
-		)
-		.returning([
-			"id",
-			"title",
-			"color",
-			"reviewed",
-			"mixcloud_key",
-			"mixcloud_url",
-		])
-		.executeTakeFirstOrThrow();
+	// A standalone insert commits before the lookup; retry only if its winner was deleted.
+	for (let attempt = 0; attempt < 3; attempt++) {
+		const createdTag = await database
+			.insertInto("tags")
+			.values({
+				title,
+				color: color ?? generateTagColor(),
+				reviewed,
+				mixcloud_key: undefinedOrEmpty(normalized.mixcloud_key)
+					? null
+					: normalized.mixcloud_key,
+				mixcloud_url: undefinedOrEmpty(normalized.mixcloud_url)
+					? null
+					: normalized.mixcloud_url,
+			})
+			.onConflict((conflict) =>
+				conflict.expression(sql`lower(title)`).doNothing(),
+			)
+			.returning([
+				"id",
+				"title",
+				"color",
+				"reviewed",
+				"mixcloud_key",
+				"mixcloud_url",
+			])
+			.executeTakeFirst();
 
-	return toCreatedTag(createdTag);
+		if (createdTag !== undefined) return toCreatedTag(createdTag);
+		const winner = await database
+			.selectFrom("tags")
+			.select([
+				"id",
+				"title",
+				"color",
+				"reviewed",
+				"mixcloud_key",
+				"mixcloud_url",
+			])
+			.where(sql<string>`lower(title)`, "=", sql<string>`lower(${title})`)
+			.executeTakeFirst();
+		if (winner !== undefined) return toCreatedTag(winner);
+	}
+	throw new Error("Tag was repeatedly deleted during creation");
 };
 
 /**

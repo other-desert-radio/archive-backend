@@ -93,6 +93,7 @@ const createTagsDatabase = {
 			},
 			onConflict: () => builder,
 			returning: () => builder,
+			executeTakeFirst: async () => builder.executeTakeFirstOrThrow(),
 			executeTakeFirstOrThrow: async () => ({ id: nextId++, ...values }),
 		};
 		return builder;
@@ -567,6 +568,7 @@ describe("admin route boundary", () => {
 								values: () => builder,
 								onConflict: () => builder,
 								returning: () => builder,
+								executeTakeFirst: async () => builder.executeTakeFirstOrThrow(),
 								executeTakeFirstOrThrow: async () => ({ id: 42 }),
 								execute: async () => [],
 							};

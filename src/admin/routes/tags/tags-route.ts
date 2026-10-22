@@ -219,11 +219,10 @@ export const tagRoutes =
 			} catch (error) {
 				if (
 					error instanceof TagEditValidationError ||
-					(error instanceof Error &&
-						"code" in error &&
-						error.code === "23505" &&
-						"constraint" in error &&
-						error.constraint === "tags_normalized_title_unique")
+					isMatching(
+						{ code: "23505", constraint: "tags_normalized_title_unique" },
+						error,
+					)
 				) {
 					const message =
 						error instanceof TagEditValidationError

@@ -96,6 +96,7 @@ const buildDatabase = (failOn?: string) => {
 								},
 								onConflict: () => query,
 								returning: () => query,
+								executeTakeFirst: async () => query.executeTakeFirstOrThrow(),
 								executeTakeFirstOrThrow: async () => {
 									if (failOn === table) throw new Error("insert failed");
 									if (table === "tags") {
