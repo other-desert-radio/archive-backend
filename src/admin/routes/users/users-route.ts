@@ -16,7 +16,7 @@ import {
 } from "../../../auth/accounts.js";
 import type { ArchiveAuth } from "../../../auth/auth.js";
 import type { TypedDatabase } from "../types.js";
-import type { UserSummary } from "./types.js";
+import type { ListedUser, UserSummary } from "./types.js";
 
 type ManagementReply = {
 	200: UserSummary | { id: string };
@@ -35,20 +35,38 @@ export const userRoutes =
 	(auth: ArchiveAuth, database: TypedDatabase): FastifyPluginAsync =>
 	async (app) => {
 		app.addHook("onRequest", accountAccessGuard(auth, true));
-		app.get<{ Reply: { 200: UserSummary[]; 500: { error: string } } }>(
+		app.get<{ Reply: { 200: ListedUser[]; 500: { error: string } } }>(
 			"/users",
 			async (request, reply) => {
 				try {
 					const users = await database
 						.selectFrom("user")
-						.select(safeUserColumns)
+						.leftJoin(
+							"mixcloud_connections",
+							"mixcloud_connections.user_id",
+							"user.id",
+						)
+						.select(safeUserColumns.map((column) => `user.${column}` as const))
+						.select([
+							"user.banned",
+							"user.banReason",
+							"user.banExpires",
+							"mixcloud_connections.display_name as mixcloudName",
+							"mixcloud_connections.mixcloud_key as mixcloudKey",
+						])
 						.orderBy("email")
 						.execute();
 					request.log.info(
 						{ count: users.length },
 						`[Accounts] accounts listed -- count: ${users.length}`,
 					);
-					return users;
+					return users.map((user) => ({
+						...user,
+						banReason: user.banReason ?? undefined,
+						banExpires: user.banExpires?.toISOString(),
+						mixcloudName: user.mixcloudName ?? undefined,
+						mixcloudKey: user.mixcloudKey ?? undefined,
+					}));
 				} catch (error) {
 					return sendAccountError(error, request, reply);
 				}
