@@ -90,8 +90,11 @@ target; an unknown target remains pending. PostgreSQL bigint values remain
 decimal strings in application types and JSON to avoid numeric precision loss.
 
 Statement-level triggers on `djs`, `shows`, `tags`, `show_djs`, `show_tags`, and
-`dj_tags` increment the revision after each INSERT, UPDATE, DELETE, or TRUNCATE
-statement. This conservatively includes no-op updates and statements affecting
+`dj_tags` increment the revision for each INSERT, UPDATE, DELETE, or TRUNCATE
+statement. After migration `0035`, the tag trigger runs before the statement to
+acquire the publication lock before tag uniqueness locks; the other five
+triggers run after their statements. Revision changes remain transactional in
+both cases. This conservatively includes no-op updates and statements affecting
 zero rows; revisions are change signals, not row counts or export diffs.
 Cascading relationship writes may advance it further. Authentication and
 Mixcloud tracking writes do not directly advance archive revisions.
@@ -340,12 +343,23 @@ mixcloud_url text
 ```
 
 Tags represent genres or other archive labels. Tag title normalization and
-conflict handling follow the [API conventions](api-routes.md); do not assume a
-database uniqueness constraint. Tags created with an automatically generated
-color are unreviewed; tags created with an explicit color are marked reviewed.
-Automatic colors use hue 0–360°, saturation 84–96%, and lightness 62–77%,
-persisted as lowercase `#rrggbb`. Reused tags retain their stored colors and
-review status; existing records are not recolored.
+conflict handling follow the [API conventions](api-routes.md). Migration `0035`
+requires nonblank titles stored without leading or trailing JavaScript
+whitespace and enforces uniqueness on `lower(title)`. API creation and editing
+trim submitted titles before persistence; a database check rejects untrimmed
+direct writes. Apply the migration before running the updated application.
+Existing untrimmed, blank, or duplicate titles stop it with the affected IDs;
+correct those records deliberately and retry. It never rewrites, merges, or
+deletes tags. Tag write statements advance the existing publication revision
+before acquiring tag row or uniqueness locks, keeping concurrent imports in the
+same lock order. Rollback removes the title check and unique index and restores
+the publication trigger to run after each tag write.
+
+Tags created with an automatically generated color are unreviewed; tags created
+with an explicit color are marked reviewed. Automatic colors use hue 0–360°,
+saturation 84–96%, and lightness 62–77%, persisted as lowercase `#rrggbb`.
+Reused tags retain their stored colors and review status; existing records are
+not recolored.
 
 `mixcloud_key` and `mixcloud_url` are optional source metadata for the matching
 Mixcloud genre, for example `/genres/experimental/` and

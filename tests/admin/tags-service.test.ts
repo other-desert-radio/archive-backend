@@ -4,7 +4,7 @@ import {
 	createTags,
 } from "../../src/admin/routes/tags/tag-service.js";
 
-const buildDatabase = (initialTags: object[] = []) => {
+const buildDatabase = (initialTags: object[] = [], deletedWinners = 0) => {
 	const tags = [...initialTags] as Array<{
 		id: number;
 		title: string;
@@ -14,11 +14,15 @@ const buildDatabase = (initialTags: object[] = []) => {
 		mixcloud_url: string | null;
 	}>;
 	let nextId = tags.length + 1;
+	let attempts = 0;
 
 	return {
 		database: {
 			selectFrom: () => ({
-				select: () => ({ execute: async () => tags }),
+				select: () => ({
+					execute: async () => tags,
+					where: () => ({ executeTakeFirst: async () => undefined }),
+				}),
 			}),
 			insertInto: () => {
 				let values: {
@@ -33,8 +37,11 @@ const buildDatabase = (initialTags: object[] = []) => {
 						values = input;
 						return builder;
 					},
+					onConflict: () => builder,
 					returning: () => builder,
-					executeTakeFirstOrThrow: async () => {
+					executeTakeFirst: async () => {
+						attempts++;
+						if (attempts <= deletedWinners) return undefined;
 						const tag = { id: nextId++, ...values };
 						tags.push(tag);
 						return tag;
@@ -44,6 +51,9 @@ const buildDatabase = (initialTags: object[] = []) => {
 			},
 		} as never,
 		tags,
+		get attempts() {
+			return attempts;
+		},
 	};
 };
 
@@ -212,4 +222,22 @@ describe("tag service", () => {
 		expect(tags[1]?.reviewed).toBe(false);
 		expect(tags[1]?.color).toMatch(/^#[0-9a-f]{6}$/);
 	});
+});
+
+test("creation retries when a conflict winner disappears before its lookup", async () => {
+	const fixture = buildDatabase([], 1);
+	expect(await createTag(fixture.database, { title: "Ambient" })).toMatchObject(
+		{ title: "Ambient" },
+	);
+	expect(fixture.attempts).toBe(2);
+	expect(fixture.tags).toHaveLength(1);
+});
+
+test("repeated deletion of conflict winners stops after three attempts", async () => {
+	const fixture = buildDatabase([], 3);
+	await expect(
+		createTag(fixture.database, { title: "Ambient" }),
+	).rejects.toThrow("Tag was repeatedly deleted during creation");
+	expect(fixture.attempts).toBe(3);
+	expect(fixture.tags).toHaveLength(0);
 });

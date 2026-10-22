@@ -163,7 +163,6 @@ export const tagRoutes =
 							.selectFrom("tags")
 							.select("id")
 							.where("id", "=", id)
-							.forUpdate()
 							.executeTakeFirst();
 						if (target === undefined) return { status: "missing" } as const;
 						const duplicate = await match(normalized)
@@ -192,7 +191,8 @@ export const tagRoutes =
 							.set(normalized.values)
 							.where("id", "=", id)
 							.returningAll()
-							.executeTakeFirstOrThrow();
+							.executeTakeFirst();
+						if (tag === undefined) return { status: "missing" } as const;
 						return { status: "saved", tag } as const;
 					});
 				if (result.status !== "saved") {
@@ -217,12 +217,22 @@ export const tagRoutes =
 				);
 				return reply.code(200).send(modified);
 			} catch (error) {
-				if (error instanceof TagEditValidationError) {
+				if (
+					error instanceof TagEditValidationError ||
+					isMatching(
+						{ code: "23505", constraint: "tags_normalized_title_unique" },
+						error,
+					)
+				) {
+					const message =
+						error instanceof TagEditValidationError
+							? error.message
+							: "Another tag already uses this title. Choose a different title.";
 					request.log.warn(
 						{ tagId: id },
-						`[Tag Editing] rejected -- id: ${id}, reason: ${error.message}`,
+						`[Tag Editing] rejected -- id: ${id}, reason: ${message}`,
 					);
-					return reply.code(400).send({ error: error.message });
+					return reply.code(400).send({ error: message });
 				}
 				request.log.error(
 					{ err: error, tagId: id },

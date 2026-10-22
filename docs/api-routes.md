@@ -239,12 +239,20 @@ with the admin Show shape, including both image URLs; an unknown Show returns
 Tag creation accepts `{ title: string }`, optionally with `color`,
 `mixcloud_key`, and `mixcloud_url`, for `create-tag`, and an array of those
 objects for `create-tags`. Tag titles and optional Mixcloud metadata are trimmed
-before persistence; tag titles are reused case-insensitively. A color must match
-`/^#[0-9a-fA-F]{6}$/`; omitted colors receive a lowercase six-digit hexadecimal
-color (hue 0–360°, saturation 84–96%, lightness 62–77%) and `reviewed: false`,
-while explicit colors receive `reviewed: true`. The DJ route uses the shared tag
-service from the Tags module inside its own transaction rather than calling a
-Fastify route handler directly.
+before persistence; tag titles are reused case-insensitively. Database migration
+`0035` requires trimmed, nonblank stored titles and enforces case-insensitive
+uniqueness even for concurrent requests. Creation reuses the winning row without
+changing its color, review state, or source metadata. A creation conflict skips
+the insert and selects the existing tag; it does not issue an UPDATE. The
+attempted INSERT still advances the publication revision once, including when no
+row is inserted, under the existing statement-trigger contract. Reusing a tag
+found by the initial lookup performs no write and advances no revision. A
+conflicting rename returns `400` after its transaction rolls back. A color must
+match `/^#[0-9a-fA-F]{6}$/`; omitted colors receive a lowercase six-digit
+hexadecimal color (hue 0–360°, saturation 84–96%, lightness 62–77%) and
+`reviewed: false`, while explicit colors receive `reviewed: true`. The DJ route
+uses the shared tag service from the Tags module inside its own transaction
+rather than calling a Fastify route handler directly.
 
 `GET /api/admin/tags` includes optional `mixcloud_key` and `mixcloud_url` fields
 when a tag is associated with a Mixcloud genre; absent database values are
