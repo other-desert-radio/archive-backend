@@ -51,8 +51,27 @@ remain blank. Existing environment values were preserved.
 
 ## Next action
 
-Await review of completed chunk 1, then implement chunk 2 as one checkpoint. The
-reader returns `MixcloudConfig | undefined`; the encryption key uses canonical
-base64 encoding of 32 bytes. Wire configuration into startup when integrating
-the provider/routes, after completing local credentials. No OAuth dependency or
-routes have been added yet.
+Chunk 1 reviewed; user requested chunk 2. Compatibility inspection found that
+`@fastify/oauth2` delegates token exchange to `simple-oauth2`, whose HTTP client
+hardcodes POST and defaults to strict JSON parsing. Mixcloud documents a GET
+exchange with credentials in query parameters and an `access_token=...`
+response. No provider dependency or implementation was added: the approved plan
+requires review before changing libraries or implementing OAuth mechanics
+ourselves.
+
+Sources inspected:
+
+- [Mixcloud authorization](https://www.mixcloud.com/developers/#authorization)
+- [Fastify OAuth wrapper](https://github.com/fastify/fastify-oauth2/blob/main/index.js)
+- [Simple OAuth HTTP client](https://github.com/lelylan/simple-oauth2/blob/master/lib/client/client.js)
+
+Recommended next decision: approve a narrow Mixcloud-specific client using
+native URL/fetch for the documented protocol, with database-backed
+state/session/replay protection implemented in the planned storage/routes
+chunks. Alternatively, investigate a different library with custom
+token-exchange support. Do not assume Mixcloud accepts the library's POST
+request without evidence.
+
+Wire configuration into startup when integrating the provider/routes, after
+completing local credentials. The encryption key contract remains canonical
+base64 encoding of 32 bytes.

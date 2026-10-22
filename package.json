@@ -30,6 +30,7 @@
 		"better-auth": "^1.7.4",
 		"fastify": "latest",
 		"kysely": "latest",
+		"oauth4webapi": "^3.8.8",
 		"pg": "latest",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
