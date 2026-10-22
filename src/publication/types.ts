@@ -82,4 +82,19 @@ export type PublicationStatus = {
 export type PublicationEvent =
 	| { type: "status"; status: PublicationStatus }
 	| { type: "job"; detail: PublicationJobDetail };
-export type PublicationStart = { requestedBy: string; retryJobId?: string };
+export type PublicationStart = {
+	requestedBy: string;
+	retryJobId?: string;
+	previewId?: string;
+};
+
+export type PublicationChanges = Record<
+	"tags" | "shows" | "djs",
+	{ added: string[]; changed: string[]; removed: string[] }
+>;
+export type PublicationPreview = {
+	id: string;
+	expiresAt: string;
+	revision: PublicationRevision;
+	changes: PublicationChanges;
+};

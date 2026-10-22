@@ -26,6 +26,20 @@ const initial: PublicationStatus = {
 	publishedRevision: "1",
 	pending: true,
 };
+const readyPreview = {
+	id: "preview-1",
+	expiresAt: "2099-10-21T00:00:00Z",
+	revision: "2",
+	changes: {
+		tags: {
+			added: ["Ambient", "Live", "Desert"],
+			changed: ["Electronic"],
+			removed: ["Old tag"],
+		},
+		shows: { added: [], changed: ["Evening broadcast"], removed: [] },
+		djs: { added: [], changed: [], removed: [] },
+	},
+};
 for (const mode of ["remote", "local"] as const) {
 	for (const width of [1440, 390, 320]) {
 		test(`publication confirmation and durable reconnect in ${mode} mode at ${width}px`, async ({
@@ -62,6 +76,11 @@ for (const mode of ["remote", "local"] as const) {
 			);
 			await page.route("**/api/admin/publication**", async (route) => {
 				const path = new URL(route.request().url()).pathname;
+				if (path.includes("/preview"))
+					return route.fulfill({
+						status: 200,
+						json: readyPreview,
+					});
 				if (path.endsWith("/events"))
 					return route.fulfill({
 						contentType: "text/event-stream",
@@ -94,13 +113,81 @@ for (const mode of ["remote", "local"] as const) {
 				.click();
 			await expect(page.getByRole("dialog")).toContainText("publish-dev");
 			await expect(page.getByRole("dialog")).toContainText(
-				mode === "local"
-					? "Write latest changes to your local archive checkout."
-					: "Publish latest changes to github.",
+				"changed Evening broadcast",
 			);
-			const publish = page
-				.getByRole("dialog")
-				.getByRole("button", { name: "Publish", exact: true });
+			await expect(page.getByRole("dialog")).toContainText(
+				"added Ambient, Live, Desert",
+			);
+			await expect(page.getByRole("dialog")).toContainText(
+				"changed Electronic",
+			);
+			await expect(page.getByRole("dialog")).toContainText("removed Old tag");
+			const pending = page.getByRole("region", {
+				name: "Pending changes",
+				exact: true,
+			});
+			await expect(
+				pending.getByRole("heading", { name: "Pending changes", exact: true }),
+			).toBeVisible();
+			await expect(pending.locator("dt")).toHaveText(["Tags", "Shows"]);
+			await expect(pending.locator("li")).toHaveText([
+				"added Ambient, Live, Desert",
+				"changed Electronic",
+				"removed Old tag",
+				"changed Evening broadcast",
+			]);
+			await expect(pending.locator("li strong")).toHaveText([
+				"added",
+				"changed",
+				"removed",
+				"changed",
+			]);
+			const layout = await pending.evaluate((element) => {
+				const bounds = (selector: string) =>
+					Array.from(element.querySelectorAll(selector)).map((node) => ({
+						x: node.getBoundingClientRect().x,
+						y: node.getBoundingClientRect().y,
+						right: node.getBoundingClientRect().right,
+					}));
+				return {
+					labels: bounds("dt"),
+					values: bounds("dd"),
+					overflow: element.scrollWidth > element.clientWidth,
+				};
+			});
+			expect(layout.overflow).toBe(false);
+			expect(layout.labels).toHaveLength(2);
+			expect(layout.values).toHaveLength(2);
+			expect(layout.labels[0]?.x).toBe(layout.labels[1]?.x);
+			expect(layout.values[0]?.x).toBe(layout.values[1]?.x);
+			for (let index = 0; index < layout.labels.length; index++) {
+				expect(
+					Math.abs(
+						(layout.labels[index]?.y ?? 0) - (layout.values[index]?.y ?? 0),
+					),
+				).toBeLessThan(2);
+				expect(layout.labels[index]?.right).toBeLessThan(
+					layout.values[index]?.x ?? 0,
+				);
+				expect(layout.values[index]?.right).toBeLessThanOrEqual(width);
+			}
+
+			await page.screenshot({
+				path: `/tmp/publication-preview-${mode}-${width}.png`,
+			});
+			if (mode === "local") {
+				await expect(page.getByRole("dialog")).not.toContainText(
+					"Write latest changes",
+				);
+				await expect(page.getByRole("dialog")).not.toContainText("Origin:");
+			} else
+				await expect(page.getByRole("dialog")).toContainText(
+					"Publish latest changes to github.",
+				);
+			const publish = page.getByRole("dialog").getByRole("button", {
+				name: "Publish",
+				exact: true,
+			});
 			const close = page.getByRole("button", { name: "Close", exact: true });
 			const panel = await page.getByRole("dialog").boundingBox();
 			const action = await publish.boundingBox();
@@ -131,7 +218,10 @@ for (const mode of ["remote", "local"] as const) {
 			).toBeFocused();
 			await page
 				.getByRole("dialog")
-				.getByRole("button", { name: "Publish", exact: true })
+				.getByRole("button", {
+					name: "Publish",
+					exact: true,
+				})
 				.click();
 			await expect(page.getByRole("dialog")).toContainText(
 				"Current stage: exporting",
@@ -140,6 +230,7 @@ for (const mode of ["remote", "local"] as const) {
 			const disclosure = page.locator("summary", {
 				hasText: "Publication log",
 			});
+			await expect(disclosure).toHaveCSS("font-weight", "400");
 			await disclosure.focus();
 			await page.keyboard.press("Enter");
 			await expect(page.getByRole("log")).toContainText("Exporting generated");
@@ -259,6 +350,11 @@ test("failed publication requires an explicit retry and preserves failure logs",
 	await page.route("**/api/admin/tags", (route) => route.fulfill({ json: [] }));
 	await page.route("**/api/admin/publication**", async (route) => {
 		const path = new URL(route.request().url()).pathname;
+		if (path.includes("/preview"))
+			return route.fulfill({
+				status: 200,
+				json: readyPreview,
+			});
 		if (path.endsWith("events")) return route.abort();
 		if (path.includes("/jobs/"))
 			return route.fulfill({
@@ -276,7 +372,10 @@ test("failed publication requires an explicit retry and preserves failure logs",
 			});
 		if (route.request().method() === "POST") {
 			posts++;
-			expect(route.request().postDataJSON()).toEqual({ retryJobId: job.id });
+			expect(route.request().postDataJSON()).toEqual({
+				retryJobId: job.id,
+				previewId: readyPreview.id,
+			});
 			return route.fulfill({
 				status: 409,
 				json: { error: "Another publication is running" },
@@ -293,9 +392,7 @@ test("failed publication requires an explicit retry and preserves failure logs",
 	await page.locator("summary", { hasText: "Publication log" }).click();
 	await expect(page.getByRole("log")).toContainText("Push interrupted");
 	expect(posts).toBe(0);
-	await page
-		.getByRole("button", { name: "Retry publication", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Publish", exact: true }).click();
 	await expect(page.getByRole("dialog")).toContainText(
 		"Another publication is running",
 	);
@@ -416,6 +513,9 @@ for (const mode of ["remote", "local"] as const) {
 				json: { job: status.latestJob, logs: [], logsTruncated: false },
 			}),
 		);
+		await page.route("**/api/admin/publication/preview**", (route) =>
+			route.fulfill({ status: 200, json: readyPreview }),
+		);
 		await page.route("**/api/admin/publication", (route) => {
 			if (route.request().method() === "POST") posts++;
 			return route.fulfill({ json: status });
@@ -435,15 +535,20 @@ for (const mode of ["remote", "local"] as const) {
 		await expect(page.getByRole("dialog")).not.toContainText(
 			"Result: succeeded",
 		);
-		await expect(page.getByRole("dialog")).toContainText(
-			mode === "local"
-				? "Write latest changes to your local archive checkout."
-				: "Publish latest changes to github.",
-		);
+		if (mode === "local") {
+			await expect(page.getByRole("dialog")).not.toContainText(
+				"Write latest changes",
+			);
+			await expect(page.getByRole("dialog")).not.toContainText("Origin:");
+		} else
+			await expect(page.getByRole("dialog")).toContainText(
+				"Publish latest changes to github.",
+			);
 		await expect(
-			page
-				.getByRole("dialog")
-				.getByRole("button", { name: "Publish", exact: true }),
+			page.getByRole("dialog").getByRole("button", {
+				name: "Publish",
+				exact: true,
+			}),
 		).toBeEnabled();
 		if (mode === "local")
 			await expect(page.getByRole("dialog")).toContainText("/archive");
@@ -476,8 +581,13 @@ for (const width of [1440, 390, 320]) {
 			route.fulfill({ json: [] }),
 		);
 		const retry = { ...job, id: "retry-job", retryJobId: job.id };
-		await page.route("**/api/admin/publication**", (route) => {
+		await page.route("**/api/admin/publication**", async (route) => {
 			const path = new URL(route.request().url()).pathname;
+			if (path.includes("/preview"))
+				return route.fulfill({
+					status: 200,
+					json: readyPreview,
+				});
 			if (path.endsWith("/events")) return route.abort();
 			if (path.endsWith("/jobs/pruned"))
 				return route.fulfill({ status: 404, json: { error: "Not Found" } });
@@ -524,5 +634,90 @@ for (const width of [1440, 390, 320]) {
 			);
 		}
 		await page.screenshot({ path: `/tmp/publication-attempts-${width}.png` });
+	});
+}
+
+for (const mode of ["remote", "local"] as const) {
+	test(`${mode} preview waits for preparation and requires refresh after a stale submit`, async ({
+		page,
+	}) => {
+		let finishPreparation: () => void = () => {};
+		const preparation = new Promise<void>((resolve) => {
+			finishPreparation = resolve;
+		});
+		let previews = 0;
+		let publications = 0;
+		await page.route("**/api/auth/get-session", (route) =>
+			route.fulfill({
+				json: {
+					user: {
+						id: "admin",
+						email: "admin@example.test",
+						role: "admin",
+						mustChangePassword: false,
+					},
+				},
+			}),
+		);
+		await page.route("**/api/admin/djs", (route) =>
+			route.fulfill({ json: [] }),
+		);
+		await page.route("**/api/admin/tags", (route) =>
+			route.fulfill({ json: [] }),
+		);
+		await page.route("**/api/admin/publication**", async (route) => {
+			const path = new URL(route.request().url()).pathname;
+			if (path.endsWith("/events")) return route.abort();
+			if (path.endsWith("/preview")) {
+				previews++;
+				expect(route.request().method()).toBe("POST");
+				await preparation;
+				return route.fulfill({ status: 200, json: readyPreview });
+			}
+			if (path.includes("/preview/"))
+				throw new Error("Preview must not poll the server");
+			if (route.request().method() === "POST") {
+				publications++;
+				expect(route.request().postDataJSON()).toEqual({
+					previewId: readyPreview.id,
+				});
+				return route.fulfill({
+					status: 409,
+					json: { error: "Archive data changed. Refresh the preview." },
+				});
+			}
+			return route.fulfill({
+				json: { ...initial, mode, target: { ...initial.target, mode } },
+			});
+		});
+		await page.goto("/admin/#djs");
+		await page
+			.getByRole("button", { name: "publish changes", exact: true })
+			.click();
+		const submit = page.getByRole("button", {
+			name: "Publish",
+			exact: true,
+		});
+		await expect(page.getByRole("dialog")).toContainText("Preparing changes…");
+		await expect(submit).toBeDisabled();
+		finishPreparation();
+		await expect(submit).toBeEnabled();
+		await expect(page.getByRole("dialog")).toContainText(
+			"changed Evening broadcast",
+		);
+		const preparedCount = previews;
+		await submit.click();
+		await expect(page.getByRole("dialog")).toContainText(
+			"Archive data changed",
+		);
+		await expect(submit).toBeDisabled();
+		expect(publications).toBe(1);
+		expect(previews).toBe(preparedCount);
+		await page
+			.getByRole("button", { name: "Refresh preview", exact: true })
+			.click();
+		await expect(submit).toBeEnabled();
+		expect(previews).toBe(preparedCount + 1);
+		expect(publications).toBe(1);
 	});
 }

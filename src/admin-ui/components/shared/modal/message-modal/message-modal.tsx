@@ -79,7 +79,7 @@ export const MessageModal = ({
 				role={role}
 				aria-modal="true"
 				aria-labelledby={titleId}
-				aria-describedby={descriptionId}
+				aria-describedby={message ? descriptionId : undefined}
 			>
 				{showCloseButton ? (
 					<div className={styles.header}>
@@ -103,7 +103,7 @@ export const MessageModal = ({
 				) : (
 					<h2 id={titleId}>{title}</h2>
 				)}
-				<p id={descriptionId}>{message}</p>
+				{message && <p id={descriptionId}>{message}</p>}
 				{children}
 				<div
 					className={[

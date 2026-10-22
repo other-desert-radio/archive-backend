@@ -29,6 +29,39 @@ test.beforeEach(async ({ page }) => {
 	);
 });
 
+test("unchanged modal submits are disabled and ignore hover until edited", async ({
+	page,
+}) => {
+	await page.goto("/admin/#djs");
+	for (const width of [1280, 390, 320]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.getByRole("button", { name: "+ DJ", exact: true }).click();
+		const form = page.getByRole("dialog", { name: "Onboard DJ" });
+		const submit = form.locator('button[type="submit"]');
+		const title = page.locator("#onboard-dj-title-input");
+		await expect(submit).toBeDisabled();
+		await expect(submit).toHaveCSS("color", "rgb(153, 153, 153)");
+		await expect(submit).toHaveCSS("border-color", "rgb(204, 204, 204)");
+		await expect(submit).toHaveCSS("background-color", "rgb(239, 239, 239)");
+		await expect(submit).toHaveCSS("pointer-events", "none");
+		await submit.scrollIntoViewIfNeeded();
+		const bounds = await submit.boundingBox();
+		if (!bounds) throw new Error("Submit button is not visible");
+		await page.mouse.move(
+			bounds.x + bounds.width / 2,
+			bounds.y + bounds.height / 2,
+		);
+		await expect(submit).toHaveCSS("transform", "none");
+		await expect(submit).toHaveCSS("box-shadow", "none");
+		await title.fill("Draft");
+		await expect(submit).toBeEnabled();
+		await expect(submit).toHaveCSS("opacity", "1");
+		await title.fill("");
+		await expect(submit).toBeDisabled();
+		await form.getByRole("button", { name: "Cancel", exact: true }).click();
+	}
+});
+
 test("all dismissal paths protect drafts and confirmation preserves focus", async ({
 	page,
 }) => {

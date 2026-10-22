@@ -1,21 +1,23 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Kysely } from "kysely";
-import {
-	type ArchiveDocuments,
-	loadArchiveDocuments,
-	writeArchiveDocuments,
-} from "../db/export-archive.js";
+import { writeArchiveDocuments } from "../db/export-archive.js";
 import type { Database } from "../db/types.js";
 import { validatePublicationDestination } from "./checkout.js";
 import {
 	commitAndPushPublication,
+	inspectGit,
 	type PublicationGitContext,
 	type PublicationGitResult,
 	reconcilePublicationGit,
 	synchronizePublicationCheckout,
 	validatePublicationCheckout,
 } from "./git/index.js";
+import { snapshotLocalPublicationFiles } from "./local-preview.js";
+import {
+	createPublicationPreviews,
+	type PreparedPublication,
+} from "./preview.js";
 import {
 	acquirePublicationLease,
 	appendPublicationLog,
@@ -33,38 +35,25 @@ import { readPublicationTarget, samePublicationTarget } from "./target.js";
 import type {
 	PublicationConfig,
 	PublicationJob,
+	PublicationPreview,
 	PublicationRevision,
 	PublicationStart,
 	RemotePublicationConfig,
 } from "./types.js";
-/** Revision and documents must come from the same repeatable-read transaction. */
-export type PublicationSnapshot = {
-	revision: PublicationRevision;
-	documents: ArchiveDocuments;
-};
+
+export { readPublicationSnapshot } from "./snapshot.js";
+
+import {
+	type PublicationSnapshot,
+	readPublicationSnapshot,
+} from "./snapshot.js";
+
+export type { PublicationSnapshot } from "./snapshot.js";
 export type PublicationRunner = {
 	start: (request: PublicationStart) => Promise<PublicationJob>;
+	preparePreview: (request: PublicationStart) => Promise<PublicationPreview>;
 	close: () => Promise<void>;
 };
-
-export const readPublicationSnapshot = (
-	database: Kysely<Database>,
-): Promise<PublicationSnapshot> =>
-	database
-		.transaction()
-		.setIsolationLevel("repeatable read")
-		.setAccessMode("read only")
-		.execute(async (transaction) => {
-			const { revision } = await transaction
-				.selectFrom("archive_publication_state")
-				.select("revision")
-				.where("id", "=", 1)
-				.executeTakeFirstOrThrow();
-			const documents = await loadArchiveDocuments(transaction, {
-				log: () => {},
-			});
-			return { revision, documents };
-		});
 
 type PublicationExecution = {
 	lease: PublicationLease;
@@ -242,6 +231,7 @@ export const executePublicationJob = async (
 	config: PublicationConfig,
 	job: PublicationJob,
 	previousJob: PublicationJob | undefined,
+	prepared?: PreparedPublication,
 ): Promise<void> => {
 	const execution = createPublicationExecution(lease, config, job);
 	try {
@@ -251,10 +241,36 @@ export const executePublicationJob = async (
 			case "local": {
 				// A local retry exports anew to repair any partially written files.
 				await validateLocalDestination(execution);
-				const snapshot = await generatePublicationAssets(execution);
-				await savePublicationExport(execution, snapshot);
+				let revision: string;
+				if (prepared) {
+					if (
+						(await snapshotLocalPublicationFiles(config.checkoutPath)) !==
+						prepared.localFingerprint
+					)
+						throw new Error(
+							"Local archive files changed after preview. Refresh preview before retrying",
+						);
+					if (!prepared.preview.revision)
+						throw new Error("Prepared publication has no revision");
+					revision = prepared.preview.revision;
+					await execution.updateStage("exporting");
+					await capturePublicationRevision(lease, job.id, revision);
+					if (!prepared.documents)
+						throw new Error("Prepared publication documents are unavailable");
+					await savePublicationExport(execution, {
+						revision,
+						documents: prepared.documents,
+					});
+					await execution.log(
+						"Installed the reviewed publication snapshot in the local checkout",
+					);
+				} else {
+					const snapshot = await generatePublicationAssets(execution);
+					await savePublicationExport(execution, snapshot);
+					revision = snapshot.revision;
+				}
 				await verifyPublicationTarget(execution);
-				await acknowledgePublication(execution, snapshot.revision, {
+				await acknowledgePublication(execution, revision, {
 					kind: "local",
 				});
 				break;
@@ -264,13 +280,49 @@ export const executePublicationJob = async (
 				// Validate the checkout and origin before any remote contact.
 				await validatePublicationCheckout(git);
 				const recovery = await reconcilePublicationGit(git, previousJob);
+				if (
+					prepared &&
+					(recovery.kind !== prepared.recovery?.kind ||
+						(recovery.kind !== "ready" &&
+							prepared.recovery?.kind !== "ready" &&
+							recovery.commitId !== prepared.recovery?.commitId))
+				)
+					throw new Error(
+						"Publication recovery changed after preview. Refresh preview before retrying",
+					);
 				let revision: PublicationRevision;
 				if (recovery.kind === "ready") {
 					await execution.updateStage("synchronizing");
 					await synchronizePublicationCheckout(git);
-					const snapshot = await generatePublicationAssets(execution);
-					await savePublicationExport(execution, snapshot);
-					revision = snapshot.revision;
+					if (prepared) {
+						if (
+							(await inspectGit(config.checkoutPath, ["rev-parse", "HEAD"])) !==
+							prepared.baseline?.commit
+						)
+							throw new Error(
+								"Target branch changed after preview. Refresh preview before retrying",
+							);
+						if (!prepared.preview.revision)
+							throw new Error("Prepared publication has no revision");
+						await execution.updateStage("exporting");
+						await capturePublicationRevision(
+							lease,
+							job.id,
+							prepared.preview.revision,
+						);
+						if (!prepared.documents)
+							throw new Error("Prepared publication documents are unavailable");
+						await savePublicationExport(execution, {
+							revision: prepared.preview.revision,
+							documents: prepared.documents,
+						});
+						await execution.log("Installed the reviewed publication snapshot");
+						revision = prepared.preview.revision;
+					} else {
+						const snapshot = await generatePublicationAssets(execution);
+						await savePublicationExport(execution, snapshot);
+						revision = snapshot.revision;
+					}
 				} else {
 					revision = await captureRecoveredRevision(execution, previousJob);
 				}
@@ -300,17 +352,31 @@ export const createPublicationRunner = async (
 			}
 		}
 	}
+	const previews = createPublicationPreviews(database, config);
 	let closing = false;
 	const work = new Set<Promise<void>>();
 	let persistenceFailed = false;
 	const starts = new Set<Promise<PublicationJob>>();
 	const begin = async (request: PublicationStart): Promise<PublicationJob> => {
 		if (closing) throw new Error("Publication runner is closing");
-		const { lease, job } = await reservePublicationJob({
-			database,
-			request,
-			config,
-		});
+		let prepared: PreparedPublication | undefined;
+		const reserve = async () => {
+			try {
+				return await reservePublicationJob({
+					database,
+					request,
+					config,
+					validate: async (lease) => {
+						prepared = await previews.validate(request, lease);
+					},
+				});
+			} catch (error) {
+				if (prepared) prepared.inUse = false;
+				throw error;
+			}
+		};
+		const { lease, job } = await reserve();
+		if (prepared) prepared.inUse = true;
 		let previousJob: PublicationJob | undefined;
 		try {
 			previousJob =
@@ -329,10 +395,23 @@ export const createPublicationRunner = async (
 			} finally {
 				await lease.release();
 			}
+			if (prepared) await previews.remove(prepared);
 			throw error;
 		}
-		const task = executePublicationJob(lease, config, job, previousJob)
-			.finally(() => lease.release())
+		const task = executePublicationJob(
+			lease,
+			config,
+			job,
+			previousJob,
+			prepared,
+		)
+			.finally(async () => {
+				try {
+					if (prepared) await previews.remove(prepared);
+				} finally {
+					await lease.release();
+				}
+			})
 			.catch(() => {
 				persistenceFailed = true;
 				console.error(
@@ -346,6 +425,7 @@ export const createPublicationRunner = async (
 		return job;
 	};
 	return {
+		preparePreview: previews.prepare,
 		start: (request) => {
 			const attempt = begin(request);
 			starts.add(attempt);
@@ -360,6 +440,7 @@ export const createPublicationRunner = async (
 			closing = true;
 			await Promise.allSettled([...starts]);
 			await Promise.all([...work]);
+			await previews.close();
 			if (persistenceFailed)
 				throw new Error("Publication job persistence or lease cleanup failed");
 		},

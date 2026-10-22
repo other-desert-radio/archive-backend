@@ -1,7 +1,9 @@
 import { Fragment, type ReactElement } from "react";
 import { MessageModal } from "../shared/modal/index.js";
 import styles from "./publication.module.css";
+import { PublicationPreviewContent } from "./publication-preview.js";
 import type { PublicationView } from "./use-publication.js";
+import { usePublicationPreview } from "./use-publication-preview.js";
 export type PublicationModalProps = {
 	publication: PublicationView;
 	onClose: () => void;
@@ -27,18 +29,25 @@ export const PublicationModal = ({
 	const canStart =
 		status !== undefined && (failed || (!running && status.pending));
 	const local = status?.mode === "local";
+	const needsPreview = canStart;
+	const preview = usePublicationPreview(
+		needsPreview,
+		failed ? job?.id : undefined,
+	);
 	const clean = status !== undefined && !status.pending && !running && !failed;
-	const title = running
-		? "Publishing archive"
-		: failed
-			? "Publication needs attention"
-			: complete && !status?.pending
-				? "Archive published"
-				: clean
-					? local
-						? "All changes saved locally"
-						: "All changes pushed"
-					: "Publish archive?";
+	const title = needsPreview
+		? "Review changes"
+		: running
+			? "Publishing archive"
+			: failed
+				? "Publication needs attention"
+				: complete && !status?.pending
+					? "Archive published"
+					: clean
+						? local
+							? "All changes saved locally"
+							: "All changes pushed"
+						: "Publish archive?";
 	const publishedAt = complete ? new Date(job.completedAt) : undefined;
 	const lastPublished = publishedAt
 		? `Last published ${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(publishedAt)} ${new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).format(publishedAt)}`
@@ -52,7 +61,7 @@ export const PublicationModal = ({
 				: clean
 					? "There are no pending archive changes to publish."
 					: local
-						? "Write latest changes to your local archive checkout."
+						? ""
 						: "Publish latest changes to github.";
 	return (
 		<MessageModal
@@ -67,14 +76,21 @@ export const PublicationModal = ({
 			primaryAction={
 				canStart
 					? {
-							label: starting
-								? "Starting…"
-								: failed
-									? "Retry publication"
-									: "Publish",
-							disabled: starting || loading,
-							onClick: () =>
-								void publication.start(failed ? job?.id : undefined),
+							label: starting ? "Starting…" : "Publish",
+							disabled:
+								starting ||
+								loading ||
+								(needsPreview && (!preview.preview || Boolean(preview.error))),
+							onClick: () => {
+								void publication
+									.start(
+										failed ? job?.id : undefined,
+										needsPreview ? preview.preview?.id : undefined,
+									)
+									.then((success) => {
+										if (!success && needsPreview) preview.invalidate();
+									});
+							},
 						}
 					: { label: "Close", onClick: onClose, appearance: "text" }
 			}
@@ -89,6 +105,13 @@ export const PublicationModal = ({
 				: {})}
 		>
 			<div className={styles.body}>
+				{needsPreview && (
+					<PublicationPreviewContent
+						preview={preview.preview}
+						error={preview.error}
+						onRefresh={preview.refresh}
+					/>
+				)}
 				{status && (
 					<div>
 						<p>
@@ -103,11 +126,9 @@ export const PublicationModal = ({
 								{status.target.branch ?? "No branch metadata"}
 							</strong>
 						</p>
-						{local && status.target.repository && (
-							<p>Origin: {status.target.repository}</p>
-						)}
 					</div>
 				)}
+
 				{loading && <p role="status">Loading publication status…</p>}
 				{!connected && !loading && (
 					<p className={styles.helper} role="status">

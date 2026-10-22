@@ -5,19 +5,21 @@ import type { RemotePublicationConfig } from "../types.js";
 const executeFile = promisify(execFile);
 
 /** Use argv, fixed safeguards, and sanitized errors for local and network commands. */
-export const runGit = async ({
-	checkout,
-	args,
-	operation = "inspect",
-	timeout = 10000,
-	identity,
-}: {
+type GitCommand = {
 	checkout: string;
 	args: string[];
 	operation?: string;
 	timeout?: number;
 	identity?: RemotePublicationConfig["gitIdentity"];
-}): Promise<string> => {
+};
+
+export const readGitBytes = async ({
+	checkout,
+	args,
+	operation = "inspect",
+	timeout = 10000,
+	identity,
+}: GitCommand): Promise<Buffer> => {
 	// Ignore inherited Git overrides so every operation targets this checkout.
 	const environment = Object.fromEntries(
 		Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
@@ -61,17 +63,21 @@ export const runGit = async ({
 					GIT_SSH_COMMAND: "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes",
 					LC_ALL: "C",
 				},
-				encoding: "utf8",
+				encoding: "buffer",
 				timeout,
-				maxBuffer: 1024 * 1024,
+				maxBuffer: 32 * 1024 * 1024,
 			},
 		);
-		return stdout.trim();
+		return stdout;
 	} catch {
 		// Git stderr may contain credential-bearing local configuration.
 		throw new Error(`Unable to ${operation} publication checkout with Git`);
 	}
 };
+
+/** Text commands trim only their framing; binary blobs preserve exact bytes. */
+export const runGit = async (command: GitCommand): Promise<string> =>
+	(await readGitBytes(command)).toString("utf8").trim();
 
 /** Read-only callers share the same safeguards as fetch, commit, and push. */
 export const inspectGit = (checkout: string, args: string[]): Promise<string> =>

@@ -540,11 +540,24 @@ remote success means pushed to GitHub, without waiting for Pages.
 
 - `GET /api/admin/publication` returns `mode`, `target`, decimal-string
   `revision` and `publishedRevision`, `pending`, and optional `latestJob`.
-- `POST /api/admin/publication` accepts `{}` or `{ retryJobId }`, reserves a
-  durable job, and returns `202` with its metadata. Concurrent starts return
-  `409`, invalid input returns `400`, and unknown retry jobs return `404`. Retry
-  requires a failed or interrupted job. Closing a browser or modal does not
-  cancel execution.
+- `POST /api/admin/publication/preview` accepts `{}` or `{ retryJobId }` in both
+  modes and returns a prepared summary: `{ id, expiresAt, revision, changes }`.
+  Each of `changes.tags`, `changes.shows`, and `changes.djs` contains `added`,
+  `changed`, and `removed` arrays of names. Preparation runs within the request;
+  the browser shows loading until it completes. Remote mode compares with the
+  fetched target branch; local mode compares current generated checkout files.
+  The backend briefly retains the reviewed documents in memory. No preview
+  polling or image endpoints are needed. Preparation leaves working-tree files
+  and the index untouched; local preparation works without Git or network
+  access.
+- `POST /api/admin/publication` accepts `{ previewId, retryJobId? }` in both
+  modes, reserves a durable job, and returns `202` with its metadata. Admission
+  requires a ready, owned, unexpired preview for the same retry and target.
+  Database revision, remote target branch, or local generated-file changes
+  return `409` and require a fresh preview before confirmation. Concurrent
+  starts return `409`, invalid input returns `400`, and unknown retry jobs
+  return `404`. Retry requires a failed or interrupted job. Closing a browser or
+  modal does not cancel execution.
 - `GET /api/admin/publication/jobs/:jobId` returns
   `{ job, logs, logsTruncated }`, with ordered, sanitized log lines. Unknown
   jobs return `404`.

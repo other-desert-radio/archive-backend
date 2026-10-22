@@ -14,6 +14,7 @@ import { validatePublicationCheckout } from "./validation.js";
 export const reconcilePublicationGit = async (
 	context: PublicationGitContext,
 	previousJob: PublicationJob | undefined,
+	options: { readOnly?: boolean } = {},
 ): Promise<PublicationRecovery> => {
 	if (previousJob === undefined) return { kind: "ready" };
 	await validatePublicationCheckout(context);
@@ -39,17 +40,18 @@ export const reconcilePublicationGit = async (
 			(await inspectGit(checkout, ["ls-files", "--unmerged", "-z"])) !== ""
 		)
 			throw new Error("Unrecognized staged work blocks publication recovery");
-		await runGit({
-			checkout,
-			args: [
-				"restore",
-				"--staged",
-				"--source=HEAD",
-				"--",
-				...staged.map((file) => `:(literal)${file}`),
-			],
-			operation: "reconcile generated staging",
-		});
+		if (!options.readOnly)
+			await runGit({
+				checkout,
+				args: [
+					"restore",
+					"--staged",
+					"--source=HEAD",
+					"--",
+					...staged.map((file) => `:(literal)${file}`),
+				],
+				operation: "reconcile generated staging",
+			});
 	}
 	const remote = await fetchPublicationBranch(context);
 	const outgoing = (

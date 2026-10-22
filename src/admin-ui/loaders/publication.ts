@@ -3,6 +3,7 @@ import type {
 	PublicationEvent,
 	PublicationJob,
 	PublicationJobDetail,
+	PublicationPreview,
 	PublicationStatus,
 } from "../../publication/index.js";
 import { apiFetch } from "./api-fetch.js";
@@ -67,8 +68,9 @@ const request = async (
 	init?: RequestInit,
 	allowMissing = false,
 ): Promise<unknown> => {
-	const operation =
-		init?.method === "POST"
+	const operation = path.startsWith("/preview")
+		? "prepare publication preview"
+		: init?.method === "POST"
 			? "start publication"
 			: path
 				? "load publication job and logs"
@@ -132,11 +134,15 @@ export const loadPreviousPublicationJob = async (
 };
 export const startPublication = async (
 	retryJobId?: string,
+	previewId?: string,
 ): Promise<PublicationJob> => {
 	const data = await request("", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(retryJobId ? { retryJobId } : {}),
+		body: JSON.stringify({
+			...(retryJobId ? { retryJobId } : {}),
+			...(previewId ? { previewId } : {}),
+		}),
 	});
 	if (!isMatching(jobPattern, data))
 		throw new Error("Invalid publication start response.");
@@ -198,4 +204,36 @@ export const connectPublicationStream = async ({
 	} catch (error) {
 		if (!signal.aborted) onError(error);
 	}
+};
+
+const summaryPattern = {
+	added: P.array(P.string),
+	changed: P.array(P.string),
+	removed: P.array(P.string),
+};
+export const preparePublicationPreview = async (
+	retryJobId?: string,
+): Promise<PublicationPreview> => {
+	const data = await request("/preview", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(retryJobId ? { retryJobId } : {}),
+	});
+	if (
+		!isMatching(
+			{
+				id: P.string,
+				expiresAt: P.string,
+				revision: P.string.regex(/^\d+$/),
+				changes: {
+					tags: summaryPattern,
+					shows: summaryPattern,
+					djs: summaryPattern,
+				},
+			},
+			data,
+		)
+	)
+		throw new Error("Invalid publication preview response.");
+	return data;
 };

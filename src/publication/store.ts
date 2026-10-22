@@ -262,10 +262,12 @@ export const reservePublicationJob = async ({
 	database,
 	request,
 	config,
+	validate,
 }: {
 	database: Kysely<Database>;
 	request: PublicationStart;
 	config: PublicationConfig;
+	validate?: ((lease: PublicationLease) => Promise<void>) | undefined;
 }): Promise<{ lease: PublicationLease; job: PublicationJob }> => {
 	const lease = await acquirePublicationLease(database);
 	if (lease === undefined) throw new PublicationBusyError();
@@ -314,6 +316,7 @@ export const reservePublicationJob = async ({
 				409,
 			);
 		}
+		await validate?.(lease);
 		const job = await createPublicationJob({ lease, request, config, target });
 		return { lease, job };
 	} catch (error) {
