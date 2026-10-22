@@ -149,6 +149,28 @@ Repeat migration steps after each review checkpoint. Use
 `scripts/run-migrations` only when all pending migrations have been reviewed.
 Startup checks PostgreSQL connectivity; `/health` is public.
 
+### Mixcloud OAuth configuration
+
+The optional integration uses `MIXCLOUD_CLIENT_ID`, `MIXCLOUD_CLIENT_SECRET`,
+`MIXCLOUD_REDIRECT_URI`, and `MIXCLOUD_TOKEN_ENCRYPTION_KEY`. Configure all four
+together, or leave all four blank to disable it. The configuration reader
+rejects partial settings without printing their values. Configuration is not yet
+wired into startup; OAuth routes and the sign-in button follow in later
+implementation chunks.
+
+For local development, use `http://localhost:43827/api/admin/mixcloud/callback`
+as the redirect URI. Deployment callbacks require HTTPS; HTTP is accepted only
+on loopback hosts. The callback must use `/api/admin/mixcloud/callback` without
+credentials, query, or fragment. The Mixcloud application website field is
+separate from this callback.
+
+Keep the client secret and encryption key in the untracked `.env`. Generate a
+32-byte encryption key with `openssl rand -base64 32` and keep it stable once
+tokens are stored; changing it makes existing tokens unreadable. `.env.example`
+contains blank placeholders; Compose forwards the settings to the API container.
+The local `.env` may contain the application ID and callback while credentials
+are still pending; complete those settings before enabling the integration.
+
 ### Initial administrator and browser login
 
 After reviewing and applying the authentication migrations, run
