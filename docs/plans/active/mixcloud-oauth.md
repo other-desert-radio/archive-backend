@@ -68,9 +68,24 @@ No live routes or startup wiring have been added. This supersedes the earlier
 conditional choice of `@fastify/oauth2`; update the final provider documentation
 once review is complete.
 
+## Storage review checkpoints
+
+User requested: implement tables/migration first, wait for confirmation, then
+implement encryption and storage functions.
+
+- [x] Add migration 0034 and Kysely types for connections and OAuth attempts.
+- [x] Add isolated PostgreSQL migration test covering constraints, ownership,
+      session/user cascades, rollback and reapply; run typecheck and scoped
+      lint.
+- [ ] User review of schema/migration before encryption/storage implementation.
+- [ ] Encryption and storage functions (not started).
+
+Connections use user_id as primary key and preserve the connection on session
+deletion. Attempts reference (session_id, user_id) together, using a supporting
+unique index on session(id, userId). Attempt state is a SHA-256 hex digest;
+expiry is bounded to ten minutes. Consumption and expiry enforcement remain
+storage-layer work. No migration applied to the regular archive database.
+
 ## Next action
 
-Await user review of callback validation and exchange, then review identity
-lookup. Session ownership, expiry, replay protection, encryption, and
-persistence remain in the planned storage/routes units. The client alone does
-not enforce them.
+Wait for schema confirmation before implementing encryption/storage functions.

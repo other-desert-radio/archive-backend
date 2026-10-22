@@ -7,6 +7,8 @@ import type {
 } from "../publication/types.js";
 
 export type Database = {
+	mixcloud_connections: MixcloudConnectionsTable;
+	mixcloud_oauth_attempts: MixcloudOAuthAttemptsTable;
 	archive_publication_state: ArchivePublicationStateTable;
 	archive_publication_jobs: ArchivePublicationJobsTable;
 	archive_publication_logs: ArchivePublicationLogsTable;
@@ -22,6 +24,23 @@ export type Database = {
 	account: BetterAuthAccountTable;
 	verification: BetterAuthVerificationTable;
 	rateLimit: BetterAuthRateLimitTable;
+};
+
+export type MixcloudConnectionsTable = {
+	user_id: string;
+	mixcloud_key: string;
+	display_name: string;
+	access_token_encrypted: string;
+	createdAt: Generated<Date>;
+	updated_at: Generated<Date>;
+};
+
+export type MixcloudOAuthAttemptsTable = {
+	state_hash: string;
+	user_id: string;
+	session_id: string;
+	createdAt: Generated<Date>;
+	expires_at: Date;
 };
 
 /** PostgreSQL bigint values are returned as decimal strings by pg. */

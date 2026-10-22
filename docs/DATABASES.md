@@ -35,6 +35,31 @@ removes dependent association rows. Mixcloud tracking uses `ON DELETE SET NULL`
 and a trigger to retain source rows and clear their import timestamps; see the
 [tracking deletion contract](MIXCLOUD_IMPORT.md#consistency-and-deletion).
 
+## Mixcloud OAuth connections
+
+Migration `0034_add_mixcloud_connections` adds `mixcloud_connections`, keyed by
+`user_id` with cascading archive-user deletion. It stores `mixcloud_key`,
+`display_name`, `access_token_encrypted`, `createdAt`, and `updated_at`.
+Different archive users may connect the same Mixcloud account. The encrypted
+token column holds an opaque envelope; encryption and storage functions follow
+separately. The storage layer must update `updated_at` when replacing a
+connection.
+
+`mixcloud_oauth_attempts` stores a SHA-256 hex `state_hash` primary key,
+`user_id`, `session_id`, `createdAt`, and `expires_at`. A composite foreign key
+to the session's ID and owner prevents cross-user session binding. Deleting a
+session cascades pending attempts but preserves its user's Mixcloud connection;
+deleting the user cascades both. An added unique session index supports that
+composite reference. Attempt expiry must be after creation and at most ten
+minutes later. Expiry does not automatically delete rows; later storage
+functions must enforce expiry and atomic single use. Raw state and authorization
+codes are not stored.
+
+Apply explicitly after review; startup never migrates. Rollback removes both
+Mixcloud tables and their supporting session index, losing connections and
+pending attempts while preserving archive users and sessions. Migration tests
+use `MIXCLOUD_OAUTH_MIGRATION_TEST_DATABASE_URL` with a disposable database.
+
 ## Archive publication revisions
 
 Migration `0029_add_archive_publication_state` creates the singleton
