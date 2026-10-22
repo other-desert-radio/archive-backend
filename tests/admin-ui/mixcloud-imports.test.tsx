@@ -400,13 +400,23 @@ test("loads and validates the status endpoint", async () => {
 	expect(
 		await loadMixcloudImportStatus((async (url) => {
 			expect(url).toBe("/api/admin/mixcloud-import/status");
-			return Response.json({ auto_parsed: 0, unparsable: 12 });
+			return Response.json({
+				auto_parsed: 0,
+				unparsable: 12,
+				missing_djs: ["DJ Alice", "DJ Bob"],
+			});
 		}) as typeof fetch),
-	).toEqual({ auto_parsed: 0, unparsable: 12 });
+	).toEqual({
+		auto_parsed: 0,
+		unparsable: 12,
+		missing_djs: ["DJ Alice", "DJ Bob"],
+	});
 	for (const invalid of [
 		{ auto_parsed: -1, unparsable: 0 },
 		{ auto_parsed: "1", unparsable: 0 },
 		{ auto_parsed: 1.5, unparsable: 0 },
+		{ auto_parsed: 0, unparsable: 0, missing_djs: [1] },
+		{ auto_parsed: 0, unparsable: 0, missing_djs: "DJ Alice" },
 		{},
 	]) {
 		await expect(
@@ -428,7 +438,11 @@ test("shows nonzero category counts and dialog launchers before refresh", () => 
 			onRefresh={() => {}}
 			isRefreshing={false}
 			refreshFailed={false}
-			status={{ auto_parsed: 0, unparsable: 12 }}
+			status={{
+				auto_parsed: 0,
+				unparsable: 12,
+				missing_djs: ["DJ Alice", "DJ Bob"],
+			}}
 			onOpenImport={() => {}}
 		/>,
 	);
@@ -458,4 +472,44 @@ test("source tag names and keys display, search, and sort with missing data firs
 	expect(
 		sortResourceRows(rows, mixcloudColumns, "mixcloud_tags", "asc"),
 	).toEqual([pending, linked]);
+});
+
+test("shared banner follows search and precedes table and empty results", () => {
+	const props = {
+		title: "Mixcloud",
+		isLoading: false,
+		onRetry: () => {},
+		isEmpty: false,
+		emptyMessage: "Empty queue",
+		noResultsMessage: "No matches",
+		toolbar: <input aria-label="Search Mixcloud" />,
+		banner: <>Missing DJs: DJ Alice, DJ Bob</>,
+		children: (
+			<table>
+				<tbody>
+					<tr>
+						<td>Import row</td>
+					</tr>
+				</tbody>
+			</table>
+		),
+	};
+	for (const state of [{}, { isEmpty: true }, { hasNoResults: true }]) {
+		const html = renderToStaticMarkup(<ResourceView {...props} {...state} />);
+		expect(html).toContain("Missing DJs: DJ Alice, DJ Bob");
+		expect(html.indexOf("Search Mixcloud")).toBeLessThan(
+			html.indexOf("Missing DJs:"),
+		);
+		const results =
+			"isEmpty" in state
+				? "Empty queue"
+				: "hasNoResults" in state
+					? "No matches"
+					: "<table>";
+		expect(html.indexOf("Missing DJs:")).toBeLessThan(html.indexOf(results));
+	}
+	const withoutBanner = renderToStaticMarkup(
+		<ResourceView {...props} banner={undefined} />,
+	);
+	expect(withoutBanner).not.toContain("Missing DJs:");
 });

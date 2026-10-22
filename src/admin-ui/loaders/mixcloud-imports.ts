@@ -62,7 +62,11 @@ export const loadMixcloudImportStatus = async (
 	const value: unknown = await response.json();
 	if (
 		!isMatching(
-			{ auto_parsed: P.number.int().gte(0), unparsable: P.number.int().gte(0) },
+			{
+				auto_parsed: P.number.int().gte(0),
+				unparsable: P.number.int().gte(0),
+				missing_djs: P.array(P.string),
+			},
 			value,
 		)
 	)

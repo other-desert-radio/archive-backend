@@ -11,6 +11,7 @@ type ResourceViewProps = {
 	noResultsMessage?: string;
 	hasNoResults?: boolean;
 	toolbar?: ReactNode;
+	banner?: ReactNode;
 	children: ReactNode;
 };
 
@@ -25,6 +26,7 @@ export const ResourceView = ({
 	noResultsMessage,
 	hasNoResults = false,
 	toolbar,
+	banner,
 	children,
 }: ResourceViewProps) => (
 	<section className={styles.view}>
@@ -43,6 +45,7 @@ export const ResourceView = ({
 		{!isLoading && error === undefined && (
 			<>
 				{toolbar}
+				{banner != null && <div className={styles.banner}>{banner}</div>}
 				{isEmpty ? (
 					<div className={styles.empty}>
 						<p>{emptyMessage}</p>

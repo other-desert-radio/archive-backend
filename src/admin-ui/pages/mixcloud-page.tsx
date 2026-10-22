@@ -264,6 +264,11 @@ export const MixcloudPage = () => {
 					emptyMessage="No Mixcloud imports yet."
 					hasNoResults={rows.length > 0 && visible.length === 0}
 					noResultsMessage="No Mixcloud imports match your filters."
+					banner={
+						status && status.missing_djs.length > 0 ? (
+							<>Missing DJs: {status.missing_djs.join(", ")}</>
+						) : undefined
+					}
 					toolbar={
 						<MixcloudToolbar
 							query={query}

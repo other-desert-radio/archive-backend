@@ -23,6 +23,17 @@ const decodedDjsExist = sql<boolean>`NOT EXISTS (
  )
 )`.as("decoded_djs_exist");
 
+/** Unmatched nonblank names, preserving the parser's original name order. */
+const missingDjs = sql<string[]>`ARRAY(
+ SELECT trim(parsed.name)
+ FROM unnest(mixcloud_import.decoded_djs) WITH ORDINALITY AS parsed(name, position)
+ WHERE trim(parsed.name) <> ''
+ AND NOT EXISTS (
+  SELECT 1 FROM djs WHERE lower(trim(djs.title)) = lower(trim(parsed.name))
+ )
+ ORDER BY parsed.position
+)`.as("missing_djs");
+
 /** Registers authenticated Mixcloud import list and refresh API routes. */
 export const mixcloudImportRoutes =
 	(database: TypedDatabase): FastifyPluginAsync =>
@@ -101,16 +112,29 @@ export const mixcloudImportRoutes =
 							"date_source",
 						])
 						.select(decodedDjsExist)
+						.select(missingDjs)
 						.where("show_id", "is", null)
+						.orderBy("mixcloud_import.id")
 						.execute();
 					const status: MixcloudImportStatus = {
 						auto_parsed: 0,
 						unparsable: 0,
+						missing_djs: [],
 					};
+					const names = new Map<string, string>();
 					for (const row of rows) {
 						const category = classifyMixcloudImport(row);
-						if (category !== undefined) status[category]++;
+						if (category === undefined) continue;
+						status[category]++;
+						for (const name of row.missing_djs) {
+							const trimmed = name.trim();
+							const key = trimmed.toLowerCase();
+							if (key && !names.has(key)) names.set(key, trimmed);
+						}
 					}
+					status.missing_djs = [...names.values()].sort((a, b) =>
+						a.localeCompare(b),
+					);
 					request.log.info(
 						status,
 						`[Mixcloud Status] loaded -- ${status.auto_parsed} ready, ${status.unparsable} need review`,
