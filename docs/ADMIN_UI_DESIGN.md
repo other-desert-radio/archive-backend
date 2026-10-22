@@ -91,7 +91,16 @@ link to `#upload`. It uses the same heading and active-link treatment.
 `trailing` React content. Leading content grows beside wrapping trailing
 actions; the layout stacks at 42rem. Its background is 80% white, becoming solid
 white on hover. The upload page uses it for Mixcloud sign-in guidance. Its
-square bordered sign-in button stays disabled until OAuth is available.
+square bordered sign-in button starts OAuth when configured. The page loads
+connection status and shows the connected account name/key with a sign-out
+action. Loading or pending requests disable actions; unavailable configuration
+explains why sign-in is disabled. Failures offer reload/retry without hiding an
+existing connection. Callback outcome messages are informational; server status
+determines the connected identity. The page removes the outcome parameter after
+reading it. Switching accounts may also require signing out on Mixcloud itself.
+Archive logout preserves the connection; Mixcloud sign-out removes it. Browser
+coverage lives in `integration-tests/mixcloud-connection-ui.spec.ts` at desktop,
+390px, and 320px.
 
 Keep resource orchestration separate from shared presentation and lifecycle
 logic. Extract repeated responsibilities into focused components or hooks; avoid

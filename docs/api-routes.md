@@ -72,7 +72,9 @@ accepts a user or session ID from the browser. Responses use
 Mixcloud responses also use `Referrer-Policy: no-referrer`. Application, admin,
 and origin-rejection request logs record paths without query strings to exclude
 OAuth codes, state, and tokens. Raw provider and storage errors are not logged
-by the Mixcloud handlers. The upload-page controls remain a separate checkpoint.
+by the Mixcloud handlers. The upload page consumes these routes and reloads
+status after authorization; the callback marker alone never establishes a
+connection.
 
 ### Resource plugin registration
 
