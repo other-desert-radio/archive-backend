@@ -1,0 +1,50 @@
+/* Owns the reusable banner layout and responsive content placement. */
+.banner {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
+	width: 100%;
+	padding: 2rem;
+	border: 1px solid #000;
+	background: rgb(255 255 255 / 80%);
+}
+
+.banner:hover {
+	background: #fff;
+}
+
+.leading {
+	flex: 1;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.leading > :first-child {
+	margin-top: 0;
+}
+
+.leading > :last-child {
+	margin-bottom: 0;
+}
+
+.trailing {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+	min-width: 0;
+}
+
+@media (max-width: 42rem) {
+	.banner {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 1rem;
+		padding: 20px;
+	}
+
+	.trailing {
+		justify-content: flex-start;
+	}
+}

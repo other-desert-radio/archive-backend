@@ -82,6 +82,17 @@ indent. The DATABASE label has a 2px solid white bottom border, `0.5rem` padding
 below its text, and a `1rem` gap below it. Active, hovered, and keyboard-focused
 links are bold without moving surrounding items.
 
+The UTILS section follows DATABASE with a 2.5rem gap and contains the upload
+link to `#upload`. It uses the same heading and active-link treatment.
+
+### Reusable banner
+
+`Banner` in `shared/resource-views` accepts caller-owned `leading` and
+`trailing` React content. Leading content grows beside wrapping trailing
+actions; the layout stacks at 42rem. Its background is 80% white, becoming solid
+white on hover. The upload page uses it for Mixcloud sign-in guidance. Its
+square bordered sign-in button stays disabled until OAuth is available.
+
 Keep resource orchestration separate from shared presentation and lifecycle
 logic. Extract repeated responsibilities into focused components or hooks; avoid
 a generic form framework or components with many unrelated mode flags.
