@@ -157,10 +157,10 @@ together, or leave all four blank to disable it. The configuration reader
 rejects partial settings without printing their values. Startup validates these
 settings and constructs the provider client and store once. Partial settings
 prevent startup; complete all four or clear all four. Connect, status, callback,
-and disconnect routes are registered under the admin API boundary. The
-upload-page sign-in button follows in a separate implementation chunk. Review
-and explicitly apply migration `0034_add_mixcloud_connections` before using
-configured routes.
+and disconnect routes are registered under the admin API boundary. The upload
+page at `/admin/#upload` provides connection status, sign-in, and sign-out.
+Review and explicitly apply migration `0034_add_mixcloud_connections` before
+using configured routes.
 
 The provider uses `oauth4webapi` for OAuth validation and grant processing, with
 its supported custom-fetch hook adapting Mixcloud's GET token exchange and token
