@@ -32,7 +32,9 @@
       stacking at 42rem. User approved.
 - [ ] 1b.3 Add background and hover styling. Implemented 80% white background
       and solid-white hover; awaiting review.
-- [ ] 1b.4 Place banner with signed-out text on upload page.
+- [ ] 1b.4 Place banner with signed-out text on upload page. Wired Banner into
+      UploadPage; trailing slot empty until button chunk. Awaiting user review
+      and authenticated browser acceptance.
 - [ ] 1b.5 Add disabled sign-in button.
 
 ## Verification
