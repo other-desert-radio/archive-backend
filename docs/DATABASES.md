@@ -35,6 +35,50 @@ removes dependent association rows. Mixcloud tracking uses `ON DELETE SET NULL`
 and a trigger to retain source rows and clear their import timestamps; see the
 [tracking deletion contract](MIXCLOUD_IMPORT.md#consistency-and-deletion).
 
+## Mixcloud OAuth connections
+
+Migration `0034_add_mixcloud_connections` adds `mixcloud_connections`, keyed by
+`user_id` with cascading archive-user deletion. It stores `mixcloud_key`,
+`display_name`, `access_token_encrypted`, `createdAt`, and `updated_at`.
+Different archive users may connect the same Mixcloud account. The encrypted
+token column holds a versioned AES-256-GCM envelope containing the random
+12-byte nonce, 16-byte authentication tag, and ciphertext. Node's built-in
+crypto implementation binds the envelope to the archive user via authenticated
+data. The stable 32-byte environment key is never stored in PostgreSQL. The
+storage layer preserves `createdAt` and updates `updated_at` when replacing a
+connection.
+
+`mixcloud_oauth_attempts` stores a SHA-256 hex `state_hash` primary key,
+`user_id`, `session_id`, `createdAt`, and `expires_at`. A composite foreign key
+to the session's ID and owner prevents cross-user session binding. Deleting a
+session cascades pending attempts but preserves its user's Mixcloud connection;
+deleting the user cascades both. An added unique session index supports that
+composite reference. Attempt expiry must be after creation and at most ten
+minutes later. Storage generates 32 random bytes of state, removes expired
+attempts for the initiating user when creating a new attempt, and rejects
+expired attempts and sessions when completing authorization. Raw state and
+authorization codes are not stored.
+
+`createMixcloudStore` exposes identity lookup, server-only token retrieval,
+attempt creation, authorization completion, and disconnect. Completion and
+disconnect serialize using a transaction-held lock on the archive user. The
+completion callback performs token exchange and identity lookup while that lock
+is held; it must use bounded provider requests and must not recursively call the
+store. Attempts are deleted atomically. Provider rejection commits the deletion
+before propagating the error, preserving the previous connection. Concurrent
+replays cannot perform a second exchange. Disconnect waits for in-flight
+completion, then deletes both the connection and pending attempts. Session
+validity is checked again before saving. Unexpected database failures roll back
+the transaction, including attempt deletion; they must not be treated as
+success.
+
+Apply explicitly after review; startup never migrates. Rollback removes both
+Mixcloud tables and their supporting session index, losing connections and
+pending attempts while preserving archive users and sessions. Migration tests
+use `MIXCLOUD_OAUTH_MIGRATION_TEST_DATABASE_URL` with a disposable database.
+Storage tests use `MIXCLOUD_OAUTH_STORE_TEST_DATABASE_URL` with isolated schemas
+in a disposable database. No storage functions are wired to routes yet.
+
 ## Archive publication revisions
 
 Migration `0029_add_archive_publication_state` creates the singleton

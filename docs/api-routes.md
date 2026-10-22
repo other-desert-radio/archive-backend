@@ -14,7 +14,9 @@ Browser auth routes allow sign-in, session lookup, and sign-out under
 routes are blocked. Account mutations require a trusted Origin. Never expose
 password hashes, tokens, or plaintext passwords in API responses or logs.
 
-- `GET /api/admin/users` returns `{id,email,role,mustChangePassword}[]`.
+- `GET /api/admin/users` returns
+  `{id,email,role,mustChangePassword,banned,banReason?,banExpires?,mixcloudName?,mixcloudKey?}[]`
+  (ban expiry is an ISO timestamp; absent optional values are omitted).
 - `POST /api/admin/create-user` accepts `{email,password,role}`.
 - `POST /api/admin/modify-user-role` accepts `{id,role}`.
 - `POST /api/admin/reset-user-password` accepts `{id,password}`.

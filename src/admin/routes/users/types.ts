@@ -5,3 +5,11 @@ export type UserSummary = {
 	role: AccountRole;
 	mustChangePassword: boolean;
 };
+
+export type ListedUser = UserSummary & {
+	banned: boolean;
+	banReason?: string | undefined;
+	banExpires?: string | undefined;
+	mixcloudName?: string | undefined;
+	mixcloudKey?: string | undefined;
+};

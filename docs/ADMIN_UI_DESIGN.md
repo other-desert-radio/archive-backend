@@ -614,13 +614,16 @@ the archive shell until the account owner supplies their current and new
 password. Everyone can change their own password and sign out.
 
 Only admins see the Users sidebar page. Its account list supports creation, role
-changes, administrator password resets, and confirmed deletion. Editors retain
-every archive action. Account forms use shared modal/focus/dismissal behavior
-and never redisplay saved passwords. Failed requests preserve drafts;
-self-deletion and self-demotion are unavailable. Verify login, forced change,
-account management, sign-out, keyboard focus, and 390px/320px layouts against a
-disposable database. `integration-tests/authentication.spec.ts` covers the real
-cookie/role lifecycle; existing suites share `auth-fixtures.ts`.
+changes, administrator password resets, and confirmed deletion. Sortable columns
+show password-change requirements, banned status, ban reason, ban expiry in UTC,
+and linked Mixcloud name and key. Missing details display None; search includes
+these account details. Editors retain every archive action. Account forms use
+shared modal/focus/dismissal behavior and never redisplay saved passwords.
+Failed requests preserve drafts; self-deletion and self-demotion are
+unavailable. Verify login, forced change, account management, sign-out, keyboard
+focus, and 390px/320px layouts against a disposable database.
+`integration-tests/authentication.spec.ts` covers the real cookie/role
+lifecycle; existing suites share `auth-fixtures.ts`.
 
 ## Original design references
 
