@@ -7,12 +7,14 @@ export const uploadMixcloud = async (fields: {
 	date: string;
 	tags: string[];
 	mp3: File;
+	image?: File;
 }): Promise<void> => {
 	const body = new FormData();
 	body.set("title", fields.title);
 	body.set("date", fields.date);
 	body.set("tags", JSON.stringify(fields.tags));
 	body.set("mp3", fields.mp3);
+	if (fields.image !== undefined) body.set("image", fields.image);
 	let response: Response;
 	try {
 		response = await apiFetch("/api/admin/mixcloud/upload", {
@@ -37,5 +39,7 @@ export const uploadMixcloud = async (fields: {
 		throw new Error("The upload exceeds the allowed size or field limits.");
 	const result: unknown = await response.json();
 	if (!response.ok || !isMatching({ success: true }, result))
-		throw new Error("Upload failed. Check your MP3, title, date, and tags.");
+		throw new Error(
+			"Upload failed. Check your MP3, image, title, date, and tags.",
+		);
 };

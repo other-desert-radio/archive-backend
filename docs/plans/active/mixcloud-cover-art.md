@@ -10,33 +10,35 @@
 
 1. Shared image extraction and DJ migration: reviewed; user requested next
    chunk.
-2. Show form integration using shared picker/crop: implemented; user review
-   pending.
-3. Browser multipart and backend image validation/cleanup: pending.
+2. Show form integration using shared picker/crop: reviewed; user requested next
+   chunk.
+3. Browser multipart and backend image validation/cleanup: implemented; user
+   review pending.
 4. Forward WebP picture to Mixcloud with provider tests: pending.
 5. Integrated verification, docs, and user live WebP verification: pending.
 
 ## Current chunk
 
-New-show mode uses shared ImageDropzone, ImageCropModal, and useImageSelection.
-Accepted artwork remains in the draft when replacing/canceling or switching
-modes; removal clears selection and errors. Image drafts trigger discard
-confirmation. Parent modal is covered during cropping. Existing-show/edit fields
-remain unchanged. Shared selection hook exposes removeImage.
+Browser loader sends optional image alongside MP3 and metadata. The backend
+streams artwork into the request-owned temporary directory, limits bytes during
+streaming to 10 million, checks MIME/extension and actual WebP format, requires
+1200 × 1200 single-frame dimensions, and decodes pixels with Sharp. Invalid
+artwork returns 400; oversized artwork returns 413. Audio-only uploads work as
+before. Validated imagePath is optional on MixcloudUpload and reaches the
+client.
 
-Artwork is not sent yet; multipart and backend integration are chunk 3.
+Provider transport still omits artwork until chunk 4. Do not live-test artwork
+before that implementation is complete.
 
 ## Verification
 
-- Typecheck and admin build passed.
-- Ten focused Playwright cases passed, including crop/rotation/zoom, WebP
-  filename, 1200px square preview, Escape cancellation, removal, and discard
-  protection at 1280px, 390px, and 320px.
-- Screenshots captured; desktop and 320px preview inspected. Agent-browser
-  opened the disposable authenticated new-show form and captured its layout.
+- 36 focused route, browser-loader, and provider tests passed.
+- Tests cover image/audio ordering, unchanged WebP bytes at the client,
+  invalid/truncated/disguised/non-square/oversized images, duplicates, and
+  cleanup after success and provider failure.
 - No live uploads performed.
 
 ## Next action
 
-Wait for approval of chunk 2 before browser/backend multipart integration. Live
-WebP acceptance is unknown.
+Wait for review of chunk 3 before forwarding WebP as Mixcloud picture in
+chunk 4. Live WebP acceptance is unknown.

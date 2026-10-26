@@ -1,7 +1,12 @@
 import { openAsBlob } from "node:fs";
 import { isMatching, P } from "ts-pattern";
 
-export type MixcloudUpload = { title: string; tags: string[]; path: string };
+export type MixcloudUpload = {
+	title: string;
+	tags: string[];
+	path: string;
+	imagePath?: string;
+};
 export type MixcloudUploadResult = {
 	success: boolean;
 	statusCode: 200 | 403 | 429 | 502 | 504;

@@ -178,6 +178,7 @@ export const ShowFormModal = ({
 				date: fields.date,
 				tags,
 				mp3,
+				...(image === undefined ? {} : { image }),
 			});
 			return;
 		}

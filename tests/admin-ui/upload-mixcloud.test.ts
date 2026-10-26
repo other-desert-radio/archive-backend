@@ -14,6 +14,7 @@ for (const status of [400, 413, 502]) {
 				expect(body.get("date")).toBe("2026-10-26");
 				expect(body.get("tags")).toBe('["House"]');
 				expect(body.get("mp3")).toBeInstanceOf(File);
+				expect(body.has("image")).toBe(false);
 				return Response.json({ success: false }, { status });
 			},
 		);
@@ -37,3 +38,32 @@ for (const status of [400, 413, 502]) {
 		}
 	});
 }
+
+test("upload loader includes cropped WebP bytes and metadata", async () => {
+	const image = new File(["cropped-webp"], "cover.webp", {
+		type: "image/webp",
+	});
+	const fetcher = spyOn(globalThis, "fetch").mockImplementation(
+		async (_input, init) => {
+			const body = init?.body;
+			if (!(body instanceof FormData)) throw new Error("Expected multipart");
+			const received = body.get("image");
+			if (!(received instanceof File)) throw new Error("Expected image");
+			expect(received.name).toBe("cover.webp");
+			expect(received.type).toBe("image/webp");
+			expect(await received.text()).toBe("cropped-webp");
+			return Response.json({ success: true });
+		},
+	);
+	try {
+		await uploadMixcloud({
+			title: "Show",
+			date: "2026-10-26",
+			tags: [],
+			mp3: new File(["audio"], "show.mp3"),
+			image,
+		});
+	} finally {
+		fetcher.mockRestore();
+	}
+});
