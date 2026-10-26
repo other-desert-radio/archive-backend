@@ -37,3 +37,12 @@ export type ConnectMixcloudRoute = {
 export type DisconnectMixcloudRoute = {
 	Reply: AdminApiReply<MixcloudDisconnectResponse> & { 503: ErrorResponse };
 };
+
+export type MixcloudUploadResponse = { success: boolean };
+
+/** Multipart parsing and validation will be added in the MP3 handling chunk. */
+export type UploadMixcloudRoute = {
+	Reply: AdminApiReply<MixcloudUploadResponse> & {
+		501: MixcloudUploadResponse;
+	};
+};

@@ -69,6 +69,14 @@ accepts a user or session ID from the browser. Responses use
   Disabled integrations return 503. This does not log out of Mixcloud or revoke
   authorization at the provider.
 
+- `POST /api/admin/mixcloud/upload` is scaffolding and currently returns HTTP
+  501 with `{success:false}`. It inherits session and trusted-origin
+  protections. Planned input is multipart `title`, `date` (show date, not
+  publication schedule), `tags` (JSON array of tag names), and one `mp3` file.
+  Multipart parsing and Mixcloud upload are not implemented; the route performs
+  no provider calls or database writes. Completed uploads will return
+  `{success:true}`.
+
 Mixcloud responses also use `Referrer-Policy: no-referrer`. Application, admin,
 and origin-rejection request logs record paths without query strings to exclude
 OAuth codes, state, and tokens. Raw provider and storage errors are not logged
