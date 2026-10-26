@@ -185,7 +185,13 @@ test.skipIf(!databaseUrl)(
 				url: "/api/admin/shows",
 			});
 			expect(listed.statusCode).toBe(200);
-			expect(listed.json()).toEqual([saved]);
+			expect(listed.json()).toEqual([
+				{
+					...saved,
+					image_small: `/api/admin/shows/${saved.id}/image/small`,
+					image_large: `/api/admin/shows/${saved.id}/image/large`,
+				},
+			]);
 
 			// Any attempted write makes this repeat request fail at the database boundary.
 			for (const table of [

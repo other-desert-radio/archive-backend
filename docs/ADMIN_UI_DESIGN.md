@@ -549,7 +549,10 @@ Editing prefills both stored URLs; each participates in draft comparison and
 failed-save retention. Empty or invalid image URLs prevent submission. The Shows
 table exposes Mixcloud image URLs with clickable `mixcloud_image_small` and
 `mixcloud_image_large` columns, each searchable and independently sortable. Grid
-cards use the API’s `image` value, derived from `mixcloud_image_large`.
+cards use the API’s `image` value, derived from `mixcloud_image_large`. The
+separate `image_small` and `image_large` columns match DJs: muted None when
+absent, or a named link to the authenticated stored WebP endpoint when present.
+Both columns support sorting and searching.
 
 ### Import success toast
 

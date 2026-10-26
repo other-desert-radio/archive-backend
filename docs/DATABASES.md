@@ -342,9 +342,10 @@ the `shows_webp_image_pair` constraint: both must be NULL or both populated,
 like DJs. Existing rows remain NULL; there is no download or backfill. These
 columns reserve storage for future 400-by-400 and 1024-by-1024 WebP derivatives.
 Show create, edit, and import currently write only Mixcloud URLs and leave image
-bytes untouched. Upload, serving, and binary-image export support are deferred.
-Rolling back `0037` drops the binary columns and any stored images while
-retaining the Mixcloud URLs.
+bytes untouched. The admin Shows table links to authenticated stored-image
+endpoints when both variants exist. Upload and binary-image export support are
+deferred. Rolling back `0037` drops the binary columns and any stored images
+while retaining the Mixcloud URLs.
 
 ### `tags`
 

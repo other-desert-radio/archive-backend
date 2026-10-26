@@ -280,9 +280,15 @@ format, alongside its identity, metadata, and relationship IDs. Its admin-only
 
 `GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
 ISO JSON date format, plus required `mixcloud_image_small` and
-`mixcloud_image_large` URLs. The public Show transformer remains unchanged;
-`date` is a broadcast calendar date stored at midnight UTC and returned as an
-ISO timestamp for compatibility.
+`mixcloud_image_large` URLs. When both stored image variants exist, the list
+also includes `image_small` and `image_large` links to
+`/api/admin/shows/{id}/image/small` and `/api/admin/shows/{id}/image/large`;
+otherwise both fields are omitted. List queries check presence without fetching
+image bytes. These authenticated GET routes serve stored WebP bytes, return
+`404` for invalid IDs/variants or absent images, and `500` for database
+failures. The public Show transformer remains unchanged; `date` is a broadcast
+calendar date stored at midnight UTC and returned as an ISO timestamp for
+compatibility.
 
 `POST /api/admin/create-show` accepts JSON with required `title`, strict
 `YYYY-MM-DD` `date`, positive whole-second `duration`, absolute HTTP(S) `url`,
