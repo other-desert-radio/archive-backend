@@ -1,11 +1,14 @@
 # Show onboarding modes
 
+Status: inactive at the user's request. Switching behavior is expected to
+change; automated tests specific to show-mode switching are deferred.
+
 ## Decisions
 
 - Work in chunks: structure → scaffolding → implementation.
 - Reuse SegmentedPicker for grid/table and Show onboarding.
 - Show modes are new_show (default on reopening) and existing_show.
-- Titles are New Show and Import Show. Switching preserves fields and is not
+- Titles are New Show and Onboard Show. Switching preserves fields and is not
   dirty.
 - Use native browser tooltips and repeat the selected description in a small
   paragraph above all fields, using the same strings for both.
@@ -25,16 +28,17 @@
 - [x] Add selected-mode paragraph and focused browser assertions.
 - [x] Update authoritative UI guide.
 - [ ] User review of the final modal and helper paragraph.
-- [ ] Archive this plan after final review.
+- [x] Move this plan to the archive at the user's request.
 
 ## Verification
 
 - Latest typecheck, admin build, targeted Biome checks, docs checks, and diff
   checks pass. Picker unit test passes; repository lint passed before the helper
   paragraph addition.
-- All five mode browser tests pass, covering desktop/390px/320px, helper text,
-  selection, native tooltip attributes, titles, preserved fields, reset,
-  keyboard selection, equal sizing, unchanged payloads, and submission locking.
+- Before removal, all five mode browser tests passed, covering
+  desktop/390px/320px, helper text, selection, native tooltip attributes,
+  titles, preserved fields, reset, keyboard selection, equal sizing, unchanged
+  payloads, and submission locking.
 - Inspected authenticated agent-browser screenshots at desktop, 390px, and 320px
   against a disposable stack. On 320px the close control wraps below the picker;
   form content remains inside the viewport and scrollable.
@@ -46,4 +50,6 @@
 
 ## Next action
 
-Await final user review. No additional feature implementation is pending.
+Inactive. Do not add tests for modal switching until its behavior is settled.
+The switching-specific browser suite was removed; shared picker and existing
+modal tests remain. Final modal review is not recorded as complete.
