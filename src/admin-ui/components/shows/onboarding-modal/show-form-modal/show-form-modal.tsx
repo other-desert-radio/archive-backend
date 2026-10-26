@@ -16,6 +16,13 @@ import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 
 export type { ShowFormValues } from "../show-form-state/index.js";
 
+export type ShowOnboardingMode = "new_show" | "existing_show";
+
+export type ShowOnboardingModeControl = {
+	value: ShowOnboardingMode;
+	onChange: (mode: ShowOnboardingMode) => void;
+};
+
 export type ShowFormOptions = {
 	djs: { id: number; title: string }[];
 	isDJsLoading: boolean;
@@ -24,6 +31,8 @@ export type ShowFormOptions = {
 	onClose: () => void;
 };
 type Props = ShowFormOptions & {
+	/** Onboarding only; edit callers omit this control. */
+	onboardingMode?: ShowOnboardingModeControl;
 	initialValues: ShowFormValues;
 	unresolvedTagIds?: number[];
 	title: string;
