@@ -721,11 +721,12 @@ phone widths.
 
 ### Shared file selection
 
-DJ images and new-show MP3 selection use `FileDropzone` from `shared/modal`. DJ
-validation and crop behavior stay in the DJ image wrapper. New shows use a
-square MP3 dropzone after tags, with filename, byte size, replacement through
-the picker/drop area, and removal. Selected audio counts as an unsaved change.
-Selection requires one nonempty `.mp3` file, up to 4 billion bytes; server-side
-content validation belongs to the later upload endpoint. Audio has no image
-preview or cropping. New-show submission stays disabled until upload
-integration.
+DJ images and new-show MP3 selection use `FileDropzone` from `shared/modal`. Its
+optional `style` prop accepts `square` or `horizontal`; omitting it preserves
+the DJ layout. DJ validation and crop behavior stay in the DJ image wrapper. New
+shows use a horizontal MP3 dropzone after tags, about three text lines tall,
+with filename, byte size, replacement through the picker/drop area, and removal.
+Selected audio counts as an unsaved change. Selection requires one nonempty
+`.mp3` file, up to 4 billion bytes; server-side content validation belongs to
+the later upload endpoint. Audio has no image preview or cropping. New-show
+submission stays disabled until upload integration.

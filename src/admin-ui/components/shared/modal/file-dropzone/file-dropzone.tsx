@@ -7,7 +7,7 @@ type FileDropzoneProps = {
 	accept: string;
 	name: string;
 	preview?: boolean;
-	square?: boolean;
+	style?: "square" | "horizontal";
 	validateFile: (
 		file: File,
 	) => { valid: true; file: File } | { valid: false; error: string };
@@ -26,7 +26,7 @@ export const FileDropzone = ({
 	accept,
 	name,
 	preview = false,
-	square = false,
+	style,
 	validateFile,
 	label = "file",
 	file,
@@ -65,7 +65,7 @@ export const FileDropzone = ({
 	const uploadControl = (
 		<section
 			aria-label={`${label} upload`}
-			className={`${styles.dropzone}${square ? ` ${styles.square}` : ""}${compact ? ` ${styles.compact}` : ""}${isDragging ? ` ${styles.dragging}` : ""}${file === undefined || isDragging ? "" : ` ${styles.hasFile}`}`}
+			className={`${styles.dropzone}${style === undefined ? "" : ` ${styles[style]}`}${compact ? ` ${styles.compact}` : ""}${isDragging ? ` ${styles.dragging}` : ""}${file === undefined || isDragging ? "" : ` ${styles.hasFile}`}`}
 			onDragEnter={(event) => {
 				event.preventDefault();
 				setIsDragging(true);

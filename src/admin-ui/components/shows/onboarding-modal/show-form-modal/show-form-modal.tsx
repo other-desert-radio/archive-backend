@@ -230,7 +230,8 @@ export const ShowFormModal = ({
 						label="MP3"
 						name="mp3"
 						accept=".mp3,audio/mpeg"
-						square
+						style="horizontal"
+						buttonLabel="Drop MP3 or choose file"
 						{...(mp3 === undefined ? {} : { file: mp3 })}
 						validateFile={validateShowMP3}
 						onFileSelected={async (file) => setMP3(file)}

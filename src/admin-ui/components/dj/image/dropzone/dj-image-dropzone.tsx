@@ -4,7 +4,7 @@ import { validateDJImageFile } from "../utils/index.js";
 
 type Props = Omit<
 	ComponentProps<typeof FileDropzone>,
-	"accept" | "name" | "preview" | "validateFile" | "square"
+	"accept" | "name" | "preview" | "validateFile" | "style"
 >;
 
 /** Keeps image validation and preview specific to DJs. */

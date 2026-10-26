@@ -51,3 +51,12 @@
 	text-align: center;
 	overflow-wrap: anywhere;
 }
+
+.horizontal {
+	width: 100%;
+}
+.horizontal .button {
+	min-height: calc(3lh + 2px);
+	text-align: center;
+	overflow-wrap: anywhere;
+}
