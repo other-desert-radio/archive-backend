@@ -79,7 +79,10 @@ accepts a user or session ID from the browser. Responses use
   with `{success:false}`. Valid requests currently return HTTP 501 with
   `{success:false}` because provider upload is not implemented. No token access,
   provider calls, or database writes occur yet. Completed provider uploads will
-  return `{success:true}`.
+  return `{success:true}`. Upload lifecycle logs include received byte count,
+  validation rejection reasons, detected codec/sample rate, cleanup, final
+  status, and elapsed milliseconds. Request logs provide the correlation ID;
+  audio bytes, metadata values, credentials, and temporary paths are not logged.
 
 Mixcloud responses also use `Referrer-Policy: no-referrer`. Application, admin,
 and origin-rejection request logs record paths without query strings to exclude
