@@ -1,5 +1,11 @@
 # Mixcloud cover art
 
+## Status
+
+Inactive and archived at the user’s request. Implementation and automated checks
+are complete; user acceptance and live Mixcloud WebP/description verification
+remain unconfirmed.
+
 ## Decisions
 
 - User requested five chunks and shared artist/show image components.
@@ -32,10 +38,11 @@ provider response validation, no-retry behavior, and route cleanup still apply.
   MIME type, audio and metadata in the outgoing multipart request.
 - No live uploads performed. Mixcloud WebP acceptance is unknown.
 
-## Next action
+## Remaining verification
 
-Wait for review of chunk 4 before integrated verification and user live testing
-in chunk 5. Rebuild the selected running stack before any live verification.
+If work resumes, rebuild the selected running stack before live verification.
+Confirm Mixcloud accepts WebP artwork and displays the description; user review
+has not been marked complete.
 
 ## Description follow-up (one-shot)
 
