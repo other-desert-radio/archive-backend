@@ -8,8 +8,8 @@ export const buildCreateShowRequest = (fields: {
 	title: string;
 	date: string;
 	duration: string;
-	image_small: string;
-	image_large: string;
+	mixcloud_image_small: string;
+	mixcloud_image_large: string;
 	tags: string;
 	url: string;
 	djs: number[];
@@ -17,11 +17,11 @@ export const buildCreateShowRequest = (fields: {
 	const duration = Number(fields.duration);
 	if (!isMatching(P.number.int().between(1, 2_147_483_647), duration))
 		throw new Error("Duration must be a positive whole number of seconds.");
-	const image_small = fields.image_small.trim();
-	const image_large = fields.image_large.trim();
+	const mixcloud_image_small = fields.mixcloud_image_small.trim();
+	const mixcloud_image_large = fields.mixcloud_image_large.trim();
 	for (const [label, value] of [
-		["Small", image_small],
-		["Large", image_large],
+		["Small", mixcloud_image_small],
+		["Large", mixcloud_image_large],
 	] as const) {
 		if (!isHttpUrl(value))
 			throw new Error(`${label} image must be an absolute HTTP(S) URL.`);
@@ -33,8 +33,8 @@ export const buildCreateShowRequest = (fields: {
 		duration,
 		url: fields.url.trim(),
 		djs: fields.djs,
-		image_small,
-		image_large,
+		mixcloud_image_small,
+		mixcloud_image_large,
 		...(tags.length === 0 ? {} : { tags }),
 	};
 };

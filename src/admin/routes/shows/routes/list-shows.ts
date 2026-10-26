@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { sql } from "kysely";
 import { transformShows } from "../../../../json-transformers/index.js";
 import type { TypedDatabase } from "../../types.js";
 import type { ListShowsRoute } from "../types.js";
@@ -19,8 +20,11 @@ export const listShowsHandler =
 						"title",
 						"date",
 						"duration",
-						"image_small",
-						"image_large",
+						"mixcloud_image_small",
+						"mixcloud_image_large",
+						sql<boolean>`image_small is not null and image_large is not null`.as(
+							"has_images",
+						),
 						"url",
 					])
 					.orderBy("id")
@@ -48,8 +52,14 @@ export const listShowsHandler =
 				return {
 					...show,
 					createdAt: row.createdAt,
-					image_small: row.image_small,
-					image_large: row.image_large,
+					...(row.has_images
+						? {
+								image_small: `/api/admin/shows/${row.id}/image/small`,
+								image_large: `/api/admin/shows/${row.id}/image/large`,
+							}
+						: {}),
+					mixcloud_image_small: row.mixcloud_image_small,
+					mixcloud_image_large: row.mixcloud_image_large,
 				};
 			});
 		} catch (error) {

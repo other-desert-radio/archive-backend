@@ -20,8 +20,8 @@ for (const [field, value] of [
 	["title", "Changed title"],
 	["date", "2025-01-02"],
 	["duration", "7201"],
-	["image_small", "https://example.test/replacement-small.jpg"],
-	["image_large", "https://example.test/replacement.jpg"],
+	["mixcloud_image_small", "https://example.test/replacement-small.jpg"],
+	["mixcloud_image_large", "https://example.test/replacement.jpg"],
 	["url", "https://example.test/replacement"],
 ] as const) {
 	test(`edits ${field} and persists through reload and reopening`, async ({
@@ -32,7 +32,11 @@ for (const [field, value] of [
 		await openShowEditor(page, show.id);
 		await expect(page.locator("#edit-show-date")).toHaveValue("2024-02-29");
 		await expect(page.locator("#edit-show-duration")).toHaveValue("3661");
-		await page.locator(`#edit-show-${field.replaceAll("_", "-")}`).fill(value);
+		await page
+			.locator(
+				`#edit-show-${field.replace("mixcloud_", "").replaceAll("_", "-")}`,
+			)
+			.fill(value);
 		await saveShow(page);
 		const expected = {
 			...show,
@@ -43,13 +47,15 @@ for (const [field, value] of [
 						? Number(value)
 						: value,
 		};
-		if (field === "image_large") expected.image = value;
+		if (field === "mixcloud_image_large") expected.image = value;
 		expect(await loadShow(request, show.id)).toEqual(expected);
 		await page.reload();
 		await expect(showRow(page, show.id)).toBeVisible();
 		await openShowEditor(page, show.id);
 		await expect(
-			page.locator(`#edit-show-${field.replaceAll("_", "-")}`),
+			page.locator(
+				`#edit-show-${field.replace("mixcloud_", "").replaceAll("_", "-")}`,
+			),
 		).toHaveValue(value);
 	});
 }
@@ -66,7 +72,11 @@ test("opens from grid and requires both image URLs while retaining drafts", asyn
 	for (const size of ["small", "large"]) {
 		const input = page.locator(`#edit-show-image-${size}`);
 		await expect(input).toHaveValue(
-			show[`image_${size}` as "image_small" | "image_large"],
+			show[
+				`mixcloud_image_${size}` as
+					| "mixcloud_image_small"
+					| "mixcloud_image_large"
+			],
 		);
 		await input.fill("");
 		await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -80,9 +90,13 @@ test("opens from grid and requires both image URLs while retaining drafts", asyn
 	}
 	await saveShow(page);
 	const saved = await loadShow(request, show.id);
-	expect(saved.image_small).toBe("https://example.test/changed-small.jpg");
-	expect(saved.image_large).toBe("https://example.test/changed-large.jpg");
-	expect(saved.image).toBe(saved.image_large);
+	expect(saved.mixcloud_image_small).toBe(
+		"https://example.test/changed-small.jpg",
+	);
+	expect(saved.mixcloud_image_large).toBe(
+		"https://example.test/changed-large.jpg",
+	);
+	expect(saved.image).toBe(saved.mixcloud_image_large);
 });
 
 test("replaces DJ links, persists inverse links, and requires a DJ", async ({
@@ -198,7 +212,11 @@ for (const [field, value] of [
 		show,
 	}) => {
 		const form = await openShowEditor(page, show.id);
-		await page.locator(`#edit-show-${field.replaceAll("_", "-")}`).fill(value);
+		await page
+			.locator(
+				`#edit-show-${field.replace("mixcloud_", "").replaceAll("_", "-")}`,
+			)
+			.fill(value);
 		await form.getByRole("button", { name: "Save", exact: true }).click();
 		await expect(form).toBeVisible();
 		expect(await loadShow(request, show.id)).toEqual(show);

@@ -71,9 +71,11 @@ details use the same fields. Both fields are omitted for DJs without images.
 Exported DJ objects do not include the legacy `image` field. Export never
 processes images or writes to the database. It must never export the private
 `/api/admin/djs/{id}/image` URL. All exported Show documents, including
-`shows.json` and shows embedded in DJ details, expose the stored URLs through
-`image_small` and `image_large` and omit the legacy JSON `image` field.
-Migration `0024` removes the legacy database `image` column.
+`shows.json` and shows embedded in DJ details, expose the stored
+`mixcloud_image_small` and `mixcloud_image_large` URLs through `image_small` and
+`image_large` and omit the legacy JSON `image` field. Migration `0024` removes
+the legacy database `image` column. The nullable binary show image columns added
+by `0037` are reserved for future uploads and are not exported.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must

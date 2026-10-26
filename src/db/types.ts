@@ -126,8 +126,10 @@ export type ShowsTable = {
 	title: string;
 	date: Date;
 	duration: number;
-	image_small: string;
-	image_large: string;
+	mixcloud_image_small: string;
+	mixcloud_image_large: string;
+	image_small: Buffer | null;
+	image_large: Buffer | null;
 	url: string;
 };
 

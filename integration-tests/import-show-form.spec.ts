@@ -182,7 +182,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	).toHaveAttribute("href", /^https:\/\/www.mixcloud.com\//);
 	await expect(
 		page.locator(
-			'input[name="image_small"], input[name="image_large"], input[name="url"]',
+			'input[name="mixcloud_image_small"], input[name="mixcloud_image_large"], input[name="url"]',
 		),
 	).toHaveCount(0);
 	await page
@@ -204,8 +204,8 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		duration: 3661,
 		djs: [1],
 		tags: ["Ambient", "New Genre", "New Tag"],
-		image_small: "https://example.test/small",
-		image_large: "https://example.test/large",
+		mixcloud_image_small: "https://example.test/small",
+		mixcloud_image_large: "https://example.test/large",
 	});
 	expect(payload?.url).toMatch(
 		/^https:\/\/www.mixcloud.com\/otherdesertradio\//,
@@ -615,6 +615,9 @@ test("empty DJ warning is limited to import and clears after selection", async (
 	page,
 }) => {
 	await page.getByRole("button", { name: "Open create" }).click();
+	await page
+		.getByRole("button", { name: "existing show", exact: true })
+		.click();
 	const search = page.getByRole("combobox", { name: "Search DJs" });
 	await expect(search).not.toHaveAttribute("aria-invalid", "true");
 	await expect(page.locator('label[for="show-djs"]')).toHaveCSS(

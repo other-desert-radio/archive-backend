@@ -5,8 +5,10 @@ import type { AdminApiReply } from "../types.js";
 /** Admin list responses retain the creation timestamp selected from the database. */
 export type AdminShowsJSON = ShowsJSON & {
 	createdAt: Date;
-	image_small: string;
-	image_large: string;
+	image_small?: string;
+	image_large?: string;
+	mixcloud_image_small: string;
+	mixcloud_image_large: string;
 };
 
 const ShowFieldsPattern = {
@@ -15,8 +17,8 @@ const ShowFieldsPattern = {
 	duration: P.number,
 	url: P.string,
 	djs: P.array(P.number),
-	image_small: P.string,
-	image_large: P.string,
+	mixcloud_image_small: P.string,
+	mixcloud_image_large: P.string,
 	tags: P.optional(P.array(P.string)),
 } as const;
 export const CreateShowRequestPattern = {
@@ -44,4 +46,9 @@ export type CreateShowRoute = {
 export type ModifyShowRoute = {
 	Body: ModifyShowRequest;
 	Reply: AdminApiReply<AdminShowsJSON>;
+};
+
+export type GetShowImageRoute = {
+	Params: { id: string; variant: "small" | "large" };
+	Reply: AdminApiReply<Buffer>;
 };

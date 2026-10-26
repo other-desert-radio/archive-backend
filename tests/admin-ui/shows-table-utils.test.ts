@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	filterShows,
 	getShowSearchValue,
@@ -13,8 +14,8 @@ const shows = [
 		title: "Zulu Broadcast",
 		date: "2026-01-02T00:00:00.000Z",
 		duration: 90061,
-		image_small: "https://example.com/zulu-small.jpg",
-		image_large: "https://example.com/alpha-large.jpg",
+		mixcloud_image_small: "https://example.com/zulu-small.jpg",
+		mixcloud_image_large: "https://example.com/alpha-large.jpg",
 		djs: [4],
 		tags: [7],
 		url: "https://example.com/zulu",
@@ -28,8 +29,8 @@ const shows = [
 		djs: [],
 		tags: [],
 		url: "legacy-show-url",
-		image_small: "https://example.com/alpha-small.jpg",
-		image_large: "https://example.com/zulu-large.jpg",
+		mixcloud_image_small: "https://example.com/alpha-small.jpg",
+		mixcloud_image_large: "https://example.com/zulu-large.jpg",
 	},
 ];
 
@@ -43,6 +44,8 @@ describe("Show table helpers", () => {
 			"duration",
 			"image_small",
 			"image_large",
+			"mixcloud_image_small",
+			"mixcloud_image_large",
 			"DJs",
 			"tags",
 			"URL",
@@ -82,7 +85,7 @@ describe("Show table helpers", () => {
 test("searches, links, and sorts both image URLs independently", () => {
 	const show = shows[0];
 	if (show === undefined) throw new Error("Missing fixture");
-	for (const key of ["image_small", "image_large"] as const) {
+	for (const key of ["mixcloud_image_small", "mixcloud_image_large"] as const) {
 		expect(filterShows(shows, show[key], new Map(), new Map())).toEqual([
 			shows[0],
 		]);
@@ -93,10 +96,32 @@ test("searches, links, and sorts both image URLs independently", () => {
 			target: "_blank",
 		});
 	}
-	expect(sortShows(shows, "image_small", "asc").map((show) => show.id)).toEqual(
-		[1, 2],
-	);
-	expect(sortShows(shows, "image_large", "asc").map((show) => show.id)).toEqual(
-		[2, 1],
-	);
+	expect(
+		sortShows(shows, "mixcloud_image_small", "asc").map((show) => show.id),
+	).toEqual([1, 2]);
+	expect(
+		sortShows(shows, "mixcloud_image_large", "asc").map((show) => show.id),
+	).toEqual([2, 1]);
+});
+
+test("stored image columns match DJs: named links or None, searchable and sortable", () => {
+	const withImages = {
+		...shows[0],
+		image_small: "/api/admin/shows/2/image/small",
+		image_large: "/api/admin/shows/2/image/large",
+	};
+	const rows = [withImages, shows[1]];
+	for (const key of ["image_small", "image_large"] as const) {
+		const column = showColumns.find((column) => column.key === key);
+		if (!column) throw new Error("Missing image column");
+		expect(renderToStaticMarkup(column.render(withImages))).toBe(
+			`<a href="${withImages[key]}">${key}</a>`,
+		);
+		expect(renderToStaticMarkup(column.render(shows[1]))).toContain("None");
+		expect(filterShows(rows, withImages[key], new Map(), new Map())).toEqual([
+			withImages,
+		]);
+		expect(sortShows(rows, key, "asc").map((show) => show.id)).toEqual([1, 2]);
+		expect(sortShows(rows, key, "desc").map((show) => show.id)).toEqual([2, 1]);
+	}
 });

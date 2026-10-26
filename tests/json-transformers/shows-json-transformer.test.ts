@@ -11,7 +11,7 @@ describe("show JSON transformer", () => {
 						title: "Show One",
 						date: new Date("2026-01-01"),
 						duration: 3600,
-						image_large: "show-one.jpg",
+						mixcloud_image_large: "show-one.jpg",
 						url: "https://example.com/show-one",
 					},
 					{
@@ -19,7 +19,7 @@ describe("show JSON transformer", () => {
 						title: "Show Two",
 						date: new Date("2026-01-02"),
 						duration: 1800,
-						image_large: "show-two.jpg",
+						mixcloud_image_large: "show-two.jpg",
 						url: "https://example.com/show-two",
 					},
 				],

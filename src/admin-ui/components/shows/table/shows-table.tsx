@@ -2,6 +2,7 @@ import { isHttpUrl } from "../../../../utils/index.js";
 import type { ShowsAdminRow } from "../../../loaders/shows.js";
 import {
 	formatDuration,
+	formatMissing,
 	formatRelationshipIDs,
 	formatUTCDate,
 	formatUTCDateTime,
@@ -64,14 +65,38 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 		{
 			key: "image_small",
 			label: "image_small",
-			render: (show) => formatURL(show.image_small),
+			render: (show) =>
+				show.image_small === undefined ? (
+					formatMissing(undefined)
+				) : (
+					<a href={show.image_small}>image_small</a>
+				),
 			compare: (a, b) => compareText(a.image_small, b.image_small),
 		},
 		{
 			key: "image_large",
 			label: "image_large",
-			render: (show) => formatURL(show.image_large),
+			render: (show) =>
+				show.image_large === undefined ? (
+					formatMissing(undefined)
+				) : (
+					<a href={show.image_large}>image_large</a>
+				),
 			compare: (a, b) => compareText(a.image_large, b.image_large),
+		},
+		{
+			key: "mixcloud_image_small",
+			label: "mixcloud_image_small",
+			render: (show) => formatURL(show.mixcloud_image_small),
+			compare: (a, b) =>
+				compareText(a.mixcloud_image_small, b.mixcloud_image_small),
+		},
+		{
+			key: "mixcloud_image_large",
+			label: "mixcloud_image_large",
+			render: (show) => formatURL(show.mixcloud_image_large),
+			compare: (a, b) =>
+				compareText(a.mixcloud_image_large, b.mixcloud_image_large),
 		},
 		{
 			key: "djs",

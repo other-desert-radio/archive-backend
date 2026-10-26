@@ -336,8 +336,8 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 		| {
 				duration: number;
 				tags: string[];
-				image_small: string;
-				image_large: string;
+				mixcloud_image_small: string;
+				mixcloud_image_large: string;
 		  }
 		| undefined;
 	await page.route("**/api/admin/create-show", async (route) => {
@@ -354,7 +354,10 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 		.getByRole("button", { name: "existing show", exact: true })
 		.click();
 	const form = page.getByRole("dialog", { name: "Onboard Show" });
-	await expect(form).toBeFocused();
+	await expect(form).toBeVisible();
+	await expect(
+		form.getByRole("button", { name: "existing show", exact: true }),
+	).toBeFocused();
 	const duration = form.getByRole("spinbutton", { name: "duration (seconds)" });
 	await expect(duration).toHaveAttribute("min", "1");
 	await expect(duration).toHaveAttribute("step", "1");
@@ -380,8 +383,8 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	await form.getByRole("button", { name: "Submit", exact: true }).click();
 	await expect.poll(() => payload?.duration).toBe(3723);
 	expect(payload?.tags).toContain("new-duration-tag");
-	expect(payload?.image_small).toBe("https://example.com/small.jpg");
-	expect(payload?.image_large).toBe("https://example.com/large.jpg");
+	expect(payload?.mixcloud_image_small).toBe("https://example.com/small.jpg");
+	expect(payload?.mixcloud_image_large).toBe("https://example.com/large.jpg");
 	await expect(form.getByRole("alert")).toBeVisible();
 	await expect(duration).toHaveValue("3723");
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();

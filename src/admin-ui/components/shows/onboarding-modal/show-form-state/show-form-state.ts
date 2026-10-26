@@ -13,8 +13,8 @@ export type ShowFormValues = {
 	date: string;
 	/** Seconds kept as input text until request validation. */
 	duration: string;
-	image_small: string;
-	image_large: string;
+	mixcloud_image_small: string;
+	mixcloud_image_large: string;
 	tags: SelectedTag[];
 	/** Uncommitted tag input; included in dirty checks and submission. */
 	tagDraft: string;

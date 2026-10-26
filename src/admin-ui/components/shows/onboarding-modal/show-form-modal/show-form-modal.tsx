@@ -162,7 +162,7 @@ export const ShowFormModal = ({
 		(pendingTagIds.length > 0 && !isTagsLoading
 			? "Some assigned tags could not be loaded. Retry before saving."
 			: undefined);
-	const { image_small, image_large, url } = fields;
+	const { mixcloud_image_small, mixcloud_image_large, url } = fields;
 	const isNewShow = onboardingMode?.value === "new_show";
 	const submit = async () => {
 		if (isNewShow) {
@@ -206,20 +206,24 @@ export const ShowFormModal = ({
 			/>
 			<LabeledFormControl
 				id={`${idPrefix}-image-small`}
-				name="image_small"
+				name="mixcloud_image_small"
 				label="small image URL"
 				type="url"
-				value={image_small}
-				onChange={(image_small) => setFields({ ...fields, image_small })}
+				value={mixcloud_image_small}
+				onChange={(mixcloud_image_small) =>
+					setFields({ ...fields, mixcloud_image_small })
+				}
 				required
 			/>
 			<LabeledFormControl
 				id={`${idPrefix}-image-large`}
-				name="image_large"
+				name="mixcloud_image_large"
 				label="large image URL"
 				type="url"
-				value={image_large}
-				onChange={(image_large) => setFields({ ...fields, image_large })}
+				value={mixcloud_image_large}
+				onChange={(mixcloud_image_large) =>
+					setFields({ ...fields, mixcloud_image_large })
+				}
 				required
 			/>
 			<ShowRelationshipFields

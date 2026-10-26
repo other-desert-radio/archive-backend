@@ -24,8 +24,8 @@ test.skipIf(!databaseUrl)(
 			date: "2026-10-01",
 			duration: 123,
 			url: "https://example.test/submitted",
-			image_small: "https://example.test/small",
-			image_large: "https://example.test/large",
+			mixcloud_image_small: "https://example.test/small",
+			mixcloud_image_large: "https://example.test/large",
 			djs: [1, 1],
 			tags: ["New", "new"],
 			mixcloud_import_id: 1,
@@ -65,9 +65,13 @@ test.skipIf(!databaseUrl)(
 				"0021_add_mixcloud_data_changed",
 				"0023_add_show_image_urls",
 				"0024_drop_show_image",
+				"0029_add_archive_publication_state",
+				"0035_unique_tag_titles",
+				"0036_rename_show_mixcloud_images",
+				"0037_add_show_webp_images",
 			]) {
 				const migration = await import(`../../src/db/migrations/${name}.js`);
-				await migration.up(db);
+				await db.transaction().execute(migration.up);
 			}
 			await db.insertInto("djs").values({ title: "DJ", bio: "bio" }).execute();
 			await db
@@ -99,8 +103,8 @@ test.skipIf(!databaseUrl)(
 				{ mixcloud_import_id: "1" },
 				{ mixcloud_import_id: null },
 				{ djs: [999] },
-				{ image_small: undefined },
-				{ image_large: undefined },
+				{ mixcloud_image_small: undefined },
+				{ mixcloud_image_large: undefined },
 				{ title: " " },
 			]) {
 				expect((await post({ ...payload, ...changes })).statusCode).toBe(400);
@@ -131,9 +135,9 @@ test.skipIf(!databaseUrl)(
 			expect(saved).toMatchObject({
 				title: "Submitted",
 				url: payload.url,
-				image: payload.image_large,
-				image_small: payload.image_small,
-				image_large: payload.image_large,
+				image: payload.mixcloud_image_large,
+				mixcloud_image_small: payload.mixcloud_image_small,
+				mixcloud_image_large: payload.mixcloud_image_large,
 				duration: 123,
 				date: "2026-10-01T00:00:00.000Z",
 				djs: [1],
@@ -148,6 +152,47 @@ test.skipIf(!databaseUrl)(
 				data_changed: false,
 			});
 			expect(tracking.imported_at).toBeInstanceOf(Date);
+			expect(
+				await db
+					.selectFrom("shows")
+					.select(["image_small", "image_large"])
+					.executeTakeFirstOrThrow(),
+			).toEqual({ image_small: null, image_large: null });
+			const images = {
+				image_small: Buffer.from("small-webp"),
+				image_large: Buffer.from("large-webp"),
+			};
+			await db
+				.updateTable("shows")
+				.set(images)
+				.where("id", "=", saved.id)
+				.execute();
+			const edited = await app.inject({
+				method: "POST",
+				url: "/api/admin/modify-show",
+				payload: { ...payload, id: saved.id },
+			});
+			expect(edited.statusCode).toBe(200);
+			expect(edited.json()).toEqual(saved);
+			expect(
+				await db
+					.selectFrom("shows")
+					.select(["image_small", "image_large"])
+					.executeTakeFirstOrThrow(),
+			).toEqual(images);
+			const listed = await app.inject({
+				method: "GET",
+				url: "/api/admin/shows",
+			});
+			expect(listed.statusCode).toBe(200);
+			expect(listed.json()).toEqual([
+				{
+					...saved,
+					image_small: `/api/admin/shows/${saved.id}/image/small`,
+					image_large: `/api/admin/shows/${saved.id}/image/large`,
+				},
+			]);
+
 			// Any attempted write makes this repeat request fail at the database boundary.
 			for (const table of [
 				"shows",

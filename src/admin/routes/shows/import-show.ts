@@ -20,7 +20,16 @@ export const importShow = async (
 		if (tracking.show_id !== null) {
 			const show = await transaction
 				.selectFrom("shows")
-				.selectAll()
+				.select([
+					"id",
+					"createdAt",
+					"title",
+					"date",
+					"duration",
+					"url",
+					"mixcloud_image_small",
+					"mixcloud_image_large",
+				])
 				.where("id", "=", tracking.show_id)
 				.executeTakeFirstOrThrow();
 			const djs = await transaction
@@ -39,7 +48,7 @@ export const importShow = async (
 				created: false,
 				show: {
 					...show,
-					image: show.image_large,
+					image: show.mixcloud_image_large,
 					djs: djs.map(({ dj_id }) => dj_id),
 					tags: tags.map(({ tag_id }) => tag_id),
 				},

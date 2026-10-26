@@ -8,8 +8,8 @@ export type NormalizedCreateShowRequest = {
 	duration: number;
 	url: string;
 	djs: number[];
-	image_small: string;
-	image_large: string;
+	mixcloud_image_small: string;
+	mixcloud_image_large: string;
 	tags: string[];
 };
 
@@ -34,8 +34,8 @@ export const normalizeCreateShowRequest = (
 	const title = request.title.trim();
 	const date = parseCalendarDate(request.date);
 	const url = request.url.trim();
-	const image_small = request.image_small.trim();
-	const image_large = request.image_large.trim();
+	const mixcloud_image_small = request.mixcloud_image_small.trim();
+	const mixcloud_image_large = request.mixcloud_image_large.trim();
 	const djs = [...new Set(request.djs)];
 	const tags = request.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [];
 	if (
@@ -47,8 +47,8 @@ export const normalizeCreateShowRequest = (
 		!isHttpUrl(url) ||
 		djs.length === 0 ||
 		djs.some((id) => !Number.isSafeInteger(id) || id < 1) ||
-		!isHttpUrl(image_small) ||
-		!isHttpUrl(image_large)
+		!isHttpUrl(mixcloud_image_small) ||
+		!isHttpUrl(mixcloud_image_large)
 	) {
 		throw new Error("Validation error");
 	}
@@ -58,8 +58,8 @@ export const normalizeCreateShowRequest = (
 		duration: request.duration,
 		url,
 		djs,
-		image_small,
-		image_large,
+		mixcloud_image_small,
+		mixcloud_image_large,
 		tags,
 	};
 };

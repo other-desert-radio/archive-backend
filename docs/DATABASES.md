@@ -310,8 +310,10 @@ createdAt   timestamptz not null
 title       text not null
 date        timestamptz
 duration    integer       -- seconds
-image_large text not null -- image URL
-image_small text not null -- image URL
+mixcloud_image_large text not null -- Mixcloud image URL
+mixcloud_image_small text not null -- Mixcloud image URL
+image_small bytea         -- nullable stored WebP
+image_large bytea         -- nullable stored WebP
 url         text          -- audio source URL
 ```
 
@@ -323,12 +325,27 @@ Migration `0023_add_show_image_urls` copies `image` into both new URL columns,
 then enforces `NOT NULL`. Existing `NULL` images must be filled before applying
 it; otherwise the migration fails and the migrator rolls back the transaction.
 Rollback drops only the new columns and preserves `image`. There are no defaults
-or URL-format constraints. Show create/edit routes and dummy seeds supply both
-columns. Migration `0024_drop_show_image` then removes the legacy `image`
-column. Apply migrations through `0024` before running the updated application.
-Public JSON exposes `image_small` and `image_large`; see the export contract.
-Rolling back `0024` restores `image` from the current large URL; distinct legacy
-values are not recoverable.
+or URL-format constraints. Migration `0024_drop_show_image` removes the legacy
+`image` column; its rollback restores that column from the large URL.
+
+Migration `0036_rename_show_mixcloud_images` renames the two URL columns to
+`mixcloud_image_small` and `mixcloud_image_large`, preserving their values and
+`NOT NULL` constraints. Show create/edit routes and dummy seeds supply both
+URLs. The admin API uses these renamed fields; public JSON retains its existing
+image field names and Mixcloud URL values. Deploy migration `0036` and its
+matching application together because the previous application uses the old
+column names. Rollback renames the URL columns back after migration `0037` has
+been rolled back.
+
+Migration `0037_add_show_webp_images` adds nullable `bytea` image columns and
+the `shows_webp_image_pair` constraint: both must be NULL or both populated,
+like DJs. Existing rows remain NULL; there is no download or backfill. These
+columns reserve storage for future 400-by-400 and 1024-by-1024 WebP derivatives.
+Show create, edit, and import currently write only Mixcloud URLs and leave image
+bytes untouched. The admin Shows table links to authenticated stored-image
+endpoints when both variants exist. Upload and binary-image export support are
+deferred. Rolling back `0037` drops the binary columns and any stored images
+while retaining the Mixcloud URLs.
 
 ### `tags`
 
