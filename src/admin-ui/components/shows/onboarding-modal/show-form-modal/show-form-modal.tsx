@@ -4,9 +4,12 @@ import { uploadMixcloud } from "../../../../loaders/upload-mixcloud.js";
 import {
 	commitTagDraft,
 	FileDropzone,
+	ImageCropModal,
+	ImageDropzone,
 	LabeledFormControl,
 	OnboardingModal,
 	TagsInput,
+	useImageSelection,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { SegmentedPicker } from "../../../shared/resource-views/index.js";
@@ -116,6 +119,17 @@ export const ShowFormModal = ({
 	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
 		useShowFormState(initialValues);
 	const [mixcloudConnected, setMixcloudConnected] = useState(false);
+	const {
+		image,
+		imageCandidate,
+		imageError,
+		setImageError,
+		imageDropzoneKey,
+		selectImageCandidate,
+		cancelImageCandidate,
+		confirmImageCandidate,
+		removeImage,
+	} = useImageSelection(true);
 	const [mp3, setMP3] = useState<File>();
 	const [mp3Error, setMP3Error] = useState<string>();
 	const [pendingTagIds, setPendingTagIds] = useState(unresolvedTagIds);
@@ -249,12 +263,34 @@ export const ShowFormModal = ({
 						{...(tagError === undefined ? {} : { error: tagError })}
 						onRetry={loadTagOptions}
 					/>
+					<ImageDropzone
+						key={imageDropzoneKey}
+						id={`${idPrefix}-image`}
+						name="image"
+						{...(image === undefined ? {} : { file: image })}
+						onFileSelected={selectImageCandidate}
+						onError={setImageError}
+					/>
+					{imageError !== undefined && (
+						<p
+							className="onboarding-modal-helper onboarding-modal-field-error"
+							role="alert"
+						>
+							{imageError}
+						</p>
+					)}
+					{image !== undefined && (
+						<div className={styles.uploadMessage}>
+							<button type="button" onClick={removeImage}>
+								Remove image
+							</button>
+						</div>
+					)}
 					<FileDropzone
 						id={`${idPrefix}-mp3`}
 						label="MP3"
 						name="mp3"
 						accept=".mp3,audio/mpeg"
-						style="horizontal"
 						buttonLabel="Drop MP3 or choose file"
 						{...(mp3 === undefined ? {} : { file: mp3 })}
 						validateFile={validateShowMP3}
@@ -291,51 +327,63 @@ export const ShowFormModal = ({
 			break;
 	}
 	return (
-		<OnboardingModal
-			isOpen
-			hasUnsavedChanges={hasUnsavedChanges || mp3 !== undefined}
-			title={modalTitle}
-			headerContent={
-				onboardingMode === undefined
-					? undefined
-					: ({ isSubmitting }) => (
-							<SegmentedPicker<ShowOnboardingMode>
-								label="Show mode"
-								appearance="muted"
-								value={onboardingMode.value}
-								onChange={onboardingMode.onChange}
-								disabled={isSubmitting}
-								options={[
-									{
-										value: "new_show",
-										label: "new show",
-										tooltip: modeDescriptions.new_show,
-									},
-									{
-										value: "existing_show",
-										label: "existing show",
-										tooltip: modeDescriptions.existing_show,
-									},
-								]}
-							/>
-						)
-			}
-			onClose={onClose}
-			onSubmit={submit}
-			cancelLabel="Cancel"
-			isSubmitDisabled={
-				(isNewShow && (!mixcloudConnected || mp3 === undefined)) ||
-				pendingTagIds.length > 0
-			}
-			{...(submitLabel === undefined ? {} : { submitLabel })}
-			{...(submittingLabel === undefined ? {} : { submittingLabel })}
-		>
-			{onboardingMode !== undefined && (
-				<p className={styles.modeDescription}>
-					{modeDescriptions[onboardingMode.value]}
-				</p>
+		<>
+			<OnboardingModal
+				isOpen
+				hasUnsavedChanges={
+					hasUnsavedChanges || mp3 !== undefined || image !== undefined
+				}
+				isCovered={imageCandidate !== undefined}
+				title={modalTitle}
+				headerContent={
+					onboardingMode === undefined
+						? undefined
+						: ({ isSubmitting }) => (
+								<SegmentedPicker<ShowOnboardingMode>
+									label="Show mode"
+									appearance="muted"
+									value={onboardingMode.value}
+									onChange={onboardingMode.onChange}
+									disabled={isSubmitting}
+									options={[
+										{
+											value: "new_show",
+											label: "new show",
+											tooltip: modeDescriptions.new_show,
+										},
+										{
+											value: "existing_show",
+											label: "existing show",
+											tooltip: modeDescriptions.existing_show,
+										},
+									]}
+								/>
+							)
+				}
+				onClose={onClose}
+				onSubmit={submit}
+				cancelLabel="Cancel"
+				isSubmitDisabled={
+					(isNewShow && (!mixcloudConnected || mp3 === undefined)) ||
+					pendingTagIds.length > 0
+				}
+				{...(submitLabel === undefined ? {} : { submitLabel })}
+				{...(submittingLabel === undefined ? {} : { submittingLabel })}
+			>
+				{onboardingMode !== undefined && (
+					<p className={styles.modeDescription}>
+						{modeDescriptions[onboardingMode.value]}
+					</p>
+				)}
+				{elements}
+			</OnboardingModal>
+			{imageCandidate !== undefined && (
+				<ImageCropModal
+					file={imageCandidate}
+					onCancel={cancelImageCandidate}
+					onConfirm={confirmImageCandidate}
+				/>
 			)}
-			{elements}
-		</OnboardingModal>
+		</>
 	);
 };

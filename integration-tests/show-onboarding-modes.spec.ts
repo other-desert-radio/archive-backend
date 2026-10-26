@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import sharp from "sharp";
 import { test } from "./auth-fixtures.js";
 
 for (const width of [1280, 390, 320]) {
@@ -80,5 +81,59 @@ for (const { status, body, text } of [
 			.getByRole("button", { name: "existing show", exact: true })
 			.click();
 		await expect(page.getByRole("dialog").getByRole("status")).toHaveCount(0);
+	});
+}
+
+for (const width of [1280, 390, 320]) {
+	test(`new show square image crop and removal at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto("/admin/#shows");
+		await page.getByRole("button", { name: "+ show", exact: true }).click();
+		const form = page.getByRole("dialog", { name: "New Show", exact: true });
+		const buffer = await sharp({
+			create: { width: 600, height: 400, channels: 3, background: "red" },
+		})
+			.png()
+			.toBuffer();
+		const select = () =>
+			page
+				.locator("#show-image")
+				.setInputFiles({ name: "cover.png", mimeType: "image/png", buffer });
+		await select();
+		const crop = page.getByRole("dialog", { name: "Crop image", exact: true });
+		await expect(crop).toBeVisible();
+		await crop.getByRole("button", { name: "Rotate right" }).click();
+		await crop.getByRole("slider", { name: "Zoom" }).fill("1.5");
+		await crop.getByRole("button", { name: "Use image" }).click();
+		await expect(crop).toBeHidden();
+		const preview = form.getByAltText("Selected preview");
+		await expect(preview).toBeVisible();
+		const dimensions = await preview.evaluate(async (img: HTMLImageElement) => {
+			await img.decode();
+			return [img.naturalWidth, img.naturalHeight];
+		});
+		expect(dimensions).toEqual([1200, 1200]);
+		await expect(
+			form.getByRole("button", { name: "cover.webp", exact: true }),
+		).toBeVisible();
+		await page.screenshot({ path: `/tmp/show-image-${width}.png` });
+		await select();
+		await expect(crop).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(crop).toBeHidden();
+		await expect(preview).toBeVisible();
+		await form.getByRole("button", { name: "Cancel", exact: true }).click();
+		await expect(page.getByRole("alertdialog")).toBeVisible();
+		await page
+			.getByRole("button", { name: "Keep editing", exact: true })
+			.click();
+		await form
+			.getByRole("button", { name: "Remove image", exact: true })
+			.click();
+		await expect(preview).toHaveCount(0);
+		await form.getByRole("button", { name: "Cancel", exact: true }).click();
+		await expect(form).toBeHidden();
 	});
 }

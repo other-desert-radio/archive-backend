@@ -43,7 +43,14 @@ export const useImageSelection = (
 		setIsExistingImageRemoved(false);
 		cancelImageCandidate();
 	};
+	const removeImage = () => {
+		cancelImageCandidate();
+		setImage(undefined);
+		setImageError(undefined);
+		setImageDropzoneKey((current) => current + 1);
+	};
 	return {
+		removeImage,
 		image,
 		imageCandidate,
 		imageError,
