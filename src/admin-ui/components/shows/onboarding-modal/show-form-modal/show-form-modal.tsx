@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import {
 	LabeledFormControl,
 	OnboardingModal,
+	TagsInput,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { SegmentedPicker } from "../../../shared/resource-views/index.js";
@@ -99,7 +100,9 @@ export const ShowFormModal = ({
 			? "Some assigned tags could not be loaded. Retry before saving."
 			: undefined);
 	const { image_small, image_large, url } = fields;
+	const isNewShow = onboardingMode?.value === "new_show";
 	const submit = async () => {
+		if (isNewShow) throw new Error("Mixcloud upload is not available yet.");
 		if (pendingTagIds.length > 0)
 			throw new Error("Assigned tags must finish loading before saving.");
 		if (isDJsLoading || djsError !== undefined)
@@ -163,6 +166,27 @@ export const ShowFormModal = ({
 	let elements: ReactNode;
 	switch (onboardingMode?.value) {
 		case "new_show":
+			elements = (
+				<>
+					<ShowTitleDateFields
+						fields={fields}
+						setFields={setFields}
+						idPrefix={idPrefix}
+					/>
+					<TagsInput
+						id={`${idPrefix}-tags`}
+						value={{ tags: fields.tags, draft: fields.tagDraft }}
+						onChange={({ tags, draft }) =>
+							setFields({ ...fields, tags, tagDraft: draft })
+						}
+						options={tagOptions}
+						isLoading={isTagsLoading}
+						{...(tagError === undefined ? {} : { error: tagError })}
+						onRetry={loadTagOptions}
+					/>
+				</>
+			);
+			break;
 		case "existing_show":
 		case undefined:
 			elements = commonFields;
@@ -201,7 +225,10 @@ export const ShowFormModal = ({
 			onClose={onClose}
 			onSubmit={submit}
 			cancelLabel="Cancel"
-			isSubmitDisabled={pendingTagIds.length > 0}
+			isSubmitDisabled={isNewShow || pendingTagIds.length > 0}
+			{...(isNewShow
+				? { actionHelper: "Mixcloud upload is not available yet." }
+				: {})}
 			{...(submitLabel === undefined ? {} : { submitLabel })}
 			{...(submittingLabel === undefined ? {} : { submittingLabel })}
 		>

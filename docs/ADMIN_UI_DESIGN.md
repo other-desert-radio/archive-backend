@@ -169,10 +169,12 @@ Show onboarding defaults to new show with the title New Show; existing show
 changes the title to Onboard Show. A small paragraph above all fields repeats
 the selected mode's native tooltip description. Mode changes preserve form
 values and do not make the form dirty. The picker sits beside the title through
-the existing headerContent slot and disables during submission. Both modes
-currently share fields and archive-save behavior; the new-show tooltip describes
-future Mixcloud upload behavior. Closing and reopening resets the mode. Editing
-has no mode picker. Header content may be static or a renderer receiving
+the existing headerContent slot and disables during submission. New show
+displays only title, date, and tags; submission is disabled with an explanation
+until Mixcloud upload is connected. Existing show retains all archive fields and
+archive-save behavior. The new-show date represents the show date, not a
+scheduled Mixcloud publication time. Closing and reopening resets the mode.
+Editing has no mode picker. Header content may be static or a renderer receiving
 isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
