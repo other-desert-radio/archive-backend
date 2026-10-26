@@ -1,4 +1,4 @@
-export { mixcloudImportRoutes } from "./mixcloud-imports-route.js";
+export { mixcloudImportRoutes } from "./mixcloud-imports-routes.js";
 export type {
 	MixcloudCloudcast,
 	MixcloudCloudcasts,

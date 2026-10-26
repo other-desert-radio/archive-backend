@@ -1,4 +1,4 @@
-export { mixcloudRoutes } from "./mixcloud-route.js";
+export { mixcloudRoutes } from "./mixcloud-routes.js";
 export type {
 	MixcloudCallbackOutcome,
 	MixcloudConnectResponse,

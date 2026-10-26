@@ -599,10 +599,12 @@ for (const width of [1280, 390])
 		await expect(
 			page.getByRole("button", { name: "Import", exact: true }),
 		).toBeEnabled();
-		const panel = page
-			.getByRole("heading", { name: "Import Show", exact: true })
-			.locator("../..");
+		const panel = page.getByRole("dialog", {
+			name: "Import Show 1/2",
+			exact: true,
+		});
 		const bounds = await panel.boundingBox();
+		expect(bounds).not.toBeNull();
 		expect(bounds?.height).toBeLessThan(1600);
 		await expect(
 			page.getByRole("button", { name: "Cancel", exact: true }),

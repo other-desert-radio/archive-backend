@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import Fastify from "fastify";
-import { authRoutes } from "../../src/auth/routes.js";
+import { authRoutes } from "../../src/routes/auth/index.js";
 
 describe("Better Auth Fastify route", () => {
 	test("correlates session failures with logs without logging response secrets", async () => {

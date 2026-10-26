@@ -273,21 +273,13 @@ for (const repeated of [false, true])
 		await expect(page.getByRole("dialog")).toBeHidden();
 		await expect(
 			page.getByRole("button", { name: /^ready for import/ }),
-		).toBeFocused();
+		).toBeDisabled();
 		await expect(
 			page.getByRole("button", { name: /^ready for import/ }).locator("span"),
 		).toHaveCount(0);
 		expect(state.posts).toBe(2);
 		await expect.poll(() => state.listReads).toBe(3);
 		await expect(page.locator("tbody tr").first()).toContainText("Ready 9");
-		await launch(page);
-		await expect(
-			page.getByRole("dialog", { name: "No pending imports" }),
-		).toBeVisible();
-		await page.getByRole("button", { name: "OK", exact: true }).click();
-		await expect(
-			page.getByRole("button", { name: /^ready for import/ }),
-		).toBeFocused();
 	});
 
 test("dirty Cancel and arrow require confirmation; reverting clears dirty state", async ({
@@ -453,6 +445,7 @@ test("an older post-import reload cannot overwrite a later committed import", as
 	await save(page).click();
 	await expect(page.getByRole("dialog")).toBeHidden();
 	await expect.poll(() => state.listReads).toBe(3);
+	const tableBeforeStaleResponse = await page.locator("tbody").textContent();
 	const oldResponse = page.waitForResponse(async (response) => {
 		if (!response.url().endsWith("/api/admin/mixcloud-imports")) return false;
 		const rows = await response.json();
@@ -470,10 +463,12 @@ test("an older post-import reload cannot overwrite a later committed import", as
 	await expect(
 		page.getByRole("button", { name: /^ready for import/ }).locator("span"),
 	).toHaveCount(0);
-	await launch(page);
 	await expect(
-		page.getByRole("dialog", { name: "No pending imports" }),
-	).toBeVisible();
+		page.getByRole("button", { name: /^ready for import/ }),
+	).toBeDisabled();
+	await expect
+		.poll(() => page.locator("tbody").textContent())
+		.toBe(tableBeforeStaleResponse);
 });
 
 test("success toast shows saved metadata, resets for the next save, fades and dismisses", async ({

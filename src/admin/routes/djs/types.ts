@@ -1,4 +1,6 @@
 import { P } from "ts-pattern";
+import type { DJJSON } from "../../../json-transformers/index.js";
+import type { AdminApiReply, ErrorResponse } from "../types.js";
 
 export const CreateDJRequestPattern = {
 	title: P.string.minLength(1),
@@ -27,3 +29,25 @@ export const ModifyDJRequestPattern = {
 } as const;
 
 export type ModifyDJRequest = P.infer<typeof ModifyDJRequestPattern>;
+
+/** Includes direct assignments separately from tags inherited through shows. */
+export type AdminDJJSON = DJJSON & { directTags: number[] };
+export type ListDJsRoute = { Reply: AdminApiReply<AdminDJJSON[]> };
+
+export type GetDJImageRoute = {
+	Params: { id: string; variant: "small" | "large" };
+	Reply: AdminApiReply<Buffer>;
+};
+
+export type GetDJDefaultImageRoute = {
+	Params: { id: string };
+	Reply: AdminApiReply<Buffer>;
+};
+
+export type CreateDJRoute = {
+	Reply: AdminApiReply<DJJSON> & { 413: ErrorResponse };
+};
+
+export type ModifyDJRoute = {
+	Reply: AdminApiReply<AdminDJJSON> & { 413: ErrorResponse };
+};

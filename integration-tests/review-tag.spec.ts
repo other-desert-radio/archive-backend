@@ -159,6 +159,10 @@ test("Review asks reviewed?; check and cross save true and false without changin
 	await row(page, tag.id)
 		.getByRole("button", { name: "Edit", exact: true })
 		.click();
+	await expect(
+		page.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
+	await page.getByLabel("title", { exact: true }).fill(`${tag.title} edited`);
 	await page.getByRole("button", { name: "Save", exact: true }).click();
 	await expect(page.getByRole("dialog", { name: "Edit Tag" })).toBeHidden();
 	expect((await load(request, tag.id)).reviewed).toBe(true);
