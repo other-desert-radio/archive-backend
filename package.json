@@ -30,6 +30,7 @@
 		"better-auth": "^1.7.4",
 		"fastify": "latest",
 		"kysely": "latest",
+		"music-metadata": "^12.3.2",
 		"oauth4webapi": "^3.8.8",
 		"pg": "latest",
 		"react": "^19.3.0",

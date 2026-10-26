@@ -69,6 +69,21 @@ accepts a user or session ID from the browser. Responses use
   Disabled integrations return 503. This does not log out of Mixcloud or revoke
   authorization at the provider.
 
+- `POST /api/admin/mixcloud/upload` accepts multipart `title`, `date` (valid
+  calendar show date, not publication scheduling), `tags` (JSON array of up to
+  five nonblank names), and exactly one nonempty `.mp3` file, up to 4 billion
+  bytes. It inherits session and trusted-origin protections. The audio streams
+  to private temporary storage, is parsed with `music-metadata` to require MPEG
+  Layer III audio, and is deleted before the response. Invalid requests return
+  400; multipart size/count limits return 413; storage errors return 500, all
+  with `{success:false}`. Valid requests currently return HTTP 501 with
+  `{success:false}` because provider upload is not implemented. No token access,
+  provider calls, or database writes occur yet. Completed provider uploads will
+  return `{success:true}`. Upload lifecycle logs include received byte count,
+  validation rejection reasons, detected codec/sample rate, cleanup, final
+  status, and elapsed milliseconds. Request logs provide the correlation ID;
+  audio bytes, metadata values, credentials, and temporary paths are not logged.
+
 Mixcloud responses also use `Referrer-Policy: no-referrer`. Application, admin,
 and origin-rejection request logs record paths without query strings to exclude
 OAuth codes, state, and tokens. Raw provider and storage errors are not logged

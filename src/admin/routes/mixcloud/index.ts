@@ -6,4 +6,6 @@ export type {
 	MixcloudIntegration,
 	MixcloudRouteDependencies,
 	MixcloudStatus,
+	MixcloudUploadResponse,
+	UploadMixcloudRoute,
 } from "./types.js";

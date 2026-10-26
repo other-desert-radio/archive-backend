@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { loadMixcloudConnection } from "../../../../loaders/mixcloud-connection.js";
+import { uploadMixcloud } from "../../../../loaders/upload-mixcloud.js";
 import {
+	commitTagDraft,
 	FileDropzone,
 	LabeledFormControl,
 	OnboardingModal,
@@ -56,13 +58,18 @@ type Props = ShowFormOptions & {
 };
 
 /** Loads identity only; upload credentials stay on the server. */
-const MixcloudSignInText = () => {
+const MixcloudSignInText = ({
+	onConnected,
+}: {
+	onConnected: (connected: boolean) => void;
+}) => {
 	const [text, setText] = useState<ReactNode>("Checking Mixcloud sign-in…");
 	useEffect(() => {
 		let active = true;
 		loadMixcloudConnection()
 			.then((status) => {
 				if (!active) return;
+				onConnected(status.connected);
 				setText(
 					status.connected ? (
 						<>
@@ -82,7 +89,7 @@ const MixcloudSignInText = () => {
 		return () => {
 			active = false;
 		};
-	}, []);
+	}, [onConnected]);
 	return (
 		<p className={styles.mixcloudStatus} role="status">
 			{text}
@@ -108,6 +115,7 @@ export const ShowFormModal = ({
 }: Props) => {
 	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
 		useShowFormState(initialValues);
+	const [mixcloudConnected, setMixcloudConnected] = useState(false);
 	const [mp3, setMP3] = useState<File>();
 	const [mp3Error, setMP3Error] = useState<string>();
 	const [pendingTagIds, setPendingTagIds] = useState(unresolvedTagIds);
@@ -142,7 +150,23 @@ export const ShowFormModal = ({
 	const { image_small, image_large, url } = fields;
 	const isNewShow = onboardingMode?.value === "new_show";
 	const submit = async () => {
-		if (isNewShow) throw new Error("Mixcloud upload is not available yet.");
+		if (isNewShow) {
+			if (!mixcloudConnected)
+				throw new Error("Sign in to Mixcloud before uploading.");
+			if (mp3 === undefined) throw new Error("Choose an MP3 file.");
+			const tags = commitTagDraft(
+				fields.tags.map(({ title }) => title),
+				fields.tagDraft,
+			);
+			if (tags.length > 5) throw new Error("Mixcloud accepts up to five tags.");
+			await uploadMixcloud({
+				title: fields.title.trim(),
+				date: fields.date,
+				tags,
+				mp3,
+			});
+			return;
+		}
 		if (pendingTagIds.length > 0)
 			throw new Error("Assigned tags must finish loading before saving.");
 		if (isDJsLoading || djsError !== undefined)
@@ -208,7 +232,7 @@ export const ShowFormModal = ({
 		case "new_show":
 			elements = (
 				<>
-					<MixcloudSignInText />
+					<MixcloudSignInText onConnected={setMixcloudConnected} />
 					<ShowTitleDateFields
 						fields={fields}
 						setFields={setFields}
@@ -299,9 +323,15 @@ export const ShowFormModal = ({
 			onClose={onClose}
 			onSubmit={submit}
 			cancelLabel="Cancel"
-			isSubmitDisabled={isNewShow || pendingTagIds.length > 0}
+			isSubmitDisabled={
+				(isNewShow && (!mixcloudConnected || mp3 === undefined)) ||
+				pendingTagIds.length > 0
+			}
 			{...(isNewShow
-				? { actionHelper: "Mixcloud upload is not available yet." }
+				? {
+						actionHelper:
+							"Upload validation only; Mixcloud upload is not connected yet.",
+					}
 				: {})}
 			{...(submitLabel === undefined ? {} : { submitLabel })}
 			{...(submittingLabel === undefined ? {} : { submittingLabel })}

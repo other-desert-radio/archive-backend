@@ -37,3 +37,15 @@ export type ConnectMixcloudRoute = {
 export type DisconnectMixcloudRoute = {
 	Reply: AdminApiReply<MixcloudDisconnectResponse> & { 503: ErrorResponse };
 };
+
+export type MixcloudUploadResponse = { success: boolean };
+
+/** Multipart title, date, JSON tag names, and one MP3 file. */
+export type UploadMixcloudRoute = {
+	Reply: Omit<AdminApiReply<MixcloudUploadResponse>, 400 | 500> & {
+		400: MixcloudUploadResponse;
+		413: MixcloudUploadResponse;
+		500: MixcloudUploadResponse;
+		501: MixcloudUploadResponse;
+	};
+};

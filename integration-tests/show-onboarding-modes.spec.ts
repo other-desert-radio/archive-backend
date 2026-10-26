@@ -17,7 +17,9 @@ for (const width of [1280, 390, 320]) {
 			await expect(page.locator(`#show-${id}`)).toHaveCount(0);
 		}
 		await expect(form.locator('button[type="submit"]')).toBeDisabled();
-		await expect(form).toContainText("Mixcloud upload is not available yet.");
+		await expect(form).toContainText(
+			"Upload validation only; Mixcloud upload is not connected yet.",
+		);
 		await page
 			.getByRole("button", { name: "existing show", exact: true })
 			.click();
