@@ -41,3 +41,44 @@ for (const width of [1280, 390, 320]) {
 		await expect(form).toBeHidden();
 	});
 }
+
+for (const { status, body, text } of [
+	{
+		status: 200,
+		body: {
+			configured: true,
+			connected: true,
+			account: { key: "/odr/", displayName: "ODR" },
+		},
+		text: "Signed in as ODR via Mixcloud",
+	},
+	{
+		status: 200,
+		body: { configured: true, connected: false },
+		text: "Not signed in via Mixcloud.",
+	},
+	{
+		status: 200,
+		body: { configured: false, connected: false },
+		text: "Mixcloud is not configured.",
+	},
+	{
+		status: 500,
+		body: { error: "Unavailable" },
+		text: "Unable to check Mixcloud sign-in.",
+	},
+]) {
+	test(`new show connection text: ${text}`, async ({ page }) => {
+		await page.route("**/api/admin/mixcloud/status", (route) =>
+			route.fulfill({ status, json: body }),
+		);
+		await page.goto("/admin/#shows");
+		await page.getByRole("button", { name: "+ show", exact: true }).click();
+		const form = page.getByRole("dialog", { name: "New Show", exact: true });
+		await expect(form.getByRole("status")).toHaveText(text);
+		await page
+			.getByRole("button", { name: "existing show", exact: true })
+			.click();
+		await expect(page.getByRole("dialog").getByRole("status")).toHaveCount(0);
+	});
+}

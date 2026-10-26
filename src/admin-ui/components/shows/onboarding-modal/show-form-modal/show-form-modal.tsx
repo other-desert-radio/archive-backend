@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
+import { loadMixcloudConnection } from "../../../../loaders/mixcloud-connection.js";
 import {
 	LabeledFormControl,
 	OnboardingModal,
@@ -50,6 +51,36 @@ type Props = ShowFormOptions & {
 	submitLabel?: string;
 	submittingLabel?: string;
 	onSubmit: (request: CreateShowForm) => Promise<void>;
+};
+
+/** Loads identity only; upload credentials stay on the server. */
+const MixcloudSignInText = () => {
+	const [text, setText] = useState("Checking Mixcloud sign-in…");
+	useEffect(() => {
+		let active = true;
+		loadMixcloudConnection()
+			.then((status) => {
+				if (!active) return;
+				setText(
+					status.connected
+						? `Signed in as <b>${status.account.displayName}</b> via Mixcloud`
+						: status.configured
+							? "Not signed in via Mixcloud."
+							: "Mixcloud is not configured.",
+				);
+			})
+			.catch(() => {
+				if (active) setText("Unable to check Mixcloud sign-in.");
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return (
+		<p className={styles.mixcloudStatus} role="status">
+			{text}
+		</p>
+	);
 };
 
 /** Shared Show create/edit values, controls, validation, and modal lifecycle. */
@@ -168,6 +199,7 @@ export const ShowFormModal = ({
 		case "new_show":
 			elements = (
 				<>
+					<MixcloudSignInText />
 					<ShowTitleDateFields
 						fields={fields}
 						setFields={setFields}
