@@ -156,6 +156,11 @@ in use even for editing.
 
 ### Show create/edit reuse
 
+Resource grid/table controls use `SegmentedPicker` from `shared/resource-views`.
+Callers own selection and persistence. The picker provides labeled grouped
+buttons with pressed states, optional disabled state, and optional tooltips on
+hover or keyboard focus. Keep segment styling shared with future modal pickers.
+
 Show onboarding and editing share `ShowFormModal`, including fields, opening
 values, validation, tag loading, DJ selection, and unsaved-change comparison.
 Small resource wrappers supply empty or existing values and the mutation

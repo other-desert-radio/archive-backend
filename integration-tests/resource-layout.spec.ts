@@ -28,6 +28,10 @@ for (const width of [1440, 1024, 768, 505, 504, 390, 320]) {
 		await page.setViewportSize({ width, height: 900 });
 		await page.goto("/admin/#djs");
 		await page.getByRole("button", { name: "table", exact: true }).click();
+		const viewPicker = page.getByRole("group", { name: "View mode" });
+		await expect(
+			viewPicker.getByRole("button", { name: "table", exact: true }),
+		).toHaveAttribute("aria-pressed", "true");
 		await page.evaluate(() => document.fonts.ready);
 		const title = await page
 			.getByRole("heading", { name: "DJs", exact: true })
@@ -79,6 +83,12 @@ for (const width of [1440, 1024, 768, 505, 504, 390, 320]) {
 		await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(1);
 		await page.getByRole("textbox", { name: "Search DJs" }).fill("");
 		await page.getByRole("button", { name: "grid", exact: true }).click();
+		await expect(
+			viewPicker.getByRole("button", { name: "grid", exact: true }),
+		).toHaveAttribute("aria-pressed", "true");
+		await expect(
+			viewPicker.getByRole("button", { name: "table", exact: true }),
+		).toHaveAttribute("aria-pressed", "false");
 		const grid = page.locator('[class*="grid"]');
 		await expect(grid).toBeVisible();
 		const gridBounds = await grid.evaluate((element) => ({

@@ -1,0 +1,47 @@
+.picker {
+	margin: 0;
+	padding: 0;
+	border: none;
+	display: flex;
+	min-width: 0;
+}
+.segment {
+	position: relative;
+	display: flex;
+}
+.segment button {
+	border-radius: 0;
+	background: transparent;
+	min-width: 5rem;
+	white-space: nowrap;
+}
+.segment button.selected {
+	font-weight: 700;
+	background: #fff;
+}
+.segment button:focus {
+	outline: none;
+}
+.segment button:focus-visible {
+	outline: 2px solid #000;
+	outline-offset: 2px;
+}
+.tooltip {
+	visibility: hidden;
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	z-index: 1;
+	width: max-content;
+	max-width: min(18rem, calc(100vw - 40px));
+	padding: 8px;
+	border: 1px solid #000;
+	background: #fff;
+	color: #000;
+	font-size: 12px;
+	line-height: 1.5;
+}
+.segment:hover .tooltip,
+.segment:focus-within .tooltip {
+	visibility: visible;
+}

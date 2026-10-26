@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
+import { SegmentedPicker } from "../segmented-picker/index.js";
+
 export type ResourceViewMode = "grid" | "table";
 
 type ResourceToolbarProps = {
@@ -71,24 +73,15 @@ export const ResourceToolbar = ({
 					{showViewControls &&
 						viewMode !== undefined &&
 						onViewModeChange !== undefined && (
-							<fieldset className={styles.switcher}>
-								<button
-									type="button"
-									className={viewMode === "grid" ? styles.selected : undefined}
-									aria-pressed={viewMode === "grid"}
-									onClick={() => onViewModeChange("grid")}
-								>
-									grid
-								</button>
-								<button
-									type="button"
-									className={viewMode === "table" ? styles.selected : undefined}
-									aria-pressed={viewMode === "table"}
-									onClick={() => onViewModeChange("table")}
-								>
-									table
-								</button>
-							</fieldset>
+							<SegmentedPicker<ResourceViewMode>
+								label="View mode"
+								value={viewMode}
+								options={[
+									{ value: "grid", label: "grid" },
+									{ value: "table", label: "table" },
+								]}
+								onChange={onViewModeChange}
+							/>
 						)}
 					{actionsBeforeCreate}
 					{onCreate !== undefined && createLabel !== undefined && (
