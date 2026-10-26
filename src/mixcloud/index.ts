@@ -6,3 +6,8 @@ export {
 } from "./client.js";
 export { type MixcloudConfig, readMixcloudConfig } from "./config.js";
 export { createMixcloudStore, type MixcloudStore } from "./store.js";
+export {
+	type MixcloudUpload,
+	type MixcloudUploadResult,
+	uploadToMixcloud,
+} from "./upload.js";

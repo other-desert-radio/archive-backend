@@ -327,12 +327,6 @@ export const ShowFormModal = ({
 				(isNewShow && (!mixcloudConnected || mp3 === undefined)) ||
 				pendingTagIds.length > 0
 			}
-			{...(isNewShow
-				? {
-						actionHelper:
-							"Upload validation only; Mixcloud upload is not connected yet.",
-					}
-				: {})}
 			{...(submitLabel === undefined ? {} : { submitLabel })}
 			{...(submittingLabel === undefined ? {} : { submittingLabel })}
 		>
