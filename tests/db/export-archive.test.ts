@@ -348,6 +348,8 @@ describe("archive export documents", () => {
 					duration: 3600,
 					mixcloud_image_small: "https://example.com/show-small.jpg",
 					mixcloud_image_large: "https://example.com/show.jpg",
+					image_small: Buffer.from("reserved-small-webp"),
+					image_large: Buffer.from("reserved-large-webp"),
 					url: "https://example.com/audio",
 				},
 			] as never,
