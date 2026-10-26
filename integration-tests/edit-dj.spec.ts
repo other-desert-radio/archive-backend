@@ -247,7 +247,10 @@ test("undoes removal, cancels cropping, then removes both image variants", async
 	await expect(
 		dialog.getByRole("img", { name: `${dj.title} current`, exact: true }),
 	).toBeVisible();
-	await save(page);
+	await expect(
+		dialog.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
+	await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
 	expect(await imageBytes(request, dj.id)).toEqual(before);
 	dialog = await openEditor(page, dj.id);
 	await dialog.getByRole("button", { name: "Remove", exact: true }).click();
@@ -344,7 +347,9 @@ test("rejects an undecodable image and preserves the DJ", async ({
 	await expect(
 		page.getByRole("dialog", { name: "Crop image", exact: true }),
 	).toHaveCount(0);
-	await dialog.getByRole("button", { name: "Save", exact: true }).click();
+	await expect(
+		dialog.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
 	await expect(dialog).toBeVisible();
 	await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
 	expect(await loadDJ(request, dj.id)).toEqual(before);
