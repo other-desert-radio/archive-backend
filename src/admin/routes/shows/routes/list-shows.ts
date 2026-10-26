@@ -18,6 +18,7 @@ export const listShowsHandler =
 						"id",
 						"createdAt",
 						"title",
+						"description",
 						"date",
 						"duration",
 						"mixcloud_image_small",
@@ -52,6 +53,7 @@ export const listShowsHandler =
 				return {
 					...show,
 					createdAt: row.createdAt,
+					...(row.description == null ? {} : { description: row.description }),
 					...(row.has_images
 						? {
 								image_small: `/api/admin/shows/${row.id}/image/small`,

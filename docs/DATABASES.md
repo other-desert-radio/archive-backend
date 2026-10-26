@@ -30,6 +30,10 @@ Archive tables use `createdAt timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP`.
 Existing rows received the migration time when this column was introduced.
 Authentication tables manage their own creation timestamps.
 
+Migration `0038_add_show_description` adds nullable `shows.description` text for
+Mixcloud descriptions. Existing rows start with `NULL`; rollback drops the
+column and any stored descriptions.
+
 Relationship foreign keys use `ON DELETE CASCADE`. Deleting a DJ, show, or tag
 removes dependent association rows. Mixcloud tracking uses `ON DELETE SET NULL`
 and a trigger to retain source rows and clear their import timestamps; see the

@@ -5,6 +5,7 @@ import type { AdminApiReply } from "../types.js";
 /** Admin list responses retain the creation timestamp selected from the database. */
 export type AdminShowsJSON = ShowsJSON & {
 	createdAt: Date;
+	description?: string;
 	image_small?: string;
 	image_large?: string;
 	mixcloud_image_small: string;

@@ -12,6 +12,7 @@ export type ShowSortColumn =
 	| "id"
 	| "createdAt"
 	| "title"
+	| "description"
 	| "date"
 	| "duration"
 	| "image_small"
@@ -32,6 +33,7 @@ export const getShowSearchValue = (
 		show.id,
 		show.createdAt,
 		show.title,
+		show.description,
 		formatUTCDate(show.date),
 		formatDuration(show.duration),
 		show.image_small,

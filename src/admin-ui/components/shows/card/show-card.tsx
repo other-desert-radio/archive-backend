@@ -65,6 +65,9 @@ export const renderShowCard = (
 			<h2 className={styles.title}>{show.title}</h2>
 			{showDJs(show, djsById)}
 			{showTags(show, tagsById)}
+			{show.description && (
+				<p className={styles.description}>{show.description}</p>
+			)}
 			<button
 				type="button"
 				className={styles.edit}

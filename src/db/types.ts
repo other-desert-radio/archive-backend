@@ -124,6 +124,7 @@ export type ShowsTable = {
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	title: string;
+	description: string | null;
 	date: Date;
 	duration: number;
 	mixcloud_image_small: string;

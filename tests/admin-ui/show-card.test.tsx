@@ -10,6 +10,7 @@ describe("Show card", () => {
 				id: 1,
 				createdAt: "2026-09-29T00:00:00.000Z",
 				title: "Show One",
+				description: "A late night journey",
 				date: "2026-09-29T00:00:00.000Z",
 				image: "https://example.com/show.webp",
 				duration: 3600,
@@ -25,7 +26,8 @@ describe("Show card", () => {
 			},
 		);
 
-		const [image, _title, djs, tags, edit] = card.props.children;
+		const [image, _title, djs, tags, description, edit] = card.props.children;
+		expect(description.props.children).toBe("A late night journey");
 		expect(image.props.src).toBe("https://example.com/show.webp");
 		expect(image.props.alt).toBe("Show One");
 		expect(djs.props.children).toBe("DJ One");
@@ -52,7 +54,8 @@ describe("Show card", () => {
 			() => undefined,
 		);
 
-		const [image, _title, djs, tags] = card.props.children;
+		const [image, _title, djs, tags, description] = card.props.children;
+		expect(description).toBeUndefined();
 		expect(image.props.children).toBe("No image");
 		expect(djs.props.children).toBe("No DJs");
 		expect(tags.props.children[0].props.children).toBe("Tag #4");
