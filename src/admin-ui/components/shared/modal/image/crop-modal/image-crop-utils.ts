@@ -1,22 +1,19 @@
 import type { Area } from "react-easy-crop";
-import {
-	croppedDJImageFilename,
-	DJ_CROPPED_IMAGE_SIZE,
-} from "../utils/index.js";
+import { CROPPED_IMAGE_SIZE, croppedImageFilename } from "../utils/index.js";
 
-export type DJImageRotation = 0 | 90 | 180 | 270;
+export type ImageRotation = 0 | 90 | 180 | 270;
 
 /** Moves a quarter-turn rotation in either direction while retaining 0–270°. */
-export const rotateDJImage = (
-	rotation: DJImageRotation,
+export const rotateImage = (
+	rotation: ImageRotation,
 	direction: -90 | 90,
-): DJImageRotation => ((rotation + direction + 360) % 360) as DJImageRotation;
+): ImageRotation => ((rotation + direction + 360) % 360) as ImageRotation;
 
 /** Returns the source dimensions after a quarter-turn rotation. */
-export const rotatedDJImageDimensions = (
+export const rotatedImageDimensions = (
 	width: number,
 	height: number,
-	rotation: DJImageRotation,
+	rotation: ImageRotation,
 ) =>
 	rotation === 90 || rotation === 270
 		? { width: height, height: width }
@@ -37,11 +34,11 @@ const canvasToWebP = async (canvas: HTMLCanvasElement): Promise<Blob> =>
 		);
 	});
 
-const rotateImage = (
+const rotateBitmap = (
 	image: ImageBitmap,
-	rotation: DJImageRotation,
+	rotation: ImageRotation,
 ): HTMLCanvasElement => {
-	const dimensions = rotatedDJImageDimensions(
+	const dimensions = rotatedImageDimensions(
 		image.width,
 		image.height,
 		rotation,
@@ -58,17 +55,17 @@ const rotateImage = (
 };
 
 /** Renders the selected square crop into the archive's normalized WebP file. */
-export const cropDJImage = async (
+export const cropImage = async (
 	file: File,
 	area: Area,
-	rotation: DJImageRotation,
+	rotation: ImageRotation,
 ): Promise<File> => {
 	const image = await createImageBitmap(file);
 	try {
-		const rotatedImage = rotateImage(image, rotation);
+		const rotatedImage = rotateBitmap(image, rotation);
 		const canvas = document.createElement("canvas");
-		canvas.width = DJ_CROPPED_IMAGE_SIZE;
-		canvas.height = DJ_CROPPED_IMAGE_SIZE;
+		canvas.width = CROPPED_IMAGE_SIZE;
+		canvas.height = CROPPED_IMAGE_SIZE;
 		const context = canvas.getContext("2d");
 		if (context === null) throw new Error("Image editor is unavailable");
 		context.drawImage(
@@ -79,11 +76,11 @@ export const cropDJImage = async (
 			area.height,
 			0,
 			0,
-			DJ_CROPPED_IMAGE_SIZE,
-			DJ_CROPPED_IMAGE_SIZE,
+			CROPPED_IMAGE_SIZE,
+			CROPPED_IMAGE_SIZE,
 		);
 		const blob = await canvasToWebP(canvas);
-		return new File([blob], croppedDJImageFilename(file.name), {
+		return new File([blob], croppedImageFilename(file.name), {
 			type: "image/webp",
 		});
 	} finally {

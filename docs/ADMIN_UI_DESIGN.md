@@ -130,23 +130,24 @@ a generic form framework or components with many unrelated mode flags.
   resource-specific controls
 - **`EditDJImageField`:** Existing DJ image, replacement, removal/undo, and
   image feedback
-- **`useDJImageSelection`:** Decoding, crop candidates, accepted files, removal
+- **`useImageSelection`:** Decoding, crop candidates, accepted files, removal
   state, and obsolete-work cleanup
 
 Keep shared tables, grids, toolbars, and formatters in `resource-views/`, and
 modal/form primitives in `modal/`. Both DJ and Shows use `card/`, `table/`,
-`toolbar/`, and `onboarding-modal/` responsibility groups. DJ image code is
+`toolbar/`, and `onboarding-modal/` responsibility groups. Shared image code is
 split into `crop-modal/`, `dropzone/`, `image-selection/`, and `utils/` under
-`dj/image/`; `dj/image/index.ts` re-exports those children. Public imports use
-`shared/modal`, `shared/resource-views`, `dj`, or `shows` group barrels.
+`shared/modal/image/`; `shared/modal/image/index.ts` re-exports those children.
+Public imports use `shared/modal`, `shared/resource-views`, `dj`, or `shows`
+group barrels.
 
 Shared primitives live under `components/shared/modal/` or
 `components/shared/resource-views/`. Resource components belong under their
 responsibility groups, including `dj/onboarding-modal/`,
-`shows/onboarding-modal/`, and `dj/image/`. Use one component per subdirectory;
-co-locate CSS and private utilities. Every component directory exposes an
-`index.ts` barrel. Public consumers import from the highest relevant group
-barrel; internal private imports may use a nearer barrel to avoid cycles.
+`shows/onboarding-modal/`, and `shared/modal/image/`. Use one component per
+subdirectory; co-locate CSS and private utilities. Every component directory
+exposes an `index.ts` barrel. Public consumers import from the highest relevant
+group barrel; internal private imports may use a nearer barrel to avoid cycles.
 
 Resource wrappers own field values, opening-value baselines, validation, and
 typed request construction. Shared shells should not know resource payloads.
@@ -724,11 +725,13 @@ phone widths.
 
 DJ images and new-show MP3 selection use `FileDropzone` from `shared/modal`. Its
 optional `style` prop accepts `square` or `horizontal`; omitting it preserves
-the DJ layout. DJ validation and crop behavior stay in the DJ image wrapper. New
-shows use a horizontal MP3 dropzone after tags, about three text lines tall,
-with filename, byte size, replacement through the picker/drop area, and removal.
-Selected audio counts as an unsaved change. Selection requires one nonempty
-`.mp3` file, up to 4 billion bytes; the server uses `music-metadata` to check
-for MPEG Layer III audio. Audio has no image preview or cropping. Submission
-uploads to Mixcloud and closes on confirmed success. Failures retain the draft;
-uncertain outcomes ask the user to check Mixcloud before retrying.
+the DJ layout. Image validation, selection, and square cropping live in shared
+`ImageDropzone`, `useImageSelection`, and `ImageCropModal`. Callers supply field
+IDs and names; the crop modal uses unique accessible IDs. Crops produce 1200 ×
+1200 WebP. New shows use a horizontal MP3 dropzone after tags, about three text
+lines tall, with filename, byte size, replacement through the picker/drop area,
+and removal. Selected audio counts as an unsaved change. Selection requires one
+nonempty `.mp3` file, up to 4 billion bytes; the server uses `music-metadata` to
+check for MPEG Layer III audio. Audio has no image preview or cropping.
+Submission uploads to Mixcloud and closes on confirmed success. Failures retain
+the draft; uncertain outcomes ask the user to check Mixcloud before retrying.

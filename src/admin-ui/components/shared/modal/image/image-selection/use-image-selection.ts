@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { decodeDJImageFile } from "../utils/index.js";
+import { decodeImageFile } from "../utils/index.js";
 
 /** Owns decoded candidates, accepted crops, removal and cancellation cleanup. */
-export const useDJImageSelection = (
+export const useImageSelection = (
 	isOpen: boolean,
-	record: { id: number } | undefined | null = null,
+	resetKey: unknown = null,
 ) => {
 	const [image, setImage] = useState<File>();
 	const [imageCandidate, setImageCandidate] = useState<File>();
@@ -13,7 +13,7 @@ export const useDJImageSelection = (
 	const [imageDropzoneKey, setImageDropzoneKey] = useState(0);
 	const imageCandidateVersion = useRef(0);
 	useEffect(() => {
-		if (!isOpen || record === undefined) return;
+		if (!isOpen || resetKey === undefined) return;
 		setImage(undefined);
 		setImageCandidate(undefined);
 		setImageError(undefined);
@@ -22,11 +22,11 @@ export const useDJImageSelection = (
 		return () => {
 			imageCandidateVersion.current += 1;
 		};
-	}, [isOpen, record]);
+	}, [isOpen, resetKey]);
 	const selectImageCandidate = async (candidate: File) => {
 		const version = ++imageCandidateVersion.current;
 		setImageError(undefined);
-		const result = await decodeDJImageFile(candidate);
+		const result = await decodeImageFile(candidate);
 		if (version !== imageCandidateVersion.current) return;
 		if (!result.valid) {
 			setImageError(result.error);
