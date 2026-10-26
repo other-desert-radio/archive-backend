@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
-	croppedDJImageFilename,
-	DJ_CROPPED_IMAGE_SIZE,
-	validateDJImageFile,
-} from "../../src/admin-ui/components/dj/image/index.js";
+	CROPPED_IMAGE_SIZE,
+	croppedImageFilename,
+	validateImageFile,
+} from "../../src/admin-ui/components/shared/modal/image/index.js";
 
-describe("validateDJImageFile", () => {
+describe("validateImageFile", () => {
 	test("accepts JPEG, PNG, and WebP source files", () => {
 		const files = [
 			new File(["image bytes"], "portrait.jpg", { type: "image/jpeg" }),
@@ -14,7 +14,7 @@ describe("validateDJImageFile", () => {
 		];
 
 		for (const file of files)
-			expect(validateDJImageFile(file)).toEqual({ valid: true, file });
+			expect(validateImageFile(file)).toEqual({ valid: true, file });
 	});
 
 	test("rejects unsupported source files", () => {
@@ -22,7 +22,7 @@ describe("validateDJImageFile", () => {
 			type: "image/gif",
 		});
 
-		expect(validateDJImageFile(file)).toEqual({
+		expect(validateImageFile(file)).toEqual({
 			valid: false,
 			error: "Image must be a JPEG, PNG, or WebP file",
 		});
@@ -35,15 +35,15 @@ describe("validateDJImageFile", () => {
 			{ type: "image/webp" },
 		);
 
-		expect(validateDJImageFile(file)).toEqual({ valid: true, file });
+		expect(validateImageFile(file)).toEqual({ valid: true, file });
 	});
 
 	test("creates a WebP filename for cropped images", () => {
-		expect(croppedDJImageFilename("portrait.PNG")).toBe("portrait.webp");
-		expect(croppedDJImageFilename("no-extension")).toBe("no-extension.webp");
+		expect(croppedImageFilename("portrait.PNG")).toBe("portrait.webp");
+		expect(croppedImageFilename("no-extension")).toBe("no-extension.webp");
 	});
 
 	test("uses a 1200 pixel square crop output", () => {
-		expect(DJ_CROPPED_IMAGE_SIZE).toBe(1200);
+		expect(CROPPED_IMAGE_SIZE).toBe(1200);
 	});
 });

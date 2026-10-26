@@ -1,5 +1,5 @@
+import { ImageDropzone } from "../../../shared/modal/index.js";
 import fieldStyles from "../../../shared/modal/labeled-form-control/labeled-form-control.module.css";
-import { DJImageDropzone } from "../../image/index.js";
 import styles from "./edit-dj-image-field.module.css";
 
 type Props = {
@@ -37,7 +37,8 @@ export const EditDJImageField = ({
 							src={existingImage}
 							alt={`${title} current`}
 						/>
-						<DJImageDropzone
+						<ImageDropzone
+							name="image"
 							key={imageDropzoneKey}
 							id="edit-dj-image-input"
 							compact
@@ -58,7 +59,8 @@ export const EditDJImageField = ({
 				image !== undefined ||
 				isExistingImageRemoved) && (
 				<div className={styles.imageUploadActions}>
-					<DJImageDropzone
+					<ImageDropzone
+						name="image"
 						key={imageDropzoneKey}
 						id="edit-dj-image-input"
 						showLabel={false}

@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
-import { validateDJImageFile } from "../utils/index.js";
-import styles from "./dj-image-crop-modal.module.css";
+import { validateImageFile } from "../utils/index.js";
+import styles from "./image-crop-modal.module.css";
 import {
-	cropDJImage,
-	type DJImageRotation,
-	rotateDJImage,
-} from "./dj-image-crop-utils.js";
+	cropImage,
+	type ImageRotation,
+	rotateImage,
+} from "./image-crop-utils.js";
 
-type DJImageCropModalProps = {
+type ImageCropModalProps = {
 	file: File;
 	onCancel: () => void;
 	onConfirm: (file: File) => void;
@@ -22,17 +22,18 @@ const getFocusableElements = (panel: HTMLElement) =>
 	).filter((element) => !element.hasAttribute("hidden"));
 
 /** Lets an admin position and zoom a square crop before keeping the image. */
-export const DJImageCropModal = ({
+export const ImageCropModal = ({
 	file,
 	onCancel,
 	onConfirm,
-}: DJImageCropModalProps) => {
+}: ImageCropModalProps) => {
+	const id = useId();
 	const panelRef = useRef<HTMLDivElement>(null);
 	const openerRef = useRef<HTMLElement | undefined>(undefined);
 	const [objectUrl, setObjectUrl] = useState("");
 	const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
 	const [zoom, setZoom] = useState(1);
-	const [rotation, setRotation] = useState<DJImageRotation>(0);
+	const [rotation, setRotation] = useState<ImageRotation>(0);
 	const [area, setArea] = useState<Area>();
 	const [error, setError] = useState<string>();
 	const [isSaving, setIsSaving] = useState(false);
@@ -83,8 +84,8 @@ export const DJImageCropModal = ({
 		setError(undefined);
 		setIsSaving(true);
 		try {
-			const cropped = await cropDJImage(file, area, rotation);
-			const validation = validateDJImageFile(cropped);
+			const cropped = await cropImage(file, area, rotation);
+			const validation = validateImageFile(cropped);
 			if (!validation.valid) throw new Error(validation.error);
 			onConfirm(validation.file);
 		} catch (cropError) {
@@ -105,11 +106,11 @@ export const DJImageCropModal = ({
 				className={styles.panel}
 				role="dialog"
 				aria-modal="true"
-				aria-labelledby="dj-image-crop-title"
+				aria-labelledby={`${id}-title`}
 				tabIndex={-1}
 			>
 				<div className={styles.header}>
-					<h2 id="dj-image-crop-title">Crop image</h2>
+					<h2 id={`${id}-title`}>Crop image</h2>
 				</div>
 				<div className={styles.preview}>
 					{objectUrl !== "" && (
@@ -127,9 +128,9 @@ export const DJImageCropModal = ({
 					)}
 				</div>
 				<div className={styles.controls}>
-					<label htmlFor="dj-image-crop-zoom">Zoom</label>
+					<label htmlFor={`${id}-zoom`}>Zoom</label>
 					<input
-						id="dj-image-crop-zoom"
+						id={`${id}-zoom`}
 						type="range"
 						min="1"
 						max="3"
@@ -138,12 +139,12 @@ export const DJImageCropModal = ({
 						onChange={(event) => setZoom(Number(event.target.value))}
 						disabled={isSaving}
 					/>
-					<span id="dj-image-crop-rotation">Rotate</span>
+					<span id={`${id}-rotation`}>Rotate</span>
 					<div className={styles.rotationControls}>
 						<button
 							type="button"
 							onClick={() =>
-								setRotation((current) => rotateDJImage(current, -90))
+								setRotation((current) => rotateImage(current, -90))
 							}
 							disabled={isSaving}
 						>
@@ -151,9 +152,7 @@ export const DJImageCropModal = ({
 						</button>
 						<button
 							type="button"
-							onClick={() =>
-								setRotation((current) => rotateDJImage(current, 90))
-							}
+							onClick={() => setRotation((current) => rotateImage(current, 90))}
 							disabled={isSaving}
 						>
 							Rotate right

@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import {
 	hasFormChanges,
+	ImageCropModal,
 	OnboardingModal,
 	TagsInput,
 	type TagsInputOption,
 	type TagsInputValue,
+	useImageSelection,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { Tag, TagsContainer } from "../../../shared/resource-views/index.js";
-import { DJImageCropModal, useDJImageSelection } from "../../image/index.js";
 import { DJMetadataFields } from "../dj-metadata-fields/index.js";
 import { EditDJImageField } from "../edit-dj-image-field/index.js";
 import styles from "./edit-dj-modal.module.css";
@@ -59,7 +60,7 @@ export const EditDJModal = ({
 		confirmImageCandidate,
 		isExistingImageRemoved,
 		setIsExistingImageRemoved,
-	} = useDJImageSelection(isOpen, dj);
+	} = useImageSelection(isOpen, dj);
 	const initialValues = useRef({
 		title: "",
 		bio: "",
@@ -199,7 +200,7 @@ export const EditDJModal = ({
 				</DJMetadataFields>
 			</OnboardingModal>
 			{imageCandidate !== undefined && (
-				<DJImageCropModal
+				<ImageCropModal
 					file={imageCandidate}
 					onCancel={cancelImageCandidate}
 					onConfirm={confirmImageCandidate}

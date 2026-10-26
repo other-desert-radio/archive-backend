@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import {
 	hasFormChanges,
+	ImageCropModal,
+	ImageDropzone,
 	OnboardingModal,
 	TagsInput,
 	type TagsInputValue,
+	useImageSelection,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
-import {
-	DJImageCropModal,
-	DJImageDropzone,
-	useDJImageSelection,
-} from "../../image/index.js";
 import { DJMetadataFields } from "../dj-metadata-fields/index.js";
 import { buildCreateDJRequest, type CreateDJForm } from "./onboard-dj-utils.js";
 
@@ -37,7 +35,7 @@ export const OnboardDJModal = ({
 		selectImageCandidate,
 		cancelImageCandidate,
 		confirmImageCandidate,
-	} = useDJImageSelection(isOpen);
+	} = useImageSelection(isOpen);
 	const initialValues = useRef({
 		title: "",
 		bio: "",
@@ -128,7 +126,9 @@ export const OnboardDJModal = ({
 					socials={{ value: socials, onChange: setSocials }}
 					bio={{ value: bio, onChange: setBio }}
 				>
-					<DJImageDropzone
+					<ImageDropzone
+						id="onboard-dj-image-input"
+						name="image"
 						key={imageDropzoneKey}
 						{...(image === undefined ? {} : { file: image })}
 						onFileSelected={selectImageCandidate}
@@ -154,7 +154,7 @@ export const OnboardDJModal = ({
 				</DJMetadataFields>
 			</OnboardingModal>
 			{imageCandidate !== undefined && (
-				<DJImageCropModal
+				<ImageCropModal
 					file={imageCandidate}
 					onCancel={cancelImageCandidate}
 					onConfirm={confirmImageCandidate}
