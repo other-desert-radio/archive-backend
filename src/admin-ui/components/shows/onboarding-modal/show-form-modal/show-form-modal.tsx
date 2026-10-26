@@ -4,9 +4,12 @@ import { uploadMixcloud } from "../../../../loaders/upload-mixcloud.js";
 import {
 	commitTagDraft,
 	FileDropzone,
+	ImageCropModal,
+	ImageDropzone,
 	LabeledFormControl,
 	OnboardingModal,
 	TagsInput,
+	useImageSelection,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { SegmentedPicker } from "../../../shared/resource-views/index.js";
@@ -116,6 +119,18 @@ export const ShowFormModal = ({
 	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
 		useShowFormState(initialValues);
 	const [mixcloudConnected, setMixcloudConnected] = useState(false);
+	const {
+		image,
+		imageCandidate,
+		imageError,
+		setImageError,
+		imageDropzoneKey,
+		selectImageCandidate,
+		cancelImageCandidate,
+		confirmImageCandidate,
+		removeImage,
+	} = useImageSelection(true);
+	const [description, setDescription] = useState("");
 	const [mp3, setMP3] = useState<File>();
 	const [mp3Error, setMP3Error] = useState<string>();
 	const [pendingTagIds, setPendingTagIds] = useState(unresolvedTagIds);
@@ -153,6 +168,8 @@ export const ShowFormModal = ({
 		if (isNewShow) {
 			if (!mixcloudConnected)
 				throw new Error("Sign in to Mixcloud before uploading.");
+			if (description.length > 1000)
+				throw new Error("Description must be at most 1000 characters.");
 			if (mp3 === undefined) throw new Error("Choose an MP3 file.");
 			const tags = commitTagDraft(
 				fields.tags.map(({ title }) => title),
@@ -164,6 +181,8 @@ export const ShowFormModal = ({
 				date: fields.date,
 				tags,
 				mp3,
+				description,
+				...(image === undefined ? {} : { image }),
 			});
 			return;
 		}
@@ -238,6 +257,16 @@ export const ShowFormModal = ({
 						setFields={setFields}
 						idPrefix={idPrefix}
 					/>
+					<LabeledFormControl
+						id={`${idPrefix}-description`}
+						name="description"
+						label="description"
+						value={description}
+						onChange={setDescription}
+						textarea
+						maxLength={1000}
+						helper="Up to 1000 characters."
+					/>
 					<TagsInput
 						id={`${idPrefix}-tags`}
 						value={{ tags: fields.tags, draft: fields.tagDraft }}
@@ -249,13 +278,39 @@ export const ShowFormModal = ({
 						{...(tagError === undefined ? {} : { error: tagError })}
 						onRetry={loadTagOptions}
 					/>
+					<ImageDropzone
+						key={imageDropzoneKey}
+						id={`${idPrefix}-image`}
+						name="image"
+						{...(image === undefined ? {} : { file: image })}
+						onFileSelected={selectImageCandidate}
+						onError={setImageError}
+					/>
+					{imageError !== undefined && (
+						<p
+							className="onboarding-modal-helper onboarding-modal-field-error"
+							role="alert"
+						>
+							{imageError}
+						</p>
+					)}
+					{image !== undefined && (
+						<div className={styles.uploadMessage}>
+							<button type="button" onClick={removeImage}>
+								Remove image
+							</button>
+						</div>
+					)}
 					<FileDropzone
 						id={`${idPrefix}-mp3`}
 						label="MP3"
 						name="mp3"
 						accept=".mp3,audio/mpeg"
-						style="horizontal"
-						buttonLabel="Drop MP3 or choose file"
+						buttonLabel={
+							mp3 === undefined
+								? "Drop MP3 or choose file"
+								: `${mp3.name} (${(mp3.size / 1_000_000).toFixed(2)} MB)`
+						}
 						{...(mp3 === undefined ? {} : { file: mp3 })}
 						validateFile={validateShowMP3}
 						onFileSelected={async (file) => setMP3(file)}
@@ -268,9 +323,6 @@ export const ShowFormModal = ({
 					)}
 					{mp3 !== undefined && (
 						<div className={styles.uploadMessage}>
-							<p>
-								{mp3.name} ({mp3.size.toLocaleString()} bytes)
-							</p>
 							<button
 								type="button"
 								onClick={() => {
@@ -291,51 +343,66 @@ export const ShowFormModal = ({
 			break;
 	}
 	return (
-		<OnboardingModal
-			isOpen
-			hasUnsavedChanges={hasUnsavedChanges || mp3 !== undefined}
-			title={modalTitle}
-			headerContent={
-				onboardingMode === undefined
-					? undefined
-					: ({ isSubmitting }) => (
-							<SegmentedPicker<ShowOnboardingMode>
-								label="Show mode"
-								appearance="muted"
-								value={onboardingMode.value}
-								onChange={onboardingMode.onChange}
-								disabled={isSubmitting}
-								options={[
-									{
-										value: "new_show",
-										label: "new show",
-										tooltip: modeDescriptions.new_show,
-									},
-									{
-										value: "existing_show",
-										label: "existing show",
-										tooltip: modeDescriptions.existing_show,
-									},
-								]}
-							/>
-						)
-			}
-			onClose={onClose}
-			onSubmit={submit}
-			cancelLabel="Cancel"
-			isSubmitDisabled={
-				(isNewShow && (!mixcloudConnected || mp3 === undefined)) ||
-				pendingTagIds.length > 0
-			}
-			{...(submitLabel === undefined ? {} : { submitLabel })}
-			{...(submittingLabel === undefined ? {} : { submittingLabel })}
-		>
-			{onboardingMode !== undefined && (
-				<p className={styles.modeDescription}>
-					{modeDescriptions[onboardingMode.value]}
-				</p>
+		<>
+			<OnboardingModal
+				isOpen
+				hasUnsavedChanges={
+					hasUnsavedChanges ||
+					mp3 !== undefined ||
+					image !== undefined ||
+					description !== ""
+				}
+				isCovered={imageCandidate !== undefined}
+				title={modalTitle}
+				headerContent={
+					onboardingMode === undefined
+						? undefined
+						: ({ isSubmitting }) => (
+								<SegmentedPicker<ShowOnboardingMode>
+									label="Show mode"
+									appearance="muted"
+									value={onboardingMode.value}
+									onChange={onboardingMode.onChange}
+									disabled={isSubmitting}
+									options={[
+										{
+											value: "new_show",
+											label: "new show",
+											tooltip: modeDescriptions.new_show,
+										},
+										{
+											value: "existing_show",
+											label: "existing show",
+											tooltip: modeDescriptions.existing_show,
+										},
+									]}
+								/>
+							)
+				}
+				onClose={onClose}
+				onSubmit={submit}
+				cancelLabel="Cancel"
+				isSubmitDisabled={
+					(isNewShow && (!mixcloudConnected || mp3 === undefined)) ||
+					pendingTagIds.length > 0
+				}
+				{...(submitLabel === undefined ? {} : { submitLabel })}
+				{...(submittingLabel === undefined ? {} : { submittingLabel })}
+			>
+				{onboardingMode !== undefined && (
+					<p className={styles.modeDescription}>
+						{modeDescriptions[onboardingMode.value]}
+					</p>
+				)}
+				{elements}
+			</OnboardingModal>
+			{imageCandidate !== undefined && (
+				<ImageCropModal
+					file={imageCandidate}
+					onCancel={cancelImageCandidate}
+					onConfirm={confirmImageCandidate}
+				/>
 			)}
-			{elements}
-		</OnboardingModal>
+		</>
 	);
 };

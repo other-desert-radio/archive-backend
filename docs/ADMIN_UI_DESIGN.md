@@ -171,13 +171,18 @@ changes the title to Onboard Show. A small paragraph above all fields repeats
 the selected mode's native tooltip description. Mode changes preserve form
 values and do not make the form dirty. The picker sits beside the title through
 the existing headerContent slot and disables during submission. New show
-displays title, date, tags, and MP3 selection. Submission requires a connected
-Mixcloud account and selected audio. Submission uploads publicly to Mixcloud;
-confirmed success closes the modal, while errors retain the draft. Existing show
-retains all archive fields and archive-save behavior. The new-show date
-represents the show date, not a scheduled Mixcloud publication time. Closing and
-reopening resets the mode. Editing has no mode picker. Header content may be
-static or a renderer receiving isSubmitting.
+displays title, date, an optional description (up to 1000 characters), tags,
+optional square image selection, and MP3 selection. Description is sent to
+Mixcloud, preserves paragraph breaks, survives mode switches, and counts as an
+unsaved change. The image picker reuses the shared artist crop flow, including
+rotation, zoom, 1200 × 1200 WebP output, replacement, removal, and discard
+protection. Submission requires a connected Mixcloud account and selected audio.
+Submission uploads publicly to Mixcloud; confirmed success closes the modal,
+while errors retain the draft. Existing show retains all archive fields and
+archive-save behavior. The new-show date represents the show date, not a
+scheduled Mixcloud publication time. Closing and reopening resets the mode.
+Editing has no mode picker. Header content may be static or a renderer receiving
+isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
 values, validation, tag loading, DJ selection, and unsaved-change comparison.
@@ -727,11 +732,14 @@ DJ images and new-show MP3 selection use `FileDropzone` from `shared/modal`. Its
 optional `style` prop accepts `square` or `horizontal`; omitting it preserves
 the DJ layout. Image validation, selection, and square cropping live in shared
 `ImageDropzone`, `useImageSelection`, and `ImageCropModal`. Callers supply field
-IDs and names; the crop modal uses unique accessible IDs. Crops produce 1200 ×
-1200 WebP. New shows use a horizontal MP3 dropzone after tags, about three text
-lines tall, with filename, byte size, replacement through the picker/drop area,
-and removal. Selected audio counts as an unsaved change. Selection requires one
-nonempty `.mp3` file, up to 4 billion bytes; the server uses `music-metadata` to
-check for MPEG Layer III audio. Audio has no image preview or cropping.
-Submission uploads to Mixcloud and closes on confirmed success. Failures retain
-the draft; uncertain outcomes ask the user to check Mixcloud before retrying.
+IDs and names; the crop modal uses unique accessible IDs. Image previews have a
+small inset from the drop-target border. Crops produce 1200 × 1200 WebP. New
+shows use the default left-aligned MP3 dropzone after the image, with the same
+minimum control height, filename, byte size, replacement through the picker/drop
+area, and removal. Image and MP3 removal controls align with the left edge of
+their drop targets, in the desktop control column and the stacked mobile column.
+Selected audio counts as an unsaved change. Selection requires one nonempty
+`.mp3` file, up to 4 billion bytes; the server uses `music-metadata` to check
+for MPEG Layer III audio. Audio has no image preview or cropping. Submission
+uploads to Mixcloud and closes on confirmed success. Failures retain the draft;
+uncertain outcomes ask the user to check Mixcloud before retrying.

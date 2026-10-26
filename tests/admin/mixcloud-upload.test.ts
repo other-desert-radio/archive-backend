@@ -1,8 +1,9 @@
 import { expect, spyOn, test } from "bun:test";
-import { readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import multipart from "@fastify/multipart";
 import Fastify from "fastify";
+import sharp from "sharp";
 import type { MixcloudIntegration } from "../../src/admin/routes/mixcloud/index.js";
 import { uploadMixcloudHandler } from "../../src/admin/routes/mixcloud/routes/upload/upload-mixcloud.js";
 // Fixtures are short silent recordings generated with ffmpeg, with no external media.
@@ -32,6 +33,8 @@ const send = async (
 	bytes = audio,
 	filename = "show.mp3",
 	extra?: string,
+	image?: File,
+	imageFirst = false,
 ) => {
 	const app = Fastify();
 	await app.register(multipart, { limits: { fileSize: 1 } });
@@ -47,7 +50,9 @@ const send = async (
 		...changes,
 	}))
 		form.set(name, value);
+	if (imageFirst && image) form.set("image", image);
 	form.set("mp3", new File([bytes], filename));
+	if (!imageFirst && image) form.set("image", image);
 	if (extra) form.append(extra, "duplicate");
 	const request = new Request("http://localhost/upload", {
 		method: "POST",
@@ -192,6 +197,114 @@ test("preserves provider rejection and cleans up the temporary file", async () =
 	});
 	try {
 		expect(await send()).toBe(502);
+	} finally {
+		provider.mockRestore();
+	}
+});
+
+const coverBytes = await sharp({
+	create: { width: 1200, height: 1200, channels: 3, background: "red" },
+})
+	.webp()
+	.toBuffer();
+const cover = new File([coverBytes], "cover.webp", { type: "image/webp" });
+
+test("passes validated WebP unchanged to the client and cleans up both files", async () => {
+	const paths: string[] = [];
+	const provider = spyOn(integration.client, "upload").mockImplementation(
+		async (_token, upload) => {
+			expect(upload.imagePath).toBeDefined();
+			if (!upload.imagePath) throw new Error("Expected image path");
+			expect(await readFile(upload.imagePath)).toEqual(coverBytes);
+			paths.push(upload.path, upload.imagePath);
+			return { success: true, statusCode: 200 };
+		},
+	);
+	try {
+		for (const first of [false, true])
+			expect(await send({}, audio, "show.mp3", undefined, cover, first)).toBe(
+				200,
+			);
+		for (const path of paths) expect(await Bun.file(path).exists()).toBe(false);
+	} finally {
+		provider.mockRestore();
+	}
+});
+
+test("rejects invalid artwork without calling the provider", async () => {
+	const nonSquare = await sharp({
+		create: { width: 1200, height: 600, channels: 3, background: "red" },
+	})
+		.webp()
+		.toBuffer();
+	const png = await sharp(coverBytes).png().toBuffer();
+	const provider = spyOn(integration.client, "upload");
+	try {
+		for (const image of [
+			new File([], "empty.webp", { type: "image/webp" }),
+			new File(["invalid"], "bad.webp", { type: "image/webp" }),
+			new File([coverBytes.subarray(0, 100)], "truncated.webp", {
+				type: "image/webp",
+			}),
+			new File([nonSquare], "wide.webp", { type: "image/webp" }),
+			new File([png], "disguised.webp", { type: "image/webp" }),
+			new File([coverBytes], "cover.png", { type: "image/webp" }),
+			new File([coverBytes], "cover.webp", { type: "image/png" }),
+		])
+			expect(await send({}, audio, "show.mp3", undefined, image)).toBe(400);
+		expect(await send({}, audio, "show.mp3", "image", cover)).toBe(400);
+		expect(provider).not.toHaveBeenCalled();
+	} finally {
+		provider.mockRestore();
+	}
+});
+
+test("enforces image byte limit while streaming and cleans up", async () => {
+	const provider = spyOn(integration.client, "upload");
+	try {
+		const image = new File([new Uint8Array(10_000_001)], "huge.webp", {
+			type: "image/webp",
+		});
+		expect(await send({}, audio, "show.mp3", undefined, image)).toBe(413);
+		expect(provider).not.toHaveBeenCalled();
+	} finally {
+		provider.mockRestore();
+	}
+});
+
+test("cleans up artwork on provider failure", async () => {
+	const provider = spyOn(integration.client, "upload").mockResolvedValue({
+		success: false,
+		statusCode: 502,
+	});
+	try {
+		expect(await send({}, audio, "show.mp3", undefined, cover)).toBe(502);
+	} finally {
+		provider.mockRestore();
+	}
+});
+
+test("forwards optional description verbatim and rejects oversized descriptions", async () => {
+	const provider = spyOn(integration.client, "upload").mockResolvedValue({
+		success: true,
+		statusCode: 200,
+	});
+	try {
+		for (const description of [
+			"",
+			"Line one\nLine two",
+			"x".repeat(1000),
+			"a\n".repeat(500),
+		]) {
+			expect(await send({ description })).toBe(200);
+			expect(provider.mock.calls.at(-1)?.[1].description).toBe(description);
+		}
+		provider.mockClear();
+		expect(await send({ description: "x".repeat(1001) })).toBe(400);
+		expect(provider).not.toHaveBeenCalled();
+		expect(
+			await send({ description: "test" }, audio, "show.mp3", "description"),
+		).toBe(400);
 	} finally {
 		provider.mockRestore();
 	}

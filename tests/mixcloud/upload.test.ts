@@ -1,4 +1,8 @@
 import { expect, test } from "bun:test";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import sharp from "sharp";
 import { uploadToMixcloud } from "../../src/mixcloud/upload.js";
 
 const upload = {
@@ -23,6 +27,7 @@ test("sends disk-backed multipart audio and names, without date or artwork", asy
 			expect(body.get("name")).toBe("Show");
 			expect(body.get("tags-1-tag")).toBe("Disco");
 			expect(body.has("picture")).toBe(false);
+			expect(body.has("description")).toBe(false);
 			expect(body.has("publish_date")).toBe(false);
 			const audio = body.get("mp3");
 			if (!(audio instanceof Blob)) throw new Error("Expected audio blob");
@@ -39,6 +44,47 @@ test("sends disk-backed multipart audio and names, without date or artwork", asy
 	);
 	expect(result.success).toBe(true);
 	expect(result.statusCode).toBe(200);
+});
+
+test("forwards optional WebP artwork unchanged as picture", async () => {
+	const directory = await mkdtemp(join(tmpdir(), "mixcloud-picture-test-"));
+	try {
+		const bytes = await sharp({
+			create: { width: 1200, height: 1200, channels: 3, background: "red" },
+		})
+			.webp()
+			.toBuffer();
+		const imagePath = join(directory, "image.webp");
+		await writeFile(imagePath, bytes);
+		const result = await uploadToMixcloud(
+			"private-token",
+			{ ...upload, imagePath, description: "Line one\nLine two" },
+			async (_url, options) => {
+				const body = options.body;
+				if (!(body instanceof FormData)) throw new Error("Expected multipart");
+				const multipart = await new Request("http://localhost/upload", {
+					method: "POST",
+					body,
+				}).formData();
+				const picture = multipart.get("picture");
+				if (!(picture instanceof File))
+					throw new Error("Expected picture file");
+				expect(body.get("description")).toBe("Line one\nLine two");
+				expect(multipart.get("description")).toBe("Line one\r\nLine two");
+				expect(picture.name).toBe("cover.webp");
+				expect(picture.type).toBe("image/webp");
+				expect(Buffer.from(await picture.arrayBuffer())).toEqual(bytes);
+				expect(body.get("mp3")).toBeInstanceOf(Blob);
+				expect(body.get("name")).toBe("Show");
+				expect(body.get("tags-1-tag")).toBe("Disco");
+				return Response.json({ result: { success: true, key: "/odr/show/" } });
+			},
+		);
+		expect(result.success).toBe(true);
+		expect(result.statusCode).toBe(200);
+	} finally {
+		await rm(directory, { recursive: true, force: true });
+	}
 });
 
 for (const { status, body, expected } of [
