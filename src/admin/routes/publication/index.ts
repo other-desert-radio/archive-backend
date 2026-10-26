@@ -3,5 +3,5 @@ export type {
 	PublicationRouteDependencies,
 	PublicationStartRoute,
 	PublicationStatusRoute,
-} from "./publication-route.js";
-export { publicationRoutes } from "./publication-route.js";
+} from "./publication-routes.js";
+export { publicationRoutes } from "./publication-routes.js";

@@ -1,7 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { extname, resolve, sep } from "node:path";
 import multipart from "@fastify/multipart";
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import { accountAccessGuard } from "../auth/access.js";
 import type { auth } from "../auth/auth.js";
 import { requireSameOrigin } from "../auth/security.js";
@@ -19,23 +17,15 @@ import {
 	publicationRoutes,
 } from "./routes/publication/index.js";
 import { showRoutes } from "./routes/shows/index.js";
-import { adminStatusRoutes } from "./routes/status.js";
+import { adminStatusRoutes } from "./routes/status/index.js";
 import { tagRoutes } from "./routes/tags/index.js";
-import type { ErrorResponse, TypedDatabase } from "./routes/types.js";
+import type { TypedDatabase } from "./routes/types.js";
+import { adminUiRoutes } from "./routes/ui/index.js";
 import { userRoutes } from "./routes/users/index.js";
 
 export type { TypedDatabase } from "./routes/types.js";
 
 type BetterAuth = typeof auth;
-
-type AdminUiRoute = {
-	Params: { "*"?: string };
-	Reply: {
-		200: Buffer;
-		404: ErrorResponse;
-		503: ErrorResponse;
-	};
-};
 
 /**
  * Registers session-protected archive APIs; account management adds admin checks.
@@ -96,55 +86,6 @@ const adminApiRoutes = (
 			mixcloudRoutes({ auth, ...(mixcloud ? { integration: mixcloud } : {}) }),
 		);
 	};
-};
-
-/** Serves the public SPA shell and assets; APIs enforce account access. */
-const adminUiRoutes: FastifyPluginAsync = async (app) => {
-	const adminUiRoot = resolve(process.cwd(), "dist/admin");
-
-	const serveAdminFile = async (
-		request: FastifyRequest,
-		reply: FastifyReply,
-	) => {
-		const wildcard = (request.params as { "*"?: string })["*"];
-		const relativePath = wildcard || "index.html";
-		const filePath = resolve(adminUiRoot, relativePath);
-
-		if (
-			filePath !== adminUiRoot &&
-			!filePath.startsWith(`${adminUiRoot}${sep}`)
-		) {
-			return reply.code(404).send({ error: "Not Found" });
-		}
-
-		try {
-			const file = await readFile(filePath);
-			return reply.type(contentTypeFor(filePath)).send(file);
-		} catch (error) {
-			request.log.error(error, "Unable to load admin UI asset");
-			return reply.code(wildcard ? 404 : 503).send({
-				error: wildcard ? "Not Found" : "Admin UI is unavailable",
-			});
-		}
-	};
-
-	app.get<AdminUiRoute>("/", serveAdminFile);
-	app.get<AdminUiRoute>("/*", serveAdminFile);
-};
-
-const contentTypeFor = (filePath: string): string => {
-	switch (extname(filePath)) {
-		case ".css":
-			return "text/css";
-		case ".js":
-			return "application/javascript";
-		case ".svg":
-			return "image/svg+xml";
-		case ".json":
-			return "application/json";
-		default:
-			return "text/html";
-	}
 };
 /**
  * Registers the authenticated admin boundary.

@@ -132,7 +132,7 @@ for (const [field, value] of [
 		await expect(page.locator(`#edit-tag-${field}`)).toHaveValue(next);
 	});
 }
-test("previews valid colors, clears metadata, and reviews unchanged saves", async ({
+test("previews valid colors, disables reverted saves, and clears metadata", async ({
 	page,
 	request,
 	tag,
@@ -160,9 +160,10 @@ test("previews valid colors, clears metadata, and reviews unchanged saves", asyn
 	);
 	await page.locator("#edit-tag-color").fill(tag.color);
 	await page.locator("#edit-tag-title").fill(tag.title);
-	await save(page);
-	expect((await loadTag(request, tag.id)).reviewed).toBe(true);
-	await open(page, tag.id);
+	await expect(
+		form.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
+	expect(await loadTag(request, tag.id)).toEqual(tag);
 	await page.locator("#edit-tag-mixcloud-key").fill("");
 	await page.locator("#edit-tag-mixcloud-url").fill("");
 	await save(page);

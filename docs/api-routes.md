@@ -85,26 +85,71 @@ src/admin/
   admin.ts
   routes/
     types.ts
-    status.ts
+    status/
+      index.ts
+      status-routes.ts
+      routes/
+        get-admin-status.ts
     djs/
       index.ts
-      djs-route.ts
+      djs-routes.ts
       types.ts
+      serve-dj-image.ts
+      routes/
+        list-djs.ts
+        get-dj-image.ts
+        get-dj-default-image.ts
+        create-dj.ts
+        modify-dj.ts
+        remove-dj.ts
     shows/
       index.ts
-      shows-route.ts
+      shows-routes.ts
+      routes/
+        list-shows.ts
+        create-show.ts
+        modify-show.ts
     tags/
       index.ts
-      tags-route.ts
+      tags-routes.ts
+      routes/
+        list-tags.ts
+        ...
 ```
 
-Each resource subfolder uses `index.ts` as a barrel. Put the implementation in
-the named `*-route.ts` file and re-export it from the index:
+Each resource subfolder uses `index.ts` as its public barrel. The named
+`*-routes.ts` file owns the complete HTTP method/path map, wires handlers, and
+registers shared plugin hooks. Re-export the plugin from the index:
 
 ```ts
-export { djRoutes } from "./djs-route.js";
+export { djRoutes } from "./djs-routes.js";
 export type { CreateDJRequest } from "./types.js";
 ```
+
+Give every endpoint a private handler file in the resource's nested `routes/`
+directory. Handlers receive only their required dependencies, declare typed
+Fastify request/reply parameters, and own validation, persistence, logging, and
+responses. Keep shared wire contracts in the resource's `types.ts` and shared
+helpers at the resource root. Import private handlers directly; they do not need
+public barrel exports.
+
+For example, `djs-routes.ts` registers
+`app.post<CreateDJRoute>("/create-dj", createDJHandler(database))` and imports
+the handler from `./routes/create-dj.js`. Handler files do not register URLs.
+When two endpoints share behavior, keep their individual handlers and extract
+the shared implementation, such as `serve-dj-image.ts` for both image endpoints.
+Preserve existing helpers rather than adding a service layer just for this
+split.
+
+Keep authorization, origin checks, multipart setup, and plugin lifecycle hooks
+at their existing registration boundaries. Publication owns its active stream
+set and shutdown hook; its events handler receives that set. Auth/account
+registration files, public SPA routes, and the health route also delegate to
+separate handler files. Each group uses the same `index.ts`, `*-routes.ts`, and
+nested `routes/` layout. Auth/account and health groups live in `src/routes/`;
+admin resource, status, and UI groups live in `src/admin/routes/`. Better Auth
+remains behind its single allowlisted wildcard proxy; provider internals are not
+application-owned route handlers.
 
 Register the resource plugin from `adminApiRoutes` and pass the typed database
 into it:

@@ -83,6 +83,7 @@ test("sidebar arrows and highlights use consistent link spacing", async ({
 		"⤷ tags",
 		"⤷ mixcloudimport",
 		"⤷ users",
+		"⤷ upload",
 	]);
 	const shows = sidebar.getByRole("link", { name: "⤷ shows" });
 	await expect(shows).toHaveCSS("font-weight", "400");
@@ -92,6 +93,7 @@ test("sidebar arrows and highlights use consistent link spacing", async ({
 	expect(await shows.boundingBox()).toEqual(before);
 	await page.mouse.move(1000, 600);
 	await expect(shows).toHaveCSS("font-weight", "400");
+	await page.getByRole("button", { name: "Account", exact: true }).focus();
 	await page.keyboard.press("Tab");
 	await expect(shows).toBeFocused();
 	await expect(shows).toHaveCSS("font-weight", "700");

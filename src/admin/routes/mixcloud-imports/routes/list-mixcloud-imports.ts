@@ -1,0 +1,115 @@
+import type { FastifyReply, FastifyRequest } from "fastify";
+import { jsonArrayFrom } from "kysely/helpers/postgres";
+import type { TypedDatabase } from "../../types.js";
+import { decodedDjsExist } from "../dj-match-expressions.js";
+import type {
+	ListMixcloudImportsRoute,
+	MixcloudImportAdminRow,
+} from "../types.js";
+
+export const listMixcloudImportsHandler =
+	(database: TypedDatabase) =>
+	async (
+		request: FastifyRequest<ListMixcloudImportsRoute>,
+		reply: FastifyReply<ListMixcloudImportsRoute>,
+	) => {
+		request.log.info(
+			"[Mixcloud Imports] loading -- /api/admin/mixcloud-imports",
+		);
+		try {
+			const rows = await database
+				.selectFrom("mixcloud_import")
+				.leftJoin("shows", "shows.id", "mixcloud_import.show_id")
+				.select([
+					"mixcloud_import.id",
+					"mixcloud_import.data_changed",
+					"mixcloud_import.key",
+					"mixcloud_import.show_id",
+					"mixcloud_import.imported_at",
+					"shows.title as show_name",
+					"mixcloud_import.duration",
+					"mixcloud_import.mixcloud_tags",
+					"mixcloud_import.url",
+					"mixcloud_import.name",
+					"mixcloud_import.created_time",
+					"mixcloud_import.derived_title",
+					"mixcloud_import.derived_date",
+					"mixcloud_import.decoded_djs",
+					"mixcloud_import.parser_version",
+					"mixcloud_import.parser_key",
+					"mixcloud_import.date_source",
+					"mixcloud_import.image_small",
+					"mixcloud_import.image_large",
+				])
+				.select((eb) => [
+					jsonArrayFrom(
+						eb
+							.selectFrom("show_djs")
+							.innerJoin("djs", "djs.id", "show_djs.dj_id")
+							.select(["djs.id", "djs.title"])
+							.whereRef("show_djs.show_id", "=", "mixcloud_import.show_id")
+							.distinct()
+							.orderBy("djs.id"),
+					).as("linked_djs"),
+					jsonArrayFrom(
+						eb
+							.selectFrom("show_tags")
+							.select("tag_id")
+							.whereRef("show_tags.show_id", "=", "mixcloud_import.show_id")
+							.distinct()
+							.orderBy("tag_id"),
+					).as("linked_tags"),
+				])
+				.select(decodedDjsExist)
+				.orderBy("mixcloud_import.id")
+				.execute();
+			const result: MixcloudImportAdminRow[] = rows.map((row) => ({
+				id: row.id,
+				decoded_djs_exist: row.decoded_djs_exist,
+				data_changed: row.data_changed,
+				...(row.mixcloud_tags == null
+					? {}
+					: { mixcloud_tags: row.mixcloud_tags }),
+				key: row.key,
+				...(row.url === null ? {} : { url: row.url }),
+				...(row.name === null ? {} : { name: row.name }),
+				...(row.created_time === null
+					? {}
+					: { created_time: row.created_time.toISOString() }),
+				...(row.derived_title === null
+					? {}
+					: { derived_title: row.derived_title }),
+				...(row.derived_date === null
+					? {}
+					: { derived_date: row.derived_date.toISOString() }),
+				...(row.decoded_djs === null ? {} : { decoded_djs: row.decoded_djs }),
+				...(row.parser_version === null
+					? {}
+					: { parser_version: row.parser_version }),
+				...(row.parser_key === null ? {} : { parser_key: row.parser_key }),
+				...(row.date_source === null ? {} : { date_source: row.date_source }),
+				...(row.image_small === null ? {} : { image_small: row.image_small }),
+				...(row.image_large === null ? {} : { image_large: row.image_large }),
+				...(row.show_id === null ? {} : { show_id: row.show_id }),
+				...(row.imported_at === null
+					? {}
+					: { imported_at: row.imported_at.toISOString() }),
+				...(row.show_name === null ? {} : { show_name: row.show_name }),
+				...(row.duration === null ? {} : { duration: row.duration }),
+				djs: row.linked_djs.map((dj) => dj.id),
+				dj_names: row.linked_djs.map((dj) => dj.title),
+				tags: row.linked_tags.map((tag) => tag.tag_id),
+			}));
+			request.log.info(
+				{ count: result.length },
+				`[Mixcloud Imports] loaded -- ${result.length} records`,
+			);
+			return result;
+		} catch (error) {
+			request.log.error(
+				{ err: error },
+				"[Mixcloud Imports] failed -- /api/admin/mixcloud-imports",
+			);
+			return reply.code(500).send({ error: "Internal Server Error" });
+		}
+	};

@@ -1,4 +1,4 @@
-export { djRoutes } from "./djs-route.js";
+export { djRoutes } from "./djs-routes.js";
 export type {
 	CreateDJMultipartForm,
 	CreateDJMultipartResult,
