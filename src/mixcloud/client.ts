@@ -1,6 +1,11 @@
 import * as oauth from "oauth4webapi";
 import { isMatching, P } from "ts-pattern";
 import type { MixcloudConfig } from "./config.js";
+import {
+	type MixcloudUpload,
+	type MixcloudUploadResult,
+	uploadToMixcloud,
+} from "./upload.js";
 
 const server: oauth.AuthorizationServer = {
 	issuer: "https://www.mixcloud.com",
@@ -10,6 +15,10 @@ const server: oauth.AuthorizationServer = {
 
 export type MixcloudIdentity = { key: string; displayName: string };
 export type MixcloudClient = {
+	upload: (
+		accessToken: string,
+		upload: MixcloudUpload,
+	) => Promise<MixcloudUploadResult>;
 	authorizationUrl: (state: string) => string;
 	/** Caller must first consume the session-bound authorization attempt. */
 	exchangeCode: (
@@ -51,6 +60,8 @@ export const createMixcloudClient = (
 	const client: oauth.Client = { client_id: config.clientId };
 
 	return {
+		upload: (accessToken, upload) =>
+			uploadToMixcloud(accessToken, upload, fetcher),
 		authorizationUrl(state) {
 			// Pure URL construction: state links this browser trip to a stored attempt.
 			// Neither the client secret nor an access token belongs in this URL.

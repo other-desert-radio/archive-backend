@@ -46,6 +46,10 @@ export type UploadMixcloudRoute = {
 		400: MixcloudUploadResponse;
 		413: MixcloudUploadResponse;
 		500: MixcloudUploadResponse;
-		501: MixcloudUploadResponse;
+		403: MixcloudUploadResponse;
+		429: MixcloudUploadResponse;
+		502: MixcloudUploadResponse;
+		503: MixcloudUploadResponse;
+		504: MixcloudUploadResponse;
 	};
 };

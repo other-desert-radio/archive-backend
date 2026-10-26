@@ -240,6 +240,7 @@ test("shared boundary rejects anonymous, forbidden and password-change sessions"
 				"/api/admin/mixcloud/callback?state=private-state&code=private-code",
 			],
 			["POST", "/api/admin/mixcloud/disconnect"],
+			["POST", "/api/admin/mixcloud/upload"],
 		] as const) {
 			const response = await app.inject({
 				method,
@@ -485,5 +486,20 @@ test("application request/response logs omit callback query strings, including u
 		} finally {
 			logging.mockRestore();
 		}
+	}
+});
+
+test("upload rejects foreign or missing origins before token access", async () => {
+	const { app } = await setup();
+	for (const headers of [
+		{ cookie: "archive=session", origin: "https://attacker.example" },
+		{ cookie: "archive=session" },
+	]) {
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/admin/mixcloud/upload",
+			headers,
+		});
+		expect(response.statusCode).toBe(403);
 	}
 });

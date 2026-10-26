@@ -1,18 +1,15 @@
 import { createWriteStream } from "node:fs";
-import { mkdtemp, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { stat } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
-import type { FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyRequest } from "fastify";
 import { parseFile } from "music-metadata";
 import { isMatching, P } from "ts-pattern";
-import type { UploadMixcloudRoute } from "../types.js";
 
 const maxMP3Bytes = 4_000_000_000;
 
 /** Streams untrusted audio to a server-owned path; the caller owns cleanup. */
-const receiveUpload = async (request: FastifyRequest, path: string) => {
-	const reject = (reason: string) => {
+export const receiveUpload = async (request: FastifyRequest, path: string) => {
+	const reject = (reason: string): false => {
 		request.log.warn({ reason }, "[Mixcloud Upload] rejected");
 		return false;
 	};
@@ -145,48 +142,4 @@ const receiveUpload = async (request: FastifyRequest, path: string) => {
 		tags: tags.map((tag) => tag.trim()),
 		path,
 	};
-};
-
-/** Authenticated by the admin boundary. Provider upload remains unimplemented. */
-export const uploadMixcloudHandler = async (
-	request: FastifyRequest<UploadMixcloudRoute>,
-	reply: FastifyReply<UploadMixcloudRoute>,
-) => {
-	const startedAt = Date.now();
-	let directory: string | undefined;
-	let status: 400 | 413 | 500 | 501 = 500;
-	try {
-		request.log.info("[Mixcloud Upload] receiving");
-		directory = await mkdtemp(join(tmpdir(), "archive-mixcloud-upload-"));
-		const upload = await receiveUpload(request, join(directory, "audio.mp3"));
-		status = upload ? 501 : 400;
-		if (upload)
-			request.log.info(
-				"[Mixcloud Upload] validated; provider upload not implemented",
-			);
-	} catch (error) {
-		if (isMatching({ statusCode: 413 }, error)) {
-			status = 413;
-			request.log.warn(
-				{ reason: "multipart_limit_exceeded" },
-				"[Mixcloud Upload] rejected",
-			);
-		} else request.log.error("[Mixcloud Upload] receiving failed");
-	} finally {
-		// Finish cleanup before sending a response, including on invalid input or stream failure.
-		if (directory !== undefined) {
-			try {
-				await rm(directory, { recursive: true, force: true });
-				request.log.info("[Mixcloud Upload] temporary files removed");
-			} catch {
-				status = 500;
-				request.log.error("[Mixcloud Upload] temporary file cleanup failed");
-			}
-		}
-	}
-	request.log.info(
-		{ statusCode: status, elapsedMs: Date.now() - startedAt },
-		"[Mixcloud Upload] completed",
-	);
-	return reply.code(status).send({ success: false });
 };

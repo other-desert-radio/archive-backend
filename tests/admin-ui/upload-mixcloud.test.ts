@@ -1,7 +1,7 @@
 import { expect, spyOn, test } from "bun:test";
 import { uploadMixcloud } from "../../src/admin-ui/loaders/upload-mixcloud.js";
 
-for (const status of [400, 413, 501]) {
+for (const status of [400, 413, 502]) {
 	test(`upload loader sends metadata/audio and preserves failure for HTTP ${status}`, async () => {
 		const fetcher = spyOn(globalThis, "fetch").mockImplementation(
 			async (input, init) => {
@@ -26,8 +26,8 @@ for (const status of [400, 413, 501]) {
 					mp3: new File(["audio"], "show.mp3"),
 				}),
 			).rejects.toThrow(
-				status === 501
-					? "validation completed"
+				status === 502
+					? "Unable to confirm"
 					: status === 413
 						? "exceeds"
 						: "Upload failed",

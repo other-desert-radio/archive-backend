@@ -24,9 +24,14 @@ export const uploadMixcloud = async (fields: {
 			"Unable to confirm upload. Check Mixcloud before trying again.",
 		);
 	}
-	if (response.status === 501)
+	if (response.status === 403)
+		throw new Error("Reconnect Mixcloud before uploading again.");
+	if (response.status === 503) throw new Error("Mixcloud is not configured.");
+	if (response.status === 429)
+		throw new Error("Mixcloud rate limit reached. Wait before trying again.");
+	if (response.status === 502 || response.status === 504)
 		throw new Error(
-			"MP3 validation completed. Mixcloud upload is not connected yet.",
+			"Unable to confirm Mixcloud upload. Check your Mixcloud account before retrying.",
 		);
 	if (response.status === 413)
 		throw new Error("The upload exceeds the allowed size or field limits.");

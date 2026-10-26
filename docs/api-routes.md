@@ -76,13 +76,25 @@ accepts a user or session ID from the browser. Responses use
   to private temporary storage, is parsed with `music-metadata` to require MPEG
   Layer III audio, and is deleted before the response. Invalid requests return
   400; multipart size/count limits return 413; storage errors return 500, all
-  with `{success:false}`. Valid requests currently return HTTP 501 with
-  `{success:false}` because provider upload is not implemented. No token access,
-  provider calls, or database writes occur yet. Completed provider uploads will
-  return `{success:true}`. Upload lifecycle logs include received byte count,
-  validation rejection reasons, detected codec/sample rate, cleanup, final
-  status, and elapsed milliseconds. Request logs provide the correlation ID;
-  audio bytes, metadata values, credentials, and temporary paths are not logged.
+  with `{success:false}`. The acting user's stored token is decrypted
+  server-side; disabled integrations return 503 and disconnected/rejected
+  connections return 403. Valid audio is sent to Mixcloud as `mp3`, title as
+  `name`, and tags as `tags-X-tag`, using the separate provider function in
+  `src/mixcloud/upload.ts`. Date and artwork are omitted; publication uses
+  Mixcloud's public default. Confirmed provider success returns 200 with
+  `{success:true}`. Provider rate limits return 429, unconfirmed/rejected
+  uploads return 502, and timeouts return 504, all with `{success:false}`.
+  Uploads have a 30-minute provider timeout and are never automatically retried.
+  Check Mixcloud before retrying an uncertain result. No archive record is
+  created.
+
+  Diagnostic logs include the full provider response body and HTTP status, with
+  credential fields and the acting token redacted. Unknown response shapes are
+  logged and treated as unconfirmed; success currently requires HTTP success
+  plus JSON `{success:true}` with no error. Upload lifecycle logs include byte
+  count, rejection reasons, detected codec/sample rate, cleanup, final status,
+  and elapsed milliseconds. Request logs provide correlation IDs. Audio bytes,
+  request metadata values, token-bearing URLs, and temporary paths are omitted.
 
 Mixcloud responses also use `Referrer-Policy: no-referrer`. Application, admin,
 and origin-rejection request logs record paths without query strings to exclude
