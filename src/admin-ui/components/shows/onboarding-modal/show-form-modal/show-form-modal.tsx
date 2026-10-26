@@ -14,10 +14,18 @@ import {
 } from "../show-form-state/index.js";
 import { ShowRelationshipFields } from "../show-relationship-fields/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
+import styles from "./show-form-modal.module.css";
 
 export type { ShowFormValues } from "../show-form-state/index.js";
 
 export type ShowOnboardingMode = "new_show" | "existing_show";
+
+const modeDescriptions: Record<ShowOnboardingMode, string> = {
+	new_show:
+		"This show doesn't exist on Mixcloud yet. Submitting this form will upload there.",
+	existing_show:
+		"This show already exists on Mixcloud. This form will onboard it to our platform.",
+};
 
 export type ShowOnboardingModeControl = {
 	value: ShowOnboardingMode;
@@ -179,14 +187,12 @@ export const ShowFormModal = ({
 									{
 										value: "new_show",
 										label: "new show",
-										tooltip:
-											"This show doesn't exist on Mixcloud yet. Submitting this form will upload there.",
+										tooltip: modeDescriptions.new_show,
 									},
 									{
 										value: "existing_show",
 										label: "existing show",
-										tooltip:
-											"This show already exists on Mixcloud. This form will onboard it to our platform.",
+										tooltip: modeDescriptions.existing_show,
 									},
 								]}
 							/>
@@ -199,6 +205,11 @@ export const ShowFormModal = ({
 			{...(submitLabel === undefined ? {} : { submitLabel })}
 			{...(submittingLabel === undefined ? {} : { submittingLabel })}
 		>
+			{onboardingMode !== undefined && (
+				<p className={styles.modeDescription}>
+					{modeDescriptions[onboardingMode.value]}
+				</p>
+			)}
 			{elements}
 		</OnboardingModal>
 	);

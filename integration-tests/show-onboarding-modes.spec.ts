@@ -42,7 +42,17 @@ for (const width of [1280, 390, 320]) {
 			exact: true,
 		});
 		await expect(newShow).toHaveAttribute("aria-pressed", "true");
+		await expect(
+			modal
+				.locator("p")
+				.filter({ hasText: "This show doesn't exist on Mixcloud yet." }),
+		).toBeVisible();
 		await existingShow.click();
+		await expect(
+			modal
+				.locator("p")
+				.filter({ hasText: "This show already exists on Mixcloud." }),
+		).toBeVisible();
 		await expect(
 			modal.getByRole("button", { name: "Submit", exact: true }),
 		).toBeDisabled();
@@ -56,11 +66,11 @@ for (const width of [1280, 390, 320]) {
 		).toBeVisible();
 		await expect(newShow).toHaveAttribute(
 			"title",
-			"This is for a show that doesn't yet exist on Mixcloud. Submitting here will upload to Mixcloud.",
+			"This show doesn't exist on Mixcloud yet. Submitting this form will upload there.",
 		);
 		await expect(existingShow).toHaveAttribute(
 			"title",
-			"This is for a show that already exists on Mixcloud. You're bringing it over.",
+			"This show already exists on Mixcloud. This form will onboard it to our platform.",
 		);
 		await expect(existingShow).toHaveCSS("color", "rgb(255, 255, 255)");
 		await expect(newShow).toHaveCSS("color", "rgb(153, 153, 153)");
