@@ -1,4 +1,5 @@
 export * from "./comma-separated-tags-field/index.js";
+export * from "./file-dropzone/index.js";
 export * from "./labeled-form-control/index.js";
 export * from "./message-modal/index.js";
 export * from "./onboarding-modal/index.js";

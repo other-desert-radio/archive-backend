@@ -1,7 +1,10 @@
 import { type ReactNode, useEffect, useState } from "react";
+import { loadMixcloudConnection } from "../../../../loaders/mixcloud-connection.js";
 import {
+	FileDropzone,
 	LabeledFormControl,
 	OnboardingModal,
+	TagsInput,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { SegmentedPicker } from "../../../shared/resource-views/index.js";
@@ -15,6 +18,7 @@ import {
 import { ShowRelationshipFields } from "../show-relationship-fields/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 import styles from "./show-form-modal.module.css";
+import { validateShowMP3 } from "./validate-show-mp3.js";
 
 export type { ShowFormValues } from "../show-form-state/index.js";
 
@@ -51,6 +55,41 @@ type Props = ShowFormOptions & {
 	onSubmit: (request: CreateShowForm) => Promise<void>;
 };
 
+/** Loads identity only; upload credentials stay on the server. */
+const MixcloudSignInText = () => {
+	const [text, setText] = useState<ReactNode>("Checking Mixcloud sign-in…");
+	useEffect(() => {
+		let active = true;
+		loadMixcloudConnection()
+			.then((status) => {
+				if (!active) return;
+				setText(
+					status.connected ? (
+						<>
+							Signed in as <strong>{status.account.displayName}</strong> via
+							Mixcloud
+						</>
+					) : status.configured ? (
+						"Not signed in via Mixcloud."
+					) : (
+						"Mixcloud is not configured."
+					),
+				);
+			})
+			.catch(() => {
+				if (active) setText("Unable to check Mixcloud sign-in.");
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return (
+		<p className={styles.mixcloudStatus} role="status">
+			{text}
+		</p>
+	);
+};
+
 /** Shared Show create/edit values, controls, validation, and modal lifecycle. */
 export const ShowFormModal = ({
 	onboardingMode,
@@ -69,6 +108,8 @@ export const ShowFormModal = ({
 }: Props) => {
 	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
 		useShowFormState(initialValues);
+	const [mp3, setMP3] = useState<File>();
+	const [mp3Error, setMP3Error] = useState<string>();
 	const [pendingTagIds, setPendingTagIds] = useState(unresolvedTagIds);
 	const { tagOptions, isTagsLoading, tagsError, loadTagOptions } =
 		useTagOptions(true);
@@ -99,7 +140,9 @@ export const ShowFormModal = ({
 			? "Some assigned tags could not be loaded. Retry before saving."
 			: undefined);
 	const { image_small, image_large, url } = fields;
+	const isNewShow = onboardingMode?.value === "new_show";
 	const submit = async () => {
+		if (isNewShow) throw new Error("Mixcloud upload is not available yet.");
 		if (pendingTagIds.length > 0)
 			throw new Error("Assigned tags must finish loading before saving.");
 		if (isDJsLoading || djsError !== undefined)
@@ -163,6 +206,61 @@ export const ShowFormModal = ({
 	let elements: ReactNode;
 	switch (onboardingMode?.value) {
 		case "new_show":
+			elements = (
+				<>
+					<MixcloudSignInText />
+					<ShowTitleDateFields
+						fields={fields}
+						setFields={setFields}
+						idPrefix={idPrefix}
+					/>
+					<TagsInput
+						id={`${idPrefix}-tags`}
+						value={{ tags: fields.tags, draft: fields.tagDraft }}
+						onChange={({ tags, draft }) =>
+							setFields({ ...fields, tags, tagDraft: draft })
+						}
+						options={tagOptions}
+						isLoading={isTagsLoading}
+						{...(tagError === undefined ? {} : { error: tagError })}
+						onRetry={loadTagOptions}
+					/>
+					<FileDropzone
+						id={`${idPrefix}-mp3`}
+						label="MP3"
+						name="mp3"
+						accept=".mp3,audio/mpeg"
+						style="horizontal"
+						buttonLabel="Drop MP3 or choose file"
+						{...(mp3 === undefined ? {} : { file: mp3 })}
+						validateFile={validateShowMP3}
+						onFileSelected={async (file) => setMP3(file)}
+						onError={setMP3Error}
+					/>
+					{mp3Error !== undefined && (
+						<p className={styles.uploadMessage} role="alert">
+							{mp3Error}
+						</p>
+					)}
+					{mp3 !== undefined && (
+						<div className={styles.uploadMessage}>
+							<p>
+								{mp3.name} ({mp3.size.toLocaleString()} bytes)
+							</p>
+							<button
+								type="button"
+								onClick={() => {
+									setMP3(undefined);
+									setMP3Error(undefined);
+								}}
+							>
+								Remove MP3
+							</button>
+						</div>
+					)}
+				</>
+			);
+			break;
 		case "existing_show":
 		case undefined:
 			elements = commonFields;
@@ -171,7 +269,7 @@ export const ShowFormModal = ({
 	return (
 		<OnboardingModal
 			isOpen
-			hasUnsavedChanges={hasUnsavedChanges}
+			hasUnsavedChanges={hasUnsavedChanges || mp3 !== undefined}
 			title={modalTitle}
 			headerContent={
 				onboardingMode === undefined
@@ -201,7 +299,10 @@ export const ShowFormModal = ({
 			onClose={onClose}
 			onSubmit={submit}
 			cancelLabel="Cancel"
-			isSubmitDisabled={pendingTagIds.length > 0}
+			isSubmitDisabled={isNewShow || pendingTagIds.length > 0}
+			{...(isNewShow
+				? { actionHelper: "Mixcloud upload is not available yet." }
+				: {})}
 			{...(submitLabel === undefined ? {} : { submitLabel })}
 			{...(submittingLabel === undefined ? {} : { submittingLabel })}
 		>

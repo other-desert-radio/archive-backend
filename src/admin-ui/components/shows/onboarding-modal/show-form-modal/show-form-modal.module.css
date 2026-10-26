@@ -4,3 +4,18 @@
 	font-size: var(--modal-helper-size);
 	line-height: 1.5;
 }
+
+.mixcloudStatus {
+	grid-column: 1 / -1;
+	margin: 0;
+	padding: var(--modal-control-padding);
+	border: 1px dashed #000;
+	font-style: italic;
+	overflow-wrap: anywhere;
+}
+
+.uploadMessage {
+	grid-column: 1 / -1;
+	margin: 0;
+	overflow-wrap: anywhere;
+}

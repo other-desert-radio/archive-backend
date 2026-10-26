@@ -112,7 +112,10 @@ test("Show selections and failed submissions retain unsaved changes", async ({
 }) => {
 	await page.goto("/admin/#shows");
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
-	const form = page.getByRole("dialog", { name: "New Show" });
+	await page
+		.getByRole("button", { name: "existing show", exact: true })
+		.click();
+	const form = page.getByRole("dialog", { name: "Onboard Show" });
 	await form.getByRole("combobox", { name: "Search DJs" }).focus();
 	const option = form.getByRole("option").first();
 	const djName = await option.innerText();
@@ -129,6 +132,9 @@ test("Show selections and failed submissions retain unsaved changes", async ({
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(form).toBeHidden();
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
+	await page
+		.getByRole("button", { name: "existing show", exact: true })
+		.click();
 	await page.locator("#show-title").fill("Draft");
 	await page.locator("#show-date").fill("2026-09-29");
 	await page.locator("#show-duration").fill("3600");
@@ -344,7 +350,10 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	});
 	await page.goto("/admin/#shows");
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
-	const form = page.getByRole("dialog", { name: "New Show" });
+	await page
+		.getByRole("button", { name: "existing show", exact: true })
+		.click();
+	const form = page.getByRole("dialog", { name: "Onboard Show" });
 	await expect(form).toBeFocused();
 	const duration = form.getByRole("spinbutton", { name: "duration (seconds)" });
 	await expect(duration).toHaveAttribute("min", "1");

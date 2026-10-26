@@ -169,10 +169,12 @@ Show onboarding defaults to new show with the title New Show; existing show
 changes the title to Onboard Show. A small paragraph above all fields repeats
 the selected mode's native tooltip description. Mode changes preserve form
 values and do not make the form dirty. The picker sits beside the title through
-the existing headerContent slot and disables during submission. Both modes
-currently share fields and archive-save behavior; the new-show tooltip describes
-future Mixcloud upload behavior. Closing and reopening resets the mode. Editing
-has no mode picker. Header content may be static or a renderer receiving
+the existing headerContent slot and disables during submission. New show
+displays only title, date, and tags; submission is disabled with an explanation
+until Mixcloud upload is connected. Existing show retains all archive fields and
+archive-save behavior. The new-show date represents the show date, not a
+scheduled Mixcloud publication time. Closing and reopening resets the mode.
+Editing has no mode picker. Header content may be static or a renderer receiving
 isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
@@ -716,3 +718,15 @@ means the archive reached GitHub; deployment can still be running.
 `integration-tests/publication-ui.spec.ts` mocks mutations and covers
 confirmation, progress, closure/reopening, refresh, retry, editor isolation, and
 phone widths.
+
+### Shared file selection
+
+DJ images and new-show MP3 selection use `FileDropzone` from `shared/modal`. Its
+optional `style` prop accepts `square` or `horizontal`; omitting it preserves
+the DJ layout. DJ validation and crop behavior stay in the DJ image wrapper. New
+shows use a horizontal MP3 dropzone after tags, about three text lines tall,
+with filename, byte size, replacement through the picker/drop area, and removal.
+Selected audio counts as an unsaved change. Selection requires one nonempty
+`.mp3` file, up to 4 billion bytes; server-side content validation belongs to
+the later upload endpoint. Audio has no image preview or cropping. New-show
+submission stays disabled until upload integration.
