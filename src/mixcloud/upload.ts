@@ -58,8 +58,9 @@ export const uploadToMixcloud = async (
 		}
 		const success =
 			response.ok &&
-			isMatching({ success: true }, result) &&
-			!isMatching({ error: P.nonNullable }, result);
+			!isMatching({ error: P.nonNullable }, result) &&
+			!isMatching({ result: { error: P.nonNullable } }, result) &&
+			isMatching({ result: { success: true } }, result);
 		return {
 			success,
 			providerStatus: response.status,

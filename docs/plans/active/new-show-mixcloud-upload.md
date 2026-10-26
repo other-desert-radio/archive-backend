@@ -1,38 +1,116 @@
 # New-show Mixcloud upload
 
-Use the seven user-approved chunks, with review after each. No archive creation
-or artwork upload. Retrieve the stored OAuth token server-side, never in the UI.
+## Handoff status
 
-1. New-show title, date, tags; disabled submit — complete, user approved.
-   Typecheck, build, lint, and docs checks passed. Browser verification is
-   user-owned. Existing-show and edit behavior remain available.
-2. Plain authentication text: signed in as X via Mixcloud — user approved;
-   full-width italic border row, account name now bold. Reuses status loader; no
-   credentials or connection controls.
-3. Move reusable DJ dropzone to shared; add MP3 selection — user approved.
-   Shared square/horizontal variants; MP3 uses a horizontal three-line box. DJ
-   wrapper retains image validation/preview. MP3 validation unit tests pass;
-   browser checks intentionally left to user.
-4. Present upload route scaffolding/contracts — complete, user approved.
-5. Build scaffolding — complete, user approved. Registered POST route returns
-   HTTP 501 with success false; no parsing, token access, or provider calls.
-6. Parse/validate multipart and handle MP3 temporary files — user approved. UI
-   posts metadata/audio; invalid requests retain the draft. Private temporary
-   files are removed before responding. Replaced signature bit masks with
-   music-metadata; real MP3/WAV fixtures cover format detection and
-   metadata-only rejection.
-7. Upload to Mixcloud, log full response with credentials redacted, return a
-   success boolean — implemented; user review pending. Provider HTTP upload must
-   live in a new file, `src/mixcloud/upload.ts`; the route owns session/token
-   lookup, validation, response mapping, and temporary-file cleanup. Route code
-   is split under `routes/upload/`: receive-upload.ts handles multipart/media
-   validation; upload-mixcloud.ts owns orchestration and cleanup.
+All seven requested implementation chunks are implemented. Final user review and
+live Mixcloud verification remain pending; do not mark them complete. The user
+explicitly owns browser verification: do not run browser checks. Preserve
+unrelated local edits; current changes are not committed.
 
-Future: server-side orchestration calls shared archive creation after upload;
-retain provider identifier so archive creation can retry without reuploading.
-Date is show metadata, not scheduling. Public upload; no automatic retries.
+## Completed chunks and decisions
 
-Next: user review and optional user-requested live upload verification. Mocked
-tests cover provider fields, credential redaction, failures, no automatic retry,
-route ownership, and temporary-file cleanup. No live upload performed. Browser
-verification is user-owned by explicit request; do not run browser checks.
+1. New-show mode displays title, show date, tags, and MP3 selection.
+   Existing-show onboarding and editing retain their archive fields and save
+   behavior.
+2. Plain sign-in row says “Signed in as X via Mixcloud”: full width, italic,
+   dashed border, bold account name. Loading/disconnected/unconfigured/error
+   states are text only; no connection controls in the row.
+3. Shared `FileDropzone` lives in `src/admin-ui/components/shared/modal/`. Its
+   optional `style` is `square` or `horizontal`; new shows use the horizontal
+   three-line-height box with “Drop MP3 or choose file”. DJ wrapper retains
+   image validation, preview, and crop behavior. MP3 selection supports
+   replacement/removal, filename/byte size, and unsaved-change protection.
+4. Upload endpoint structure/contracts reviewed and approved.
+5. Route scaffolding implemented; the former HTTP 501 stub is now replaced by
+   the actual upload flow described below.
+6. Multipart validation and disk streaming implemented. `music-metadata`
+   replaces custom signature masks. Real silent MP3/WAV fixtures cover format
+   detection, renamed-file rejection, metadata-only rejection, and
+   temporary-file cleanup.
+7. Provider upload implemented separately, with response diagnostics and safe
+   failure messages. Route split requested by user is implemented.
+
+## Current flow and code
+
+- UI: `show-form-modal.tsx` owns the MP3 draft and connected-account state.
+  `src/admin-ui/loaders/upload-mixcloud.ts` builds the multipart request using
+  `apiFetch`. Submit requires a connected account and selected file. Confirmed
+  success closes the modal; failures retain the draft.
+- `POST /api/admin/mixcloud/upload` inherits the admin session/trusted-origin
+  boundary. Multipart fields: `title`, `date`, `tags` (JSON array), `mp3`.
+- `src/admin/routes/mixcloud/routes/upload/receive-upload.ts` validates a real
+  calendar date, nonblank title, up to five nonblank tag names, and one nonempty
+  `.mp3` up to 4 billion bytes. Streams to private server-owned temporary
+  storage and uses `music-metadata` to require MPEG Layer III audio. It does not
+  decode the full recording or extract artwork/exact duration.
+- `src/admin/routes/mixcloud/routes/upload/upload-mixcloud.ts` owns
+  session/token lookup, temporary-file lifetime, provider invocation, response
+  logging, and HTTP mapping. Cleanup finishes before responding. A cleanup
+  failure after confirmed provider success does not turn success into a
+  retryable failure.
+- `src/mixcloud/upload.ts` implements the actual provider POST; `client.ts`
+  exposes it through the existing Mixcloud client/fetcher. Uses disk-backed
+  `openAsBlob` and FormData, a fixed HTTPS endpoint, redirects disabled,
+  30-minute timeout, and no automatic retry.
+- OAuth token already exists encrypted per archive user in the database. Fetch
+  and decrypt server-side per request; do not fetch tokens in the browser.
+- Outbound fields: title as `name`, audio as `mp3`, tags as `tags-X-tag`. Omit
+  date, artwork, and scheduling. Upload is PUBLIC by default.
+- No archive show is created. Date remains form metadata for future archive
+  work.
+
+## Responses and logging
+
+- Success: HTTP 200 `{success:true}`; currently requires a successful provider
+  HTTP status plus JSON `success:true` without a non-null error.
+- Failures: `{success:false}` with 400 validation, 403 disconnected/rejected
+  connection, 413 multipart limits, 429 provider rate limit, 500 server error,
+  502 unconfirmed/rejected provider result, 503 unconfigured, or 504 timeout.
+  Shared authentication failures retain the shared error format.
+- Provider response shape has NOT been confirmed against a live upload. Unknown
+  responses are logged and treated as unconfirmed; inspect before changing the
+  success detector or retrying.
+- BACKEND console logs under `[Mixcloud Upload]` include provider HTTP status
+  and full response body with acting-token echoes and credential fields
+  redacted. No raw request URL, token, audio bytes, or temporary paths are
+  logged. Browser console does not receive the full response body.
+- Other logs: received bytes, rejection reasons, codec/sample rate/channels,
+  cleanup, final status, elapsed time. Network failures without a response have
+  no provider response body to log.
+
+## Verification performed
+
+- Typecheck, admin build, Biome/lint, docs checks, and diff whitespace checks
+  passed during implementation. Typecheck/docs and focused tests were repeated
+  after moving the route files.
+- Latest route/provider run: 22 tests passed in
+  `tests/admin/mixcloud-upload.test.ts` and `tests/mixcloud/upload.test.ts`.
+- Latest shared auth/origin boundary run: 15 tests passed in
+  `tests/admin/mixcloud.test.ts`, including upload restrictions.
+- Loader and OAuth client tests also passed before the route-only split.
+- Browser tests were updated but not run for the completed flow, per user
+  request.
+- No live Mixcloud upload has been performed. Do not imply production
+  acceptance.
+
+## Next actions
+
+1. Let the user review the current UI and perform a deliberate live upload when
+   they request it. Rebuild/restart their chosen stack if needed; do not assume
+   the running container serves current source.
+2. Inspect backend provider-response logs. Confirm actual success/error shapes
+   and adjust parsing with a representative mocked regression test if needed.
+3. Confirm the show appears on the intended account, and user-facing failure
+   behavior preserves drafts. Never automatically retry uncertain results:
+   Mixcloud may have published even if the response was lost.
+4. Only after user acceptance, archive this plan or retain useful history under
+   `docs/plans/archive/`; do not mark user review complete without their input.
+
+## Deferred
+
+Artwork, scheduling, resumable/background uploads, and local archive creation.
+For future archive creation, prefer one server-side orchestration endpoint that
+calls shared creation logic rather than having the browser coordinate a second
+POST or the backend call its own HTTP create route. Persist the provider upload
+identifier before local creation so archive retries do not upload again. Retain
+show date and obtain duration/default artwork before creating the archive show.

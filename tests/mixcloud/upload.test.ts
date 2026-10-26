@@ -28,7 +28,13 @@ test("sends disk-backed multipart audio and names, without date or artwork", asy
 			if (!(audio instanceof Blob)) throw new Error("Expected audio blob");
 			expect(audio.size).toBe(957);
 			expect((await audio.arrayBuffer()).byteLength).toBe(957);
-			return Response.json({ success: true });
+			return Response.json({
+				result: {
+					success: true,
+					message: "Uploaded My first show!",
+					key: "/garrepi/my-first-show/",
+				},
+			});
 		},
 	);
 	expect(result.success).toBe(true);
@@ -37,6 +43,20 @@ test("sends disk-backed multipart audio and names, without date or artwork", asy
 
 for (const { status, body, expected } of [
 	{ status: 200, body: { success: false }, expected: 502 },
+	{ status: 200, body: { result: { success: false } }, expected: 502 },
+	{ status: 200, body: { result: { success: "true" } }, expected: 502 },
+	{ status: 200, body: { success: true }, expected: 502 },
+	{
+		status: 200,
+		body: { result: { success: true, error: "bad" } },
+		expected: 502,
+	},
+	{
+		status: 200,
+		body: { result: { success: true }, error: "bad" },
+		expected: 502,
+	},
+	{ status: 500, body: { result: { success: true } }, expected: 502 },
 	{ status: 200, body: { unexpected: true }, expected: 502 },
 	{ status: 200, body: { success: true, error: "bad" }, expected: 502 },
 	{ status: 401, body: { error: "invalid token" }, expected: 403 },
