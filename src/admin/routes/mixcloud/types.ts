@@ -40,9 +40,12 @@ export type DisconnectMixcloudRoute = {
 
 export type MixcloudUploadResponse = { success: boolean };
 
-/** Multipart parsing and validation will be added in the MP3 handling chunk. */
+/** Multipart title, date, JSON tag names, and one MP3 file. */
 export type UploadMixcloudRoute = {
-	Reply: AdminApiReply<MixcloudUploadResponse> & {
+	Reply: Omit<AdminApiReply<MixcloudUploadResponse>, 400 | 500> & {
+		400: MixcloudUploadResponse;
+		413: MixcloudUploadResponse;
+		500: MixcloudUploadResponse;
 		501: MixcloudUploadResponse;
 	};
 };
