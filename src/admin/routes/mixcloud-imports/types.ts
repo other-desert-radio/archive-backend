@@ -3,6 +3,7 @@ import {
 	createdTimeRegex,
 	parseCreatedTimeDate,
 } from "../../../utils/mixcloud-parser/index.js";
+import type { AdminApiReply } from "../types.js";
 
 // unused fields are commented out for performance but left here for documentation
 export const PicturesPattern = {
@@ -99,4 +100,16 @@ export type MixcloudImportStatus = {
 	auto_parsed: number;
 	unparsable: number;
 	missing_djs: string[];
+};
+
+export type RefreshMixcloudRoute = {
+	Reply: AdminApiReply<RefreshMixcloudResponse>;
+};
+
+export type GetMixcloudImportStatusRoute = {
+	Reply: AdminApiReply<MixcloudImportStatus>;
+};
+
+export type ListMixcloudImportsRoute = {
+	Reply: AdminApiReply<MixcloudImportAdminRow[]>;
 };

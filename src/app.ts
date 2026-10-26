@@ -2,10 +2,11 @@ import Fastify from "fastify";
 import { adminRoutes } from "./admin/admin.js";
 import type { MixcloudIntegration } from "./admin/routes/mixcloud/index.js";
 import type { PublicationRouteDependencies } from "./admin/routes/publication/index.js";
-import { accountRoutes } from "./auth/account-routes.js";
 import type { auth } from "./auth/auth.js";
-import { authRoutes } from "./auth/routes.js";
 import { db } from "./db/db.js";
+import { accountRoutes } from "./routes/account/index.js";
+import { authRoutes } from "./routes/auth/index.js";
+import { healthRoutes } from "./routes/health/index.js";
 import { requestPathForLog } from "./utils/index.js";
 import { PrettyLogStream } from "./utils/pretty-log-stream.js";
 
@@ -34,7 +35,7 @@ export const buildApp = (
 		);
 	});
 
-	app.get("/health", async () => ({ status: "ok" }));
+	app.register(healthRoutes);
 	app.register(adminRoutes(auth, db, publication, mixcloud));
 	app.register(authRoutes(auth));
 	app.register(accountRoutes(auth, db));

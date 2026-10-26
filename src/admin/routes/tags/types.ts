@@ -1,4 +1,8 @@
 import { P } from "ts-pattern";
+import type { TagsJSON } from "../../../json-transformers/index.js";
+import type { ValidateTagsResult } from "../../../utils/validate-tags.js";
+import type { AdminApiReply } from "../types.js";
+import type { CreatedTag } from "./tag-service.js";
 
 export const RemoveTagRequestPattern = {
 	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
@@ -85,4 +89,36 @@ export type ValidateTagsRequest = P.infer<typeof ValidateTagsRequestPattern>;
 export type ResolveMixcloudTagsResponse = {
 	valid: { key: string; tag: { id: number; title: string; color: string } }[];
 	invalid: string[];
+};
+
+export type ListTagsRoute = { Reply: AdminApiReply<TagsJSON[]> };
+
+export type ValidateTagsRoute = {
+	Body: ValidateTagsRequest;
+	Reply: AdminApiReply<ValidateTagsResult | ResolveMixcloudTagsResponse>;
+};
+
+export type CreateTagRoute = {
+	Body: CreateTagRequest;
+	Reply: AdminApiReply<CreatedTag>;
+};
+
+export type CreateTagsRoute = {
+	Body: CreateTagsRequest;
+	Reply: AdminApiReply<CreatedTag[]>;
+};
+
+export type ModifyTagRoute = {
+	Body: ModifyTagRequest;
+	Reply: AdminApiReply<TagsJSON>;
+};
+
+export type GetTagDeleteImpactRoute = {
+	Params: { id: string };
+	Reply: AdminApiReply<TagDeleteImpact>;
+};
+
+export type RemoveTagRoute = {
+	Body: RemoveTagRequest;
+	Reply: AdminApiReply<RemoveTagResponse>;
 };

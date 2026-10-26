@@ -1,5 +1,6 @@
 import { P } from "ts-pattern";
 import type { ShowsJSON } from "../../../json-transformers/index.js";
+import type { AdminApiReply } from "../types.js";
 
 /** Admin list responses retain the creation timestamp selected from the database. */
 export type AdminShowsJSON = ShowsJSON & {
@@ -32,3 +33,15 @@ export const ModifyShowRequestPattern = {
 	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
 } as const;
 export type ModifyShowRequest = P.infer<typeof ModifyShowRequestPattern>;
+
+export type ListShowsRoute = { Reply: AdminApiReply<AdminShowsJSON[]> };
+
+export type CreateShowRoute = {
+	Body: CreateShowRequest;
+	Reply: AdminApiReply<AdminShowsJSON>;
+};
+
+export type ModifyShowRoute = {
+	Body: ModifyShowRequest;
+	Reply: AdminApiReply<AdminShowsJSON>;
+};

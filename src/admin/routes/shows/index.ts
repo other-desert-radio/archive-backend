@@ -1,4 +1,4 @@
-export { showRoutes } from "./shows-route.js";
+export { showRoutes } from "./shows-routes.js";
 export type {
 	AdminShowsJSON,
 	CreateShowRequest,
