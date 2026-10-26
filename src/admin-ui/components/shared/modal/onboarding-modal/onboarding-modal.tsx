@@ -16,6 +16,15 @@ type ModalAction = {
 	disabled?: boolean;
 };
 
+type HeaderContentRenderer = (state: { isSubmitting: boolean }) => ReactNode;
+
+const renderHeaderContent = (
+	renderer: HeaderContentRenderer,
+	state: { isSubmitting: boolean },
+): ReactNode => {
+	return renderer(state);
+};
+
 type OnboardingModalProps = {
 	isOpen: boolean;
 	/** Keep the panel bounds stable as multi-value fields wrap. */
@@ -32,7 +41,7 @@ type OnboardingModalProps = {
 	submittingLabel?: string;
 	cancelLabel: string;
 	actionHelper?: string;
-	headerContent?: ReactNode;
+	headerContent?: ReactNode | HeaderContentRenderer;
 	navigationAction?: ModalAction;
 	previousNavigationAction?: ModalAction;
 	secondaryAction?: ModalAction;
@@ -180,7 +189,9 @@ export const OnboardingModal = ({
 								{titleSuffix}
 							</h2>
 							<div className={styles.headerActions}>
-								{headerContent}
+								{typeof headerContent === "function"
+									? renderHeaderContent(headerContent, { isSubmitting })
+									: headerContent}
 								{headerAction !== undefined && (
 									<button
 										type="button"

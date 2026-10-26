@@ -58,10 +58,10 @@ reachable.
 - Disabled controls do not apply hover effects. Mouse clicks do not introduce
   extra button focus outlines; keyboard focus remains visible with
   `:focus-visible`.
-- Create/edit form submit buttons are disabled with gray text, border, and
-  background and no pointer events when values match their opening values.
-  Editing enables submission; reverting all changes disables it again. Other
-  submission locks still apply.
+- Create/edit form submit buttons are disabled with gray text and border,
+  retaining their white background, with no pointer events when values match
+  their opening values. Editing enables submission; reverting all changes
+  disables it again. Other submission locks still apply.
 - Message actions currently use square bordered buttons and gray hover
   backgrounds, with the same font and control sizing. Their semantic primary and
   secondary roles do not currently imply different visual styles.
@@ -155,6 +155,25 @@ the existing loaders/shared API types. The public `OnboardingModal` name remains
 in use even for editing.
 
 ### Show create/edit reuse
+
+Resource grid/table controls use `SegmentedPicker` from `shared/resource-views`.
+Callers own selection and persistence. The picker provides labeled grouped
+buttons with pressed states, optional disabled state, and native browser
+tooltips through button title attributes. Grid/table keeps the default styling.
+Show onboarding uses the muted appearance: a black background, white text, and
+black border when selected; a white background with gray text and border
+otherwise. The selected label is bold. Both segments keep equal widths and 1px
+borders when selection changes.
+
+Show onboarding defaults to new show with the title New Show; existing show
+changes the title to Onboard Show. A small paragraph above all fields repeats
+the selected mode's native tooltip description. Mode changes preserve form
+values and do not make the form dirty. The picker sits beside the title through
+the existing headerContent slot and disables during submission. Both modes
+currently share fields and archive-save behavior; the new-show tooltip describes
+future Mixcloud upload behavior. Closing and reopening resets the mode. Editing
+has no mode picker. Header content may be static or a renderer receiving
+isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
 values, validation, tag loading, DJ selection, and unsaved-change comparison.

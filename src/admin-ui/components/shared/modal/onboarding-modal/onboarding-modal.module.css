@@ -84,7 +84,6 @@
 .submit:disabled {
 	color: #999;
 	border-color: #ccc;
-	background: #efefef;
 	pointer-events: none;
 }
 .cancel {
@@ -170,6 +169,8 @@
 }
 .headerActions {
 	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
 	align-items: center;
 	gap: 16px;
 	margin-left: auto;

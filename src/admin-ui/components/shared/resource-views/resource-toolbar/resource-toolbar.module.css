@@ -30,30 +30,9 @@
 	gap: 8px;
 	flex-wrap: wrap;
 }
-.switcher {
-	margin: 0;
-	padding: 0;
-	border: none;
-	display: flex;
-}
-.switcher button,
 .add {
 	border-radius: 0;
 	background: transparent;
-}
-.switcher button {
-	width: 5rem;
-}
-.switcher button.selected {
-	font-weight: 700;
-	background: #fff;
-}
-.switcher button:focus {
-	outline: none;
-}
-.switcher button:focus-visible {
-	outline: 2px solid #000;
-	outline-offset: 2px;
 }
 .add {
 	font-weight: 700;

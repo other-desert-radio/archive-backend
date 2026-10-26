@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import {
 	LabeledFormControl,
 	OnboardingModal,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
+import { SegmentedPicker } from "../../../shared/resource-views/index.js";
 import type { CreateShowForm } from "../onboard-show-modal/onboard-show-utils.js";
 import { ShowDurationField } from "../show-duration-field/index.js";
 import {
@@ -13,8 +14,23 @@ import {
 } from "../show-form-state/index.js";
 import { ShowRelationshipFields } from "../show-relationship-fields/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
+import styles from "./show-form-modal.module.css";
 
 export type { ShowFormValues } from "../show-form-state/index.js";
+
+export type ShowOnboardingMode = "new_show" | "existing_show";
+
+const modeDescriptions: Record<ShowOnboardingMode, string> = {
+	new_show:
+		"This show doesn't exist on Mixcloud yet. Submitting this form will upload there.",
+	existing_show:
+		"This show already exists on Mixcloud. This form will onboard it to our platform.",
+};
+
+export type ShowOnboardingModeControl = {
+	value: ShowOnboardingMode;
+	onChange: (mode: ShowOnboardingMode) => void;
+};
 
 export type ShowFormOptions = {
 	djs: { id: number; title: string }[];
@@ -24,6 +40,8 @@ export type ShowFormOptions = {
 	onClose: () => void;
 };
 type Props = ShowFormOptions & {
+	/** Onboarding only; edit callers omit this control. */
+	onboardingMode?: ShowOnboardingModeControl;
 	initialValues: ShowFormValues;
 	unresolvedTagIds?: number[];
 	title: string;
@@ -35,6 +53,7 @@ type Props = ShowFormOptions & {
 
 /** Shared Show create/edit values, controls, validation, and modal lifecycle. */
 export const ShowFormModal = ({
+	onboardingMode,
 	initialValues,
 	unresolvedTagIds = [],
 	title: modalTitle,
@@ -87,18 +106,8 @@ export const ShowFormModal = ({
 			throw new Error("DJs must finish loading before submitting.");
 		await onSubmit(buildShowFormRequest(fields));
 	};
-	return (
-		<OnboardingModal
-			isOpen
-			hasUnsavedChanges={hasUnsavedChanges}
-			title={modalTitle}
-			onClose={onClose}
-			onSubmit={submit}
-			cancelLabel="Cancel"
-			isSubmitDisabled={pendingTagIds.length > 0}
-			{...(submitLabel === undefined ? {} : { submitLabel })}
-			{...(submittingLabel === undefined ? {} : { submittingLabel })}
-		>
+	const commonFields = (
+		<>
 			<ShowTitleDateFields
 				fields={fields}
 				setFields={setFields}
@@ -149,6 +158,59 @@ export const ShowFormModal = ({
 				onChange={(url) => setFields({ ...fields, url })}
 				required
 			/>
+		</>
+	);
+	let elements: ReactNode;
+	switch (onboardingMode?.value) {
+		case "new_show":
+		case "existing_show":
+		case undefined:
+			elements = commonFields;
+			break;
+	}
+	return (
+		<OnboardingModal
+			isOpen
+			hasUnsavedChanges={hasUnsavedChanges}
+			title={modalTitle}
+			headerContent={
+				onboardingMode === undefined
+					? undefined
+					: ({ isSubmitting }) => (
+							<SegmentedPicker<ShowOnboardingMode>
+								label="Show mode"
+								appearance="muted"
+								value={onboardingMode.value}
+								onChange={onboardingMode.onChange}
+								disabled={isSubmitting}
+								options={[
+									{
+										value: "new_show",
+										label: "new show",
+										tooltip: modeDescriptions.new_show,
+									},
+									{
+										value: "existing_show",
+										label: "existing show",
+										tooltip: modeDescriptions.existing_show,
+									},
+								]}
+							/>
+						)
+			}
+			onClose={onClose}
+			onSubmit={submit}
+			cancelLabel="Cancel"
+			isSubmitDisabled={pendingTagIds.length > 0}
+			{...(submitLabel === undefined ? {} : { submitLabel })}
+			{...(submittingLabel === undefined ? {} : { submittingLabel })}
+		>
+			{onboardingMode !== undefined && (
+				<p className={styles.modeDescription}>
+					{modeDescriptions[onboardingMode.value]}
+				</p>
+			)}
+			{elements}
 		</OnboardingModal>
 	);
 };
