@@ -51,6 +51,12 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			compare: (a, b) => compareText(a.title, b.title),
 		},
 		{
+			key: "description",
+			label: "description",
+			render: (show) => formatMissing(show.description),
+			compare: (a, b) => compareText(a.description, b.description),
+		},
+		{
 			key: "date",
 			label: "date",
 			render: (show) => formatUTCDate(show.date),

@@ -375,6 +375,10 @@ either answer can be retried. Successful responses update only the row's
 reviewed state, retaining search and sort. The existing full editor continues to
 mark metadata saves reviewed.
 
+Shows tables include a sortable, searchable description column after title;
+missing descriptions display None. Show cards display nonempty descriptions as
+plain text with preserved line breaks and omit missing descriptions.
+
 ## Verification and delivery
 
 Use the selected [development mode](DEVELOPMENT.md#development-modes) for review

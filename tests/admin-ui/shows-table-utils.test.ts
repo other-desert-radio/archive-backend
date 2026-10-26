@@ -12,6 +12,7 @@ const shows = [
 		id: 2,
 		createdAt: "2026-01-02T12:34:56.000Z",
 		title: "Zulu Broadcast",
+		description: "Late night journey",
 		date: "2026-01-02T00:00:00.000Z",
 		duration: 90061,
 		mixcloud_image_small: "https://example.com/zulu-small.jpg",
@@ -40,6 +41,7 @@ describe("Show table helpers", () => {
 			"id",
 			"created at",
 			"title",
+			"description",
 			"date",
 			"duration",
 			"image_small",
@@ -51,7 +53,7 @@ describe("Show table helpers", () => {
 			"URL",
 		]);
 		expect(showColumns[1].render(shows[0])).toBe("2026-01-02 12:34:56 UTC");
-		expect(showColumns[3].render(shows[1])).toBe("2025-12-31");
+		expect(showColumns[4].render(shows[1])).toBe("2025-12-31");
 	});
 
 	test("searches formatted values and resolved relationship names", () => {
@@ -124,4 +126,17 @@ test("stored image columns match DJs: named links or None, searchable and sortab
 		expect(sortShows(rows, key, "asc").map((show) => show.id)).toEqual([1, 2]);
 		expect(sortShows(rows, key, "desc").map((show) => show.id)).toEqual([2, 1]);
 	}
+});
+
+test("displays, searches, and sorts descriptions with missing values", () => {
+	const column = showColumns.find((column) => column.key === "description");
+	if (!column) throw new Error("Missing description column");
+	expect(column.render(shows[0])).toBe("Late night journey");
+	expect(renderToStaticMarkup(column.render(shows[1]))).toContain("None");
+	expect(filterShows(shows, "journey", new Map(), new Map())).toEqual([
+		shows[0],
+	]);
+	expect(sortShows(shows, "description", "asc").map((show) => show.id)).toEqual(
+		[1, 2],
+	);
 });

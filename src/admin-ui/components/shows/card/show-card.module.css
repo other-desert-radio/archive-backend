@@ -55,3 +55,10 @@
 	border: 1px solid black;
 	border-radius: 0;
 }
+
+.description {
+	margin: 0;
+	font-size: 0.875rem;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
