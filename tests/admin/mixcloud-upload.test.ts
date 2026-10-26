@@ -283,3 +283,29 @@ test("cleans up artwork on provider failure", async () => {
 		provider.mockRestore();
 	}
 });
+
+test("forwards optional description verbatim and rejects oversized descriptions", async () => {
+	const provider = spyOn(integration.client, "upload").mockResolvedValue({
+		success: true,
+		statusCode: 200,
+	});
+	try {
+		for (const description of [
+			"",
+			"Line one\nLine two",
+			"x".repeat(1000),
+			"a\n".repeat(500),
+		]) {
+			expect(await send({ description })).toBe(200);
+			expect(provider.mock.calls.at(-1)?.[1].description).toBe(description);
+		}
+		provider.mockClear();
+		expect(await send({ description: "x".repeat(1001) })).toBe(400);
+		expect(provider).not.toHaveBeenCalled();
+		expect(
+			await send({ description: "test" }, audio, "show.mp3", "description"),
+		).toBe(400);
+	} finally {
+		provider.mockRestore();
+	}
+});

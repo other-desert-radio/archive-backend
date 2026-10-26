@@ -52,6 +52,7 @@ test("upload loader includes cropped WebP bytes and metadata", async () => {
 			expect(received.name).toBe("cover.webp");
 			expect(received.type).toBe("image/webp");
 			expect(await received.text()).toBe("cropped-webp");
+			expect(body.get("description")).toBe("Line one\nLine two");
 			return Response.json({ success: true });
 		},
 	);
@@ -62,6 +63,7 @@ test("upload loader includes cropped WebP bytes and metadata", async () => {
 			tags: [],
 			mp3: new File(["audio"], "show.mp3"),
 			image,
+			description: "Line one\nLine two",
 		});
 	} finally {
 		fetcher.mockRestore();

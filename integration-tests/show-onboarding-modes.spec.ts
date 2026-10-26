@@ -11,6 +11,12 @@ for (const width of [1280, 390, 320]) {
 		await expect(form).toBeVisible();
 		await page.locator("#show-title").fill("Upload draft");
 		await page.locator("#show-date").fill("2026-10-26");
+		const description = form.getByRole("textbox", {
+			name: "description",
+			exact: true,
+		});
+		await expect(description).toHaveAttribute("maxlength", "1000");
+		await description.fill("A show description\nSecond line");
 		await form
 			.getByRole("combobox", { name: "tags", exact: true })
 			.fill("House");
@@ -34,6 +40,8 @@ for (const width of [1280, 390, 320]) {
 		await expect(existing.locator('button[type="submit"]')).toBeEnabled();
 		await page.getByRole("button", { name: "new show", exact: true }).click();
 		await expect(page.locator("#show-date")).toHaveValue("2026-10-26");
+		await expect(description).toHaveValue("A show description\nSecond line");
+		await page.screenshot({ path: `/tmp/show-description-${width}.png` });
 		await form.getByRole("button", { name: "Cancel", exact: true }).click();
 		await expect(page.getByRole("alertdialog")).toBeVisible();
 		await page

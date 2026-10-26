@@ -6,6 +6,7 @@ export type MixcloudUpload = {
 	tags: string[];
 	path: string;
 	imagePath?: string;
+	description?: string;
 };
 export type MixcloudUploadResult = {
 	success: boolean;
@@ -24,6 +25,8 @@ export const uploadToMixcloud = async (
 	if (!accessToken.trim()) throw new Error("Mixcloud access token is required");
 	const body = new FormData();
 	body.set("name", upload.title);
+	if (upload.description !== undefined)
+		body.set("description", upload.description);
 	upload.tags.forEach((tag, index) => {
 		body.set(`tags-${index}-tag`, tag);
 	});
@@ -33,6 +36,12 @@ export const uploadToMixcloud = async (
 		await openAsBlob(upload.path, { type: "audio/mpeg" }),
 		"show.mp3",
 	);
+	if (upload.imagePath !== undefined)
+		body.set(
+			"picture",
+			await openAsBlob(upload.imagePath, { type: "image/webp" }),
+			"cover.webp",
+		);
 	const url = new URL("https://api.mixcloud.com/upload/");
 	url.searchParams.set("access_token", accessToken);
 	try {

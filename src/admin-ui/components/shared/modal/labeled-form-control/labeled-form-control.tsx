@@ -50,6 +50,8 @@ export const LabeledFormControl = ({
 		<div>
 			{textarea ? (
 				<textarea
+					maxLength={maxLength}
+					minLength={minLength}
 					id={id}
 					name={name}
 					value={value}

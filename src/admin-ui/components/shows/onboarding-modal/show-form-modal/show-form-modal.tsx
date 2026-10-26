@@ -130,6 +130,7 @@ export const ShowFormModal = ({
 		confirmImageCandidate,
 		removeImage,
 	} = useImageSelection(true);
+	const [description, setDescription] = useState("");
 	const [mp3, setMP3] = useState<File>();
 	const [mp3Error, setMP3Error] = useState<string>();
 	const [pendingTagIds, setPendingTagIds] = useState(unresolvedTagIds);
@@ -167,6 +168,8 @@ export const ShowFormModal = ({
 		if (isNewShow) {
 			if (!mixcloudConnected)
 				throw new Error("Sign in to Mixcloud before uploading.");
+			if (description.length > 1000)
+				throw new Error("Description must be at most 1000 characters.");
 			if (mp3 === undefined) throw new Error("Choose an MP3 file.");
 			const tags = commitTagDraft(
 				fields.tags.map(({ title }) => title),
@@ -178,6 +181,7 @@ export const ShowFormModal = ({
 				date: fields.date,
 				tags,
 				mp3,
+				description,
 				...(image === undefined ? {} : { image }),
 			});
 			return;
@@ -252,6 +256,16 @@ export const ShowFormModal = ({
 						fields={fields}
 						setFields={setFields}
 						idPrefix={idPrefix}
+					/>
+					<LabeledFormControl
+						id={`${idPrefix}-description`}
+						name="description"
+						label="description"
+						value={description}
+						onChange={setDescription}
+						textarea
+						maxLength={1000}
+						helper="Up to 1000 characters."
 					/>
 					<TagsInput
 						id={`${idPrefix}-tags`}
@@ -332,7 +346,10 @@ export const ShowFormModal = ({
 			<OnboardingModal
 				isOpen
 				hasUnsavedChanges={
-					hasUnsavedChanges || mp3 !== undefined || image !== undefined
+					hasUnsavedChanges ||
+					mp3 !== undefined ||
+					image !== undefined ||
+					description !== ""
 				}
 				isCovered={imageCandidate !== undefined}
 				title={modalTitle}

@@ -171,15 +171,18 @@ changes the title to Onboard Show. A small paragraph above all fields repeats
 the selected mode's native tooltip description. Mode changes preserve form
 values and do not make the form dirty. The picker sits beside the title through
 the existing headerContent slot and disables during submission. New show
-displays title, date, tags, optional square image selection, and MP3 selection.
-The image picker reuses the shared artist crop flow, including rotation, zoom,
-1200 × 1200 WebP output, replacement, removal, and discard protection.
-Submission requires a connected Mixcloud account and selected audio. Submission
-uploads publicly to Mixcloud; confirmed success closes the modal, while errors
-retain the draft. Existing show retains all archive fields and archive-save
-behavior. The new-show date represents the show date, not a scheduled Mixcloud
-publication time. Closing and reopening resets the mode. Editing has no mode
-picker. Header content may be static or a renderer receiving isSubmitting.
+displays title, date, an optional description (up to 1000 characters), tags,
+optional square image selection, and MP3 selection. Description is sent to
+Mixcloud, preserves paragraph breaks, survives mode switches, and counts as an
+unsaved change. The image picker reuses the shared artist crop flow, including
+rotation, zoom, 1200 × 1200 WebP output, replacement, removal, and discard
+protection. Submission requires a connected Mixcloud account and selected audio.
+Submission uploads publicly to Mixcloud; confirmed success closes the modal,
+while errors retain the draft. Existing show retains all archive fields and
+archive-save behavior. The new-show date represents the show date, not a
+scheduled Mixcloud publication time. Closing and reopening resets the mode.
+Editing has no mode picker. Header content may be static or a renderer receiving
+isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
 values, validation, tag loading, DJ selection, and unsaved-change comparison.

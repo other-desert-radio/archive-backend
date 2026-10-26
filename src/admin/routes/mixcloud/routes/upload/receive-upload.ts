@@ -109,7 +109,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 				return reject("empty_or_truncated_audio");
 		} else {
 			if (
-				!["title", "date", "tags"].includes(part.fieldname) ||
+				!["title", "date", "tags", "description"].includes(part.fieldname) ||
 				part.valueTruncated
 			) {
 				request.log.warn(
@@ -122,10 +122,21 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 			fields[part.fieldname] = part.value;
 		}
 	}
+	// Multipart encoders use CRLF; restore textarea line breaks before checking length.
+	if (typeof fields.description === "string")
+		fields.description = fields.description.replace(/\r\n/g, "\n");
 	if (
 		!valid ||
 		!seen.has("mp3") ||
-		!isMatching({ title: P.string, date: P.string, tags: P.string }, fields)
+		!isMatching(
+			{
+				title: P.string,
+				date: P.string,
+				tags: P.string,
+				description: P.optional(P.string.maxLength(1000)),
+			},
+			fields,
+		)
 	)
 		return reject("missing_or_invalid_parts");
 	if (!fields.title.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(fields.date))
@@ -198,6 +209,9 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 	return {
 		...(imagePath === undefined ? {} : { imagePath }),
 		title: fields.title.trim(),
+		...(fields.description === undefined
+			? {}
+			: { description: fields.description }),
 		date: fields.date,
 		tags: tags.map((tag) => tag.trim()),
 		path,

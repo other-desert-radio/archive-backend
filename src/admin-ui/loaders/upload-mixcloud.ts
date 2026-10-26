@@ -8,9 +8,12 @@ export const uploadMixcloud = async (fields: {
 	tags: string[];
 	mp3: File;
 	image?: File;
+	description?: string;
 }): Promise<void> => {
 	const body = new FormData();
 	body.set("title", fields.title);
+	if (fields.description !== undefined)
+		body.set("description", fields.description);
 	body.set("date", fields.date);
 	body.set("tags", JSON.stringify(fields.tags));
 	body.set("mp3", fields.mp3);
