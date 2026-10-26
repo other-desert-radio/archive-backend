@@ -306,7 +306,11 @@ export const ShowFormModal = ({
 						label="MP3"
 						name="mp3"
 						accept=".mp3,audio/mpeg"
-						buttonLabel="Drop MP3 or choose file"
+						buttonLabel={
+							mp3 === undefined
+								? "Drop MP3 or choose file"
+								: `${mp3.name} (${(mp3.size / 1_000_000).toFixed(2)} MB)`
+						}
 						{...(mp3 === undefined ? {} : { file: mp3 })}
 						validateFile={validateShowMP3}
 						onFileSelected={async (file) => setMP3(file)}
@@ -319,9 +323,6 @@ export const ShowFormModal = ({
 					)}
 					{mp3 !== undefined && (
 						<div className={styles.uploadMessage}>
-							<p>
-								{mp3.name} ({mp3.size.toLocaleString()} bytes)
-							</p>
 							<button
 								type="button"
 								onClick={() => {

@@ -15,7 +15,7 @@
 	display: block;
 	width: 7.5rem;
 	height: 7.5rem;
-	margin-bottom: 0.5rem;
+	margin: 10px 12px 0;
 	object-fit: cover;
 }
 .button {
@@ -26,6 +26,7 @@
 	border-radius: 0;
 	font: inherit;
 	text-align: left;
+	overflow-wrap: anywhere;
 }
 .compact {
 	padding: 0;

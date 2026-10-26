@@ -15,7 +15,13 @@
 }
 
 .uploadMessage {
-	grid-column: 1 / -1;
+	grid-column: 2;
 	margin: 0;
 	overflow-wrap: anywhere;
+}
+
+@media (max-width: 450px) {
+	.uploadMessage {
+		grid-column: 1;
+	}
 }

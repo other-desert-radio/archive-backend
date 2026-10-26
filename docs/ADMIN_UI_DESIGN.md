@@ -732,12 +732,14 @@ DJ images and new-show MP3 selection use `FileDropzone` from `shared/modal`. Its
 optional `style` prop accepts `square` or `horizontal`; omitting it preserves
 the DJ layout. Image validation, selection, and square cropping live in shared
 `ImageDropzone`, `useImageSelection`, and `ImageCropModal`. Callers supply field
-IDs and names; the crop modal uses unique accessible IDs. Crops produce 1200 ×
-1200 WebP. New shows use the default left-aligned MP3 dropzone after the image,
-with the same minimum control height, filename, byte size, replacement through
-the picker/drop area, and removal. Selected audio counts as an unsaved change.
-Selection requires one nonempty `.mp3` file, up to 4 billion bytes; the server
-uses `music-metadata` to check for MPEG Layer III audio. Audio has no image
-preview or cropping. Submission uploads to Mixcloud and closes on confirmed
-success. Failures retain the draft; uncertain outcomes ask the user to check
-Mixcloud before retrying.
+IDs and names; the crop modal uses unique accessible IDs. Image previews have a
+small inset from the drop-target border. Crops produce 1200 × 1200 WebP. New
+shows use the default left-aligned MP3 dropzone after the image, with the same
+minimum control height, filename, byte size, replacement through the picker/drop
+area, and removal. Image and MP3 removal controls align with the left edge of
+their drop targets, in the desktop control column and the stacked mobile column.
+Selected audio counts as an unsaved change. Selection requires one nonempty
+`.mp3` file, up to 4 billion bytes; the server uses `music-metadata` to check
+for MPEG Layer III audio. Audio has no image preview or cropping. Submission
+uploads to Mixcloud and closes on confirmed success. Failures retain the draft;
+uncertain outcomes ask the user to check Mixcloud before retrying.
