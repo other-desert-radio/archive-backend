@@ -718,3 +718,14 @@ means the archive reached GitHub; deployment can still be running.
 `integration-tests/publication-ui.spec.ts` mocks mutations and covers
 confirmation, progress, closure/reopening, refresh, retry, editor isolation, and
 phone widths.
+
+### Shared file selection
+
+DJ images and new-show MP3 selection use `FileDropzone` from `shared/modal`. DJ
+validation and crop behavior stay in the DJ image wrapper. New shows use a
+square MP3 dropzone after tags, with filename, byte size, replacement through
+the picker/drop area, and removal. Selected audio counts as an unsaved change.
+Selection requires one nonempty `.mp3` file, up to 4 billion bytes; server-side
+content validation belongs to the later upload endpoint. Audio has no image
+preview or cropping. New-show submission stays disabled until upload
+integration.

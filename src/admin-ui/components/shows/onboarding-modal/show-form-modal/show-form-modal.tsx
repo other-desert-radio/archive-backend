@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { loadMixcloudConnection } from "../../../../loaders/mixcloud-connection.js";
 import {
+	FileDropzone,
 	LabeledFormControl,
 	OnboardingModal,
 	TagsInput,
@@ -17,6 +18,7 @@ import {
 import { ShowRelationshipFields } from "../show-relationship-fields/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 import styles from "./show-form-modal.module.css";
+import { validateShowMP3 } from "./validate-show-mp3.js";
 
 export type { ShowFormValues } from "../show-form-state/index.js";
 
@@ -55,18 +57,23 @@ type Props = ShowFormOptions & {
 
 /** Loads identity only; upload credentials stay on the server. */
 const MixcloudSignInText = () => {
-	const [text, setText] = useState("Checking Mixcloud sign-in…");
+	const [text, setText] = useState<ReactNode>("Checking Mixcloud sign-in…");
 	useEffect(() => {
 		let active = true;
 		loadMixcloudConnection()
 			.then((status) => {
 				if (!active) return;
 				setText(
-					status.connected
-						? `Signed in as <b>${status.account.displayName}</b> via Mixcloud`
-						: status.configured
-							? "Not signed in via Mixcloud."
-							: "Mixcloud is not configured.",
+					status.connected ? (
+						<>
+							Signed in as <strong>{status.account.displayName}</strong> via
+							Mixcloud
+						</>
+					) : status.configured ? (
+						"Not signed in via Mixcloud."
+					) : (
+						"Mixcloud is not configured."
+					),
 				);
 			})
 			.catch(() => {
@@ -101,6 +108,8 @@ export const ShowFormModal = ({
 }: Props) => {
 	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
 		useShowFormState(initialValues);
+	const [mp3, setMP3] = useState<File>();
+	const [mp3Error, setMP3Error] = useState<string>();
 	const [pendingTagIds, setPendingTagIds] = useState(unresolvedTagIds);
 	const { tagOptions, isTagsLoading, tagsError, loadTagOptions } =
 		useTagOptions(true);
@@ -216,6 +225,38 @@ export const ShowFormModal = ({
 						{...(tagError === undefined ? {} : { error: tagError })}
 						onRetry={loadTagOptions}
 					/>
+					<FileDropzone
+						id={`${idPrefix}-mp3`}
+						label="MP3"
+						name="mp3"
+						accept=".mp3,audio/mpeg"
+						square
+						{...(mp3 === undefined ? {} : { file: mp3 })}
+						validateFile={validateShowMP3}
+						onFileSelected={async (file) => setMP3(file)}
+						onError={setMP3Error}
+					/>
+					{mp3Error !== undefined && (
+						<p className={styles.uploadMessage} role="alert">
+							{mp3Error}
+						</p>
+					)}
+					{mp3 !== undefined && (
+						<div className={styles.uploadMessage}>
+							<p>
+								{mp3.name} ({mp3.size.toLocaleString()} bytes)
+							</p>
+							<button
+								type="button"
+								onClick={() => {
+									setMP3(undefined);
+									setMP3Error(undefined);
+								}}
+							>
+								Remove MP3
+							</button>
+						</div>
+					)}
 				</>
 			);
 			break;
@@ -227,7 +268,7 @@ export const ShowFormModal = ({
 	return (
 		<OnboardingModal
 			isOpen
-			hasUnsavedChanges={hasUnsavedChanges}
+			hasUnsavedChanges={hasUnsavedChanges || mp3 !== undefined}
 			title={modalTitle}
 			headerContent={
 				onboardingMode === undefined

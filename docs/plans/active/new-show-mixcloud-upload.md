@@ -6,9 +6,12 @@ or artwork upload. Retrieve the stored OAuth token server-side, never in the UI.
 1. New-show title, date, tags; disabled submit — implemented, verification
    pending. User review pending. Existing-show and edit behavior remain
    available.
-2. Plain authentication text: signed in as X via Mixcloud — implemented; user
-   review pending. Reuses status loader; no credentials or connection controls.
-3. Move reusable DJ dropzone to shared; add MP3 selection — pending.
+2. Plain authentication text: signed in as X via Mixcloud — user approved;
+   full-width italic border row, account name now bold. Reuses status loader; no
+   credentials or connection controls.
+3. Move reusable DJ dropzone to shared; add MP3 selection — implemented; user
+   review pending. DJ wrapper retains image validation/preview. MP3 validation
+   unit tests pass; browser checks intentionally left to user.
 4. Present upload route scaffolding/contracts — pending.
 5. Build scaffolding — pending.
 6. Parse/validate multipart and handle MP3 temporary files — pending.
@@ -19,5 +22,5 @@ Future: server-side orchestration calls shared archive creation after upload;
 retain provider identifier so archive creation can retry without reuploading.
 Date is show metadata, not scheduling. Public upload; no automatic retries.
 
-Next: obtain chunk 2 review before shared dropzone/MP3 work. Browser
+Next: obtain chunk 3 review before presenting route scaffolding. Browser
 verification is user-owned by explicit request; do not run browser checks.

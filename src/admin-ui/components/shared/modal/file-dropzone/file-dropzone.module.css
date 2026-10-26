@@ -40,3 +40,14 @@
 	background: #fff;
 	font: inherit;
 }
+
+.square {
+	width: min(100%, 16rem);
+	aspect-ratio: 1;
+	display: flex;
+}
+.square .button {
+	height: 100%;
+	text-align: center;
+	overflow-wrap: anywhere;
+}
