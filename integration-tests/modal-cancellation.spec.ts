@@ -42,7 +42,7 @@ test("unchanged modal submits are disabled and ignore hover until edited", async
 		await expect(submit).toBeDisabled();
 		await expect(submit).toHaveCSS("color", "rgb(153, 153, 153)");
 		await expect(submit).toHaveCSS("border-color", "rgb(204, 204, 204)");
-		await expect(submit).toHaveCSS("background-color", "rgb(239, 239, 239)");
+		await expect(submit).toHaveCSS("background-color", "rgb(255, 255, 255)");
 		await expect(submit).toHaveCSS("pointer-events", "none");
 		await submit.scrollIntoViewIfNeeded();
 		const bounds = await submit.boundingBox();
@@ -112,7 +112,7 @@ test("Show selections and failed submissions retain unsaved changes", async ({
 }) => {
 	await page.goto("/admin/#shows");
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
-	const form = page.getByRole("dialog", { name: "Onboard Show" });
+	const form = page.getByRole("dialog", { name: "New Show" });
 	await form.getByRole("combobox", { name: "Search DJs" }).focus();
 	const option = form.getByRole("option").first();
 	const djName = await option.innerText();
@@ -276,7 +276,7 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 		);
 		await add.click();
 		const form = page.getByRole("dialog", {
-			name: resource === "djs" ? "Onboard DJ" : "Onboard Show",
+			name: resource === "djs" ? "Onboard DJ" : "New Show",
 		});
 		await expect(form).toBeFocused();
 		await expect(
@@ -344,7 +344,7 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	});
 	await page.goto("/admin/#shows");
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
-	const form = page.getByRole("dialog", { name: "Onboard Show" });
+	const form = page.getByRole("dialog", { name: "New Show" });
 	await expect(form).toBeFocused();
 	const duration = form.getByRole("spinbutton", { name: "duration (seconds)" });
 	await expect(duration).toHaveAttribute("min", "1");

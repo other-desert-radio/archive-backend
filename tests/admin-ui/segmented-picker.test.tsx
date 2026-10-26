@@ -16,10 +16,7 @@ test("segments expose selection, disabled state, and tooltip descriptions", () =
 		/>,
 	);
 	expect(html).toContain('aria-label="Show mode" disabled=""');
-	expect(html).toMatch(/aria-pressed="false"[^>]*aria-describedby="([^"]+)"/);
+	expect(html).toMatch(/aria-pressed="false"[^>]*title="Upload to Mixcloud"/);
 	expect(html).toMatch(/aria-pressed="true"[^>]*>existing show<\/button>/);
-	const descriptionId = html.match(/aria-describedby="([^"]+)"/)?.[1];
-	expect(descriptionId).toBeDefined();
-	expect(html).toContain(`role="tooltip" id="${descriptionId}"`);
-	expect(html).toContain("Upload to Mixcloud");
+	expect(html).not.toContain('role="tooltip"');
 });

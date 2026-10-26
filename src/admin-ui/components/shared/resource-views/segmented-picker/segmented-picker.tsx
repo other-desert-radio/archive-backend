@@ -1,4 +1,4 @@
-import { type ReactElement, useId } from "react";
+import type { ReactElement } from "react";
 import styles from "./segmented-picker.module.css";
 
 export type SegmentedPickerOption<Value extends string> = {
@@ -13,6 +13,7 @@ export type SegmentedPickerProps<Value extends string> = {
 	options: readonly SegmentedPickerOption<Value>[];
 	onChange: (value: Value) => void;
 	disabled?: boolean;
+	appearance?: "default" | "muted";
 };
 
 /** Controlled selection; callers own state, persistence, and side effects. */
@@ -22,33 +23,25 @@ export const SegmentedPicker = <Value extends string>({
 	options,
 	onChange,
 	disabled = false,
+	appearance = "default",
 }: SegmentedPickerProps<Value>): ReactElement => {
-	const id = useId();
 	return (
-		<fieldset className={styles.picker} aria-label={label} disabled={disabled}>
+		<fieldset
+			className={`${styles.picker} ${appearance === "muted" ? styles.muted : ""}`}
+			aria-label={label}
+			disabled={disabled}
+		>
 			{options.map((option) => (
-				<span className={styles.segment} key={option.value}>
-					<button
-						type="button"
-						className={option.value === value ? styles.selected : undefined}
-						aria-pressed={option.value === value}
-						aria-describedby={
-							option.tooltip === undefined ? undefined : `${id}-${option.value}`
-						}
-						onClick={() => onChange(option.value)}
-					>
-						{option.label}
-					</button>
-					{option.tooltip !== undefined && (
-						<span
-							className={styles.tooltip}
-							role="tooltip"
-							id={`${id}-${option.value}`}
-						>
-							{option.tooltip}
-						</span>
-					)}
-				</span>
+				<button
+					key={option.value}
+					type="button"
+					className={option.value === value ? styles.selected : undefined}
+					aria-pressed={option.value === value}
+					title={option.tooltip}
+					onClick={() => onChange(option.value)}
+				>
+					{option.label}
+				</button>
 			))}
 		</fieldset>
 	);

@@ -5,43 +5,37 @@
 	display: flex;
 	min-width: 0;
 }
-.segment {
-	position: relative;
-	display: flex;
-}
-.segment button {
+.picker button {
 	border-radius: 0;
 	background: transparent;
 	min-width: 5rem;
 	white-space: nowrap;
 }
-.segment button.selected {
+.picker button.selected {
 	font-weight: 700;
 	background: #fff;
 }
-.segment button:focus {
+.picker button:focus {
 	outline: none;
 }
-.segment button:focus-visible {
+.picker button:focus-visible {
 	outline: 2px solid #000;
 	outline-offset: 2px;
 }
-.tooltip {
-	visibility: hidden;
-	position: absolute;
-	top: calc(100% + 8px);
-	right: 0;
-	z-index: 1;
-	width: max-content;
-	max-width: min(18rem, calc(100vw - 40px));
-	padding: 8px;
-	border: 1px solid #000;
-	background: #fff;
-	color: #000;
-	font-size: 12px;
-	line-height: 1.5;
+.muted {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: 1fr;
 }
-.segment:hover .tooltip,
-.segment:focus-within .tooltip {
-	visibility: visible;
+.muted button {
+	background: #fff;
+	color: #999;
+	border: 1px solid #999;
+	font-weight: 400;
+}
+.muted button.selected {
+	font-weight: 700;
+	background: #000;
+	color: #fff;
+	border-color: #000;
 }

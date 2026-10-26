@@ -19,10 +19,10 @@ type ModalAction = {
 type HeaderContentRenderer = (state: { isSubmitting: boolean }) => ReactNode;
 
 const renderHeaderContent = (
-	_renderer: HeaderContentRenderer,
-	_state: { isSubmitting: boolean },
+	renderer: HeaderContentRenderer,
+	state: { isSubmitting: boolean },
 ): ReactNode => {
-	throw new Error("Not implemented: renderHeaderContent");
+	return renderer(state);
 };
 
 type OnboardingModalProps = {
