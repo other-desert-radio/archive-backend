@@ -547,10 +547,9 @@ Show create/edit modals require separate “small image URL” and “large imag
 HTTP(S) fields, using the shared labeled controls and responsive form layout.
 Editing prefills both stored URLs; each participates in draft comparison and
 failed-save retention. Empty or invalid image URLs prevent submission. The Shows
-table replaces the legacy image column with clickable `image_small` and
-`image_large` columns, each searchable and independently sortable. Grid cards
-continue using the legacy image value, which saves synchronize with the large
-URL.
+table exposes Mixcloud image URLs with clickable `mixcloud_image_small` and
+`mixcloud_image_large` columns, each searchable and independently sortable. Grid
+cards use the API’s `image` value, derived from `mixcloud_image_large`.
 
 ### Import success toast
 

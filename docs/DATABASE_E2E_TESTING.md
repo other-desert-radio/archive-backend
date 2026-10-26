@@ -89,8 +89,8 @@ curl --silent --show-error --cookie /tmp/archive-e2e.cookies \
     "date":"2026-09-24",
     "duration":3661,
     "url":"https://example.test/show",
-    "image_small":"https://example.test/small.jpg",
-    "image_large":"https://example.test/large.jpg",
+    "mixcloud_image_small":"https://example.test/small.jpg",
+    "mixcloud_image_large":"https://example.test/large.jpg",
     "djs":[1],
     "tags":["E2E Tag"]
   }' \

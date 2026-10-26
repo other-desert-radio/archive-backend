@@ -31,8 +31,8 @@ test("import initialization uses suggestions, UTC dates, and complete source URL
 		date: "2026-09-30",
 		duration: "3661",
 		url: row.url,
-		image_small: row.image_small,
-		image_large: row.image_large,
+		mixcloud_image_small: row.image_small,
+		mixcloud_image_large: row.image_large,
 	});
 	expect(
 		initialImportValues({
@@ -49,8 +49,8 @@ test("import initialization uses suggestions, UTC dates, and complete source URL
 		date: "",
 		duration: "",
 		url: "",
-		image_small: "",
-		image_large: "",
+		mixcloud_image_small: "",
+		mixcloud_image_large: "",
 	});
 });
 test("DJ names resolve only unique exact matches and deduplicate IDs", () => {
@@ -77,8 +77,8 @@ test("shared Show payload builder retains image variants, selected DJs and tag d
 	).toMatchObject({
 		title: "Suggested",
 		duration: 3661,
-		image_small: row.image_small,
-		image_large: row.image_large,
+		mixcloud_image_small: row.image_small,
+		mixcloud_image_large: row.image_large,
 		djs: [1],
 		tags: ["Ambient", "New"],
 	});
@@ -89,7 +89,7 @@ test("shared Show payload builder retains image variants, selected DJs and tag d
 		buildShowFormRequest({
 			...initialImportValues(row),
 			selected: [1],
-			image_large: "",
+			mixcloud_image_large: "",
 		}),
 	).toThrow("Large image");
 });

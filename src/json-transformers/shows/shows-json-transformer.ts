@@ -6,7 +6,7 @@ import type { ShowsJSON, TransformShowsParams } from "./types.js";
  * Converts show rows and relationship rows into the public show JSON shape.
  *
  * Each show includes the IDs of its related DJs and tags. Shows without
- * relationships receive empty arrays. The public image URL uses image_large.
+ * relationships receive empty arrays. The public image URL uses mixcloud_image_large.
  * Durations are represented in seconds.
  *
  * @example
@@ -62,7 +62,7 @@ export const transformShows = ({
 		title: show.title,
 		date: show.date,
 		duration: show.duration,
-		image: show.image_large,
+		image: show.mixcloud_image_large,
 		url: show.url,
 		djs: djsForShow.get(show.id) ?? [],
 		tags: tagsForShow.get(show.id) ?? [],

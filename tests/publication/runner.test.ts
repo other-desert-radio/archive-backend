@@ -100,7 +100,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 	if (!newBranch) await git("push", "origin", "publish-dev");
 	await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(database);
 	await sql`CREATE TABLE djs (id integer, title text, bio text, image_small bytea, image_large bytea, socials text, "showTitle" text, "showDescription" text);
-	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, image_small text, image_large text, url text);
+	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea);
 	CREATE TABLE tags (id integer, title text, color text, mixcloud_key text, mixcloud_url text);
 	CREATE TABLE show_djs (dj_id integer, show_id integer);
 	CREATE TABLE dj_tags (dj_id integer, tag_id integer);

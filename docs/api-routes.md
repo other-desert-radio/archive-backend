@@ -279,18 +279,20 @@ format, alongside its identity, metadata, and relationship IDs. Its admin-only
 `tags` array, which also includes tags inherited through linked shows.
 
 `GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
-ISO JSON date format, plus required `image_small` and `image_large` URLs. The
-public Show transformer remains unchanged; `date` is a broadcast calendar date
-stored at midnight UTC and returned as an ISO timestamp for compatibility.
+ISO JSON date format, plus required `mixcloud_image_small` and
+`mixcloud_image_large` URLs. The public Show transformer remains unchanged;
+`date` is a broadcast calendar date stored at midnight UTC and returned as an
+ISO timestamp for compatibility.
 
 `POST /api/admin/create-show` accepts JSON with required `title`, strict
 `YYYY-MM-DD` `date`, positive whole-second `duration`, absolute HTTP(S) `url`,
 one or more existing DJ IDs in `djs`, and required absolute HTTP(S)
-`image_small` and `image_large` URLs. Optional `tags` are titles. The route
-trims text, validates real calendar dates and URLs, deduplicates DJ IDs and tag
-titles, and stores the date at midnight UTC. It creates the Show, relationships,
-and any missing unreviewed tags in one transaction, returning `201` with the
-same admin Show shape as the list response.
+`mixcloud_image_small` and `mixcloud_image_large` URLs. Optional `tags` are
+titles. The route trims text, validates real calendar dates and URLs,
+deduplicates DJ IDs and tag titles, and stores the date at midnight UTC. It
+creates the Show, relationships, and any missing unreviewed tags in one
+transaction, returning `201` with the same admin Show shape as the list
+response.
 
 Creation also accepts optional positive safe-integer `mixcloud_import_id`. After
 validating submitted metadata, an import locks that tracking row with

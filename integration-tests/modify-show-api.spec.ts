@@ -17,8 +17,8 @@ test("replaces Show fields and links in PostgreSQL while preserving identity and
 			date: "2025-01-02",
 			duration: 7201,
 			url: "https://example.test/edited",
-			image_small: "https://example.test/edited-small.jpg",
-			image_large: "https://example.test/edited.jpg",
+			mixcloud_image_small: "https://example.test/edited-small.jpg",
+			mixcloud_image_large: "https://example.test/edited.jpg",
 			djs: [replacementDJ.id, replacementDJ.id],
 			tags: [show.title.toLowerCase(), newTag, newTag.toLowerCase()],
 		},
@@ -32,8 +32,8 @@ test("replaces Show fields and links in PostgreSQL while preserving identity and
 		date: "2025-01-02T00:00:00.000Z",
 		duration: 7201,
 		url: "https://example.test/edited",
-		image_small: "https://example.test/edited-small.jpg",
-		image_large: "https://example.test/edited.jpg",
+		mixcloud_image_small: "https://example.test/edited-small.jpg",
+		mixcloud_image_large: "https://example.test/edited.jpg",
 		djs: [replacementDJ.id],
 	});
 	expect(saved.tags).toHaveLength(2);
@@ -47,8 +47,8 @@ test("replaces Show fields and links in PostgreSQL while preserving identity and
 	});
 	expect(cleared.status()).toBe(200);
 	const reloaded = await loadShow(request, show.id);
-	expect(reloaded.image_small).toBe(saved.image_small);
-	expect(reloaded.image_large).toBe(saved.image_large);
+	expect(reloaded.mixcloud_image_small).toBe(saved.mixcloud_image_small);
+	expect(reloaded.mixcloud_image_large).toBe(saved.mixcloud_image_large);
 	expect(reloaded.tags).toEqual([]);
 	const tags = await request.get("/api/admin/tags");
 	expect(tags.ok()).toBeTruthy();
@@ -68,16 +68,16 @@ test("rejects invalid edits and missing records without changing persisted Show 
 		{ date: "2024-02-30" },
 		{ duration: 0 },
 		{ url: "relative" },
-		{ image_small: undefined },
-		{ image_small: null },
-		{ image_small: "" },
-		{ image_small: "relative" },
-		{ image_small: "ftp://example.test/image" },
-		{ image_large: undefined },
-		{ image_large: null },
-		{ image_large: "" },
-		{ image_large: "relative" },
-		{ image_large: "ftp://example.test/image" },
+		{ mixcloud_image_small: undefined },
+		{ mixcloud_image_small: null },
+		{ mixcloud_image_small: "" },
+		{ mixcloud_image_small: "relative" },
+		{ mixcloud_image_small: "ftp://example.test/image" },
+		{ mixcloud_image_large: undefined },
+		{ mixcloud_image_large: null },
+		{ mixcloud_image_large: "" },
+		{ mixcloud_image_large: "relative" },
+		{ mixcloud_image_large: "ftp://example.test/image" },
 		{ djs: [] },
 		{ djs: [2147483647] },
 		{ id: 0 },

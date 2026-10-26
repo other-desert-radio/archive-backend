@@ -19,8 +19,8 @@ export const listShowsHandler =
 						"title",
 						"date",
 						"duration",
-						"image_small",
-						"image_large",
+						"mixcloud_image_small",
+						"mixcloud_image_large",
 						"url",
 					])
 					.orderBy("id")
@@ -48,8 +48,8 @@ export const listShowsHandler =
 				return {
 					...show,
 					createdAt: row.createdAt,
-					image_small: row.image_small,
-					image_large: row.image_large,
+					mixcloud_image_small: row.mixcloud_image_small,
+					mixcloud_image_large: row.mixcloud_image_large,
 				};
 			});
 		} catch (error) {

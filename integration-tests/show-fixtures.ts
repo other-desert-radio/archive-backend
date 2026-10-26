@@ -10,8 +10,8 @@ export type Show = {
 	date: string;
 	duration: number;
 	image?: string;
-	image_small: string;
-	image_large: string;
+	mixcloud_image_small: string;
+	mixcloud_image_large: string;
 	url: string;
 	djs: number[];
 	tags: number[];
@@ -37,8 +37,8 @@ export const showRequest = (show: Show) => ({
 	duration: show.duration,
 	url: show.url,
 	djs: show.djs,
-	image_small: show.image_small,
-	image_large: show.image_large,
+	mixcloud_image_small: show.mixcloud_image_small,
+	mixcloud_image_large: show.mixcloud_image_large,
 });
 
 export const test = djTest.extend<{ show: Show }>({
@@ -50,8 +50,8 @@ export const test = djTest.extend<{ show: Show }>({
 				date: "2024-02-29",
 				duration: 3661,
 				url: "https://example.test/show",
-				image_small: "https://example.test/original-small.jpg",
-				image_large: "https://example.test/original.jpg",
+				mixcloud_image_small: "https://example.test/original-small.jpg",
+				mixcloud_image_large: "https://example.test/original.jpg",
 				djs: [dj.id],
 				tags: [title],
 			},
