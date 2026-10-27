@@ -2,10 +2,10 @@
 
 ## Status
 
-Chunked mode, with substantial responsibility groups. Unit 1 structure and
-scaffolding were approved. Its implementation is complete; user review remains
-pending. Units 2 and 3 have not started. The migration has been tested only in a
-disposable database, not applied to the regular archive database.
+Chunked mode, with substantial responsibility groups. Unit 1 is reviewed; the
+user reports migration 0039 applied. Unit 2 structure is approved and its
+scaffolding is ready for review. Unit 3 has not started. No independent
+inspection of the user's migration state has been performed.
 
 ## Decisions
 
@@ -33,35 +33,70 @@ Apply structure, scaffolding, and implementation checkpoints within each unit.
 Do not advance a checkpoint without user approval. Group closely coupled work;
 do not scaffold later units in advance.
 
-## Current structure proposal
+## Unit 2 structure proposal
 
 New files:
 
-- src/db/migrations/0039_add_mixcloud_uploads.ts: successful upload draft table.
-- src/admin/routes/mixcloud/routes/upload/upload-store.ts: insert successful
-  upload metadata and provider key; later units extend this storage boundary.
-- tests/db/mixcloud-uploads.test.ts: disposable database migration/storage
-  checks.
+- src/mixcloud/cloudcast.ts: shared cloudcast validation/types, moved from the
+  import route types so provider transport does not depend on admin routes.
+- src/admin/routes/mixcloud/routes/upload/prepare-uploaded-show.ts: prepare
+  handler; load the pending record, fetch its cloudcast, store the validated
+  snapshot, and return review fields.
+- src/admin/routes/mixcloud/routes/upload/save-uploaded-show.ts: save handler;
+  validate reviewed editorial fields and return the committed Show.
+- tests/admin/uploaded-show.test.ts: prepare/save API boundary coverage.
 
-Existing files to modify in this unit:
+Extend existing modules:
 
-- src/mixcloud/upload.ts: validate and return the provider cloudcast key.
-- src/db/types.ts: pending upload row type.
-- src/admin/routes/mixcloud/routes/upload/receive-upload.ts: retain archive
-  title and selected DJ IDs separately from provider transport metadata.
-- src/admin/routes/mixcloud/routes/upload/upload-mixcloud.ts: validate selected
-  DJs before contacting Mixcloud; record success before responding.
-- src/admin/routes/mixcloud/types.ts and mixcloud-routes.ts, plus
-  src/admin/admin.ts: database dependency and explicit upload reply contract.
-- src/admin-ui/loaders/upload-mixcloud.ts and its form caller: send DJ IDs and
-  accept the upload confirmation contract; review navigation belongs to unit 3.
-- Existing provider, route, and loader tests: update fixtures and assertions.
-- docs/api-routes.md and docs/DATABASES.md: document implemented contracts.
+- Mixcloud client/index and import route types: single-cloudcast fetch using a
+  validated key, fixed API origin, timeout, and shared cloudcast pattern.
+- Upload storage: read pending records, retain fetched snapshots, and save a
+  reviewed upload transactionally. Provider-owned fields come from the stored
+  validated snapshot, never from the browser's save payload.
+- Mixcloud route types/registration: POST uploads/:id/prepare and
+  uploads/:id/save under /api/admin/mixcloud, with existing admin protections.
+- Show normalization/persistence: optional description, preserving existing
+  descriptions when omitted by other callers.
+- import-show.ts: expose its existing transaction-level import operation for
+  reuse; include description on replay. Reuse source-row locking, relationship
+  creation, and persistMixcloudEntry instead of a second import implementation.
+- Existing client, database upload/import, normalization, and persistence tests,
+  plus authoritative API/database references.
 
-Data flow: validated media/editorial fields → provider upload → validated key →
-pending record → upload confirmation. Keep cleanup in the route wrapper and
-provider transport in src/mixcloud/upload.ts. No live route uses unfinished
-scaffolding. Prepare/save route files are introduced in unit 2.
+Flow: pending ID → fetch cloudcast → persist snapshot → review response.
+Explicit Save: lock upload → return prior saved Show on replay, or validate
+editorial fields and stored snapshot → persist/lock source tracking → reuse
+transactional import → link upload → commit → return Show.
+
+Save accepts our title, description, date, and DJ IDs only. Duration, image
+URLs, show URL, and tags come from fetched Mixcloud data. Creating the Show,
+relationships, import marker, and upload link is one transaction. Existing
+imports and uploaded saves serialize on the same source row. An already imported
+source returns its saved Show without overwriting it. No provider requests or
+uploads occur during Save. No new migration is needed.
+
+Unit 2 scaffolding is now present. Shared cloudcast patterns/types have moved
+unchanged into the provider module, with compatibility re-exports for existing
+imports. The client exposes getCloudcast, and upload storage exposes read,
+snapshot, and reviewed-save entry points. New prepare/save handlers are not
+registered. These six functions explicitly throw Not implemented until the
+implementation checkpoint; live upload and existing import behavior remains
+unchanged. Show normalization and import transaction extraction wait for that
+implementation rather than introducing a parallel unfinished path.
+
+Review contract: uploadId plus editorial title/description/date/DJ IDs and the
+fetched cloudcast. Save accepts only editorial fields, returns the committed
+Show, and distinguishes first creation (201) from replay (200). Invalid input
+returns 400, unknown uploads 404, and missing prepared metadata 409. Prepare
+rejects completed uploads with 409, disabled integration with 503, and invalid
+or unavailable provider metadata with 502/504.
+
+No schema changes or UI changes are included in this checkpoint.
+
+Scaffolding checks passed: typecheck, lint, docs:check, whitespace checks, and
+99 existing client, cloudcast validation/parser, and upload route regressions.
+No assertions exercise unfinished stubs; new behavior tests arrive with
+implementation. No database or browser checks were run for this checkpoint.
 
 ## Verification and next action
 
@@ -98,4 +133,4 @@ regular database mutations for verification.
   been performed. Layout and controls are unchanged in this unit; final review
   interactions require browser acceptance in unit 3.
 
-Next: user review of unit 1, then unit 2 structure.
+Next: user review of unit 2 scaffolding, then implementation.

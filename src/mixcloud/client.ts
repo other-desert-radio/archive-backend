@@ -1,5 +1,6 @@
 import * as oauth from "oauth4webapi";
 import { isMatching, P } from "ts-pattern";
+import type { MixcloudCloudcast } from "./cloudcast.js";
 import type { MixcloudConfig } from "./config.js";
 import {
 	type MixcloudUpload,
@@ -15,6 +16,8 @@ const server: oauth.AuthorizationServer = {
 
 export type MixcloudIdentity = { key: string; displayName: string };
 export type MixcloudClient = {
+	/** Read a single cloudcast using a validated provider key; never uploads media. */
+	getCloudcast: (key: string) => Promise<MixcloudCloudcast>;
 	upload: (
 		accessToken: string,
 		upload: MixcloudUpload,
@@ -60,6 +63,9 @@ export const createMixcloudClient = (
 	const client: oauth.Client = { client_id: config.clientId };
 
 	return {
+		async getCloudcast(_key) {
+			throw new Error("Not implemented: getCloudcast");
+		},
 		upload: (accessToken, upload) =>
 			uploadToMixcloud(accessToken, upload, fetcher),
 		authorizationUrl(state) {

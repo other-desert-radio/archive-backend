@@ -1,9 +1,12 @@
+import { P } from "ts-pattern";
 import type { ArchiveAuth } from "../../../auth/auth.js";
 import type {
 	MixcloudClient,
+	MixcloudCloudcast,
 	MixcloudIdentity,
 	MixcloudStore,
 } from "../../../mixcloud/index.js";
+import type { AdminShowsJSON } from "../shows/types.js";
 import type { AdminApiReply, ErrorResponse, TypedDatabase } from "../types.js";
 
 export type MixcloudIntegration = {
@@ -62,4 +65,35 @@ export type UploadMixcloudRoute = {
 		503: MixcloudUploadResponse;
 		504: MixcloudUploadResponse;
 	};
+};
+
+/** Only editorial fields may be supplied when saving an uploaded show. */
+export const ReviewedUploadFieldsPattern = {
+	title: P.string,
+	description: P.string.maxLength(1000),
+	date: P.string,
+	djs: P.array(P.number.int().between(1, Number.MAX_SAFE_INTEGER)),
+} as const;
+export type ReviewedUploadFields = P.infer<typeof ReviewedUploadFieldsPattern>;
+export type UploadedShowReview = {
+	uploadId: number;
+	editorial: ReviewedUploadFields;
+	mixcloud: MixcloudCloudcast;
+};
+export type SavedUploadedShow = { created: boolean; show: AdminShowsJSON };
+
+/** Future routes: registered only once their implementations are complete. */
+export type PrepareUploadedShowRoute = {
+	Params: { id: string };
+	Reply: AdminApiReply<UploadedShowReview> & {
+		409: ErrorResponse;
+		502: ErrorResponse;
+		503: ErrorResponse;
+		504: ErrorResponse;
+	};
+};
+export type SaveUploadedShowRoute = {
+	Params: { id: string };
+	Body: ReviewedUploadFields;
+	Reply: AdminApiReply<{ show: AdminShowsJSON }> & { 409: ErrorResponse };
 };
