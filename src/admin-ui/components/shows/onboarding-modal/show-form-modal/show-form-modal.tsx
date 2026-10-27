@@ -482,8 +482,12 @@ export const ShowFormModal = ({
 							fields.selected.length === 0)) ||
 					pendingTagIds.length > 0
 				}
-				{...(submitLabel === undefined ? {} : { submitLabel })}
-				{...(submittingLabel === undefined ? {} : { submittingLabel })}
+				submitLabel={
+					submitLabel ?? (isNewShow ? "Upload to Mixcloud" : "Submit")
+				}
+				submittingLabel={
+					submittingLabel ?? (isNewShow ? "Uploading…" : "Submitting…")
+				}
 			>
 				{onboardingMode !== undefined && (
 					<p className={styles.modeDescription}>

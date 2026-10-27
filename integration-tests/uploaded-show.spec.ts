@@ -57,13 +57,27 @@ async function setup(
 		reloadFails?: boolean;
 		holdPrepare?: boolean;
 		holdSave?: boolean;
+		holdUpload?: boolean;
 		uploadFails?: boolean;
+		missingTags?: boolean;
 	} = {},
 ) {
-	const calls = { uploads: 0, prepares: 0, saves: [] as unknown[], manual: 0 };
+	const calls = {
+		uploads: 0,
+		prepares: 0,
+		saves: [] as unknown[],
+		manual: 0,
+		modifies: 0,
+	};
 	let committed = false;
 	let releasePrepare = () => {};
 	let releaseSave = () => {};
+	let releaseUpload = () => {};
+	const uploadGate = options.holdUpload
+		? new Promise<void>((resolve) => {
+				releaseUpload = resolve;
+			})
+		: Promise.resolve();
 	const prepareGate = options.holdPrepare
 		? new Promise<void>((resolve) => {
 				releasePrepare = resolve;
@@ -103,15 +117,17 @@ async function setup(
 			});
 		if (path === "/api/admin/tags")
 			return route.fulfill({
-				json: [
-					{
-						id: 3,
-						title: "House",
-						color: "#cc3300",
-						reviewed: true,
-						shows: [],
-					},
-				],
+				json: options.missingTags
+					? []
+					: [
+							{
+								id: 3,
+								title: "House",
+								color: "#cc3300",
+								reviewed: true,
+								shows: [],
+							},
+						],
 			});
 		if (path === "/api/admin/mixcloud/status")
 			return route.fulfill({
@@ -123,6 +139,7 @@ async function setup(
 			});
 		if (path === "/api/admin/mixcloud/upload") {
 			calls.uploads++;
+			await uploadGate;
 			expect(route.request().postDataBuffer()?.toString()).toContain(
 				'name="djs"',
 			);
@@ -160,7 +177,13 @@ async function setup(
 		}
 		if (path === "/api/admin/create-show") {
 			calls.manual++;
+			committed = true;
 			return route.fulfill({ status: 201, json: saved });
+		}
+		if (path === "/api/admin/modify-show") {
+			calls.modifies++;
+			expect(route.request().postDataJSON().id).toBe(saved.id);
+			return route.fulfill({ json: saved });
 		}
 		return route.fulfill({
 			status: 404,
@@ -172,6 +195,7 @@ async function setup(
 		calls,
 		releasePrepare: () => releasePrepare(),
 		releaseSave: () => releaseSave(),
+		releaseUpload: () => releaseUpload(),
 	};
 }
 
@@ -319,12 +343,13 @@ test("metadata and save retries retain edits without another upload", async ({
 test("success survives list reload failure with persisted IDs and retry feedback", async ({
 	page,
 }) => {
-	const { calls } = await setup(page, { reloadFails: true });
+	const { calls } = await setup(page, { reloadFails: true, missingTags: true });
 	await upload(page);
 	await page.getByRole("button", { name: "Save Show", exact: true }).click();
 	const success = page.getByRole("dialog", { name: "Show saved", exact: true });
 	await expect(success).toBeVisible();
 	await expect(success.getByText(saved.title, { exact: true })).toBeVisible();
+	await expect(success.getByText("ID 3", { exact: true })).toBeVisible();
 	await success.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(
 		page.getByText(
@@ -397,4 +422,66 @@ test("rejected uploads retain the original form and do not prepare metadata", as
 		form.getByRole("textbox", { name: "title", exact: true }),
 	).toHaveValue(editorial.title);
 	expect(calls.prepares).toBe(0);
+});
+
+test("manual onboarding and editing keep using the existing Show endpoints", async ({
+	page,
+}) => {
+	const { calls } = await setup(page);
+	await page.getByRole("button", { name: "+ show", exact: true }).click();
+	await page.locator("#show-title").fill("Manual show");
+	await page.locator("#show-date").fill("2026-10-26");
+	await page.getByRole("combobox", { name: "Search DJs" }).fill("Original");
+	await page.getByRole("option", { name: "Original DJ", exact: true }).click();
+	await page
+		.getByRole("button", { name: "existing show", exact: true })
+		.click();
+	const form = page.getByRole("dialog", { name: "Onboard Show", exact: true });
+	await expect(
+		form.getByRole("textbox", { name: "title", exact: true }),
+	).toHaveValue("Manual show");
+	await page.locator("#show-duration").fill("120");
+	await page.locator("#show-image-small").fill(mixcloud.pictures.large);
+	await page
+		.locator("#show-image-large")
+		.fill(mixcloud.pictures["1024wx1024h"]);
+	await page.locator("#show-url").fill(mixcloud.url);
+	await form.locator('button[type="submit"]').click();
+	await expect(form).toBeHidden();
+	expect(calls.manual).toBe(1);
+	await page.getByRole("button", { name: "Edit", exact: true }).first().click();
+	const edit = page.getByRole("dialog", { name: "Edit Show", exact: true });
+	await edit
+		.getByRole("textbox", { name: "title", exact: true })
+		.fill("Changed title");
+	await edit.getByRole("button", { name: "Save", exact: true }).click();
+	await expect(edit).toBeHidden();
+	expect(calls.modifies).toBe(1);
+	expect(calls.uploads).toBe(0);
+	expect(calls.prepares).toBe(0);
+	expect(calls.saves).toHaveLength(0);
+});
+
+test("upload submission locks controls until provider confirmation", async ({
+	page,
+}) => {
+	const state = await setup(page, { holdUpload: true });
+	await upload(page);
+	const form = page.getByRole("dialog", { name: "Upload Show", exact: true });
+	await expect(
+		form.getByRole("button", { name: "Uploading…", exact: true }),
+	).toBeDisabled();
+	await expect(
+		form.getByRole("textbox", { name: "title", exact: true }),
+	).toBeDisabled();
+	await expect(
+		form.getByRole("button", { name: "Cancel", exact: true }),
+	).toBeDisabled();
+	await page.keyboard.press("Escape");
+	await expect(form).toBeVisible();
+	state.releaseUpload();
+	await expect(
+		page.getByRole("dialog", { name: "Review Show", exact: true }),
+	).toBeVisible();
+	expect(state.calls.uploads).toBe(1);
 });
