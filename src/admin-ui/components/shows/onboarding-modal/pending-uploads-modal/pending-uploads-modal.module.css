@@ -39,6 +39,10 @@
 	font: inherit;
 	border-radius: 0;
 }
+.list button.remove {
+	color: #b00020;
+	border: 1px solid #b00020;
+}
 @media (max-width: 600px) {
 	.list li {
 		flex-wrap: wrap;

@@ -26,3 +26,9 @@ test("uses available fields without dangling separators", () => {
 	] as const)
 		expect(generatedMixcloudTitle([...names], title, date)).toBe(expected);
 });
+
+test("preserves lowercase DJ names and the supplied show title", () => {
+	expect(
+		generatedMixcloudTitle(["garrepi"], "Wall Drug South Dakota", "2026-06-08"),
+	).toBe("garrepi - Wall Drug South Dakota, June 8, 2026");
+});

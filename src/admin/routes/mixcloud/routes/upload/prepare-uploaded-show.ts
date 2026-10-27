@@ -50,6 +50,31 @@ export const prepareUploadedShowHandler =
 			const cloudcast = await integration.client.getCloudcast(
 				upload.mixcloud_key,
 			);
+			request.log.info(
+				{
+					uploadId,
+					requestedTitle: upload.mixcloud_title,
+					archiveTitle: upload.title,
+					metadata: {
+						key: cloudcast.key,
+						name: cloudcast.name,
+						url: cloudcast.url,
+						created_time: cloudcast.created_time,
+						updated_time: cloudcast.updated_time,
+						audio_length: cloudcast.audio_length,
+						tags: cloudcast.tags.map(({ key, name, url }) => ({
+							key,
+							name,
+							url,
+						})),
+						pictures: {
+							large: cloudcast.pictures.large,
+							"1024wx1024h": cloudcast.pictures["1024wx1024h"],
+						},
+					},
+				},
+				"[Mixcloud Review] fetched provider metadata",
+			);
 			const prepared = await storeUploadedShowSnapshot(
 				database,
 				uploadId,

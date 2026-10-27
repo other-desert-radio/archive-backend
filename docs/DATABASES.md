@@ -493,9 +493,11 @@ Preparation stores validated provider metadata in `mixcloud_data` without
 creating a Show. Reviewed Save locks the upload and source tracking row and
 atomically saves the Show, relationships, import markers, and upload link.
 Provider fields come from that snapshot; our reviewed fields supply title,
-description, date, and DJs. Replays return the existing Show. The same source
-row lock serializes this workflow with ordinary Mixcloud imports. Omitted
-descriptions in existing edit callers preserve stored text.
+description, date, DJs, and optionally tag names. Supplied reviewed tags replace
+the archive selection; omitted tags retain the snapshot names. Replays return
+the existing Show. The same source row lock serializes this workflow with
+ordinary Mixcloud imports. Omitted descriptions in existing edit callers
+preserve stored text.
 
 Confirmed uploads with `show_id IS NULL` appear in the shared Shows pending
 queue, including records whose metadata preparation failed. Listing and resuming

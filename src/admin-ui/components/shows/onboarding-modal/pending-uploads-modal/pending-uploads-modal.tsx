@@ -133,6 +133,7 @@ export const PendingUploadsModal = (props: Props) => {
 									void remove(upload.uploadId);
 								}}
 								aria-label={`Remove ${upload.title}`}
+								className={styles.remove}
 								title="Remove this pending record only; the Mixcloud upload is unchanged."
 							>
 								{removingId === upload.uploadId ? "Removing…" : "Remove"}

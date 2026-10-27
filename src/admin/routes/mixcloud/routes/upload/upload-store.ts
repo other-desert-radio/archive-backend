@@ -113,7 +113,7 @@ export const saveReviewedUpload = async (
 			duration: cloudcast.audio_length,
 			mixcloud_image_small: cloudcast.pictures.large,
 			mixcloud_image_large: cloudcast.pictures["1024wx1024h"],
-			tags: cloudcast.tags.map(({ name }) => name),
+			tags: reviewed.tags ?? cloudcast.tags.map(({ name }) => name),
 		});
 		await persistMixcloudEntry(transaction, cloudcast);
 		const tracking = await transaction

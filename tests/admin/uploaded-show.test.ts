@@ -143,6 +143,7 @@ test.skipIf(!databaseUrl)(
 		};
 		const reviewed = {
 			title: " Reviewed title ",
+			tags: ["Reviewed tag"],
 			description: "Our description\r\nSecond line",
 			date: "2026-10-25",
 			djs: [1, 1],
@@ -342,6 +343,17 @@ test.skipIf(!databaseUrl)(
 			mode = "ok";
 			const prepared = await post(upload.id, "prepare");
 			expect(prepared.statusCode).toBe(200);
+			expect(logs).toContainEqual(
+				expect.objectContaining({
+					msg: "[Mixcloud Review] fetched provider metadata",
+					requestedTitle: "Provider title",
+					archiveTitle: "Original title",
+					metadata: expect.objectContaining({
+						name: cloudcast.name,
+						tags: cloudcast.tags,
+					}),
+				}),
+			);
 			expect(prepared.json()).toMatchObject({
 				uploadId: upload.id,
 				editorial: {
@@ -407,6 +419,7 @@ test.skipIf(!databaseUrl)(
 				{ djs: [] },
 				{ djs: [999] },
 				{ description: "x".repeat(1001) },
+				{ tags: [42] },
 			])
 				expect(
 					(await post(upload.id, "save", { ...reviewed, ...changes }))
@@ -429,7 +442,6 @@ test.skipIf(!databaseUrl)(
 					...reviewed,
 					duration: 999,
 					url: "https://fake.test/",
-					tags: ["Fake"],
 				}),
 				post(upload.id, "save", reviewed),
 			]);
@@ -451,7 +463,7 @@ test.skipIf(!databaseUrl)(
 			expect(
 				(await db.selectFrom("tags").select("title").executeTakeFirstOrThrow())
 					.title,
-			).toBe("House");
+			).toBe("Reviewed tag");
 			expect(
 				(
 					await db
@@ -524,7 +536,7 @@ test.skipIf(!databaseUrl)(
 				[uploadResponse.statusCode, importResponse.statusCode].sort(),
 			).toEqual([200, 201]);
 			expect(uploadResponse.json().show.id).toBe(importResponse.json().id);
-			expect(await counts()).toEqual(["2", "1", "2", "2", "2"]);
+			expect(await counts()).toEqual(["2", "2", "2", "2", "2"]);
 		} finally {
 			await app.close();
 			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(db);

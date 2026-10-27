@@ -151,15 +151,19 @@ accepts a user or session ID from the browser. Responses use
   (including the provider's HTTP status), timeout, network failure, unreadable
   JSON, invalid metadata, mismatched keys, and error-bearing payloads. For
   example, a provider `404` logs “Mixcloud API returned HTTP 404” while the
-  endpoint responds `502`. Metadata response bodies, credentials, and raw
-  transport errors are excluded.
+  endpoint responds `502`. Successful fetches log the requested provider title,
+  original archive title, and validated metadata fields (including the fetched
+  name, tags, duration, dates, show URL, and image URLs). Unexpected response
+  fields, credentials, and raw transport errors are excluded.
 - `POST /api/admin/mixcloud/uploads/:id/save` accepts reviewed
-  `{title,description,date,djs}`. Description is required and may be empty, up
-  to 1000 characters. Title/date/DJs use the shared Show validation; DJ
-  existence is checked in the saving transaction. Duration, image URLs, show
-  URL, and tag names come exclusively from the stored validated snapshot; extra
-  browser fields cannot override them. One transaction locks the upload,
-  persists and locks its source tracking row, reuses the existing import
+  `{title,description,date,djs,tags?}`. Optional tags are an array of names;
+  supplied tags replace the archive selection, including an empty array. Omitted
+  tags preserve the fetched provider tags for existing clients. Description is
+  required and may be empty, up to 1000 characters. Title/date/DJs use the
+  shared Show validation; DJ existence is checked in the saving transaction.
+  Duration, image URLs, show URL come exclusively from the stored validated
+  snapshot; extra browser fields cannot override them. One transaction locks the
+  upload, persists and locks its source tracking row, reuses the existing import
   transaction, and links the upload to the saved Show. Creation returns
   `201 {show}`; replay or an already imported source returns `200 {show}`
   without overwriting the Show. Invalid input returns `400`, unknown uploads

@@ -304,6 +304,12 @@ for (const width of [1280, 390, 320])
 			.getByRole("textbox", { name: "description", exact: true })
 			.fill("Reviewed description");
 		await review.getByLabel("date", { exact: true }).fill("2026-10-25");
+		await expect(
+			review.locator("section").getByText("tags", { exact: true }),
+		).toHaveCount(0);
+		await review
+			.getByRole("combobox", { name: "tags", exact: true })
+			.fill("New review tag");
 		await review
 			.getByRole("button", { name: "Remove Original DJ", exact: true })
 			.click();
@@ -340,6 +346,7 @@ for (const width of [1280, 390, 320])
 				description: "Reviewed description",
 				date: "2026-10-25",
 				djs: [2],
+				tags: ["House", "New review tag"],
 			},
 		]);
 		await page.screenshot({ path: `/tmp/upload-saved-${width}.png` });

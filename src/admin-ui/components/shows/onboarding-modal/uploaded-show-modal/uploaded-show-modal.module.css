@@ -7,6 +7,9 @@
 	overflow-wrap: anywhere;
 	white-space: pre-wrap;
 }
+.helper {
+	color: #666;
+}
 .preparationPanel .notice {
 	margin-bottom: 16px;
 }
@@ -15,7 +18,6 @@
 	width: 160px;
 	max-width: 100%;
 	height: auto;
-	margin-top: 16px;
 }
 .successPanel {
 	--message-modal-width: 864px;

@@ -85,6 +85,7 @@ export const ReviewedUploadFieldsPattern = {
 	description: P.string.maxLength(1000),
 	date: P.string,
 	djs: P.array(P.number.int().between(1, Number.MAX_SAFE_INTEGER)),
+	tags: P.optional(P.array(P.string)),
 } as const;
 export type ReviewedUploadFields = P.infer<typeof ReviewedUploadFieldsPattern>;
 export type UploadedShowReview = {
