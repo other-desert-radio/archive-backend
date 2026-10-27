@@ -11,6 +11,7 @@ for (const status of [400, 413, 502]) {
 				expect(body).toBeInstanceOf(FormData);
 				if (!(body instanceof FormData)) throw new Error("Expected multipart");
 				expect(body.get("title")).toBe("Test");
+				expect(body.get("mixcloud_title")).toBe("DJ - Test");
 				expect(body.get("date")).toBe("2026-10-26");
 				expect(body.get("tags")).toBe('["House"]');
 				expect(body.get("mp3")).toBeInstanceOf(File);
@@ -22,6 +23,7 @@ for (const status of [400, 413, 502]) {
 			await expect(
 				uploadMixcloud({
 					title: "Test",
+					mixcloud_title: "DJ - Test",
 					date: "2026-10-26",
 					tags: ["House"],
 					mp3: new File(["audio"], "show.mp3"),
@@ -59,6 +61,7 @@ test("upload loader includes cropped WebP bytes and metadata", async () => {
 	try {
 		await uploadMixcloud({
 			title: "Show",
+			mixcloud_title: "DJ - Show",
 			date: "2026-10-26",
 			tags: [],
 			mp3: new File(["audio"], "show.mp3"),

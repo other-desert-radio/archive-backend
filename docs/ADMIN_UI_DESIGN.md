@@ -166,17 +166,26 @@ black border when selected; a white background with gray text and border
 otherwise. The selected label is bold. Both segments keep equal widths and 1px
 borders when selection changes.
 
-Show onboarding defaults to new show with the title New Show; existing show
+Show onboarding defaults to new show with the title Upload Show; existing show
 changes the title to Onboard Show. A small paragraph above all fields repeats
 the selected mode's native tooltip description. Mode changes preserve form
 values and do not make the form dirty. The picker sits beside the title through
 the existing headerContent slot and disables during submission. New show
-displays title, date, an optional description (up to 1000 characters), tags,
-optional square image selection, and MP3 selection. Description is sent to
+displays title, DJs, date, an optional description (up to 1000 characters),
+tags, required square image selection, and MP3 selection. Description is sent to
 Mixcloud, preserves paragraph breaks, survives mode switches, and counts as an
 unsaved change. The image picker reuses the shared artist crop flow, including
 rotation, zoom, 1200 × 1200 WebP output, replacement, removal, and discard
-protection. Submission requires a connected Mixcloud account and selected audio.
+protection. A MIXCLOUD panel above the fields centers the connection status and
+shows the editable Mixcloud title after a form edit. The input fills the panel
+width, has an accessible label without a visible label, and uses only a bottom
+border. Gray helper text underneath reads “Title to be sent to Mixcloud. This is
+auto generated using the existing format. Click to edit”. Generated titles have
+a gray underline; manual edits use the standard black underline and persist
+until reset. Titles update as source fields are typed, using whichever fields
+are available and omitting missing parts. Submission requires a connected
+Mixcloud account, nonblank show and Mixcloud titles, at least one DJ, a show
+date, an image, and selected audio. Description and tags are optional.
 Submission uploads publicly to Mixcloud; confirmed success closes the modal,
 while errors retain the draft. Existing show retains all archive fields and
 archive-save behavior. The new-show date represents the show date, not a

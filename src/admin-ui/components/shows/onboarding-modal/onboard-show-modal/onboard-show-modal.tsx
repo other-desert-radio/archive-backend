@@ -16,7 +16,7 @@ const OnboardShowForm = (props: Omit<Props, "isOpen">) => {
 		<ShowFormModal
 			{...props}
 			onboardingMode={{ value: mode, onChange: setMode }}
-			title={mode === "new_show" ? "New Show" : "Onboard Show"}
+			title={mode === "new_show" ? "Upload Show" : "Onboard Show"}
 			idPrefix="show"
 			initialValues={{
 				title: "",

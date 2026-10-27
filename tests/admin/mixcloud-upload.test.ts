@@ -29,7 +29,7 @@ const temporaryUploads = async () =>
 		.sort();
 
 const send = async (
-	changes: Record<string, string> = {},
+	changes: Record<string, string | undefined> = {},
 	bytes = audio,
 	filename = "show.mp3",
 	extra?: string,
@@ -45,11 +45,12 @@ const send = async (
 	const form = new FormData();
 	for (const [name, value] of Object.entries({
 		title: "Show",
+		mixcloud_title: "DJ - Show",
 		date: "2024-02-29",
 		tags: '["House"]',
 		...changes,
 	}))
-		form.set(name, value);
+		if (value !== undefined) form.set(name, value);
 	if (imageFirst && image) form.set("image", image);
 	form.set("mp3", new File([bytes], filename));
 	if (!imageFirst && image) form.set("image", image);
@@ -88,6 +89,9 @@ test("rejects an ID3 metadata header without audio", async () => {
 test("rejects malformed metadata and cleans up audio", async () => {
 	for (const changes of [
 		{ title: " " },
+		{ mixcloud_title: " " },
+		{ mixcloud_title: undefined },
+		{ title: undefined },
 		{ date: "2025-02-29" },
 		{ date: "invalid" },
 		{ tags: "{}" },
@@ -180,7 +184,7 @@ test("uses the acting user's token and never uploads invalid audio", async () =>
 		expect(await send()).toBe(200);
 		expect(token).toHaveBeenCalledWith("acting-user");
 		expect(provider.mock.calls[0]?.[0]).toBe("acting-token");
-		expect(provider.mock.calls[0]?.[1].title).toBe("Show");
+		expect(provider.mock.calls[0]?.[1].title).toBe("DJ - Show");
 		provider.mockClear();
 		expect(await send({}, new Uint8Array([0, 1, 2]))).toBe(400);
 		expect(provider).not.toHaveBeenCalled();
