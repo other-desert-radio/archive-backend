@@ -102,7 +102,8 @@ export const createMixcloudClient = (
 						providerStatus,
 						"http_error",
 					);
-				const data: unknown = await response.json().catch(() => {
+				const data: unknown = await response.json().catch((error) => {
+					if (!(error instanceof SyntaxError)) throw error;
 					throw new MixcloudClientError(
 						"cloudcast_failed",
 						providerStatus,
