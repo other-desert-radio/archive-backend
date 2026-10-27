@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { UploadedShowConfirmation } from "../../../../../admin/routes/mixcloud/index.js";
-import { loadMixcloudConnection } from "../../../../loaders/mixcloud-connection.js";
 import { uploadMixcloud } from "../../../../loaders/upload-mixcloud.js";
+import { MixcloudConnectionBanner } from "../../../mixcloud/connection-banner/index.js";
 import sourceStyles from "../../../mixcloud/onboarding-modal/mixcloud-source-data/mixcloud-source-data.module.css";
 import {
 	commitTagDraft,
@@ -63,45 +63,6 @@ type Props = ShowFormOptions & {
 	submitLabel?: string;
 	submittingLabel?: string;
 	onSubmit: (request: CreateShowForm) => Promise<void>;
-};
-
-/** Loads identity only; upload credentials stay on the server. */
-const MixcloudSignInText = ({
-	onConnected,
-}: {
-	onConnected: (connected: boolean) => void;
-}) => {
-	const [text, setText] = useState<ReactNode>("Checking Mixcloud sign-in…");
-	useEffect(() => {
-		let active = true;
-		loadMixcloudConnection()
-			.then((status) => {
-				if (!active) return;
-				onConnected(status.connected);
-				setText(
-					status.connected ? (
-						<>
-							Signed in as <strong>{status.account.displayName}</strong>
-						</>
-					) : status.configured ? (
-						"Not signed in via Mixcloud."
-					) : (
-						"Mixcloud is not configured."
-					),
-				);
-			})
-			.catch(() => {
-				if (active) setText("Unable to check Mixcloud sign-in.");
-			});
-		return () => {
-			active = false;
-		};
-	}, [onConnected]);
-	return (
-		<p className={styles.mixcloudStatus} role="status">
-			{text}
-		</p>
-	);
 };
 
 /** Shared Show create/edit values, controls, validation, and modal lifecycle. */
@@ -289,28 +250,29 @@ export const ShowFormModal = ({
 						aria-labelledby={`${idPrefix}-mixcloud-data`}
 					>
 						<h3 id={`${idPrefix}-mixcloud-data`}>MIXCLOUD</h3>
-						<MixcloudSignInText onConnected={setMixcloudConnected} />
-						{(hasUnsavedChanges ||
-							description !== "" ||
-							mp3 !== undefined ||
-							image !== undefined ||
-							mixcloudTitleOverride !== undefined) && (
-							<div
-								className={styles.mixcloudTitle}
-								data-generated={mixcloudTitleOverride === undefined}
-							>
-								<LabeledFormControl
-									id={`${idPrefix}-mixcloud-title`}
-									name="mixcloud_title"
-									label="Mixcloud title"
-									helper="Title to be sent to Mixcloud. This is auto generated using the existing format. Click to edit"
-									value={mixcloudTitle}
-									onChange={setMixcloudTitleOverride}
-									required
-								/>
-							</div>
-						)}
-						{mixcloudTitleOverride !== undefined && (
+						<MixcloudConnectionBanner onConnected={setMixcloudConnected} />
+						{mixcloudConnected &&
+							(hasUnsavedChanges ||
+								description !== "" ||
+								mp3 !== undefined ||
+								image !== undefined ||
+								mixcloudTitleOverride !== undefined) && (
+								<div
+									className={styles.mixcloudTitle}
+									data-generated={mixcloudTitleOverride === undefined}
+								>
+									<LabeledFormControl
+										id={`${idPrefix}-mixcloud-title`}
+										name="mixcloud_title"
+										label="Mixcloud title"
+										helper="Title to be sent to Mixcloud. This is auto generated using the existing format. Click to edit"
+										value={mixcloudTitle}
+										onChange={setMixcloudTitleOverride}
+										required
+									/>
+								</div>
+							)}
+						{mixcloudConnected && mixcloudTitleOverride !== undefined && (
 							<button
 								type="button"
 								onClick={() => setMixcloudTitleOverride(undefined)}
@@ -319,102 +281,106 @@ export const ShowFormModal = ({
 							</button>
 						)}
 					</section>
-					<ShowTitleDateFields
-						fields={fields}
-						setFields={setFields}
-						idPrefix={idPrefix}
-					>
-						<SearchableMultiSelect
-							id={`${idPrefix}-djs`}
-							label="DJs"
-							options={djs.map((dj) => ({
-								id: dj.id,
-								label: dj.title,
-								searchText: `${dj.title} ${dj.id}`,
-							}))}
-							selectedIds={fields.selected}
-							onChange={(selected) => setFields({ ...fields, selected })}
-							isLoading={isDJsLoading}
-							{...(djsError === undefined ? {} : { error: djsError })}
-							onRetry={onRetryDJs}
-						/>
-					</ShowTitleDateFields>
-					<LabeledFormControl
-						id={`${idPrefix}-description`}
-						name="description"
-						label="description"
-						value={description}
-						onChange={setDescription}
-						textarea
-						maxLength={1000}
-						helper="Up to 1000 characters."
-					/>
-					<TagsInput
-						id={`${idPrefix}-tags`}
-						value={{ tags: fields.tags, draft: fields.tagDraft }}
-						onChange={({ tags, draft }) =>
-							setFields({ ...fields, tags, tagDraft: draft })
-						}
-						options={tagOptions}
-						isLoading={isTagsLoading}
-						{...(tagError === undefined ? {} : { error: tagError })}
-						onRetry={loadTagOptions}
-					/>
-					<ImageDropzone
-						key={imageDropzoneKey}
-						id={`${idPrefix}-image`}
-						name="image"
-						{...(image === undefined ? {} : { file: image })}
-						onFileSelected={selectImageCandidate}
-						onError={setImageError}
-					/>
-					{imageError !== undefined && (
-						<p
-							className="onboarding-modal-helper onboarding-modal-field-error"
-							role="alert"
-						>
-							{imageError}
-						</p>
-					)}
-					{image !== undefined && (
-						<div className={styles.uploadMessage}>
-							<button type="button" onClick={removeImage}>
-								Remove image
-							</button>
-						</div>
-					)}
-					<FileDropzone
-						id={`${idPrefix}-mp3`}
-						label="MP3"
-						name="mp3"
-						accept=".mp3,audio/mpeg"
-						buttonLabel={
-							mp3 === undefined
-								? "Drop MP3 or choose file"
-								: `${mp3.name} (${(mp3.size / 1_000_000).toFixed(2)} MB)`
-						}
-						{...(mp3 === undefined ? {} : { file: mp3 })}
-						validateFile={validateShowMP3}
-						onFileSelected={async (file) => setMP3(file)}
-						onError={setMP3Error}
-					/>
-					{mp3Error !== undefined && (
-						<p className={styles.uploadMessage} role="alert">
-							{mp3Error}
-						</p>
-					)}
-					{mp3 !== undefined && (
-						<div className={styles.uploadMessage}>
-							<button
-								type="button"
-								onClick={() => {
-									setMP3(undefined);
-									setMP3Error(undefined);
-								}}
+					{mixcloudConnected && (
+						<>
+							<ShowTitleDateFields
+								fields={fields}
+								setFields={setFields}
+								idPrefix={idPrefix}
 							>
-								Remove MP3
-							</button>
-						</div>
+								<SearchableMultiSelect
+									id={`${idPrefix}-djs`}
+									label="DJs"
+									options={djs.map((dj) => ({
+										id: dj.id,
+										label: dj.title,
+										searchText: `${dj.title} ${dj.id}`,
+									}))}
+									selectedIds={fields.selected}
+									onChange={(selected) => setFields({ ...fields, selected })}
+									isLoading={isDJsLoading}
+									{...(djsError === undefined ? {} : { error: djsError })}
+									onRetry={onRetryDJs}
+								/>
+							</ShowTitleDateFields>
+							<LabeledFormControl
+								id={`${idPrefix}-description`}
+								name="description"
+								label="description"
+								value={description}
+								onChange={setDescription}
+								textarea
+								maxLength={1000}
+								helper="Up to 1000 characters."
+							/>
+							<TagsInput
+								id={`${idPrefix}-tags`}
+								value={{ tags: fields.tags, draft: fields.tagDraft }}
+								onChange={({ tags, draft }) =>
+									setFields({ ...fields, tags, tagDraft: draft })
+								}
+								options={tagOptions}
+								isLoading={isTagsLoading}
+								{...(tagError === undefined ? {} : { error: tagError })}
+								onRetry={loadTagOptions}
+							/>
+							<ImageDropzone
+								key={imageDropzoneKey}
+								id={`${idPrefix}-image`}
+								name="image"
+								{...(image === undefined ? {} : { file: image })}
+								onFileSelected={selectImageCandidate}
+								onError={setImageError}
+							/>
+							{imageError !== undefined && (
+								<p
+									className="onboarding-modal-helper onboarding-modal-field-error"
+									role="alert"
+								>
+									{imageError}
+								</p>
+							)}
+							{image !== undefined && (
+								<div className={styles.uploadMessage}>
+									<button type="button" onClick={removeImage}>
+										Remove image
+									</button>
+								</div>
+							)}
+							<FileDropzone
+								id={`${idPrefix}-mp3`}
+								label="MP3"
+								name="mp3"
+								accept=".mp3,audio/mpeg"
+								buttonLabel={
+									mp3 === undefined
+										? "Drop MP3 or choose file"
+										: `${mp3.name} (${(mp3.size / 1_000_000).toFixed(2)} MB)`
+								}
+								{...(mp3 === undefined ? {} : { file: mp3 })}
+								validateFile={validateShowMP3}
+								onFileSelected={async (file) => setMP3(file)}
+								onError={setMP3Error}
+							/>
+							{mp3Error !== undefined && (
+								<p className={styles.uploadMessage} role="alert">
+									{mp3Error}
+								</p>
+							)}
+							{mp3 !== undefined && (
+								<div className={styles.uploadMessage}>
+									<button
+										type="button"
+										onClick={() => {
+											setMP3(undefined);
+											setMP3Error(undefined);
+										}}
+									>
+										Remove MP3
+									</button>
+								</div>
+							)}
+						</>
 					)}
 				</>
 			);
@@ -489,7 +455,7 @@ export const ShowFormModal = ({
 					submittingLabel ?? (isNewShow ? "Uploading…" : "Submitting…")
 				}
 			>
-				{onboardingMode !== undefined && (
+				{onboardingMode !== undefined && (!isNewShow || mixcloudConnected) && (
 					<p className={styles.modeDescription}>
 						{modeDescriptions[onboardingMode.value]}
 					</p>

@@ -69,29 +69,18 @@ for (const width of [1440, 390, 320]) {
 		await page.goto("/admin/#shows");
 		await expect(page.getByText("UTILS", { exact: true })).toHaveCount(0);
 		await expect(page.getByRole("link", { name: "⤷ upload" })).toHaveCount(0);
-		const heading = page.getByRole("heading", { name: "SHOWS", exact: true });
-		const guidance = page.getByText(
-			"Sign in to mixcloud to begin uploading a show.",
-			{ exact: false },
-		);
-		const search = page.getByRole("textbox", { name: "Search Shows" });
-		await expect(guidance).toBeVisible();
-		await expect(search).toBeVisible();
-		await page.evaluate(() => document.fonts.ready);
-		await page.screenshot({
-			path: `/tmp/mixcloud-shows-${width}.png`,
-			fullPage: true,
-		});
-		const titleBox = await heading.boundingBox();
-		const bannerBox = await guidance.boundingBox();
-		const searchBox = await search.boundingBox();
-		expect(
-			titleBox &&
-				bannerBox &&
-				searchBox &&
-				titleBox.y + titleBox.height <= bannerBox.y &&
-				bannerBox.y + bannerBox.height <= searchBox.y,
-		).toBe(true);
+		await expect(
+			page.getByRole("button", { name: "sign into mixcloud" }),
+		).toHaveCount(0);
+		await page.getByRole("button", { name: "+ show", exact: true }).click();
+		await expect(
+			page.getByRole("dialog", { name: "Upload Show", exact: true }),
+		).toBeVisible();
+		await expect(page.locator("#show-title")).toHaveCount(0);
+		await expect(page.locator("#show-mp3")).toHaveCount(0);
+		await expect(
+			page.getByRole("button", { name: "Upload to Mixcloud", exact: true }),
+		).toBeDisabled();
 		await expect(
 			page.getByRole("button", { name: "sign into mixcloud" }),
 		).toBeEnabled();
@@ -105,6 +94,7 @@ for (const width of [1440, 390, 320]) {
 			page.getByText("Signed into Mixcloud as", { exact: false }),
 		).toBeVisible();
 		await expect(page).toHaveURL(/\/admin\/#shows$/);
+		await expect(page.locator("#show-title")).toBeVisible();
 		await page.evaluate(() => document.fonts.ready);
 		expect(
 			await page.evaluate(
@@ -126,6 +116,7 @@ for (const width of [1440, 390, 320]) {
 		);
 		fail = true;
 		await page.reload();
+		await page.getByRole("button", { name: "+ show", exact: true }).click();
 		await expect(page.getByRole("alert")).toBeVisible();
 		fail = false;
 		await page.getByRole("button", { name: "reload connection" }).click();

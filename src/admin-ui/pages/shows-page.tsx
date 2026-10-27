@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MixcloudConnectionBanner } from "../components/mixcloud/connection-banner/index.js";
 import type { ResourceViewMode } from "../components/shared/resource-views/index.js";
 import {
 	ResourceGrid,
@@ -43,7 +42,11 @@ export const ShowsPage = () => {
 	const [error, setError] = useState<string>();
 	const [isDJsLoading, setIsDJsLoading] = useState(false);
 	const [djsError, setDJsError] = useState<string>();
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isModalOpen, setIsModalOpen] = useState(
+		() =>
+			typeof window !== "undefined" &&
+			new URLSearchParams(window.location.search).has("mixcloud"),
+	);
 	const [editingShow, setEditingShow] = useState<ShowsAdminRow>();
 	const loadVersion = useRef(0);
 	const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
@@ -172,7 +175,6 @@ export const ShowsPage = () => {
 			<div inert={isModalOpen || pendingOpen || editingShow !== undefined}>
 				<ResourceView
 					title="SHOWS"
-					afterTitle={<MixcloudConnectionBanner />}
 					isLoading={isLoading}
 					error={error}
 					onRetry={() => refreshShows()}

@@ -3,7 +3,6 @@ import styles from "./resource-view.module.css";
 
 type ResourceViewProps = {
 	title: string;
-	afterTitle?: ReactNode;
 	isLoading: boolean;
 	error?: unknown;
 	onRetry: () => void;
@@ -19,7 +18,6 @@ type ResourceViewProps = {
 /** Shares the load, retry, empty, and no-results states used by resource views. */
 export const ResourceView = ({
 	title,
-	afterTitle,
 	isLoading,
 	error,
 	onRetry,
@@ -35,7 +33,6 @@ export const ResourceView = ({
 		<header className={styles.header}>
 			<h1>{title}</h1>
 		</header>
-		{afterTitle}
 		{isLoading && <p className={styles.status}>Loading {title}…</p>}
 		{error !== undefined && (
 			<div className={`${styles.message} ${styles.error}`} role="alert">

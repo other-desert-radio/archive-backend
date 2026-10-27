@@ -25,7 +25,11 @@ const callbackMessage = (): string | undefined => {
 };
 
 /** Owns Mixcloud connection status and actions on Shows. */
-export const MixcloudConnectionBanner = (): ReactElement => {
+export const MixcloudConnectionBanner = ({
+	onConnected,
+}: {
+	onConnected: (connected: boolean) => void;
+}): ReactElement => {
 	const [status, setStatus] = useState<MixcloudStatus>();
 	const [loading, setLoading] = useState(true);
 	const [pending, setPending] = useState<"connecting" | "disconnecting">();
@@ -107,6 +111,9 @@ export const MixcloudConnectionBanner = (): ReactElement => {
 			setPending(undefined);
 		}
 	};
+	useEffect(() => {
+		onConnected(status?.connected ?? false);
+	}, [status, onConnected]);
 	const busy = loading || pending !== undefined;
 	return (
 		<div className={styles.connection}>
@@ -122,17 +129,11 @@ export const MixcloudConnectionBanner = (): ReactElement => {
 								Mixcloud sign-in is not configured. Contact an administrator.
 							</p>
 						) : status.connected ? (
-							<>
-								<p>
-									Signed into Mixcloud as{" "}
-									<strong>{status.account.displayName}</strong> (
-									{status.account.key}).
-								</p>
-								<p className={styles.hint}>
-									To switch accounts, sign out here. You may also need to sign
-									out on Mixcloud.
-								</p>
-							</>
+							<p>
+								Signed into Mixcloud as{" "}
+								<strong>{status.account.displayName}</strong> (
+								{status.account.key}).
+							</p>
 						) : (
 							<p>Sign in to mixcloud to begin uploading a show.</p>
 						)}
