@@ -107,9 +107,11 @@ accepts a user or session ID from the browser. Responses use
   date (for example, `DJ - Show, October 19, 2026`). Manual edits persist until
   reset; the server validates and forwards the provider title without
   regenerating it. Upload confirmation creates a pending upload, not a Show. The
-  current modal still closes after confirmation; the review transition and final
-  saved-show modal remain for the UI implementation unit. Reload/resume and
-  toolbar recovery are deferred to the
+  UI announces provider success, prepares the fetched metadata, then opens
+  Review Show. Explicit Save uses the endpoints below, and Show saved displays
+  the returned persisted record. A failed resource-list reload retains that
+  success and offers Reload lists separately. Reload/resume and toolbar recovery
+  are deferred to the
   [future recovery plan](plans/future/mixcloud-upload-recovery.md).
 
   Diagnostic logs include the full provider response body and HTTP status, with

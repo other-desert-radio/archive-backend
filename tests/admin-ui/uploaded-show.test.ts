@@ -120,6 +120,12 @@ test("rejects incomplete saved Show data and accepts an omitted description", as
 			Response.json({ show: { id: 42 } }),
 		),
 	).rejects.toThrow("Retry Save");
+	for (const field of ["date", "createdAt"])
+		await expect(
+			saveUploadedShow(5, reviewed, async () =>
+				Response.json({ show: { ...show, [field]: "invalid-date" } }),
+			),
+		).rejects.toThrow("Retry Save");
 	const { description: _description, ...withoutDescription } = show;
 	expect(
 		await saveUploadedShow(5, reviewed, async () =>
