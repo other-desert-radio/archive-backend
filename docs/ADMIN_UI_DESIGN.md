@@ -756,5 +756,35 @@ their drop targets, in the desktop control column and the stacked mobile column.
 Selected audio counts as an unsaved change. Selection requires one nonempty
 `.mp3` file, up to 4 billion bytes; the server uses `music-metadata` to check
 for MPEG Layer III audio. Audio has no image preview or cropping. Submission
-uploads to Mixcloud and closes on confirmed success. Failures retain the draft;
-uncertain outcomes ask the user to check Mixcloud before retrying.
+uses Upload to Mixcloud / Uploading… and locks the form while pending. Upload
+failures retain the draft; uncertain outcomes ask the user to check Mixcloud
+before retrying.
+
+Confirmed upload transitions to Uploaded to Mixcloud while preparing metadata,
+then a dedicated Review Show modal. Reuse the existing onboarding shell,
+title/date fields, description textarea, and DJ picker. Our title, description,
+date, and DJs are editable; Mixcloud title, duration, tags, show URL, image
+URLs, and image preview are read-only. Explain that review edits affect the
+archive and closing leaves the Mixcloud upload unsaved in the archive; reopening
+a pending upload is not yet available. Save Show is enabled without review
+edits. Preparation errors offer Retry loading details; save errors retain edits
+and retry only Save, never the media upload. Pending saves block dismissal and
+submission. Closing review uses the shared unsaved-change confirmation.
+
+Show saved is a persistent MessageModal, rendered from the actual saved response
+with ID, creation timestamp, title, description, date, duration, DJ/tag IDs and
+available names, Mixcloud URL, image URLs, and preview. Missing labels fall back
+to IDs. The top close control receives initial focus so phone dialogs begin at
+the heading; Escape, backdrop, or either Close dismisses and restores focus to
+the original + show control. Keep the underlying Shows view inert throughout
+upload, preparation, review, and success. Resource reload runs independently of
+committed success; failures retain the saved Show and display Reload lists
+feedback after dismissal, preserving search/sort. Existing manual onboarding and
+editing keep their ordinary endpoints and modal lifecycle.
+
+`integration-tests/uploaded-show.spec.ts` mocks every API/provider interaction
+and covers desktop, 390px, and 320px layouts; pending locks, retries, retained
+edits, stale preparation, dirty dismissal, persisted success, missing labels,
+post-save reload failures, focus restoration, and manual create/edit regression.
+Visual acceptance uses both browser automation screenshots and agent-browser
+inspection; no live provider upload is needed for these checks.

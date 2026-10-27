@@ -1,4 +1,5 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import type { UploadedShowConfirmation } from "../../../../../admin/routes/mixcloud/index.js";
 import { loadMixcloudConnection } from "../../../../loaders/mixcloud-connection.js";
 import { uploadMixcloud } from "../../../../loaders/upload-mixcloud.js";
 import sourceStyles from "../../../mixcloud/onboarding-modal/mixcloud-source-data/mixcloud-source-data.module.css";
@@ -54,6 +55,7 @@ export type ShowFormOptions = {
 type Props = ShowFormOptions & {
 	/** Onboarding only; edit callers omit this control. */
 	onboardingMode?: ShowOnboardingModeControl;
+	onUploaded?: (upload: UploadedShowConfirmation) => void;
 	initialValues: ShowFormValues;
 	unresolvedTagIds?: number[];
 	title: string;
@@ -105,6 +107,7 @@ const MixcloudSignInText = ({
 /** Shared Show create/edit values, controls, validation, and modal lifecycle. */
 export const ShowFormModal = ({
 	onboardingMode,
+	onUploaded,
 	initialValues,
 	unresolvedTagIds = [],
 	title: modalTitle,
@@ -120,6 +123,7 @@ export const ShowFormModal = ({
 }: Props) => {
 	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
 		useShowFormState(initialValues);
+	const uploaded = useRef<UploadedShowConfirmation | undefined>(undefined);
 	const [mixcloudConnected, setMixcloudConnected] = useState(false);
 	const {
 		image,
@@ -199,10 +203,11 @@ export const ShowFormModal = ({
 				fields.tagDraft,
 			);
 			if (tags.length > 5) throw new Error("Mixcloud accepts up to five tags.");
-			await uploadMixcloud({
+			uploaded.current = await uploadMixcloud({
 				title: fields.title.trim(),
 				mixcloud_title: mixcloudTitle.trim(),
 				date: fields.date,
+				djs: fields.selected,
 				tags,
 				mp3,
 				description,
@@ -459,6 +464,10 @@ export const ShowFormModal = ({
 				}
 				onClose={onClose}
 				onSubmit={submit}
+				onSubmitted={() => {
+					if (uploaded.current && onUploaded) onUploaded(uploaded.current);
+					else onClose();
+				}}
 				cancelLabel="Cancel"
 				isSubmitDisabled={
 					(isNewShow &&
@@ -473,8 +482,12 @@ export const ShowFormModal = ({
 							fields.selected.length === 0)) ||
 					pendingTagIds.length > 0
 				}
-				{...(submitLabel === undefined ? {} : { submitLabel })}
-				{...(submittingLabel === undefined ? {} : { submittingLabel })}
+				submitLabel={
+					submitLabel ?? (isNewShow ? "Upload to Mixcloud" : "Submit")
+				}
+				submittingLabel={
+					submittingLabel ?? (isNewShow ? "Uploading…" : "Submitting…")
+				}
 			>
 				{onboardingMode !== undefined && (
 					<p className={styles.modeDescription}>

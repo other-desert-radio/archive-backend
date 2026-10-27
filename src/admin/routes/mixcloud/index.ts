@@ -7,5 +7,8 @@ export type {
 	MixcloudRouteDependencies,
 	MixcloudStatus,
 	MixcloudUploadResponse,
+	ReviewedUploadFields,
+	UploadedShowConfirmation,
+	UploadedShowReview,
 	UploadMixcloudRoute,
 } from "./types.js";

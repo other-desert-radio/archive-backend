@@ -1,5 +1,9 @@
 import * as oauth from "oauth4webapi";
 import { isMatching, P } from "ts-pattern";
+import {
+	type MixcloudCloudcast,
+	UploadedCloudcastPattern,
+} from "./cloudcast.js";
 import type { MixcloudConfig } from "./config.js";
 import {
 	type MixcloudUpload,
@@ -15,6 +19,8 @@ const server: oauth.AuthorizationServer = {
 
 export type MixcloudIdentity = { key: string; displayName: string };
 export type MixcloudClient = {
+	/** Read a single cloudcast using a validated provider key; never uploads media. */
+	getCloudcast: (key: string) => Promise<MixcloudCloudcast>;
 	upload: (
 		accessToken: string,
 		upload: MixcloudUpload,
@@ -35,7 +41,9 @@ export class MixcloudClientError extends Error {
 			| "authorization_rejected"
 			| "token_exchange_failed"
 			| "identity_failed"
-			| "invalid_token",
+			| "invalid_token"
+			| "cloudcast_failed"
+			| "cloudcast_timeout",
 	) {
 		super(`Mixcloud ${code}`);
 		this.name = "MixcloudClientError";
@@ -60,6 +68,35 @@ export const createMixcloudClient = (
 	const client: oauth.Client = { client_id: config.clientId };
 
 	return {
+		async getCloudcast(key) {
+			try {
+				if (!/^\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/$/.test(key))
+					throw new Error("Invalid cloudcast key");
+				const response = await fetcher(
+					new URL(key, "https://api.mixcloud.com"),
+					{
+						method: "GET",
+						redirect: "error",
+						signal: AbortSignal.timeout(timeoutMs),
+					},
+				);
+				if (!response.ok) throw new Error("Cloudcast request failed");
+				const data: unknown = await response.json();
+				if (
+					!isMatching(UploadedCloudcastPattern, data) ||
+					data.key !== key ||
+					"error" in data
+				)
+					throw new Error("Invalid cloudcast response");
+				return data;
+			} catch (error) {
+				throw new MixcloudClientError(
+					isMatching({ name: "TimeoutError" }, error)
+						? "cloudcast_timeout"
+						: "cloudcast_failed",
+				);
+			}
+		},
 		upload: (accessToken, upload) =>
 			uploadToMixcloud(accessToken, upload, fetcher),
 		authorizationUrl(state) {

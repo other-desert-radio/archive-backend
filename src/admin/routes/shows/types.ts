@@ -13,6 +13,7 @@ export type AdminShowsJSON = ShowsJSON & {
 };
 
 const ShowFieldsPattern = {
+	description: P.optional(P.string.maxLength(1000)),
 	title: P.string,
 	date: P.string,
 	duration: P.number,

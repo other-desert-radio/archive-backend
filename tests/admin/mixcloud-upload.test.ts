@@ -1,4 +1,4 @@
-import { expect, spyOn, test } from "bun:test";
+import { expect, mock, spyOn, test } from "bun:test";
 import { readdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import multipart from "@fastify/multipart";
@@ -6,12 +6,25 @@ import Fastify from "fastify";
 import sharp from "sharp";
 import type { MixcloudIntegration } from "../../src/admin/routes/mixcloud/index.js";
 import { uploadMixcloudHandler } from "../../src/admin/routes/mixcloud/routes/upload/upload-mixcloud.js";
+import type { TypedDatabase } from "../../src/admin/routes/types.js";
 // Fixtures are short silent recordings generated with ffmpeg, with no external media.
 import { auth } from "../../src/auth/auth.js";
 
+const selectDJs = mock(async () => [{ id: 1 }]);
+const insertPending = mock(async () => ({ id: 42 }));
+const values = mock((_input: unknown) => ({
+	returningAll: () => ({ executeTakeFirstOrThrow: insertPending }),
+}));
+const database = {
+	selectFrom: () => ({
+		select: () => ({ where: () => ({ execute: selectDJs }) }),
+	}),
+	insertInto: () => ({ values }),
+} as unknown as TypedDatabase;
+
 const integration: MixcloudIntegration = {
 	client: {
-		upload: async () => ({ success: true, statusCode: 200 }),
+		upload: async () => ({ success: true, statusCode: 200, key: "/odr/show/" }),
 	} as MixcloudIntegration["client"],
 	store: {
 		getAccessToken: async () => "test-token",
@@ -41,13 +54,14 @@ const send = async (
 	const session = spyOn(auth.api, "getSession").mockResolvedValue({
 		user: { id: "acting-user", role: "editor", mustChangePassword: false },
 	} as never);
-	app.post("/upload", uploadMixcloudHandler(auth, integration));
+	app.post("/upload", uploadMixcloudHandler(auth, integration, database));
 	const form = new FormData();
 	for (const [name, value] of Object.entries({
 		title: "Show",
 		mixcloud_title: "DJ - Show",
 		date: "2024-02-29",
 		tags: '["House"]',
+		djs: "[1]",
 		...changes,
 	}))
 		if (value !== undefined) form.set(name, value);
@@ -67,7 +81,21 @@ const send = async (
 			headers: { "content-type": request.headers.get("content-type") ?? "" },
 			payload: Buffer.from(await request.arrayBuffer()),
 		});
-		expect(response.json()).toEqual({ success: response.statusCode === 200 });
+		if (response.statusCode === 200)
+			expect(response.json()).toEqual({
+				success: true,
+				uploadId: 42,
+				key: "/odr/show/",
+				url: "https://www.mixcloud.com/odr/show/",
+			});
+		else if (response.json().uploaded)
+			expect(response.json()).toEqual({
+				success: false,
+				uploaded: true,
+				key: "/odr/show/",
+				url: "https://www.mixcloud.com/odr/show/",
+			});
+		else expect(response.json()).toEqual({ success: false });
 		expect(await temporaryUploads()).toEqual(before);
 		return response.statusCode;
 	} finally {
@@ -120,7 +148,7 @@ test("rejects requests without multipart", async () => {
 	const session = spyOn(auth.api, "getSession").mockResolvedValue({
 		user: { id: "acting-user", role: "editor", mustChangePassword: false },
 	} as never);
-	app.post("/upload", uploadMixcloudHandler(auth, integration));
+	app.post("/upload", uploadMixcloudHandler(auth, integration, database));
 	try {
 		const result = await app.inject({
 			method: "POST",
@@ -154,7 +182,11 @@ for (const configured of [false, true]) {
 		);
 		app.post(
 			"/upload",
-			uploadMixcloudHandler(auth, configured ? integration : undefined),
+			uploadMixcloudHandler(
+				auth,
+				configured ? integration : undefined,
+				database,
+			),
 		);
 		try {
 			const result = await app.inject({
@@ -179,6 +211,7 @@ test("uses the acting user's token and never uploads invalid audio", async () =>
 	const provider = spyOn(integration.client, "upload").mockResolvedValue({
 		success: true,
 		statusCode: 200,
+		key: "/odr/show/",
 	});
 	try {
 		expect(await send()).toBe(200);
@@ -221,7 +254,7 @@ test("passes validated WebP unchanged to the client and cleans up both files", a
 			if (!upload.imagePath) throw new Error("Expected image path");
 			expect(await readFile(upload.imagePath)).toEqual(coverBytes);
 			paths.push(upload.path, upload.imagePath);
-			return { success: true, statusCode: 200 };
+			return { success: true, statusCode: 200, key: "/odr/show/" };
 		},
 	);
 	try {
@@ -292,6 +325,7 @@ test("forwards optional description verbatim and rejects oversized descriptions"
 	const provider = spyOn(integration.client, "upload").mockResolvedValue({
 		success: true,
 		statusCode: 200,
+		key: "/odr/show/",
 	});
 	try {
 		for (const description of [
@@ -309,6 +343,64 @@ test("forwards optional description verbatim and rejects oversized descriptions"
 		expect(
 			await send({ description: "test" }, audio, "show.mp3", "description"),
 		).toBe(400);
+	} finally {
+		provider.mockRestore();
+	}
+});
+
+test("retains editorial fields and selected DJs in the pending record", async () => {
+	values.mockClear();
+	expect(
+		await send({
+			title: "  Archive title  ",
+			description: "Our description",
+			djs: "[1,1]",
+		}),
+	).toBe(200);
+	expect(values).toHaveBeenCalledWith({
+		title: "Archive title",
+		mixcloud_title: "DJ - Show",
+		description: "Our description",
+		date: new Date("2024-02-29T00:00:00.000Z"),
+		djs: [1],
+		tags: ["House"],
+		created_by: "acting-user",
+		mixcloud_key: "/odr/show/",
+		mixcloud_data: null,
+		show_id: null,
+	});
+});
+test("rejects invalid or missing DJs without uploading", async () => {
+	const provider = spyOn(integration.client, "upload");
+	try {
+		for (const djs of [undefined, "[]", "[0]", "[1.5]", '["1"]', "not-json"])
+			expect(await send({ djs })).toBe(400);
+		selectDJs.mockResolvedValueOnce([]);
+		expect(await send()).toBe(400);
+		expect(provider).not.toHaveBeenCalled();
+	} finally {
+		provider.mockRestore();
+	}
+});
+test("distinguishes a pending-record failure after successful provider upload", async () => {
+	insertPending.mockRejectedValueOnce(new Error("database offline"));
+	const provider = spyOn(integration.client, "upload");
+	try {
+		expect(await send({}, audio, "show.mp3", undefined, cover)).toBe(500);
+		expect(provider).toHaveBeenCalledTimes(1);
+	} finally {
+		provider.mockRestore();
+	}
+});
+test("does not write pending records when the provider rejects the upload", async () => {
+	values.mockClear();
+	const provider = spyOn(integration.client, "upload").mockResolvedValue({
+		success: false,
+		statusCode: 502,
+	});
+	try {
+		expect(await send()).toBe(502);
+		expect(values).not.toHaveBeenCalled();
 	} finally {
 		provider.mockRestore();
 	}

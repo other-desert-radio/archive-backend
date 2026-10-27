@@ -37,6 +37,9 @@ export const saveShowInTransaction = async (
 
 	const values = {
 		title: normalized.title,
+		...(normalized.description === undefined
+			? {}
+			: { description: normalized.description }),
 		date: normalized.date,
 		duration: normalized.duration,
 		mixcloud_image_small: normalized.mixcloud_image_small,
@@ -105,5 +108,47 @@ export const saveShowInTransaction = async (
 		url: normalized.url,
 		djs: [...normalized.djs].sort((a, b) => a - b),
 		tags: tags.map((tag) => tag.id).sort((a, b) => a - b),
+	};
+};
+
+/** Read persisted fields and relationships for idempotent save responses. */
+export const loadSavedShow = async (
+	transaction: Transaction<Database>,
+	id: number,
+): Promise<AdminShowsJSON> => {
+	const show = await transaction
+		.selectFrom("shows")
+		.select([
+			"id",
+			"createdAt",
+			"title",
+			"description",
+			"date",
+			"duration",
+			"url",
+			"mixcloud_image_small",
+			"mixcloud_image_large",
+		])
+		.where("id", "=", id)
+		.executeTakeFirstOrThrow();
+	const djs = await transaction
+		.selectFrom("show_djs")
+		.select("dj_id")
+		.where("show_id", "=", show.id)
+		.orderBy("dj_id")
+		.execute();
+	const tags = await transaction
+		.selectFrom("show_tags")
+		.select("tag_id")
+		.where("show_id", "=", show.id)
+		.orderBy("tag_id")
+		.execute();
+	const { description, ...fields } = show;
+	return {
+		...fields,
+		...(description == null ? {} : { description }),
+		image: show.mixcloud_image_large,
+		djs: djs.map(({ dj_id }) => dj_id),
+		tags: tags.map(({ tag_id }) => tag_id),
 	};
 };

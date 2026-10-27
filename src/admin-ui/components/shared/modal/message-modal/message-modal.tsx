@@ -17,7 +17,7 @@ type MessageModalProps = {
 	secondaryAction?: MessageModalAction;
 	additionalActions?: MessageModalAction[];
 	onDismiss: () => void;
-	initialFocus?: "primary" | "secondary";
+	initialFocus?: "primary" | "secondary" | "close";
 	role?: "dialog" | "alertdialog";
 	children?: ReactNode;
 	restoreFocus?: boolean;
@@ -88,6 +88,7 @@ export const MessageModal = ({
 							type="button"
 							className={styles.close}
 							aria-label="Close dialog"
+							data-action="close"
 							onClick={onDismiss}
 						>
 							<svg

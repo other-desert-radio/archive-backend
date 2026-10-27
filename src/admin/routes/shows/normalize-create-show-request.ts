@@ -4,6 +4,7 @@ import type { CreateShowRequest } from "./types.js";
 
 export type NormalizedCreateShowRequest = {
 	title: string;
+	description?: string;
 	date: Date;
 	duration: number;
 	url: string;
@@ -54,6 +55,9 @@ export const normalizeCreateShowRequest = (
 	}
 	return {
 		title,
+		...(request.description === undefined
+			? {}
+			: { description: request.description.replace(/\r\n/g, "\n") }),
 		date,
 		duration: request.duration,
 		url,

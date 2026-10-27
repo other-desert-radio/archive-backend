@@ -33,6 +33,7 @@ export const ShowsPage = () => {
 	const [sortColumn, setSortColumn] = useState<ShowSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isLoading, setIsLoading] = useState(true);
+	const [reloadError, setReloadError] = useState<string>();
 	const [error, setError] = useState<string>();
 	const [isDJsLoading, setIsDJsLoading] = useState(false);
 	const [djsError, setDJsError] = useState<string>();
@@ -40,9 +41,10 @@ export const ShowsPage = () => {
 	const [editingShow, setEditingShow] = useState<ShowsAdminRow>();
 	const loadVersion = useRef(0);
 
-	const refreshShows = useCallback(() => {
+	const refreshShows = useCallback((keepResults = false) => {
 		const version = ++loadVersion.current;
-		setIsLoading(true);
+		if (!keepResults) setIsLoading(true);
+		setReloadError(undefined);
 		setError(undefined);
 
 		Promise.all([loadShows(), loadDJs(), loadTags()])
@@ -54,7 +56,11 @@ export const ShowsPage = () => {
 			})
 			.catch(() => {
 				if (version === loadVersion.current) {
-					setError("The shows could not be loaded.");
+					if (keepResults)
+						setReloadError(
+							"Show saved, but the latest resource lists could not be loaded.",
+						);
+					else setError("The shows could not be loaded.");
 				}
 			})
 			.finally(() => {
@@ -127,50 +133,68 @@ export const ShowsPage = () => {
 
 	return (
 		<>
-			<ResourceView
-				title="SHOWS"
-				isLoading={isLoading}
-				error={error}
-				onRetry={refreshShows}
-				isEmpty={shows.length === 0}
-				emptyMessage="No shows have been added yet."
-				hasNoResults={shows.length > 0 && visibleShows.length === 0}
-				noResultsMessage="No Shows match your search."
-				toolbar={
-					<ShowsToolbar
-						query={query}
-						onQueryChange={setQuery}
-						viewMode={viewMode}
-						onViewModeChange={handleViewModeChange}
-						onAddShow={() => setIsModalOpen(true)}
-					/>
-				}
-			>
-				{(() => {
-					switch (viewMode) {
-						case "grid":
-							return (
-								<ResourceGrid
-									rows={visibleShows}
-									rowKey={(show) => show.id}
-									renderCard={(show, key) =>
-										renderShowCard(show, tagsById, djsById, key, handleEditShow)
-									}
-								/>
-							);
-						case "table":
-							return (
-								<ShowsTable
-									shows={visibleShows}
-									sortColumn={sortColumn}
-									sortDirection={sortDirection}
-									onSort={handleSort}
-									onEdit={handleEditShow}
-								/>
-							);
+			<div inert={isModalOpen || editingShow !== undefined}>
+				<ResourceView
+					title="SHOWS"
+					isLoading={isLoading}
+					error={error}
+					onRetry={() => refreshShows()}
+					banner={
+						reloadError && (
+							<div role="status">
+								<p>{reloadError}</p>
+								<button type="button" onClick={() => refreshShows(true)}>
+									Reload lists
+								</button>
+							</div>
+						)
 					}
-				})()}
-			</ResourceView>
+					isEmpty={shows.length === 0}
+					emptyMessage="No shows have been added yet."
+					hasNoResults={shows.length > 0 && visibleShows.length === 0}
+					noResultsMessage="No Shows match your search."
+					toolbar={
+						<ShowsToolbar
+							query={query}
+							onQueryChange={setQuery}
+							viewMode={viewMode}
+							onViewModeChange={handleViewModeChange}
+							onAddShow={() => setIsModalOpen(true)}
+						/>
+					}
+				>
+					{(() => {
+						switch (viewMode) {
+							case "grid":
+								return (
+									<ResourceGrid
+										rows={visibleShows}
+										rowKey={(show) => show.id}
+										renderCard={(show, key) =>
+											renderShowCard(
+												show,
+												tagsById,
+												djsById,
+												key,
+												handleEditShow,
+											)
+										}
+									/>
+								);
+							case "table":
+								return (
+									<ShowsTable
+										shows={visibleShows}
+										sortColumn={sortColumn}
+										sortDirection={sortDirection}
+										onSort={handleSort}
+										onEdit={handleEditShow}
+									/>
+								);
+						}
+					})()}
+				</ResourceView>
+			</div>
 			<OnboardShowModal
 				isOpen={isModalOpen}
 				djs={djs}
@@ -179,6 +203,14 @@ export const ShowsPage = () => {
 				onRetryDJs={refreshDJs}
 				onClose={() => setIsModalOpen(false)}
 				onSubmit={handleCreateShow}
+				tags={tags}
+				onSaved={(show) => {
+					setShows((current) => [
+						show,
+						...current.filter((item) => item.id !== show.id),
+					]);
+					refreshShows(true);
+				}}
 			/>
 			{editingShow !== undefined && (
 				<EditShowModal

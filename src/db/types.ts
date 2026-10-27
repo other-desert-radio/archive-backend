@@ -19,6 +19,7 @@ export type Database = {
 	show_tags: ShowTagsTable;
 	dj_tags: DjTagsTable;
 	mixcloud_import: MixcloudImportTable;
+	mixcloud_uploads: MixcloudUploadsTable;
 	user: BetterAuthUserTable;
 	session: BetterAuthSessionTable;
 	account: BetterAuthAccountTable;
@@ -33,6 +34,26 @@ export type MixcloudConnectionsTable = {
 	access_token_encrypted: string;
 	createdAt: Generated<Date>;
 	updated_at: Generated<Date>;
+};
+
+/** Successful provider uploads awaiting review; media bytes are never retained. */
+export type MixcloudUploadsTable = {
+	id: Generated<number>;
+	createdAt: Generated<Date>;
+	created_by: string | null;
+	mixcloud_key: string;
+	title: string;
+	description: string | null;
+	date: Date;
+	djs: number[];
+	mixcloud_title: string;
+	tags: string[];
+	mixcloud_data: ColumnType<
+		Record<string, unknown> | null,
+		string | null | undefined,
+		string | null
+	>;
+	show_id: number | null;
 };
 
 export type MixcloudOAuthAttemptsTable = {

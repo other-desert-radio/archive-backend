@@ -1,0 +1,41 @@
+.notice {
+	grid-column: 1 / -1;
+	margin: 0;
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+.preview {
+	display: block;
+	width: 160px;
+	max-width: 100%;
+	height: auto;
+	margin-top: 16px;
+}
+.successPanel {
+	--message-modal-width: 864px;
+}
+.details {
+	margin: 24px 0;
+}
+.details > div {
+	display: grid;
+	grid-template-columns: 9rem minmax(0, 1fr);
+	gap: 8px 16px;
+	margin-top: 12px;
+}
+.details dt {
+	font-weight: 700;
+}
+.details dd {
+	min-width: 0;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+.description {
+	white-space: pre-wrap;
+}
+@media (max-width: 450px) {
+	.details > div {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

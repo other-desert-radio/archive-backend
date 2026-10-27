@@ -43,6 +43,7 @@ test("sends disk-backed multipart audio and names, without date or artwork", asy
 		},
 	);
 	expect(result.success).toBe(true);
+	if (result.success) expect(result.key).toMatch(/^\/[^/]+\/[^/]+\/$/);
 	expect(result.statusCode).toBe(200);
 });
 
@@ -81,6 +82,7 @@ test("forwards optional WebP artwork unchanged as picture", async () => {
 			},
 		);
 		expect(result.success).toBe(true);
+		if (result.success) expect(result.key).toMatch(/^\/[^/]+\/[^/]+\/$/);
 		expect(result.statusCode).toBe(200);
 	} finally {
 		await rm(directory, { recursive: true, force: true });
@@ -88,6 +90,19 @@ test("forwards optional WebP artwork unchanged as picture", async () => {
 });
 
 for (const { status, body, expected } of [
+	...[
+		undefined,
+		"",
+		"/odr/",
+		"https://evil.test/show/",
+		"//evil.test/",
+		"/odr/../",
+		"/odr/show/?secret=x",
+	].map((key) => ({
+		status: 200,
+		body: { result: { success: true, key } },
+		expected: 502,
+	})),
 	{ status: 200, body: { success: false }, expected: 502 },
 	{ status: 200, body: { result: { success: false } }, expected: 502 },
 	{ status: 200, body: { result: { success: "true" } }, expected: 502 },
