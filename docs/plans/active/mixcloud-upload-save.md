@@ -3,8 +3,10 @@
 ## Status
 
 Chunked mode, with substantial responsibility groups. Documentation additions
-are complete; the first unit's file structure is proposed and awaits approval.
-No runtime code or schema changes have been made. User review is incomplete.
+are complete; the first unit's structure was approved and its storage
+scaffolding is in place. Scaffolding review is pending. Live upload behavior is
+unchanged; the migration and storage function explicitly throw until
+implemented.
 
 ## Decisions
 
@@ -69,4 +71,18 @@ typecheck, focused tests, admin build when affected, lint, and required
 desktop/phone browser acceptance for the final UI unit. No live uploads or
 regular database mutations for verification.
 
-Next: review the first unit's file structure, then request its scaffolding.
+## First-unit scaffolding
+
+- Added the pending database row type, editorial draft contract, successful
+  upload confirmation type, and recordUploadedShow storage entry point.
+- Added up/down migration stubs and a test-file responsibility comment. No
+  assertions test unfinished stubs; executable checks arrive with behavior.
+- Left provider parsing, multipart handling, route dependencies, browser loader,
+  and live replies unchanged. They will be connected during implementation, so
+  no production request can reach the unfinished storage function.
+- The migration throws explicitly; do not apply it or run all migrations until
+  its implementation is approved and complete.
+- Typecheck, repository lint, docs:check, and diff whitespace checks passed. No
+  migration, database test, browser check, or live upload was run.
+
+Next: review scaffolding and authorize implementation of unit 1.

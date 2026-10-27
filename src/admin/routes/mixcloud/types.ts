@@ -40,6 +40,13 @@ export type DisconnectMixcloudRoute = {
 
 export type MixcloudUploadResponse = { success: boolean };
 
+/** Future success reply; wired into the live route only after implementation. */
+export type UploadedShowConfirmation = {
+	uploadId: number;
+	key: string;
+	url: string;
+};
+
 /** Multipart title, date, JSON tag names, and one MP3 file. */
 export type UploadMixcloudRoute = {
 	Reply: Omit<AdminApiReply<MixcloudUploadResponse>, 400 | 500> & {
