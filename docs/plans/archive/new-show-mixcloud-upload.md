@@ -1,11 +1,12 @@
 # New-show Mixcloud upload
 
-## Handoff status
+## Archived status
 
-All seven requested implementation chunks are implemented. Final user review and
-live Mixcloud verification remain pending; do not mark them complete. The user
-explicitly owns browser verification: do not run browser checks. Preserve
-unrelated local edits; current changes are not committed.
+Archived at the user's request. Implementation is complete; live Mixcloud
+verification remains unperformed. Historical decisions below describe the
+original implementation. Later title, artwork, description, validation, and UI
+changes are recorded in [Mixcloud upload title](mixcloud-upload-title.md).
+Current behavior is documented in the API conventions and admin UI guide.
 
 ## Completed chunks and decisions
 
@@ -103,8 +104,8 @@ unrelated local edits; current changes are not committed.
 3. Confirm the show appears on the intended account, and user-facing failure
    behavior preserves drafts. Never automatically retry uncertain results:
    Mixcloud may have published even if the response was lost.
-4. Only after user acceptance, archive this plan or retain useful history under
-   `docs/plans/archive/`; do not mark user review complete without their input.
+4. This plan has been archived at the user’s request; live verification remains
+   a separate follow-up.
 
 ## Deferred
 

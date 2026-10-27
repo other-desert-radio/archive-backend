@@ -4,6 +4,7 @@ import { apiFetch } from "./api-fetch.js";
 /** Posts audio directly to our server; browser credentials never include a provider token. */
 export const uploadMixcloud = async (fields: {
 	title: string;
+	mixcloud_title: string;
 	date: string;
 	tags: string[];
 	mp3: File;
@@ -12,6 +13,7 @@ export const uploadMixcloud = async (fields: {
 }): Promise<void> => {
 	const body = new FormData();
 	body.set("title", fields.title);
+	body.set("mixcloud_title", fields.mixcloud_title);
 	if (fields.description !== undefined)
 		body.set("description", fields.description);
 	body.set("date", fields.date);

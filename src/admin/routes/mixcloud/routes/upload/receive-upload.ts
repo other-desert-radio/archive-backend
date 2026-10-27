@@ -109,7 +109,9 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 				return reject("empty_or_truncated_audio");
 		} else {
 			if (
-				!["title", "date", "tags", "description"].includes(part.fieldname) ||
+				!["title", "mixcloud_title", "date", "tags", "description"].includes(
+					part.fieldname,
+				) ||
 				part.valueTruncated
 			) {
 				request.log.warn(
@@ -131,6 +133,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 		!isMatching(
 			{
 				title: P.string,
+				mixcloud_title: P.string,
 				date: P.string,
 				tags: P.string,
 				description: P.optional(P.string.maxLength(1000)),
@@ -139,7 +142,11 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 		)
 	)
 		return reject("missing_or_invalid_parts");
-	if (!fields.title.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(fields.date))
+	if (
+		!fields.title.trim() ||
+		!fields.mixcloud_title.trim() ||
+		!/^\d{4}-\d{2}-\d{2}$/.test(fields.date)
+	)
 		return reject("invalid_title_or_date");
 	// Round-trip the date because JavaScript normalizes impossible dates such as February 30.
 	const date = new Date(`${fields.date}T00:00:00.000Z`);
@@ -208,7 +215,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 
 	return {
 		...(imagePath === undefined ? {} : { imagePath }),
-		title: fields.title.trim(),
+		title: fields.mixcloud_title.trim(),
 		...(fields.description === undefined
 			? {}
 			: { description: fields.description }),

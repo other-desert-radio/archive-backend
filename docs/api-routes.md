@@ -69,31 +69,35 @@ accepts a user or session ID from the browser. Responses use
   Disabled integrations return 503. This does not log out of Mixcloud or revoke
   authorization at the provider.
 
-- `POST /api/admin/mixcloud/upload` accepts multipart `title`, `date` (valid
-  calendar show date, not publication scheduling), `tags` (JSON array of up to
-  five nonblank names), optional `description` (up to 1000 characters, with
-  multipart CRLF line endings normalized to LF), and exactly one nonempty `.mp3`
-  file, up to 4 billion bytes. An optional `image` file must be a single-frame,
-  decodable 1200 × 1200 WebP with an `image/webp` MIME type and `.webp`
-  extension, at most 10 million bytes. Its byte limit is enforced during
-  streaming. Both files are removed before responding, including on validation
-  or provider failure. The validated image is forwarded unchanged as `picture`,
-  with filename `cover.webp` and MIME type `image/webp`. The route inherits
-  session and trusted-origin protections. The audio streams to private temporary
-  storage, is parsed with `music-metadata` to require MPEG Layer III audio, and
-  is deleted before the response. Invalid requests return 400; multipart
-  size/count limits return 413; storage errors return 500, all with
-  `{success:false}`. The acting user's stored token is decrypted server-side;
-  disabled integrations return 503 and disconnected/rejected connections
-  return 403. Valid audio is sent to Mixcloud as `mp3`, title as `name`,
-  description as `description` when supplied, and tags as `tags-X-tag`, using
-  the separate provider function in `src/mixcloud/upload.ts`. Date is omitted;
-  publication uses Mixcloud's public default. Confirmed provider success returns
-  200 with `{success:true}`. Provider rate limits return 429,
-  unconfirmed/rejected uploads return 502, and timeouts return 504, all with
-  `{success:false}`. Uploads have a 30-minute provider timeout and are never
-  automatically retried. Check Mixcloud before retrying an uncertain result. No
-  archive record is created.
+- `POST /api/admin/mixcloud/upload` accepts multipart `title` (original show
+  title), `mixcloud_title` (editable provider title), `date` (valid calendar
+  show date, not publication scheduling), `tags` (JSON array of up to five
+  nonblank names), optional `description` (up to 1000 characters, with multipart
+  CRLF line endings normalized to LF), and exactly one nonempty `.mp3` file, up
+  to 4 billion bytes. An optional `image` file must be a single-frame, decodable
+  1200 × 1200 WebP with an `image/webp` MIME type and `.webp` extension, at most
+  10 million bytes. Its byte limit is enforced during streaming. Both files are
+  removed before responding, including on validation or provider failure. The
+  validated image is forwarded unchanged as `picture`, with filename
+  `cover.webp` and MIME type `image/webp`. The route inherits session and
+  trusted-origin protections. The audio streams to private temporary storage, is
+  parsed with `music-metadata` to require MPEG Layer III audio, and is deleted
+  before the response. Invalid requests return 400; multipart size/count limits
+  return 413; storage errors return 500, all with `{success:false}`. The acting
+  user's stored token is decrypted server-side; disabled integrations return 503
+  and disconnected/rejected connections return 403. Valid audio is sent to
+  Mixcloud as `mp3`, `mixcloud_title` as `name`, description as `description`
+  when supplied, and tags as `tags-X-tag`, using the separate provider function
+  in `src/mixcloud/upload.ts`. Date is omitted; publication uses Mixcloud's
+  public default. Confirmed provider success returns 200 with `{success:true}`.
+  Provider rate limits return 429, unconfirmed/rejected uploads return 502, and
+  timeouts return 504, all with `{success:false}`. Uploads have a 30-minute
+  provider timeout and are never automatically retried. Check Mixcloud before
+  retrying an uncertain result. Both titles must be nonblank. The new-show modal
+  generates the editable provider title from selected DJ names joined with `+`,
+  show title, and show date (for example, `DJ - Show, October 19, 2026`). Manual
+  edits persist until reset; the server validates and forwards the provider
+  title without regenerating it. No archive record is created.
 
   Diagnostic logs include the full provider response body and HTTP status, with
   credential fields and the acting token redacted. Unknown response shapes are

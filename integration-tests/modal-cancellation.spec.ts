@@ -282,7 +282,7 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 		);
 		await add.click();
 		const form = page.getByRole("dialog", {
-			name: resource === "djs" ? "Onboard DJ" : "New Show",
+			name: resource === "djs" ? "Onboard DJ" : "Upload Show",
 		});
 		await expect(form).toBeFocused();
 		await expect(
