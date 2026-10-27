@@ -12,10 +12,15 @@ import {
 	MessageModal,
 	OnboardingModal,
 	SearchableMultiSelect,
+	TagsInput,
+	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { formatDuration } from "../../../shared/resource-views/index.js";
 import type { ShowFormOptions } from "../show-form-modal/index.js";
-import { useShowFormState } from "../show-form-state/index.js";
+import {
+	buildShowFormRequest,
+	useShowFormState,
+} from "../show-form-state/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 import styles from "./uploaded-show-modal.module.css";
 
@@ -53,6 +58,8 @@ export const UploadedShowModal = (props: UploadedShowModalProps) => {
 		<MessageModal
 			title="Uploaded to Mixcloud"
 			message="Your show is on Mixcloud. It has not been saved to the archive yet."
+			panelClassName={styles.preparationPanel}
+			initialFocus="secondary"
 			onDismiss={props.onClose}
 			primaryAction={{
 				label: error ? "Retry loading details" : "Loading show details…",
@@ -61,7 +68,11 @@ export const UploadedShowModal = (props: UploadedShowModalProps) => {
 			}}
 			secondaryAction={{ label: "Close", onClick: props.onClose }}
 		>
-			<p role="status">Uploaded to Mixcloud.</p>
+			<p className={styles.notice}>
+				<a href={props.upload.url} target="_blank" rel="noreferrer">
+					{props.upload.key}
+				</a>
+			</p>
 			{error && (
 				<p role="alert" className={styles.notice}>
 					{error}
@@ -93,6 +104,8 @@ const ReviewForm = ({
 		tagDraft: "",
 	});
 	const [description, setDescription] = useState(editorial.description);
+	const { tagOptions, isTagsLoading, tagsError, loadTagOptions } =
+		useTagOptions(true);
 	const saved = useRef<ShowsAdminRow | undefined>(undefined);
 	useEffect(() => {
 		onRetryDJs();
@@ -100,6 +113,8 @@ const ReviewForm = ({
 	const submit = async () => {
 		if (isDJsLoading || djsError)
 			throw new Error("DJs must finish loading before saving.");
+		if (isTagsLoading || tagsError)
+			throw new Error("Tags must finish loading before saving.");
 		if (!fields.title.trim()) throw new Error("Title is required.");
 		if (
 			fields.selected.length === 0 ||
@@ -111,6 +126,7 @@ const ReviewForm = ({
 			description,
 			date: fields.date,
 			djs: fields.selected,
+			tags: buildShowFormRequest(fields).tags ?? [],
 		});
 	};
 	return (
@@ -128,7 +144,11 @@ const ReviewForm = ({
 			submittingLabel="Saving…"
 			cancelLabel="Close"
 			isSubmitDisabled={
-				isDJsLoading || djsError !== undefined || fields.selected.length === 0
+				isDJsLoading ||
+				djsError !== undefined ||
+				isTagsLoading ||
+				tagsError !== undefined ||
+				fields.selected.length === 0
 			}
 		>
 			<p role="status" className={styles.notice}>
@@ -165,6 +185,17 @@ const ReviewForm = ({
 				maxLength={1000}
 				helper="Changes here affect the archive; your Mixcloud upload stays as uploaded."
 			/>
+			<TagsInput
+				id="uploaded-show-tags"
+				value={{ tags: fields.tags, draft: fields.tagDraft }}
+				onChange={({ tags, draft }) =>
+					setFields({ ...fields, tags, tagDraft: draft })
+				}
+				options={tagOptions}
+				isLoading={isTagsLoading}
+				{...(tagsError === undefined ? {} : { error: tagsError })}
+				onRetry={loadTagOptions}
+			/>
 			<section
 				className={sourceStyles.section}
 				aria-labelledby="uploaded-show-provider-heading"
@@ -185,12 +216,6 @@ const ReviewForm = ({
 							<a href={mixcloud.url} target="_blank" rel="noreferrer">
 								{mixcloud.url}
 							</a>
-						</dd>
-					</div>
-					<div>
-						<dt>tags</dt>
-						<dd>
-							{mixcloud.tags.map(({ name }) => name).join(", ") || "None"}
 						</dd>
 					</div>
 					<div>
@@ -217,16 +242,21 @@ const ReviewForm = ({
 							</a>
 						</dd>
 					</div>
+					<div>
+						<dt>cover</dt>
+						<dd>
+							<img
+								className={styles.preview}
+								src={mixcloud.pictures.large}
+								alt="Uploaded show cover"
+							/>
+						</dd>
+					</div>
 				</dl>
-				<img
-					className={styles.preview}
-					src={mixcloud.pictures.large}
-					alt="Uploaded show cover"
-				/>
 			</section>
-			<p className={styles.notice}>
-				Closing leaves this show on Mixcloud without adding it to the archive.
-				Resuming after closing is not available yet.
+			<p className={`${styles.notice} ${styles.helper}`}>
+				Closing leaves this show unsaved in the archive. You can resume from
+				Pending uploads on the Shows page.
 			</p>
 		</OnboardingModal>
 	);

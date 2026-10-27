@@ -50,6 +50,15 @@ for (const [role, status] of [
 			),
 		);
 		try {
+			expect(
+				(
+					await app.inject({
+						method: "DELETE",
+						url: "/api/admin/mixcloud/uploads/1",
+						headers: { origin: "https://foreign.test" },
+					})
+				).statusCode,
+			).toBe(status);
 			for (const action of ["prepare", "save"])
 				expect(
 					(
@@ -58,6 +67,15 @@ for (const [role, status] of [
 							url: `/api/admin/mixcloud/uploads/1/${action}`,
 							headers: { origin: "https://foreign.test" },
 							payload: {},
+						})
+					).statusCode,
+				).toBe(status);
+			if (role !== "editor")
+				expect(
+					(
+						await app.inject({
+							method: "GET",
+							url: "/api/admin/mixcloud/uploads/pending",
 						})
 					).statusCode,
 				).toBe(status);
@@ -79,8 +97,17 @@ test.skipIf(!databaseUrl)(
 				}),
 			}),
 		});
-		const app = Fastify();
-		let mode: "ok" | "timeout" | "malformed" = "ok";
+		const logs: Record<string, unknown>[] = [];
+		const app = Fastify({
+			logger: {
+				stream: {
+					write: (line: string) => {
+						logs.push(JSON.parse(line));
+					},
+				},
+			},
+		});
+		let mode: "ok" | "timeout" | "malformed" | "http" = "ok";
 		let providerCalls = 0;
 		const integration: MixcloudIntegration = {
 			client: createMixcloudClient(
@@ -93,6 +120,11 @@ test.skipIf(!databaseUrl)(
 				{
 					fetcher: async (url) => {
 						providerCalls++;
+						if (mode === "http")
+							return Response.json(
+								{ error: { message: "private-provider-message" } },
+								{ status: 404 },
+							);
 						if (mode === "timeout")
 							throw new DOMException(
 								"private-provider-message",
@@ -111,6 +143,7 @@ test.skipIf(!databaseUrl)(
 		};
 		const reviewed = {
 			title: " Reviewed title ",
+			tags: ["Reviewed tag"],
 			description: "Our description\r\nSecond line",
 			date: "2026-10-25",
 			djs: [1, 1],
@@ -195,6 +228,85 @@ test.skipIf(!databaseUrl)(
 				),
 			);
 			const upload = await record(cloudcast.key);
+			const pending = () =>
+				app.inject({
+					method: "GET",
+					url: "/api/admin/mixcloud/uploads/pending",
+				});
+			const pendingResponse = await pending();
+			expect(pendingResponse.statusCode).toBe(200);
+			expect(pendingResponse.headers["cache-control"]).toBe("no-store");
+			expect(pendingResponse.json()).toEqual([
+				{
+					uploadId: upload.id,
+					title: "Original title",
+					date: "2026-10-26",
+					key: cloudcast.key,
+					url: cloudcast.url,
+				},
+			]);
+			expect(providerCalls).toBe(0);
+			const remove = (id: number | string) =>
+				app.inject({
+					method: "DELETE",
+					url: `/api/admin/mixcloud/uploads/${id}`,
+					headers: { origin: authOrigin },
+				});
+			for (const id of ["0", "1.5", "9007199254740992", "abc"])
+				expect((await remove(id)).statusCode).toBe(400);
+			expect((await remove(999)).statusCode).toBe(404);
+			const removable = await record("/odr/remove-me/");
+			expect(
+				(await pending())
+					.json()
+					.map((item: { uploadId: number }) => item.uploadId),
+			).toEqual([removable.id, upload.id]);
+			expect((await remove(removable.id)).json()).toEqual({
+				uploadId: removable.id,
+			});
+			expect((await pending()).json()).toHaveLength(1);
+			expect((await remove(removable.id)).statusCode).toBe(404);
+			expect(providerCalls).toBe(0);
+			const unconfigured = Fastify({
+				logger: {
+					stream: {
+						write: (line: string) => {
+							logs.push(JSON.parse(line));
+						},
+					},
+				},
+			});
+			try {
+				await unconfigured.register(
+					adminRoutes(
+						{
+							api: {
+								getSession: async () => ({
+									user: { id: "actor", role: "editor" },
+								}),
+							},
+						} as never,
+						db,
+					),
+				);
+				const unavailable = await unconfigured.inject({
+					method: "POST",
+					url: `/api/admin/mixcloud/uploads/${upload.id}/prepare`,
+					headers: { origin: authOrigin },
+				});
+				expect(unavailable.statusCode).toBe(503);
+				expect(logs).toContainEqual(
+					expect.objectContaining({
+						uploadId: upload.id,
+						statusCode: 503,
+						reason: "integration_not_configured",
+						elapsedMs: expect.any(Number),
+						reqId: expect.any(String),
+					}),
+				);
+			} finally {
+				await unconfigured.close();
+			}
 			const revision = async () =>
 				(
 					await db
@@ -213,9 +325,35 @@ test.skipIf(!databaseUrl)(
 			expect((await post(upload.id, "prepare")).statusCode).toBe(504);
 			mode = "malformed";
 			expect((await post(upload.id, "prepare")).statusCode).toBe(502);
+			expect((await pending()).json()).toHaveLength(1);
+			mode = "http";
+			expect((await post(upload.id, "prepare")).statusCode).toBe(502);
+			expect(logs).toContainEqual(
+				expect.objectContaining({
+					uploadId: upload.id,
+					statusCode: 502,
+					providerStatus: 404,
+					failureReason: "http_error",
+					msg: "[Mixcloud Review] Mixcloud API returned HTTP 404",
+					elapsedMs: expect.any(Number),
+					reqId: expect.any(String),
+				}),
+			);
+			expect(JSON.stringify(logs)).not.toContain("private-provider-message");
 			mode = "ok";
 			const prepared = await post(upload.id, "prepare");
 			expect(prepared.statusCode).toBe(200);
+			expect(logs).toContainEqual(
+				expect.objectContaining({
+					msg: "[Mixcloud Review] fetched provider metadata",
+					requestedTitle: "Provider title",
+					archiveTitle: "Original title",
+					metadata: expect.objectContaining({
+						name: cloudcast.name,
+						tags: cloudcast.tags,
+					}),
+				}),
+			);
 			expect(prepared.json()).toMatchObject({
 				uploadId: upload.id,
 				editorial: {
@@ -281,6 +419,7 @@ test.skipIf(!databaseUrl)(
 				{ djs: [] },
 				{ djs: [999] },
 				{ description: "x".repeat(1001) },
+				{ tags: [42] },
 			])
 				expect(
 					(await post(upload.id, "save", { ...reviewed, ...changes }))
@@ -303,7 +442,6 @@ test.skipIf(!databaseUrl)(
 					...reviewed,
 					duration: 999,
 					url: "https://fake.test/",
-					tags: ["Fake"],
 				}),
 				post(upload.id, "save", reviewed),
 			]);
@@ -325,7 +463,7 @@ test.skipIf(!databaseUrl)(
 			expect(
 				(await db.selectFrom("tags").select("title").executeTakeFirstOrThrow())
 					.title,
-			).toBe("House");
+			).toBe("Reviewed tag");
 			expect(
 				(
 					await db
@@ -336,6 +474,8 @@ test.skipIf(!databaseUrl)(
 				).show_id,
 			).toBe(saved.id);
 			expect((await post(upload.id, "prepare")).statusCode).toBe(409);
+			expect((await pending()).json()).toEqual([]);
+			expect((await remove(upload.id)).statusCode).toBe(409);
 			expect(
 				(
 					await post(upload.id, "save", {
@@ -396,7 +536,7 @@ test.skipIf(!databaseUrl)(
 				[uploadResponse.statusCode, importResponse.statusCode].sort(),
 			).toEqual([200, 201]);
 			expect(uploadResponse.json().show.id).toBe(importResponse.json().id);
-			expect(await counts()).toEqual(["2", "1", "2", "2", "2"]);
+			expect(await counts()).toEqual(["2", "2", "2", "2", "2"]);
 		} finally {
 			await app.close();
 			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(db);

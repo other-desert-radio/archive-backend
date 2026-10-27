@@ -110,8 +110,9 @@ accepts a user or session ID from the browser. Responses use
   UI announces provider success, prepares the fetched metadata, then opens
   Review Show. Explicit Save uses the endpoints below, and Show saved displays
   the returned persisted record. A failed resource-list reload retains that
-  success and offers Reload lists separately. Reload/resume and toolbar recovery
-  are deferred to the
+  success and offers Reload lists separately. Confirmed pending uploads can be
+  resumed from the Shows toolbar after closing or reloading. Uncertain attempts
+  without a recorded confirmation remain deferred to the
   [future recovery plan](plans/future/mixcloud-upload-recovery.md).
 
   Diagnostic logs include the full provider response body and HTTP status, with
@@ -123,6 +124,17 @@ accepts a user or session ID from the browser. Responses use
   Request logs provide correlation IDs. Audio bytes, request metadata values,
   token-bearing URLs, and temporary paths are omitted.
 
+- `GET /api/admin/mixcloud/uploads/pending` returns all uploads with no linked
+  archive Show, newest first, as `{uploadId,title,date,key,url}[]`. The date is
+  a UTC calendar date. Admins and editors share the queue; responses omit
+  creator identities, provider payloads, and credentials. Listing requires no
+  Mixcloud connection or provider requests, includes failed preparations, and
+  uses `Cache-Control: no-store`. Database failures return `500`.
+- `DELETE /api/admin/mixcloud/uploads/:id` removes only a pending database
+  record and returns `{uploadId}`. It never calls Mixcloud or deletes a Show.
+  Invalid IDs return `400`, missing records `404`, already saved uploads `409`,
+  and database failures `500`. It inherits session and trusted-origin checks.
+  The delete condition prevents removal of a concurrently saved upload.
 - `POST /api/admin/mixcloud/uploads/:id/prepare` loads the pending upload,
   fetches its single cloudcast from the fixed Mixcloud API origin, validates the
   matching key, HTTP(S) URLs, positive integer duration, and source tags, and
@@ -133,13 +145,25 @@ accepts a user or session ID from the browser. Responses use
   disabled integrations `503`, provider failures `502`, and provider timeouts
   `504`. Database failures return `500`. The provider read has a ten-second
   default timeout, rejects redirects, needs no OAuth token, and never retries.
+  Warning logs include upload ID, request correlation ID, elapsed milliseconds,
+  endpoint status, and a plain-language cause. A local `503` records
+  `integration_not_configured`. Provider failures distinguish HTTP rejection
+  (including the provider's HTTP status), timeout, network failure, unreadable
+  JSON, invalid metadata, mismatched keys, and error-bearing payloads. For
+  example, a provider `404` logs “Mixcloud API returned HTTP 404” while the
+  endpoint responds `502`. Successful fetches log the requested provider title,
+  original archive title, and validated metadata fields (including the fetched
+  name, tags, duration, dates, show URL, and image URLs). Unexpected response
+  fields, credentials, and raw transport errors are excluded.
 - `POST /api/admin/mixcloud/uploads/:id/save` accepts reviewed
-  `{title,description,date,djs}`. Description is required and may be empty, up
-  to 1000 characters. Title/date/DJs use the shared Show validation; DJ
-  existence is checked in the saving transaction. Duration, image URLs, show
-  URL, and tag names come exclusively from the stored validated snapshot; extra
-  browser fields cannot override them. One transaction locks the upload,
-  persists and locks its source tracking row, reuses the existing import
+  `{title,description,date,djs,tags?}`. Optional tags are an array of names;
+  supplied tags replace the archive selection, including an empty array. Omitted
+  tags preserve the fetched provider tags for existing clients. Description is
+  required and may be empty, up to 1000 characters. Title/date/DJs use the
+  shared Show validation; DJ existence is checked in the saving transaction.
+  Duration, image URLs, show URL come exclusively from the stored validated
+  snapshot; extra browser fields cannot override them. One transaction locks the
+  upload, persists and locks its source tracking row, reuses the existing import
   transaction, and links the upload to the saved Show. Creation returns
   `201 {show}`; replay or an already imported source returns `200 {show}`
   without overwriting the Show. Invalid input returns `400`, unknown uploads

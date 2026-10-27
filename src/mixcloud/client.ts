@@ -44,6 +44,16 @@ export class MixcloudClientError extends Error {
 			| "invalid_token"
 			| "cloudcast_failed"
 			| "cloudcast_timeout",
+		public readonly providerStatus?: number,
+		public readonly failureReason?:
+			| "invalid_key"
+			| "http_error"
+			| "invalid_json"
+			| "invalid_metadata"
+			| "key_mismatch"
+			| "provider_error"
+			| "timeout"
+			| "network_error",
 	) {
 		super(`Mixcloud ${code}`);
 		this.name = "MixcloudClientError";
@@ -69,9 +79,14 @@ export const createMixcloudClient = (
 
 	return {
 		async getCloudcast(key) {
+			let providerStatus: number | undefined;
 			try {
 				if (!/^\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/$/.test(key))
-					throw new Error("Invalid cloudcast key");
+					throw new MixcloudClientError(
+						"cloudcast_failed",
+						undefined,
+						"invalid_key",
+					);
 				const response = await fetcher(
 					new URL(key, "https://api.mixcloud.com"),
 					{
@@ -80,20 +95,50 @@ export const createMixcloudClient = (
 						signal: AbortSignal.timeout(timeoutMs),
 					},
 				);
-				if (!response.ok) throw new Error("Cloudcast request failed");
-				const data: unknown = await response.json();
-				if (
-					!isMatching(UploadedCloudcastPattern, data) ||
-					data.key !== key ||
-					"error" in data
-				)
-					throw new Error("Invalid cloudcast response");
+				providerStatus = response.status;
+				if (!response.ok)
+					throw new MixcloudClientError(
+						"cloudcast_failed",
+						providerStatus,
+						"http_error",
+					);
+				const data: unknown = await response.json().catch((error) => {
+					if (!(error instanceof SyntaxError)) throw error;
+					throw new MixcloudClientError(
+						"cloudcast_failed",
+						providerStatus,
+						"invalid_json",
+					);
+				});
+				if (isMatching({ error: P.unknown }, data))
+					throw new MixcloudClientError(
+						"cloudcast_failed",
+						providerStatus,
+						"provider_error",
+					);
+				if (!isMatching(UploadedCloudcastPattern, data))
+					throw new MixcloudClientError(
+						"cloudcast_failed",
+						providerStatus,
+						"invalid_metadata",
+					);
+				if (data.key !== key)
+					throw new MixcloudClientError(
+						"cloudcast_failed",
+						providerStatus,
+						"key_mismatch",
+					);
 				return data;
 			} catch (error) {
+				if (error instanceof MixcloudClientError) throw error;
 				throw new MixcloudClientError(
 					isMatching({ name: "TimeoutError" }, error)
 						? "cloudcast_timeout"
 						: "cloudcast_failed",
+					providerStatus,
+					isMatching({ name: "TimeoutError" }, error)
+						? "timeout"
+						: "network_error",
 				);
 			}
 		},

@@ -60,6 +60,9 @@ async function setup(
 		holdUpload?: boolean;
 		uploadFails?: boolean;
 		missingTags?: boolean;
+		pending?: boolean;
+		pendingFailures?: number;
+		removeFailures?: number;
 	} = {},
 ) {
 	const calls = {
@@ -68,8 +71,11 @@ async function setup(
 		saves: [] as unknown[],
 		manual: 0,
 		modifies: 0,
+		pendingLoads: 0,
+		removes: 0,
 	};
 	let committed = false;
+	let uploaded = options.pending ?? false;
 	let releasePrepare = () => {};
 	let releaseSave = () => {};
 	let releaseUpload = () => {};
@@ -93,6 +99,35 @@ async function setup(
 	);
 	await page.route("**/api/**", async (route) => {
 		const path = new URL(route.request().url()).pathname;
+		if (
+			path === "/api/admin/mixcloud/uploads/5" &&
+			route.request().method() === "DELETE"
+		) {
+			calls.removes++;
+			if (calls.removes <= (options.removeFailures ?? 0))
+				return route.fulfill({ status: 500, json: { error: "Unavailable" } });
+			uploaded = false;
+			return route.fulfill({ json: { uploadId: 5 } });
+		}
+		if (path === "/api/admin/mixcloud/uploads/pending") {
+			calls.pendingLoads++;
+			return calls.pendingLoads <= (options.pendingFailures ?? 0)
+				? route.fulfill({ status: 500, json: { error: "Unavailable" } })
+				: route.fulfill({
+						json:
+							uploaded && !committed
+								? [
+										{
+											uploadId: 5,
+											key: mixcloud.key,
+											url: mixcloud.url,
+											title: editorial.title,
+											date: editorial.date,
+										},
+									]
+								: [],
+					});
+		}
 		if (path === "/api/auth/get-session")
 			return route.fulfill({
 				json: {
@@ -138,6 +173,7 @@ async function setup(
 				},
 			});
 		if (path === "/api/admin/mixcloud/upload") {
+			uploaded = !options.uploadFails;
 			calls.uploads++;
 			await uploadGate;
 			expect(route.request().postDataBuffer()?.toString()).toContain(
@@ -160,7 +196,10 @@ async function setup(
 			return calls.prepares <= (options.prepareFailures ?? 0)
 				? route.fulfill({
 						status: 502,
-						json: { error: "Mixcloud details are not ready" },
+						json: {
+							error:
+								"Uploaded to Mixcloud, but we were unable to fetch the show.",
+						},
 					})
 				: route.fulfill({ json: { uploadId: 5, editorial, mixcloud } });
 		}
@@ -265,6 +304,12 @@ for (const width of [1280, 390, 320])
 			.getByRole("textbox", { name: "description", exact: true })
 			.fill("Reviewed description");
 		await review.getByLabel("date", { exact: true }).fill("2026-10-25");
+		await expect(
+			review.locator("section").getByText("tags", { exact: true }),
+		).toHaveCount(0);
+		await review
+			.getByRole("combobox", { name: "tags", exact: true })
+			.fill("New review tag");
 		await review
 			.getByRole("button", { name: "Remove Original DJ", exact: true })
 			.click();
@@ -301,6 +346,7 @@ for (const width of [1280, 390, 320])
 				description: "Reviewed description",
 				date: "2026-10-25",
 				djs: [2],
+				tags: ["House", "New review tag"],
 			},
 		]);
 		await page.screenshot({ path: `/tmp/upload-saved-${width}.png` });
@@ -316,6 +362,21 @@ test("metadata and save retries retain edits without another upload", async ({
 }) => {
 	const { calls } = await setup(page, { prepareFailures: 1, saveFailures: 1 });
 	await upload(page);
+	const failure = page.getByRole("dialog", {
+		name: "Uploaded to Mixcloud",
+		exact: true,
+	});
+	await expect(failure.getByRole("alert")).toHaveText(
+		"Uploaded to Mixcloud, but we were unable to fetch the show.\n\nStatus: HTTP 502 (Bad Gateway)",
+	);
+	await expect(
+		failure.getByRole("link", { name: mixcloud.key, exact: true }),
+	).toHaveAttribute("href", mixcloud.url);
+	await expect(failure).not.toContainText("Please correct this issue");
+	for (const width of [1280, 390, 320]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.screenshot({ path: `/tmp/upload-details-error-${width}.png` });
+	}
 	await page
 		.getByRole("button", { name: "Retry loading details", exact: true })
 		.click();
@@ -484,4 +545,184 @@ test("upload submission locks controls until provider confirmation", async ({
 		page.getByRole("dialog", { name: "Review Show", exact: true }),
 	).toBeVisible();
 	expect(state.calls.uploads).toBe(1);
+});
+
+for (const width of [1280, 390, 320])
+	test(`pending upload survives reload, metadata failure and resume at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		const { calls } = await setup(page, { pending: true, prepareFailures: 1 });
+		await page.reload();
+		const trigger = page.getByRole("button", {
+			name: "pending uploads 1",
+			exact: true,
+		});
+		await expect(trigger).toBeVisible();
+		const grid = page.getByRole("button", { name: "grid", exact: true });
+		expect(
+			await trigger.evaluate(
+				(button, next) =>
+					Boolean(
+						button.compareDocumentPosition(next as Node) &
+							Node.DOCUMENT_POSITION_FOLLOWING,
+					),
+				await grid.elementHandle(),
+			),
+		).toBe(true);
+		await expect(trigger.locator("span")).toHaveCSS(
+			"background-color",
+			"rgb(204, 0, 0)",
+		);
+		await page.screenshot({ path: `/tmp/pending-toolbar-${width}.png` });
+		await trigger.click();
+		const queue = page.getByRole("dialog", {
+			name: "Pending uploads",
+			exact: true,
+		});
+		await expect(
+			queue.getByRole("button", { name: "Close dialog", exact: true }),
+		).toBeFocused();
+		if (width === 1280) expect((await queue.boundingBox())?.width).toBe(960);
+		await expect(
+			queue.getByRole("link", { name: mixcloud.key, exact: true }),
+		).toHaveAttribute("href", mixcloud.url);
+		await expect(
+			queue.getByText(editorial.date, { exact: true }),
+		).toBeVisible();
+		await page.screenshot({ path: `/tmp/pending-uploads-${width}.png` });
+		await queue
+			.getByRole("button", { name: `Resume ${editorial.title}`, exact: true })
+			.click();
+		const failure = page.getByRole("dialog", {
+			name: "Uploaded to Mixcloud",
+			exact: true,
+		});
+		await expect(failure.getByRole("alert")).toContainText("Status: HTTP 502");
+		await page.keyboard.press("Escape");
+		await expect(queue).toBeVisible();
+		await queue
+			.getByRole("button", { name: "Close dialog", exact: true })
+			.click();
+		await expect(trigger).toBeFocused();
+		await trigger.click();
+		await queue
+			.getByRole("button", { name: `Resume ${editorial.title}`, exact: true })
+			.click();
+		const review = page.getByRole("dialog", {
+			name: "Review Show",
+			exact: true,
+		});
+		await expect(
+			review.getByRole("textbox", { name: "title", exact: true }),
+		).toHaveValue(editorial.title);
+		await review
+			.getByRole("button", { name: "Save Show", exact: true })
+			.click();
+		const success = page.getByRole("dialog", {
+			name: "Show saved",
+			exact: true,
+		});
+		await expect(success).toBeVisible();
+		await success.getByRole("button", { name: "Close", exact: true }).click();
+		await expect(
+			queue.getByText("No pending uploads.", { exact: true }),
+		).toBeVisible();
+		await queue
+			.getByRole("button", { name: "Close dialog", exact: true })
+			.click();
+		await expect(
+			page.getByRole("textbox", { name: "Search Shows", exact: true }),
+		).toBeFocused();
+		await page.reload();
+		await expect(
+			page.getByRole("button", { name: /pending uploads/i }),
+		).toHaveCount(0);
+		expect(calls.uploads).toBe(0);
+		expect(calls.prepares).toBe(2);
+		expect(calls.saves).toHaveLength(1);
+	});
+
+test("pending list failures stay separate from Shows and offer retry", async ({
+	page,
+}) => {
+	await setup(page, { pending: true, pendingFailures: 1 });
+	await expect(
+		page.getByText("No shows have been added yet.", { exact: true }),
+	).toBeVisible();
+	await expect(page.getByRole("alert")).toContainText(
+		"Pending uploads could not be loaded",
+	);
+	await expect(
+		page.getByRole("button", { name: "pending uploads 1", exact: true }),
+	).toHaveCount(0);
+	await page
+		.getByRole("button", { name: "Retry pending uploads", exact: true })
+		.click();
+	await page
+		.getByRole("button", { name: "pending uploads 1", exact: true })
+		.click();
+	const queue = page.getByRole("dialog", {
+		name: "Pending uploads",
+		exact: true,
+	});
+	await expect(
+		queue.getByRole("button", {
+			name: `Resume ${editorial.title}`,
+			exact: true,
+		}),
+	).toBeVisible();
+	await queue
+		.getByRole("button", { name: "Close dialog", exact: true })
+		.click();
+	await expect(
+		page.getByRole("button", { name: "pending uploads 1", exact: true }),
+	).toBeVisible();
+});
+
+test("Shows hides pending uploads when the queue is empty", async ({
+	page,
+}) => {
+	await setup(page);
+	await expect(
+		page.getByText("No shows have been added yet.", { exact: true }),
+	).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: /pending uploads/i }),
+	).toHaveCount(0);
+});
+
+test("removing a pending upload retries failures and deletes only its pending record", async ({
+	page,
+}) => {
+	const { calls } = await setup(page, { pending: true, removeFailures: 1 });
+	await page
+		.getByRole("button", { name: "pending uploads 1", exact: true })
+		.click();
+	const queue = page.getByRole("dialog", {
+		name: "Pending uploads",
+		exact: true,
+	});
+	const remove = queue.getByRole("button", {
+		name: `Remove ${editorial.title}`,
+		exact: true,
+	});
+	await remove.click();
+	await expect(queue.getByRole("alert")).toContainText("could not be removed");
+	await expect(remove).toBeEnabled();
+	await remove.click();
+	await expect(
+		queue.getByText("No pending uploads.", { exact: true }),
+	).toBeVisible();
+	await queue
+		.getByRole("button", { name: "Close dialog", exact: true })
+		.click();
+	await page.reload();
+	await expect(
+		page.getByRole("button", { name: /pending uploads/i }),
+	).toHaveCount(0);
+	expect(calls.removes).toBe(2);
+	expect(calls.uploads).toBe(0);
+	expect(calls.prepares).toBe(0);
+	expect(calls.saves).toHaveLength(0);
 });

@@ -1,15 +1,23 @@
+.preparationPanel > p[id] {
+	color: #666;
+}
 .notice {
 	grid-column: 1 / -1;
 	margin: 0;
 	overflow-wrap: anywhere;
 	white-space: pre-wrap;
 }
+.helper {
+	color: #666;
+}
+.preparationPanel .notice {
+	margin-bottom: 16px;
+}
 .preview {
 	display: block;
 	width: 160px;
 	max-width: 100%;
 	height: auto;
-	margin-top: 16px;
 }
 .successPanel {
 	--message-modal-width: 864px;

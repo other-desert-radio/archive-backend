@@ -1,0 +1,50 @@
+.panel {
+	--message-modal-width: 960px;
+}
+.error {
+	color: #b00020;
+}
+.list {
+	list-style: none;
+	padding: 0;
+	margin: 20px 0;
+}
+.list li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding-block: 16px;
+	border-top: 1px solid #ccc;
+	overflow-wrap: anywhere;
+}
+.details {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+}
+.actions {
+	display: flex;
+	gap: 10px;
+	flex-shrink: 0;
+}
+.list a,
+.list strong {
+	max-width: 100%;
+}
+.list button {
+	min-height: var(--modal-control-height);
+	padding: var(--modal-control-padding);
+	font: inherit;
+	border-radius: 0;
+}
+.list button.remove {
+	color: #b00020;
+	border: 1px solid #b00020;
+}
+@media (max-width: 600px) {
+	.list li {
+		flex-wrap: wrap;
+	}
+}

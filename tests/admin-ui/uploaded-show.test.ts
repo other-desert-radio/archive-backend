@@ -1,8 +1,51 @@
 import { expect, test } from "bun:test";
 import {
+	loadPendingUploads,
 	prepareUploadedShow,
+	removePendingUpload,
 	saveUploadedShow,
 } from "../../src/admin-ui/loaders/uploaded-show.js";
+
+test("removes only the requested pending upload and rejects unsuccessful confirmations", async () => {
+	await removePendingUpload(5, async (url, init) => {
+		expect(url).toBe("/api/admin/mixcloud/uploads/5");
+		expect(init?.method).toBe("DELETE");
+		return Response.json({ uploadId: 5 });
+	});
+	for (const response of [
+		Response.json({}, { status: 500 }),
+		Response.json({ uploadId: 6 }),
+	])
+		await expect(
+			removePendingUpload(5, async () => response),
+		).rejects.toThrow();
+});
+
+test("pending uploads load independently and reject failed or invalid responses", async () => {
+	const items = [
+		{
+			uploadId: 1,
+			title: "Pending",
+			date: "2026-10-27",
+			key: "/odr/pending/",
+			url: "https://www.mixcloud.com/odr/pending/",
+		},
+	];
+	expect(
+		await loadPendingUploads(async (url) => {
+			expect(url).toBe("/api/admin/mixcloud/uploads/pending");
+			return Response.json(items);
+		}),
+	).toEqual(items);
+	for (const response of [
+		Response.json({}, { status: 500 }),
+		Response.json({}),
+		Response.json([{ ...items[0], uploadId: -1 }]),
+	])
+		await expect(loadPendingUploads(async () => response)).rejects.toThrow(
+			"Pending uploads",
+		);
+});
 
 const reviewed = {
 	title: "Our title",
@@ -90,7 +133,7 @@ for (const stage of ["prepare", "save"] as const) {
 				throw new Error("network");
 			}),
 		).rejects.toThrow(
-			stage === "prepare" ? "Retry loading details" : "Retry Save",
+			stage === "prepare" ? "unable to fetch the show" : "Retry Save",
 		);
 		expect(calls).toBe(1);
 		for (const response of [
@@ -101,6 +144,17 @@ for (const stage of ["prepare", "save"] as const) {
 			await expect(call(async () => response)).rejects.toThrow();
 	});
 }
+test("preparation failure shows one message and HTTP status without correction boilerplate", async () => {
+	const message = "Uploaded to Mixcloud, but we were unable to fetch the show.";
+	await expect(
+		prepareUploadedShow(5, async () =>
+			Response.json(
+				{ error: message },
+				{ status: 502, statusText: "Bad Gateway" },
+			),
+		),
+	).rejects.toThrow(`${message}\n\nStatus: HTTP 502 (Bad Gateway)`);
+});
 test("rejects another upload's review and invalid provider fields", async () => {
 	for (const body of [
 		{ uploadId: 6, editorial: reviewed, mixcloud },

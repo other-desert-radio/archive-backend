@@ -53,6 +53,18 @@ export type UploadedShowConfirmation = {
 	url: string;
 };
 
+export type PendingUpload = UploadedShowConfirmation & {
+	title: string;
+	date: string;
+};
+export type GetPendingUploadsRoute = {
+	Reply: AdminApiReply<PendingUpload[]>;
+};
+export type RemovePendingUploadRoute = {
+	Params: { id: string };
+	Reply: AdminApiReply<{ uploadId: number }> & { 409: ErrorResponse };
+};
+
 /** Multipart title, date, JSON tag names, and one MP3 file. */
 export type UploadMixcloudRoute = {
 	Reply: Omit<AdminApiReply<MixcloudUploadResponse>, 400 | 500> & {
@@ -73,6 +85,7 @@ export const ReviewedUploadFieldsPattern = {
 	description: P.string.maxLength(1000),
 	date: P.string,
 	djs: P.array(P.number.int().between(1, Number.MAX_SAFE_INTEGER)),
+	tags: P.optional(P.array(P.string)),
 } as const;
 export type ReviewedUploadFields = P.infer<typeof ReviewedUploadFieldsPattern>;
 export type UploadedShowReview = {

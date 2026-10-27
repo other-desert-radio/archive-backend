@@ -263,9 +263,11 @@ test("single-cloudcast failures use safe errors and do not retry", async () => {
 				return response;
 			},
 		});
-		await expect(client.getCloudcast(cloudcast.key)).rejects.toThrow(
-			"cloudcast_failed",
-		);
+		await expect(client.getCloudcast(cloudcast.key)).rejects.toMatchObject({
+			message: "Mixcloud cloudcast_failed",
+			providerStatus: response.status,
+			failureReason: response.ok ? "invalid_json" : "http_error",
+		});
 		expect(calls).toBe(1);
 	}
 	const timeout = createMixcloudClient(config, {
@@ -276,4 +278,71 @@ test("single-cloudcast failures use safe errors and do not retry", async () => {
 	await expect(timeout.getCloudcast(cloudcast.key)).rejects.toThrow(
 		"cloudcast_timeout",
 	);
+});
+
+test("cloudcast body transport failures retain their classification and HTTP status", async () => {
+	for (const [error, code, failureReason] of [
+		[
+			new DOMException("private-timeout", "TimeoutError"),
+			"cloudcast_timeout",
+			"timeout",
+		],
+		[
+			new TypeError("private-network-error"),
+			"cloudcast_failed",
+			"network_error",
+		],
+	] as const) {
+		const client = createMixcloudClient(config, {
+			fetcher: async () =>
+				new Response(
+					new ReadableStream({
+						start(controller) {
+							controller.error(error);
+						},
+					}),
+				),
+		});
+		await expect(client.getCloudcast(cloudcast.key)).rejects.toMatchObject({
+			message: `Mixcloud ${code}`,
+			code,
+			failureReason,
+			providerStatus: 200,
+		});
+	}
+});
+
+test("metadata diagnostics distinguish safe failure reasons without provider payloads", async () => {
+	const cases = [
+		[Response.json({ ...cloudcast, audio_length: 0 }), "invalid_metadata"],
+		[Response.json({ ...cloudcast, key: "/odr/other/" }), "key_mismatch"],
+		[
+			Response.json({ error: { message: "private-provider-error" } }),
+			"provider_error",
+		],
+	] as const;
+	for (const [response, failureReason] of cases) {
+		const client = createMixcloudClient(config, {
+			fetcher: async () => response,
+		});
+		await expect(client.getCloudcast(cloudcast.key)).rejects.toMatchObject({
+			failureReason,
+			providerStatus: 200,
+			message: "Mixcloud cloudcast_failed",
+		});
+	}
+	for (const [error, failureReason] of [
+		[new Error("private-network-error"), "network_error"],
+		[new DOMException("private-timeout", "TimeoutError"), "timeout"],
+	] as const) {
+		const client = createMixcloudClient(config, {
+			fetcher: async () => {
+				throw error;
+			},
+		});
+		await expect(client.getCloudcast(cloudcast.key)).rejects.toMatchObject({
+			failureReason,
+			providerStatus: undefined,
+		});
+	}
 });

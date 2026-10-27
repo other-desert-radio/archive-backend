@@ -2,17 +2,19 @@
 
 ## Status
 
-Deferred. The initial upload/review/save workflow has no recovery queue, toolbar
-action, reconciliation endpoint, or automatic upload retries.
+Partially implemented: confirmed uploads with no linked archive Show are listed
+under pending uploads on Shows, with a shared count button before grid/table.
+They survive reload and can resume preparation/review/save without uploading
+again. Failed preparations remain pending; successful saves leave the queue.
+Uncertain attempts, reconciliation, and provider upload retries remain deferred.
 
 ## Intended behavior
 
 - Record the editorial draft and original Mixcloud account before contacting
   Mixcloud. Track active attempts, deadlines, returned keys, and safe errors.
-- Add a shared **ready to save [N]** action to the Shows toolbar for editors and
-  admins. Include confirmed uploads awaiting review and uncertain attempts;
-  label uncertain items clearly. Confirmed upload failures stay in the initial
-  modal and do not contribute to the count.
+- Extend the shared pending uploads action for editors and admins to include
+  uncertain attempts, labeled clearly. Rejected uploads without a confirmed key
+  do not contribute to the count.
 - Resume from database state after reload or a lost response. Treat interrupted
   provider attempts as uncertain after their deadline.
 - Reconcile an uncertain upload by accepting its existing Mixcloud URL,
@@ -30,6 +32,5 @@ concurrent recovery, account mismatch, and uncertain reconciliation. Confirm
 toolbar counts and shared access, and verify no recovery action silently repeats
 a provider upload.
 
-Until implemented, a successful upload can remain pending without a resume UI.
-If Mixcloud accepts an upload but its response is lost, check Mixcloud manually
-before considering another upload.
+If Mixcloud accepts an upload but its response is lost before a pending record
+is confirmed, check Mixcloud manually before considering another upload.

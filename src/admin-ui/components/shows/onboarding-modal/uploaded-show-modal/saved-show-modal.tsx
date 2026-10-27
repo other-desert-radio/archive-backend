@@ -102,12 +102,17 @@ export const SavedShowModal = ({
 						</a>
 					</dd>
 				</div>
+				<div>
+					<dt>cover</dt>
+					<dd>
+						<img
+							className={styles.preview}
+							src={show.image}
+							alt={`Cover for ${show.title}`}
+						/>
+					</dd>
+				</div>
 			</dl>
-			<img
-				className={styles.preview}
-				src={show.image}
-				alt={`Cover for ${show.title}`}
-			/>
 		</MessageModal>
 	);
 };
