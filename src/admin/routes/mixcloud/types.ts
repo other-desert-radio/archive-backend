@@ -11,6 +11,7 @@ export type MixcloudIntegration = {
 	store: MixcloudStore;
 };
 export type MixcloudRouteDependencies = {
+	database: import("../types.js").TypedDatabase;
 	auth: ArchiveAuth;
 	integration?: MixcloudIntegration;
 };
@@ -38,9 +39,11 @@ export type DisconnectMixcloudRoute = {
 	Reply: AdminApiReply<MixcloudDisconnectResponse> & { 503: ErrorResponse };
 };
 
-export type MixcloudUploadResponse = { success: boolean };
+export type MixcloudUploadResponse =
+	| ({ success: true } & UploadedShowConfirmation)
+	| { success: false; uploaded?: true; key?: string; url?: string };
 
-/** Future success reply; wired into the live route only after implementation. */
+/** Provider upload and pending draft have both been confirmed. */
 export type UploadedShowConfirmation = {
 	uploadId: number;
 	key: string;

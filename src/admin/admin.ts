@@ -83,7 +83,11 @@ const adminApiRoutes = (
 		await app.register(tagRoutes(database));
 		await app.register(mixcloudImportRoutes(database));
 		await app.register(
-			mixcloudRoutes({ auth, ...(mixcloud ? { integration: mixcloud } : {}) }),
+			mixcloudRoutes({
+				auth,
+				database,
+				...(mixcloud ? { integration: mixcloud } : {}),
+			}),
 		);
 	};
 };

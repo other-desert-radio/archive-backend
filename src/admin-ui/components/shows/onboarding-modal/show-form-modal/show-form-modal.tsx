@@ -203,6 +203,7 @@ export const ShowFormModal = ({
 				title: fields.title.trim(),
 				mixcloud_title: mixcloudTitle.trim(),
 				date: fields.date,
+				djs: fields.selected,
 				tags,
 				mp3,
 				description,

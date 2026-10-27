@@ -14,7 +14,11 @@ import type {
 
 /** Authenticated admin resource; register beneath the shared session/origin boundary. */
 export const mixcloudRoutes =
-	({ auth, integration }: MixcloudRouteDependencies): FastifyPluginAsync =>
+	({
+		auth,
+		integration,
+		database,
+	}: MixcloudRouteDependencies): FastifyPluginAsync =>
 	async (app) => {
 		app.addHook("onRequest", async (_request, reply) => {
 			reply.header("cache-control", "no-store");
@@ -22,7 +26,7 @@ export const mixcloudRoutes =
 		});
 		app.post<UploadMixcloudRoute>(
 			"/mixcloud/upload",
-			uploadMixcloudHandler(auth, integration),
+			uploadMixcloudHandler(auth, integration, database),
 		);
 		app.get<GetMixcloudStatusRoute>(
 			"/mixcloud/status",

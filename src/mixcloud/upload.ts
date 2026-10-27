@@ -8,9 +8,10 @@ export type MixcloudUpload = {
 	imagePath?: string;
 	description?: string;
 };
-export type MixcloudUploadResult = {
-	success: boolean;
-	statusCode: 200 | 403 | 429 | 502 | 504;
+export type MixcloudUploadResult = (
+	| { success: true; statusCode: 200; key: string }
+	| { success: false; statusCode: 403 | 429 | 502 | 504 }
+) & {
 	providerStatus?: number;
 	/** Full diagnostic response, with credentials removed before it leaves this module. */
 	responseBody?: string;
@@ -74,15 +75,30 @@ export const uploadToMixcloud = async (
 			response.ok &&
 			!isMatching({ error: P.nonNullable }, result) &&
 			!isMatching({ result: { error: P.nonNullable } }, result) &&
-			isMatching({ result: { success: true } }, result);
+			isMatching(
+				{
+					result: {
+						success: true,
+						key: P.string.regex(/^\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/$/),
+					},
+				},
+				result,
+			);
+		if (success && isMatching({ result: { key: P.string } }, result))
+			return {
+				success: true,
+				statusCode: 200,
+				key: result.result.key,
+				providerStatus: response.status,
+				responseBody,
+			};
 		return {
-			success,
+			success: false,
 			providerStatus: response.status,
 			responseBody,
-			statusCode: success
-				? 200
-				: response.status === 401 ||
-						(response.status === 403 && !response.headers.has("retry-after"))
+			statusCode:
+				response.status === 401 ||
+				(response.status === 403 && !response.headers.has("retry-after"))
 					? 403
 					: response.status === 429 || response.headers.has("retry-after")
 						? 429

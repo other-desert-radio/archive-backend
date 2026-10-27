@@ -1,11 +1,32 @@
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 
-/** Scaffold only: do not apply until the upload storage implementation is reviewed. */
-export async function up(_db: Kysely<Database>): Promise<void> {
-	throw new Error("Not implemented: create mixcloud_uploads");
+export async function up(db: Kysely<Database>): Promise<void> {
+	await db.schema
+		.createTable("mixcloud_uploads")
+		.addColumn("id", "integer", (column) =>
+			column.generatedByDefaultAsIdentity().primaryKey(),
+		)
+		.addColumn("createdAt", "timestamptz", (column) =>
+			column.notNull().defaultTo(sql`CURRENT_TIMESTAMP`),
+		)
+		.addColumn("created_by", "text", (column) =>
+			column.references("user.id").onDelete("set null"),
+		)
+		.addColumn("mixcloud_key", "text", (column) => column.notNull().unique())
+		.addColumn("title", "text", (column) => column.notNull())
+		.addColumn("description", "text")
+		.addColumn("date", "timestamptz", (column) => column.notNull())
+		.addColumn("djs", sql`integer[]`, (column) => column.notNull())
+		.addColumn("mixcloud_title", "text", (column) => column.notNull())
+		.addColumn("tags", sql`text[]`, (column) => column.notNull())
+		.addColumn("mixcloud_data", "jsonb")
+		.addColumn("show_id", "integer", (column) =>
+			column.references("shows.id").onDelete("set null"),
+		)
+		.execute();
 }
 
-export async function down(_db: Kysely<Database>): Promise<void> {
-	throw new Error("Not implemented: drop mixcloud_uploads");
+export async function down(db: Kysely<Database>): Promise<void> {
+	await db.schema.dropTable("mixcloud_uploads").execute();
 }

@@ -109,9 +109,14 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 				return reject("empty_or_truncated_audio");
 		} else {
 			if (
-				!["title", "mixcloud_title", "date", "tags", "description"].includes(
-					part.fieldname,
-				) ||
+				![
+					"title",
+					"mixcloud_title",
+					"date",
+					"tags",
+					"description",
+					"djs",
+				].includes(part.fieldname) ||
 				part.valueTruncated
 			) {
 				request.log.warn(
@@ -136,6 +141,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 				mixcloud_title: P.string,
 				date: P.string,
 				tags: P.string,
+				djs: P.string,
 				description: P.optional(P.string.maxLength(1000)),
 			},
 			fields,
@@ -155,6 +161,20 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 		date.toISOString().slice(0, 10) !== fields.date
 	)
 		return reject("invalid_calendar_date");
+	let djs: unknown;
+	try {
+		djs = JSON.parse(fields.djs);
+	} catch {
+		return reject("invalid_djs_json");
+	}
+	if (
+		!isMatching(
+			P.array(P.number.int().between(1, Number.MAX_SAFE_INTEGER)),
+			djs,
+		) ||
+		djs.length === 0
+	)
+		return reject("invalid_djs");
 	let tags: unknown;
 	try {
 		tags = JSON.parse(fields.tags);
@@ -216,6 +236,16 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 	return {
 		...(imagePath === undefined ? {} : { imagePath }),
 		title: fields.mixcloud_title.trim(),
+		draft: {
+			title: fields.title.trim(),
+			mixcloud_title: fields.mixcloud_title.trim(),
+			date: fields.date,
+			djs: [...new Set(djs)],
+			tags: tags.map((tag) => tag.trim()),
+			...(fields.description === undefined
+				? {}
+				: { description: fields.description }),
+		},
 		...(fields.description === undefined
 			? {}
 			: { description: fields.description }),

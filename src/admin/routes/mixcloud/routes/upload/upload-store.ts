@@ -16,10 +16,22 @@ export type UploadedShowDraft = {
 
 /** Called only after provider success; database failures must not imply upload failure. */
 export const recordUploadedShow = async (
-	_database: TypedDatabase,
-	_userId: string,
-	_draft: UploadedShowDraft,
-	_mixcloudKey: string,
+	database: TypedDatabase,
+	userId: string,
+	draft: UploadedShowDraft,
+	mixcloudKey: string,
 ): Promise<UploadedShow> => {
-	throw new Error("Not implemented: recordUploadedShow");
+	return database
+		.insertInto("mixcloud_uploads")
+		.values({
+			...draft,
+			date: new Date(`${draft.date}T00:00:00.000Z`),
+			description: draft.description ?? null,
+			created_by: userId,
+			mixcloud_key: mixcloudKey,
+			mixcloud_data: null,
+			show_id: null,
+		})
+		.returningAll()
+		.executeTakeFirstOrThrow();
 };
