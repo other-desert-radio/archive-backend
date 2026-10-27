@@ -8,10 +8,13 @@
 .mixcloudStatus {
 	grid-column: 1 / -1;
 	margin: 0;
-	margin-bottom: 16px;
 	font-style: italic;
 	text-align: center;
 	overflow-wrap: anywhere;
+}
+
+.mixcloudStatus:not(:last-child) {
+	margin-bottom: 16px;
 }
 
 .uploadMessage {
