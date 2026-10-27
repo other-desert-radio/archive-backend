@@ -1,4 +1,5 @@
 import { P } from "ts-pattern";
+import { isHttpUrl } from "../utils/index.js";
 import {
 	createdTimeRegex,
 	parseCreatedTimeDate,
@@ -57,3 +58,30 @@ export const CloudcastPattern = {
 
 export type MixcloudPictures = P.infer<typeof PicturesPattern>;
 export type MixcloudCloudcast = P.infer<typeof CloudcastPattern>;
+
+/** Metadata required to create an archive Show from a newly uploaded cloudcast. */
+export const UploadedCloudcastPattern = {
+	...CloudcastPattern,
+	key: P.string.regex(/^\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/$/),
+	url: P.string.and(
+		P.when((value) => typeof value === "string" && isHttpUrl(value)),
+	),
+	audio_length: P.number.int().between(1, 2_147_483_647),
+	pictures: {
+		large: P.string.and(
+			P.when((value) => typeof value === "string" && isHttpUrl(value)),
+		),
+		"1024wx1024h": P.string.and(
+			P.when((value) => typeof value === "string" && isHttpUrl(value)),
+		),
+	},
+	tags: P.array({
+		key: P.string,
+		url: P.string.and(
+			P.when((value) => typeof value === "string" && isHttpUrl(value)),
+		),
+		name: P.string.and(
+			P.when((value) => typeof value === "string" && value.trim().length > 0),
+		),
+	}),
+} as const;

@@ -169,3 +169,111 @@ test("token and identity requests have an aborting timeout", async () => {
 		"Mixcloud identity_failed",
 	);
 });
+
+const cloudcast = {
+	key: "/odr/show/",
+	url: "https://www.mixcloud.com/odr/show/",
+	name: "Provider title",
+	tags: [
+		{
+			key: "/genres/house/",
+			name: "House",
+			url: "https://www.mixcloud.com/genres/house/",
+		},
+	],
+	created_time: "2026-10-26T12:00:00Z",
+	updated_time: "2026-10-26T12:00:00Z",
+	play_count: 0,
+	pictures: {
+		large: "https://images.test/small.jpg",
+		"1024wx1024h": "https://images.test/large.jpg",
+	},
+	slug: "show",
+	audio_length: 120,
+};
+
+test("fetches a single uploaded cloudcast at the fixed API origin without credentials", async () => {
+	const client = createMixcloudClient(config, {
+		fetcher: async (url, options) => {
+			expect(url.href).toBe("https://api.mixcloud.com/odr/show/");
+			expect(options).toMatchObject({ method: "GET", redirect: "error" });
+			expect(options.signal).toBeInstanceOf(AbortSignal);
+			return Response.json(cloudcast);
+		},
+	});
+	expect(await client.getCloudcast(cloudcast.key)).toEqual(cloudcast);
+});
+
+test("rejects unsafe cloudcast keys before fetching", async () => {
+	let calls = 0;
+	const client = createMixcloudClient(config, {
+		fetcher: async () => {
+			calls++;
+			return Response.json(cloudcast);
+		},
+	});
+	for (const key of [
+		"//evil.test/x/",
+		"https://evil.test/",
+		"/odr/../",
+		"/odr/show/?token=secret",
+		"/odr/",
+	])
+		await expect(client.getCloudcast(key)).rejects.toThrow("cloudcast_failed");
+	expect(calls).toBe(0);
+});
+
+test("rejects invalid uploaded metadata and mismatched keys", async () => {
+	for (const changes of [
+		{ key: "/other/show/" },
+		{ audio_length: 0 },
+		{ audio_length: 1.5 },
+		{ audio_length: 2_147_483_648 },
+		{ url: "javascript:alert(1)" },
+		{ pictures: { ...cloudcast.pictures, large: "relative" } },
+		{
+			tags: [
+				{
+					key: "/genres/house/",
+					name: " ",
+					url: "https://www.mixcloud.com/genres/house/",
+				},
+			],
+		},
+		{ error: "secret" },
+	]) {
+		const client = createMixcloudClient(config, {
+			fetcher: async () => Response.json({ ...cloudcast, ...changes }),
+		});
+		await expect(client.getCloudcast(cloudcast.key)).rejects.toThrow(
+			"cloudcast_failed",
+		);
+	}
+});
+
+test("single-cloudcast failures use safe errors and do not retry", async () => {
+	for (const response of [
+		new Response("private-provider-error", { status: 404 }),
+		new Response("not-json"),
+	]) {
+		let calls = 0;
+		const client = createMixcloudClient(config, {
+			fetcher: async () => {
+				calls++;
+				return response;
+			},
+		});
+		await expect(client.getCloudcast(cloudcast.key)).rejects.toThrow(
+			"cloudcast_failed",
+		);
+		expect(calls).toBe(1);
+	}
+	const timeout = createMixcloudClient(config, {
+		fetcher: async () => {
+			throw new DOMException("private-token", "TimeoutError");
+		},
+	});
+	await expect(timeout.getCloudcast(cloudcast.key)).rejects.toThrow(
+		"cloudcast_timeout",
+	);
+});

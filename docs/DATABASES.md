@@ -489,8 +489,15 @@ publication state. Apply the migration explicitly before using the updated
 upload route; startup does not migrate. Rollback deletes pending upload records,
 without deleting Shows or provider uploads.
 
-The first implementation unit records provider success only. Fetch/review/save
-follows in later units; durable attempts and reload recovery are deferred to the
+Preparation stores validated provider metadata in `mixcloud_data` without
+creating a Show. Reviewed Save locks the upload and source tracking row and
+atomically saves the Show, relationships, import markers, and upload link.
+Provider fields come from that snapshot; our reviewed fields supply title,
+description, date, and DJs. Replays return the existing Show. The same source
+row lock serializes this workflow with ordinary Mixcloud imports. Omitted
+descriptions in existing edit callers preserve stored text.
+
+Durable attempts and reload recovery are deferred to the
 [future recovery plan](plans/future/mixcloud-upload-recovery.md). Migration and
 storage tests use `MIXCLOUD_UPLOADS_TEST_DATABASE_URL` with an isolated schema
 in a disposable PostgreSQL database.

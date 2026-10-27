@@ -82,7 +82,7 @@ export type UploadedShowReview = {
 };
 export type SavedUploadedShow = { created: boolean; show: AdminShowsJSON };
 
-/** Future routes: registered only once their implementations are complete. */
+/** Authenticated upload review and save endpoints. */
 export type PrepareUploadedShowRoute = {
 	Params: { id: string };
 	Reply: AdminApiReply<UploadedShowReview> & {

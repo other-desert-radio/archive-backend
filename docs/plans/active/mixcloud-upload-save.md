@@ -3,9 +3,9 @@
 ## Status
 
 Chunked mode, with substantial responsibility groups. Unit 1 is reviewed; the
-user reports migration 0039 applied. Unit 2 structure is approved and its
-scaffolding is ready for review. Unit 3 has not started. No independent
-inspection of the user's migration state has been performed.
+user reports migration 0039 applied. Unit 2 structure and scaffolding are
+approved; implementation is complete and user review is pending. Unit 3 has not
+started. No independent inspection of the user's migration state was performed.
 
 ## Decisions
 
@@ -75,28 +75,35 @@ imports and uploaded saves serialize on the same source row. An already imported
 source returns its saved Show without overwriting it. No provider requests or
 uploads occur during Save. No new migration is needed.
 
-Unit 2 scaffolding is now present. Shared cloudcast patterns/types have moved
-unchanged into the provider module, with compatibility re-exports for existing
-imports. The client exposes getCloudcast, and upload storage exposes read,
-snapshot, and reviewed-save entry points. New prepare/save handlers are not
-registered. These six functions explicitly throw Not implemented until the
-implementation checkpoint; live upload and existing import behavior remains
-unchanged. Show normalization and import transaction extraction wait for that
-implementation rather than introducing a parallel unfinished path.
+## Unit 2 implementation
 
-Review contract: uploadId plus editorial title/description/date/DJ IDs and the
-fetched cloudcast. Save accepts only editorial fields, returns the committed
-Show, and distinguishes first creation (201) from replay (200). Invalid input
-returns 400, unknown uploads 404, and missing prepared metadata 409. Prepare
-rejects completed uploads with 409, disabled integration with 503, and invalid
-or unavailable provider metadata with 502/504.
+- Registered prepare/save endpoints under the existing upload handler folder.
+- Single-cloudcast reads use a fixed provider origin, bounded timeout, redirect
+  rejection, validated key/metadata, and safe errors; no token or media upload.
+- Prepare stores a snapshot and returns our editorial fields alongside fetched
+  metadata. It creates no Show and does not advance publication state.
+- Save locks the upload, uses provider fields only from the stored snapshot, and
+  reuses source persistence plus the extracted import transaction.
+- Source-row locking prevents duplicate Shows across import and upload flows.
+  Repeated saves return persisted fields; failed writes roll back every marker,
+  relationship, tag/Show creation, and publication revision change.
+- Shared persistence writes optional descriptions and preserves them when
+  existing callers omit the field. Replay responses include description.
+- UI wiring and final browser acceptance remain in unit 3. No new migration.
 
-No schema changes or UI changes are included in this checkpoint.
+## Unit 2 verification
 
-Scaffolding checks passed: typecheck, lint, docs:check, whitespace checks, and
-99 existing client, cloudcast validation/parser, and upload route regressions.
-No assertions exercise unfinished stubs; new behavior tests arrive with
-implementation. No database or browser checks were run for this checkpoint.
+- Disposable PostgreSQL API/storage tests passed for review mapping, invalid
+  metadata, validation, omitted-description preservation, transaction rollback,
+  concurrent save replay, and racing upload/import saves.
+- Existing import transaction and upload migration/storage tests passed against
+  that disposable database. No regular database writes or live provider calls.
+- Client tests cover fixed-origin fetch, key/metadata validation, timeout,
+  malformed/failed responses, and no retries.
+- 144 focused regression tests passed; the database-gated case was run
+  separately with the disposable PostgreSQL checks. Typecheck and admin build
+  passed. Repository lint, docs:check, and whitespace checks also passed.
+- The temporary database container was stopped and removed after verification.
 
 ## Verification and next action
 
@@ -133,4 +140,4 @@ regular database mutations for verification.
   been performed. Layout and controls are unchanged in this unit; final review
   interactions require browser acceptance in unit 3.
 
-Next: user review of unit 2 scaffolding, then implementation.
+Next: user review of unit 2 implementation, then unit 3 structure.

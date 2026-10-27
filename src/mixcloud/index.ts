@@ -9,6 +9,7 @@ export {
 	type MixcloudCloudcast,
 	type MixcloudPictures,
 	PicturesPattern,
+	UploadedCloudcastPattern,
 } from "./cloudcast.js";
 export { type MixcloudConfig, readMixcloudConfig } from "./config.js";
 export { createMixcloudStore, type MixcloudStore } from "./store.js";

@@ -3,12 +3,16 @@ import { connectMixcloudHandler } from "./routes/connect-mixcloud.js";
 import { disconnectMixcloudHandler } from "./routes/disconnect-mixcloud.js";
 import { getMixcloudStatusHandler } from "./routes/get-mixcloud-status.js";
 import { mixcloudCallbackHandler } from "./routes/mixcloud-callback.js";
+import { prepareUploadedShowHandler } from "./routes/upload/prepare-uploaded-show.js";
+import { saveUploadedShowHandler } from "./routes/upload/save-uploaded-show.js";
 import { uploadMixcloudHandler } from "./routes/upload/upload-mixcloud.js";
 import type {
 	ConnectMixcloudRoute,
 	DisconnectMixcloudRoute,
 	GetMixcloudStatusRoute,
 	MixcloudRouteDependencies,
+	PrepareUploadedShowRoute,
+	SaveUploadedShowRoute,
 	UploadMixcloudRoute,
 } from "./types.js";
 
@@ -27,6 +31,14 @@ export const mixcloudRoutes =
 		app.post<UploadMixcloudRoute>(
 			"/mixcloud/upload",
 			uploadMixcloudHandler(auth, integration, database),
+		);
+		app.post<PrepareUploadedShowRoute>(
+			"/mixcloud/uploads/:id/prepare",
+			prepareUploadedShowHandler(database, integration),
+		);
+		app.post<SaveUploadedShowRoute>(
+			"/mixcloud/uploads/:id/save",
+			saveUploadedShowHandler(database),
 		);
 		app.get<GetMixcloudStatusRoute>(
 			"/mixcloud/status",
