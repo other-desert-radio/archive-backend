@@ -1,5 +1,13 @@
-.header {
-	margin-bottom: 1.5rem;
+.connection {
+	margin-block: 1.5rem;
+}
+
+.connection > div {
+	padding-block: 0.75rem;
+}
+
+.connection p {
+	margin-block: 0.25rem;
 }
 
 .signIn {
@@ -23,4 +31,8 @@
 .signIn:focus-visible {
 	outline: 2px solid #000;
 	outline-offset: 3px;
+}
+
+.hint {
+	color: #666;
 }

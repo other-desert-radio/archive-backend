@@ -67,9 +67,6 @@
 	padding-bottom: 0.5rem;
 	border-bottom: 2px solid #fff;
 }
-.sidebar .navigationSection {
-	margin-top: 2.5rem;
-}
 .sidebar ul {
 	display: grid;
 	gap: 0.5rem;

@@ -5,13 +5,11 @@ import { DJsPage } from "./djs-page.js";
 import { MixcloudPage } from "./mixcloud-page.js";
 import { ShowsPage } from "./shows-page.js";
 import { TagsPage } from "./tags-page.js";
-import { UploadPage } from "./upload-page.js";
 import { UsersPage } from "./users-page.js";
 
-type AdminResource = "shows" | "djs" | "tags" | "mixcloud" | "users" | "upload";
+type AdminResource = "shows" | "djs" | "tags" | "mixcloud" | "users";
 
 const getResourceFromHash = (): AdminResource => {
-	if (window.location.hash === "#upload") return "upload";
 	if (window.location.hash === "#users") return "users";
 	if (window.location.hash === "#djs") {
 		return "djs";
@@ -55,8 +53,6 @@ export const AdminPage = ({
 				<ShowsPage />
 			) : resource === "djs" ? (
 				<DJsPage />
-			) : resource === "upload" ? (
-				<UploadPage />
 			) : resource === "mixcloud" ? (
 				<MixcloudPage />
 			) : (

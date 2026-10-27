@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MixcloudConnectionBanner } from "../components/mixcloud/connection-banner/index.js";
 import type { ResourceViewMode } from "../components/shared/resource-views/index.js";
 import {
 	ResourceGrid,
@@ -171,6 +172,7 @@ export const ShowsPage = () => {
 			<div inert={isModalOpen || pendingOpen || editingShow !== undefined}>
 				<ResourceView
 					title="SHOWS"
+					afterTitle={<MixcloudConnectionBanner />}
 					isLoading={isLoading}
 					error={error}
 					onRetry={() => refreshShows()}

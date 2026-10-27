@@ -15,7 +15,7 @@ export const mixcloudCallbackHandler =
 	) =>
 	async (request: FastifyRequest, reply: FastifyReply) => {
 		const redirect = (outcome: MixcloudCallbackOutcome) =>
-			reply.redirect(`/admin/?mixcloud=${outcome}#upload`, 303);
+			reply.redirect(`/admin/?mixcloud=${outcome}#shows`, 303);
 		if (!integration) return redirect("unavailable");
 		try {
 			const { user, session } = await getAccountSession(auth, request);

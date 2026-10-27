@@ -86,20 +86,20 @@ indent. The DATABASE label has a 2px solid white bottom border, `0.5rem` padding
 below its text, and a `1rem` gap below it. Active, hovered, and keyboard-focused
 links are bold without moving surrounding items.
 
-The UTILS section follows DATABASE with a 2.5rem gap and contains the upload
-link to `#upload`. It uses the same heading and active-link treatment.
+Mixcloud connection controls live on Shows, below its title and above the search
+controls and grid/table. There is no separate upload navigation item.
 
 ### Reusable banner
 
 `Banner` in `shared/resource-views` accepts caller-owned `leading` and
 `trailing` React content. Leading content grows beside wrapping trailing
 actions; the layout stacks at 42rem. Its background is 80% white, becoming solid
-white on hover. The upload page uses it for Mixcloud sign-in guidance. Its
-square bordered sign-in button starts OAuth when configured. The page loads
-connection status and shows the connected account name/key with a sign-out
-action. Loading or pending requests disable actions; unavailable configuration
-explains why sign-in is disabled. Failures offer reload/retry without hiding an
-existing connection. Callback outcome messages are informational; server status
+white on hover. The Shows page uses it for Mixcloud sign-in guidance. Its square
+bordered sign-in button starts OAuth when configured. The page loads connection
+status and shows the connected account name/key with a sign-out action. Loading
+or pending requests disable actions; unavailable configuration explains why
+sign-in is disabled. Failures offer reload/retry without hiding an existing
+connection. Callback outcome messages are informational; server status
 determines the connected identity. The page removes the outcome parameter after
 reading it. Switching accounts may also require signing out on Mixcloud itself.
 Archive logout preserves the connection; Mixcloud sign-out removes it. Browser

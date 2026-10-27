@@ -1,13 +1,12 @@
 import { type ReactElement, useEffect, useState } from "react";
-import type { MixcloudStatus } from "../../admin/routes/mixcloud/index.js";
-import { Banner } from "../components/shared/resource-views/index.js";
-import styles from "../components/shared/resource-views/resource-view/resource-view.module.css";
+import type { MixcloudStatus } from "../../../../admin/routes/mixcloud/index.js";
 import {
 	connectMixcloud,
 	disconnectMixcloud,
 	loadMixcloudConnection,
-} from "../loaders/mixcloud-connection.js";
-import uploadStyles from "./upload-page.module.css";
+} from "../../../loaders/mixcloud-connection.js";
+import { Banner } from "../../shared/resource-views/index.js";
+import styles from "./mixcloud-connection-banner.module.css";
 
 const callbackMessage = (): string | undefined => {
 	if (typeof window === "undefined") return undefined;
@@ -25,8 +24,8 @@ const callbackMessage = (): string | undefined => {
 	}
 };
 
-/** Owns the Mixcloud upload page presentation. */
-export const UploadPage = (): ReactElement => {
+/** Owns Mixcloud connection status and actions on Shows. */
+export const MixcloudConnectionBanner = (): ReactElement => {
 	const [status, setStatus] = useState<MixcloudStatus>();
 	const [loading, setLoading] = useState(true);
 	const [pending, setPending] = useState<"connecting" | "disconnecting">();
@@ -110,10 +109,7 @@ export const UploadPage = (): ReactElement => {
 	};
 	const busy = loading || pending !== undefined;
 	return (
-		<section className={styles.view}>
-			<header className={`${styles.header} ${uploadStyles.header}`}>
-				<h1>MIXCLOUD UPLOAD</h1>
-			</header>
+		<div className={styles.connection}>
 			<Banner
 				leading={
 					<div aria-live="polite">
@@ -132,16 +128,13 @@ export const UploadPage = (): ReactElement => {
 									<strong>{status.account.displayName}</strong> (
 									{status.account.key}).
 								</p>
-								<p>
+								<p className={styles.hint}>
 									To switch accounts, sign out here. You may also need to sign
 									out on Mixcloud.
 								</p>
 							</>
 						) : (
-							<p>
-								You are not currently signed into mixcloud. Sign in to mixcloud
-								to begin uploading a show.
-							</p>
+							<p>Sign in to mixcloud to begin uploading a show.</p>
 						)}
 						{notice && <p role="status">{notice}</p>}
 						{error && <p role="alert">{error}</p>}
@@ -152,7 +145,7 @@ export const UploadPage = (): ReactElement => {
 						{status?.connected ? (
 							<button
 								type="button"
-								className={uploadStyles.signIn}
+								className={styles.signIn}
 								onClick={() => void signOut()}
 								disabled={busy}
 							>
@@ -163,7 +156,7 @@ export const UploadPage = (): ReactElement => {
 						) : (
 							<button
 								type="button"
-								className={uploadStyles.signIn}
+								className={styles.signIn}
 								onClick={() => void signIn()}
 								disabled={busy || !status?.configured}
 							>
@@ -175,7 +168,7 @@ export const UploadPage = (): ReactElement => {
 						{error && (
 							<button
 								type="button"
-								className={uploadStyles.signIn}
+								className={styles.signIn}
 								onClick={() => void reload()}
 								disabled={busy}
 							>
@@ -185,6 +178,6 @@ export const UploadPage = (): ReactElement => {
 					</>
 				}
 			/>
-		</section>
+		</div>
 	);
 };
