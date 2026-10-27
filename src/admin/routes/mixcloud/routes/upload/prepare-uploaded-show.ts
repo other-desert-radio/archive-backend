@@ -66,12 +66,15 @@ export const prepareUploadedShowHandler =
 		} catch (error) {
 			if (error instanceof MixcloudClientError) {
 				request.log.warn(
-					{ uploadId, reason: error.code },
+					{
+						uploadId,
+						reason: error.code,
+						providerStatus: error.providerStatus,
+					},
 					"[Mixcloud Review] provider metadata unavailable",
 				);
 				return reply.code(error.code === "cloudcast_timeout" ? 504 : 502).send({
-					error:
-						"Uploaded to Mixcloud, but show details could not be loaded. Try loading details again.",
+					error: "Uploaded to Mixcloud, but we were unable to fetch the show.",
 				});
 			}
 			request.log.error({ uploadId }, "[Mixcloud Review] preparation failed");

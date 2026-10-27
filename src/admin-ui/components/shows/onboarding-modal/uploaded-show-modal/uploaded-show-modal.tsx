@@ -53,6 +53,7 @@ export const UploadedShowModal = (props: UploadedShowModalProps) => {
 		<MessageModal
 			title="Uploaded to Mixcloud"
 			message="Your show is on Mixcloud. It has not been saved to the archive yet."
+			panelClassName={styles.preparationPanel}
 			onDismiss={props.onClose}
 			primaryAction={{
 				label: error ? "Retry loading details" : "Loading show details…",
@@ -61,7 +62,11 @@ export const UploadedShowModal = (props: UploadedShowModalProps) => {
 			}}
 			secondaryAction={{ label: "Close", onClick: props.onClose }}
 		>
-			<p role="status">Uploaded to Mixcloud.</p>
+			<p className={styles.notice}>
+				<a href={props.upload.url} target="_blank" rel="noreferrer">
+					{props.upload.key}
+				</a>
+			</p>
 			{error && (
 				<p role="alert" className={styles.notice}>
 					{error}

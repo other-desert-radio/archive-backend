@@ -90,7 +90,7 @@ for (const stage of ["prepare", "save"] as const) {
 				throw new Error("network");
 			}),
 		).rejects.toThrow(
-			stage === "prepare" ? "Retry loading details" : "Retry Save",
+			stage === "prepare" ? "unable to fetch the show" : "Retry Save",
 		);
 		expect(calls).toBe(1);
 		for (const response of [
@@ -101,6 +101,17 @@ for (const stage of ["prepare", "save"] as const) {
 			await expect(call(async () => response)).rejects.toThrow();
 	});
 }
+test("preparation failure shows one message and HTTP status without correction boilerplate", async () => {
+	const message = "Uploaded to Mixcloud, but we were unable to fetch the show.";
+	await expect(
+		prepareUploadedShow(5, async () =>
+			Response.json(
+				{ error: message },
+				{ status: 502, statusText: "Bad Gateway" },
+			),
+		),
+	).rejects.toThrow(`${message}\n\nStatus: HTTP 502 (Bad Gateway)`);
+});
 test("rejects another upload's review and invalid provider fields", async () => {
 	for (const body of [
 		{ uploadId: 6, editorial: reviewed, mixcloud },

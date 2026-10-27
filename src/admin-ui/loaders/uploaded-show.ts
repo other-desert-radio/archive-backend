@@ -30,18 +30,17 @@ export const prepareUploadedShow = async (
 		);
 	} catch {
 		throw new Error(
-			"Uploaded to Mixcloud, but show details could not be loaded. Retry loading details.",
+			"Uploaded to Mixcloud, but we were unable to fetch the show.",
 		);
 	}
-	if (!response.ok)
-		throw new Error(
-			await describeMutationFailure(
-				response,
-				"Show details",
-				"Retry loading details without uploading again.",
-				"loaded",
-			),
-		);
+	if (!response.ok) {
+		const body: unknown = await response.json().catch(() => undefined);
+		const message = isMatching({ error: P.string.minLength(1) }, body)
+			? body.error
+			: "Uploaded to Mixcloud, but we were unable to fetch the show.";
+		const status = `HTTP ${response.status}${response.statusText ? ` (${response.statusText})` : ""}`;
+		throw new Error(`${message}\n\nStatus: ${status}`);
+	}
 	const result: unknown = await response.json().catch(() => undefined);
 	if (
 		!isMatching(

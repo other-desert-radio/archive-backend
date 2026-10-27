@@ -1,8 +1,14 @@
+.preparationPanel > p[id] {
+	color: #666;
+}
 .notice {
 	grid-column: 1 / -1;
 	margin: 0;
 	overflow-wrap: anywhere;
 	white-space: pre-wrap;
+}
+.preparationPanel .notice {
+	margin-bottom: 16px;
 }
 .preview {
 	display: block;

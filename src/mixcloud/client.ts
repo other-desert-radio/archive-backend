@@ -44,6 +44,7 @@ export class MixcloudClientError extends Error {
 			| "invalid_token"
 			| "cloudcast_failed"
 			| "cloudcast_timeout",
+		public readonly providerStatus?: number,
 	) {
 		super(`Mixcloud ${code}`);
 		this.name = "MixcloudClientError";
@@ -80,7 +81,8 @@ export const createMixcloudClient = (
 						signal: AbortSignal.timeout(timeoutMs),
 					},
 				);
-				if (!response.ok) throw new Error("Cloudcast request failed");
+				if (!response.ok)
+					throw new MixcloudClientError("cloudcast_failed", response.status);
 				const data: unknown = await response.json();
 				if (
 					!isMatching(UploadedCloudcastPattern, data) ||
@@ -90,6 +92,7 @@ export const createMixcloudClient = (
 					throw new Error("Invalid cloudcast response");
 				return data;
 			} catch (error) {
+				if (error instanceof MixcloudClientError) throw error;
 				throw new MixcloudClientError(
 					isMatching({ name: "TimeoutError" }, error)
 						? "cloudcast_timeout"

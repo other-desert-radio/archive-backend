@@ -160,7 +160,10 @@ async function setup(
 			return calls.prepares <= (options.prepareFailures ?? 0)
 				? route.fulfill({
 						status: 502,
-						json: { error: "Mixcloud details are not ready" },
+						json: {
+							error:
+								"Uploaded to Mixcloud, but we were unable to fetch the show.",
+						},
 					})
 				: route.fulfill({ json: { uploadId: 5, editorial, mixcloud } });
 		}
@@ -316,6 +319,21 @@ test("metadata and save retries retain edits without another upload", async ({
 }) => {
 	const { calls } = await setup(page, { prepareFailures: 1, saveFailures: 1 });
 	await upload(page);
+	const failure = page.getByRole("dialog", {
+		name: "Uploaded to Mixcloud",
+		exact: true,
+	});
+	await expect(failure.getByRole("alert")).toHaveText(
+		"Uploaded to Mixcloud, but we were unable to fetch the show.\n\nStatus: HTTP 502 (Bad Gateway)",
+	);
+	await expect(
+		failure.getByRole("link", { name: mixcloud.key, exact: true }),
+	).toHaveAttribute("href", mixcloud.url);
+	await expect(failure).not.toContainText("Please correct this issue");
+	for (const width of [1280, 390, 320]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.screenshot({ path: `/tmp/upload-details-error-${width}.png` });
+	}
 	await page
 		.getByRole("button", { name: "Retry loading details", exact: true })
 		.click();

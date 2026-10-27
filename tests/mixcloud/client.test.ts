@@ -263,9 +263,10 @@ test("single-cloudcast failures use safe errors and do not retry", async () => {
 				return response;
 			},
 		});
-		await expect(client.getCloudcast(cloudcast.key)).rejects.toThrow(
-			"cloudcast_failed",
-		);
+		await expect(client.getCloudcast(cloudcast.key)).rejects.toMatchObject({
+			message: "Mixcloud cloudcast_failed",
+			providerStatus: response.ok ? undefined : response.status,
+		});
 		expect(calls).toBe(1);
 	}
 	const timeout = createMixcloudClient(config, {

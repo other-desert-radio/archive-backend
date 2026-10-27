@@ -527,8 +527,21 @@ and timestamps.
 `bun run db:delete:mixcloud-imports -- --confirm` permanently deletes tracking
 rows while preserving the table and all archive resources and relationships.
 Clearing tracking removes duplicate-import protection; refresh can repopulate
-source rows. All deletion commands use the configured database and require the
-explicit confirmation flag.
+source rows. These bulk deletion commands use the configured database and
+require the explicit confirmation flag.
+
+To permanently remove one DJ, run `./scripts/hard-remove-dj <id>`. This keeps
+their shows and removes their DJ associations. Add `--including-shows` to also
+delete every linked show, including shows shared with other DJs. The command
+prints the DJ and the shows selected for deletion, then requires typing
+`delete <id>` to confirm. Any other answer cancels. Deletion is atomic and uses
+the configured database; it never deletes uploads from Mixcloud. Show deletion
+retains source tracking rows and clears import links and timestamps. Publish the
+archive afterward to update the exported site.
+
+The command holds write-blocking locks on DJs, shows, and their associations
+while awaiting confirmation so the preview cannot change. Confirm or cancel
+promptly when running against a live database.
 
 ## Database backups and restores
 
