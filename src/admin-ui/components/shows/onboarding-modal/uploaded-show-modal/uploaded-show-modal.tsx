@@ -54,6 +54,7 @@ export const UploadedShowModal = (props: UploadedShowModalProps) => {
 			title="Uploaded to Mixcloud"
 			message="Your show is on Mixcloud. It has not been saved to the archive yet."
 			panelClassName={styles.preparationPanel}
+			initialFocus="secondary"
 			onDismiss={props.onClose}
 			primaryAction={{
 				label: error ? "Retry loading details" : "Loading show details…",
@@ -230,8 +231,8 @@ const ReviewForm = ({
 				/>
 			</section>
 			<p className={styles.notice}>
-				Closing leaves this show on Mixcloud without adding it to the archive.
-				Resuming after closing is not available yet.
+				Closing leaves this show unsaved in the archive. You can resume from
+				Pending uploads on the Shows page.
 			</p>
 		</OnboardingModal>
 	);

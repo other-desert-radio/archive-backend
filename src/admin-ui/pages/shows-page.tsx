@@ -8,6 +8,7 @@ import {
 	EditShowModal,
 	filterShows,
 	OnboardShowModal,
+	PendingUploadsModal,
 	renderShowCard,
 	type ShowSortColumn,
 	ShowsTable,
@@ -20,6 +21,10 @@ import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { modifyShow } from "../loaders/modify-show.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 import { loadTags, type TagsAdminRow } from "../loaders/tags.js";
+import {
+	loadPendingUploads,
+	type PendingUpload,
+} from "../loaders/uploaded-show.js";
 import { userPreferences } from "../user-preferences.js";
 
 export const ShowsPage = () => {
@@ -40,6 +45,36 @@ export const ShowsPage = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingShow, setEditingShow] = useState<ShowsAdminRow>();
 	const loadVersion = useRef(0);
+	const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+	const [pendingLoaded, setPendingLoaded] = useState(false);
+	const [pendingLoading, setPendingLoading] = useState(false);
+	const [pendingError, setPendingError] = useState<string>();
+	const [pendingOpen, setPendingOpen] = useState(false);
+	const pendingVersion = useRef(0);
+	const refreshPending = useCallback(() => {
+		const version = ++pendingVersion.current;
+		setPendingLoading(true);
+		setPendingError(undefined);
+		loadPendingUploads()
+			.then((items) => {
+				if (version !== pendingVersion.current) return;
+				setPendingUploads(items);
+				setPendingLoaded(true);
+			})
+			.catch(() => {
+				if (version === pendingVersion.current)
+					setPendingError("Pending uploads could not be loaded.");
+			})
+			.finally(() => {
+				if (version === pendingVersion.current) setPendingLoading(false);
+			});
+	}, []);
+	useEffect(() => {
+		refreshPending();
+		return () => {
+			pendingVersion.current += 1;
+		};
+	}, [refreshPending]);
 
 	const refreshShows = useCallback((keepResults = false) => {
 		const version = ++loadVersion.current;
@@ -133,20 +168,32 @@ export const ShowsPage = () => {
 
 	return (
 		<>
-			<div inert={isModalOpen || editingShow !== undefined}>
+			<div inert={isModalOpen || pendingOpen || editingShow !== undefined}>
 				<ResourceView
 					title="SHOWS"
 					isLoading={isLoading}
 					error={error}
 					onRetry={() => refreshShows()}
 					banner={
-						reloadError && (
-							<div role="status">
-								<p>{reloadError}</p>
-								<button type="button" onClick={() => refreshShows(true)}>
-									Reload lists
-								</button>
-							</div>
+						(pendingError || reloadError) && (
+							<>
+								{pendingError && (
+									<p role="alert">
+										{pendingError}{" "}
+										<button type="button" onClick={refreshPending}>
+											Retry pending uploads
+										</button>
+									</p>
+								)}
+								{reloadError && (
+									<div role="status">
+										<p>{reloadError}</p>
+										<button type="button" onClick={() => refreshShows(true)}>
+											Reload lists
+										</button>
+									</div>
+								)}
+							</>
 						)
 					}
 					isEmpty={shows.length === 0}
@@ -160,6 +207,11 @@ export const ShowsPage = () => {
 							viewMode={viewMode}
 							onViewModeChange={handleViewModeChange}
 							onAddShow={() => setIsModalOpen(true)}
+							pendingCount={pendingLoaded ? pendingUploads.length : undefined}
+							onPendingUploads={() => {
+								setPendingOpen(true);
+								refreshPending();
+							}}
 						/>
 					}
 				>
@@ -201,10 +253,14 @@ export const ShowsPage = () => {
 				isDJsLoading={isDJsLoading}
 				{...(djsError === undefined ? {} : { djsError })}
 				onRetryDJs={refreshDJs}
-				onClose={() => setIsModalOpen(false)}
+				onClose={() => {
+					setIsModalOpen(false);
+					refreshPending();
+				}}
 				onSubmit={handleCreateShow}
 				tags={tags}
 				onSaved={(show) => {
+					refreshPending();
 					setShows((current) => [
 						show,
 						...current.filter((item) => item.id !== show.id),
@@ -212,6 +268,42 @@ export const ShowsPage = () => {
 					refreshShows(true);
 				}}
 			/>
+			{pendingOpen && (
+				<PendingUploadsModal
+					items={pendingUploads}
+					isLoading={pendingLoading}
+					error={pendingError}
+					onRefresh={refreshPending}
+					onRemoved={(uploadId) => {
+						pendingVersion.current += 1;
+						setPendingLoading(false);
+						setPendingUploads((items) =>
+							items.filter((item) => item.uploadId !== uploadId),
+						);
+					}}
+					djs={djs}
+					tags={tags}
+					isDJsLoading={isDJsLoading}
+					{...(djsError === undefined ? {} : { djsError })}
+					onRetryDJs={refreshDJs}
+					onClose={() => {
+						setPendingOpen(false);
+						refreshPending();
+					}}
+					onSaved={(uploadId, show) => {
+						pendingVersion.current += 1;
+						setPendingLoading(false);
+						setPendingUploads((items) =>
+							items.filter((item) => item.uploadId !== uploadId),
+						);
+						setShows((items) => [
+							show,
+							...items.filter((item) => item.id !== show.id),
+						]);
+						refreshShows(true);
+					}}
+				/>
+			)}
 			{editingShow !== undefined && (
 				<EditShowModal
 					key={editingShow.id}

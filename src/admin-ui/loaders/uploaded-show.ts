@@ -1,5 +1,6 @@
 import { isMatching, P } from "ts-pattern";
 import type {
+	PendingUpload,
 	ReviewedUploadFields,
 	UploadedShowReview,
 } from "../../admin/routes/mixcloud/index.js";
@@ -9,7 +10,45 @@ import { apiFetch } from "./api-fetch.js";
 import { describeMutationFailure } from "./mutation-error.js";
 import type { ShowsAdminRow } from "./shows.js";
 
-export type { ReviewedUploadFields, UploadedShowReview };
+export type { PendingUpload, ReviewedUploadFields, UploadedShowReview };
+
+export const removePendingUpload = async (
+	uploadId: number,
+	fetcher: typeof fetch = apiFetch,
+): Promise<void> => {
+	const response = await fetcher(`/api/admin/mixcloud/uploads/${uploadId}`, {
+		method: "DELETE",
+	});
+	if (!response.ok)
+		throw new Error("Pending upload could not be removed. Try again.");
+	const body: unknown = await response.json();
+	if (!isMatching({ uploadId }, body))
+		throw new Error(
+			"The removal response could not be read. Refresh the list.",
+		);
+};
+
+export const loadPendingUploads = async (
+	fetcher: typeof fetch = apiFetch,
+): Promise<PendingUpload[]> => {
+	const response = await fetcher("/api/admin/mixcloud/uploads/pending");
+	if (!response.ok) throw new Error("Pending uploads could not be loaded.");
+	const body: unknown = await response.json();
+	if (
+		!isMatching(
+			P.array({
+				uploadId: P.number.int().positive(),
+				title: P.string,
+				date: P.string,
+				key: P.string.regex(/^\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/$/),
+				url: P.string.startsWith("https://www.mixcloud.com/"),
+			}),
+			body,
+		)
+	)
+		throw new Error("Pending uploads could not be read.");
+	return body;
+};
 
 const timestamp = P.string.and(
 	P.when(

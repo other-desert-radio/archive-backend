@@ -7,6 +7,7 @@ export type {
 	MixcloudRouteDependencies,
 	MixcloudStatus,
 	MixcloudUploadResponse,
+	PendingUpload,
 	ReviewedUploadFields,
 	UploadedShowConfirmation,
 	UploadedShowReview,

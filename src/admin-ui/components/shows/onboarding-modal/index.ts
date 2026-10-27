@@ -1,5 +1,6 @@
 export * from "./edit-show-modal/index.js";
 export * from "./onboard-show-modal/index.js";
+export * from "./pending-uploads-modal/index.js";
 export * from "./show-duration-field/index.js";
 export * from "./show-form-state/index.js";
 export * from "./show-relationship-fields/index.js";

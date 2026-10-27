@@ -497,7 +497,12 @@ description, date, and DJs. Replays return the existing Show. The same source
 row lock serializes this workflow with ordinary Mixcloud imports. Omitted
 descriptions in existing edit callers preserve stored text.
 
-Durable attempts and reload recovery are deferred to the
+Confirmed uploads with `show_id IS NULL` appear in the shared Shows pending
+queue, including records whose metadata preparation failed. Listing and resuming
+use existing upload IDs; saving links the Show and removes the item from the
+queue. No additional migration is needed.
+
+Durable attempts and uncertain upload recovery are deferred to the
 [future recovery plan](plans/future/mixcloud-upload-recovery.md). Migration and
 storage tests use `MIXCLOUD_UPLOADS_TEST_DATABASE_URL` with an isolated schema
 in a disposable PostgreSQL database.

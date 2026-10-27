@@ -53,6 +53,18 @@ export type UploadedShowConfirmation = {
 	url: string;
 };
 
+export type PendingUpload = UploadedShowConfirmation & {
+	title: string;
+	date: string;
+};
+export type GetPendingUploadsRoute = {
+	Reply: AdminApiReply<PendingUpload[]>;
+};
+export type RemovePendingUploadRoute = {
+	Params: { id: string };
+	Reply: AdminApiReply<{ uploadId: number }> & { 409: ErrorResponse };
+};
+
 /** Multipart title, date, JSON tag names, and one MP3 file. */
 export type UploadMixcloudRoute = {
 	Reply: Omit<AdminApiReply<MixcloudUploadResponse>, 400 | 500> & {

@@ -17,6 +17,7 @@ type ResourceToolbarProps = {
 	onCreate?: () => void;
 	createDisabled?: boolean;
 	actionsBeforeCreate?: ReactNode;
+	actionsBeforeView?: ReactNode;
 };
 
 import styles from "./resource-toolbar.module.css";
@@ -34,6 +35,7 @@ export const ResourceToolbar = ({
 	onCreate,
 	createDisabled = false,
 	actionsBeforeCreate,
+	actionsBeforeView,
 }: ResourceToolbarProps) => {
 	const sentinelRef = useRef<HTMLDivElement>(null);
 	const toolbarRef = useRef<HTMLDivElement>(null);
@@ -70,6 +72,7 @@ export const ResourceToolbar = ({
 					onChange={(event) => onQueryChange(event.target.value)}
 				/>
 				<div className={styles.actions}>
+					{actionsBeforeView}
 					{showViewControls &&
 						viewMode !== undefined &&
 						onViewModeChange !== undefined && (

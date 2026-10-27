@@ -1,6 +1,9 @@
 import type { MixcloudImportCategory } from "../../../../utils/mixcloud-import-status.js";
 import type { MixcloudImportStatus } from "../../../loaders/mixcloud-imports.js";
-import { ResourceToolbar } from "../../shared/resource-views/index.js";
+import {
+	CountButton,
+	ResourceToolbar,
+} from "../../shared/resource-views/index.js";
 import styles from "./mixcloud-toolbar.module.css";
 
 type Props = {
@@ -45,30 +48,21 @@ export const MixcloudToolbar = ({
 					["unparsable", "needs review"],
 				] as const
 			).map(([value, label]) => (
-				<button
+				<CountButton
 					key={value}
-					type="button"
-					className={styles.category}
+					label={label}
+					count={status?.[value]}
+					ready={value === "auto_parsed"}
 					title={
 						value === "unparsable"
 							? "These shows couldn't be automatically parsed, or their DJs haven't been onboarded to the platform yet."
 							: "These shows were automatically parsed and their DJs are onboarded. They're ready to review and import."
 					}
-					aria-haspopup="dialog"
 					disabled={
 						!status || status[value] === 0 || isRefreshing || isImportOpen
 					}
 					onClick={() => onOpenImport?.(value)}
-				>
-					{label}
-					{status && status[value] > 0 && (
-						<span
-							className={`${styles.count} ${value === "auto_parsed" ? styles.readyCount : ""}`}
-						>
-							{status[value]}
-						</span>
-					)}
-				</button>
+				/>
 			))}
 		/>
 		{statusError && (

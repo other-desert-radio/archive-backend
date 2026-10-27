@@ -1,8 +1,51 @@
 import { expect, test } from "bun:test";
 import {
+	loadPendingUploads,
 	prepareUploadedShow,
+	removePendingUpload,
 	saveUploadedShow,
 } from "../../src/admin-ui/loaders/uploaded-show.js";
+
+test("removes only the requested pending upload and rejects unsuccessful confirmations", async () => {
+	await removePendingUpload(5, async (url, init) => {
+		expect(url).toBe("/api/admin/mixcloud/uploads/5");
+		expect(init?.method).toBe("DELETE");
+		return Response.json({ uploadId: 5 });
+	});
+	for (const response of [
+		Response.json({}, { status: 500 }),
+		Response.json({ uploadId: 6 }),
+	])
+		await expect(
+			removePendingUpload(5, async () => response),
+		).rejects.toThrow();
+});
+
+test("pending uploads load independently and reject failed or invalid responses", async () => {
+	const items = [
+		{
+			uploadId: 1,
+			title: "Pending",
+			date: "2026-10-27",
+			key: "/odr/pending/",
+			url: "https://www.mixcloud.com/odr/pending/",
+		},
+	];
+	expect(
+		await loadPendingUploads(async (url) => {
+			expect(url).toBe("/api/admin/mixcloud/uploads/pending");
+			return Response.json(items);
+		}),
+	).toEqual(items);
+	for (const response of [
+		Response.json({}, { status: 500 }),
+		Response.json({}),
+		Response.json([{ ...items[0], uploadId: -1 }]),
+	])
+		await expect(loadPendingUploads(async () => response)).rejects.toThrow(
+			"Pending uploads",
+		);
+});
 
 const reviewed = {
 	title: "Our title",
