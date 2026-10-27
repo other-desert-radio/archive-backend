@@ -71,12 +71,13 @@ accepts a user or session ID from the browser. Responses use
 
 - `POST /api/admin/mixcloud/upload` accepts multipart `title` (original show
   title), `mixcloud_title` (editable provider title), `date` (valid calendar
-  show date, not publication scheduling), `tags` (JSON array of up to five
-  nonblank names), optional `description` (up to 1000 characters, with multipart
-  CRLF line endings normalized to LF), and exactly one nonempty `.mp3` file, up
-  to 4 billion bytes. An optional `image` file must be a single-frame, decodable
-  1200 × 1200 WebP with an `image/webp` MIME type and `.webp` extension, at most
-  10 million bytes. Its byte limit is enforced during streaming. Both files are
+  show date, not publication scheduling), `djs` (nonempty JSON array of positive
+  safe integer DJ IDs), `tags` (JSON array of up to five nonblank names),
+  optional `description` (up to 1000 characters, with multipart CRLF line
+  endings normalized to LF), and exactly one nonempty `.mp3` file, up to 4
+  billion bytes. An optional `image` file must be a single-frame, decodable 1200
+  × 1200 WebP with an `image/webp` MIME type and `.webp` extension, at most 10
+  million bytes. Its byte limit is enforced during streaming. Both files are
   removed before responding, including on validation or provider failure. The
   validated image is forwarded unchanged as `picture`, with filename
   `cover.webp` and MIME type `image/webp`. The route inherits session and
@@ -89,15 +90,27 @@ accepts a user or session ID from the browser. Responses use
   Mixcloud as `mp3`, `mixcloud_title` as `name`, description as `description`
   when supplied, and tags as `tags-X-tag`, using the separate provider function
   in `src/mixcloud/upload.ts`. Date is omitted; publication uses Mixcloud's
-  public default. Confirmed provider success returns 200 with `{success:true}`.
-  Provider rate limits return 429, unconfirmed/rejected uploads return 502, and
-  timeouts return 504, all with `{success:false}`. Uploads have a 30-minute
-  provider timeout and are never automatically retried. Check Mixcloud before
-  retrying an uncertain result. Both titles must be nonblank. The new-show modal
-  generates the editable provider title from selected DJ names joined with `+`,
-  show title, and show date (for example, `DJ - Show, October 19, 2026`). Manual
-  edits persist until reset; the server validates and forwards the provider
-  title without regenerating it. No archive record is created.
+  public default. Selected DJs are deduplicated and checked against the database
+  before uploading. Confirmed provider success requires a cloudcast key of the
+  form `/account/slug/`. The route stores that key with the original title,
+  description, date, DJ IDs, requested tags, provider title, and acting user in
+  `mixcloud_uploads`, then returns 200 with `{success:true,uploadId,key,url}`.
+  The browser loader returns this confirmation for the later review flow. If
+  recording the pending upload fails after provider success, return 500 with
+  `{success:false,uploaded:true,key,url}`; the UI explicitly reports that
+  Mixcloud succeeded and says not to reupload. Provider rate limits return 429,
+  unconfirmed/rejected uploads return 502, and timeouts return 504, all with
+  `{success:false}`. Uploads have a 30-minute provider timeout and are never
+  automatically retried. Check Mixcloud before retrying an uncertain result.
+  Both titles must be nonblank. The new-show modal generates the editable
+  provider title from selected DJ names joined with `+`, show title, and show
+  date (for example, `DJ - Show, October 19, 2026`). Manual edits persist until
+  reset; the server validates and forwards the provider title without
+  regenerating it. No Show is created yet. The current modal still closes after
+  confirmation; metadata preparation, reviewed Save, and the final saved-show
+  modal are the next implementation units. Reload/resume and toolbar recovery
+  are deferred to the
+  [future recovery plan](plans/future/mixcloud-upload-recovery.md).
 
   Diagnostic logs include the full provider response body and HTTP status, with
   credential fields and the acting token redacted. Unknown response shapes are

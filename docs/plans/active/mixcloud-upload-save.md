@@ -2,11 +2,10 @@
 
 ## Status
 
-Chunked mode, with substantial responsibility groups. Documentation additions
-are complete; the first unit's structure was approved and its storage
-scaffolding is in place. Scaffolding review is pending. Live upload behavior is
-unchanged; the migration and storage function explicitly throw until
-implemented.
+Chunked mode, with substantial responsibility groups. Unit 1 structure and
+scaffolding were approved. Its implementation is complete; user review remains
+pending. Units 2 and 3 have not started. The migration has been tested only in a
+disposable database, not applied to the regular archive database.
 
 ## Decisions
 
@@ -71,18 +70,32 @@ typecheck, focused tests, admin build when affected, lint, and required
 desktop/phone browser acceptance for the final UI unit. No live uploads or
 regular database mutations for verification.
 
-## First-unit scaffolding
+## Unit 1 implementation
 
-- Added the pending database row type, editorial draft contract, successful
-  upload confirmation type, and recordUploadedShow storage entry point.
-- Added up/down migration stubs and a test-file responsibility comment. No
-  assertions test unfinished stubs; executable checks arrive with behavior.
-- Left provider parsing, multipart handling, route dependencies, browser loader,
-  and live replies unchanged. They will be connected during implementation, so
-  no production request can reach the unfinished storage function.
-- The migration throws explicitly; do not apply it or run all migrations until
-  its implementation is approved and complete.
-- Typecheck, repository lint, docs:check, and diff whitespace checks passed. No
-  migration, database test, browser check, or live upload was run.
+- Provider success returns a validated cloudcast key. Receive preserves our
+  title, description, date, selected DJs, provider title, and requested tags.
+- Route validates DJ existence before uploading, records the pending upload, and
+  returns success plus uploadId/key/url. Media cleanup remains mandatory.
+- A storage failure after provider success returns an explicit uploaded marker
+  and Mixcloud URL; the loader says not to upload again.
+- Migration creates the pending table with unique provider keys and nullable
+  creator/show foreign keys. No durable attempts or recovery UI were added.
+- The browser sends selected DJs and accepts the new reply. The modal still
+  closes after confirmation until unit 3 implements the review transition.
+- The up/down and storage scaffolding now has executable behavior. Prepare/save
+  routes remain deferred to unit 2.
 
-Next: review scaffolding and authorize implementation of unit 1.
+## Verification
+
+- 89 provider, route, loader, OAuth, and admin-boundary regression tests passed.
+- Disposable PostgreSQL migration/storage test passed, covering round-trip
+  editorial data, unique keys, foreign keys, omitted description, deletion, and
+  migration rollback/reapply.
+- Typecheck, admin build, repository lint, docs:check, and whitespace checks
+  passed. An initial Bun invocation matched Playwright files accidentally;
+  rerunning with explicit relative test paths passed all intended checks.
+- No live Mixcloud upload, regular database migration, or browser acceptance has
+  been performed. Layout and controls are unchanged in this unit; final review
+  interactions require browser acceptance in unit 3.
+
+Next: user review of unit 1, then unit 2 structure.

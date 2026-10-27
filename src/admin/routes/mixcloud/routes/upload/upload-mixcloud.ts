@@ -7,6 +7,7 @@ import { AccountError, getAccountSession } from "../../../../../auth/access.js";
 import { sendFailure } from "../../send-failure.js";
 import type {
 	MixcloudRouteDependencies,
+	UploadedShowConfirmation,
 	UploadMixcloudRoute,
 } from "../../types.js";
 import { receiveUpload } from "./receive-upload.js";
@@ -27,9 +28,7 @@ export const uploadMixcloudHandler =
 		let directory: string | undefined;
 		let status: 200 | 400 | 403 | 413 | 429 | 500 | 502 | 503 | 504 = 500;
 		let success = false;
-		let confirmation:
-			| import("../../types.js").UploadedShowConfirmation
-			| undefined;
+		let confirmation: UploadedShowConfirmation | undefined;
 		let providerKey: string | undefined;
 		try {
 			if (!integration) return reply.code(503).send({ success: false });
@@ -50,7 +49,9 @@ export const uploadMixcloudHandler =
 					request.log.warn(
 						"[Mixcloud Upload] rejected -- selected DJs do not exist",
 					);
-					return reply.code(400).send({ success: false });
+					throw Object.assign(new Error("Invalid selected DJs"), {
+						statusCode: 400,
+					});
 				}
 				request.log.info("[Mixcloud Upload] uploading to provider");
 				const result = await integration.client.upload(token, upload);
@@ -89,7 +90,9 @@ export const uploadMixcloudHandler =
 		} catch (error) {
 			if (isMatching(P.instanceOf(AccountError), error))
 				return sendFailure(error, request, reply);
-			if (isMatching({ statusCode: 413 }, error)) {
+			if (isMatching({ statusCode: 400 }, error)) {
+				status = 400;
+			} else if (isMatching({ statusCode: 413 }, error)) {
 				status = 413;
 				request.log.warn(
 					{ reason: "multipart_limit_exceeded" },

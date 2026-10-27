@@ -4,14 +4,14 @@ import type {
 	MixcloudIdentity,
 	MixcloudStore,
 } from "../../../mixcloud/index.js";
-import type { AdminApiReply, ErrorResponse } from "../types.js";
+import type { AdminApiReply, ErrorResponse, TypedDatabase } from "../types.js";
 
 export type MixcloudIntegration = {
 	client: MixcloudClient;
 	store: MixcloudStore;
 };
 export type MixcloudRouteDependencies = {
-	database: import("../types.js").TypedDatabase;
+	database: TypedDatabase;
 	auth: ArchiveAuth;
 	integration?: MixcloudIntegration;
 };

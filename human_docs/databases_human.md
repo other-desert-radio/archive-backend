@@ -183,7 +183,7 @@ deletes can advance it further. Changes roll back with the writing transaction;
 `archive_publication_changed` notifications arrive only after commit. The
 publisher will record the captured revision after successful publication.
 
-## Mixcloud uploads (planned)
+## Mixcloud uploads
 
 ```text
 mixcloud_uploads: ID | createdAt | created_by | mixcloud_key (unique) |
