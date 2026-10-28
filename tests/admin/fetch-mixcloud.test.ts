@@ -1,5 +1,67 @@
-import { expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { fetchMixcloud } from "../../src/admin/routes/mixcloud-imports/fetch-mixcloud.js";
+
+let originalUrl: string | undefined;
+beforeEach(() => {
+	originalUrl = process.env.MIXCLOUD_URL;
+	delete process.env.MIXCLOUD_URL;
+});
+afterEach(() => {
+	if (originalUrl === undefined) delete process.env.MIXCLOUD_URL;
+	else process.env.MIXCLOUD_URL = originalUrl;
+});
+
+for (const profile of [
+	"https://www.mixcloud.com/my-profile/",
+	"https://mixcloud.com/my-profile",
+]) {
+	test(`fetches configured profile ${profile}`, async () => {
+		process.env.MIXCLOUD_URL = profile;
+		const urls: string[] = [];
+		await fetchMixcloud((async (url) => {
+			urls.push(String(url));
+			return Response.json({ data: [] });
+		}) as typeof fetch);
+		expect(urls).toEqual([
+			"https://api.mixcloud.com/my-profile/cloudcasts/?limit=100&offset=0",
+		]);
+	});
+}
+
+for (const profile of [
+	"invalid",
+	"http://mixcloud.com/test/",
+	"https://example.com/test/",
+	"https://mixcloud.com/test/show/",
+	"https://user:pass@mixcloud.com/test/",
+	"https://mixcloud.com/test/?q=1",
+	"https://mixcloud.com/test/#fragment",
+	"https://mixcloud.com/",
+]) {
+	test(`rejects invalid profile ${profile} before fetching`, async () => {
+		process.env.MIXCLOUD_URL = profile;
+		let calls = 0;
+		await expect(
+			fetchMixcloud((async () => {
+				calls++;
+				return Response.json({ data: [] });
+			}) as typeof fetch),
+		).rejects.toThrow("MIXCLOUD_URL");
+		expect(calls).toBe(0);
+	});
+}
+
+test("blank profile uses the default", async () => {
+	process.env.MIXCLOUD_URL = "  ";
+	let fetchedUrl = "";
+	await fetchMixcloud((async (url) => {
+		fetchedUrl = String(url);
+		return Response.json({ data: [] });
+	}) as typeof fetch);
+	expect(fetchedUrl).toBe(
+		"https://api.mixcloud.com/otherdesertradio/cloudcasts/?limit=100&offset=0",
+	);
+});
 
 const pictures = {
 	small: "image",

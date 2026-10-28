@@ -72,3 +72,33 @@ export const readMixcloudConfig = (
 		);
 	return { clientId, clientSecret, redirectUri, tokenEncryptionKey };
 };
+
+/** Resolve the public profile URL to the fixed Mixcloud API origin. */
+export const readMixcloudSourceUrl = (
+	environment: NodeJS.ProcessEnv,
+): string => {
+	const value =
+		environment.MIXCLOUD_URL?.trim() ||
+		"https://www.mixcloud.com/otherdesertradio/";
+	const message =
+		"MIXCLOUD_URL must be an HTTPS Mixcloud profile URL without credentials, query, or fragment";
+	let profile: URL;
+	try {
+		profile = new URL(value);
+	} catch {
+		throw new Error(message);
+	}
+	if (
+		profile.protocol !== "https:" ||
+		!["www.mixcloud.com", "mixcloud.com"].includes(profile.hostname) ||
+		profile.port ||
+		profile.username ||
+		profile.password ||
+		profile.search ||
+		profile.hash ||
+		!/^\/[a-zA-Z0-9_-]+\/?$/.test(profile.pathname)
+	)
+		throw new Error(message);
+	const path = profile.pathname.replace(/\/$/, "");
+	return `https://api.mixcloud.com${path}/cloudcasts/?limit=100&offset=0`;
+};
