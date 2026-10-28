@@ -1,5 +1,15 @@
-.header {
-	margin-bottom: 1.5rem;
+.connection {
+	margin: 0;
+}
+
+.connection > div {
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.connection p {
+	margin-block: 0.25rem;
 }
 
 .signIn {

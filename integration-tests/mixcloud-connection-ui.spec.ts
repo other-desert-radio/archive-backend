@@ -22,7 +22,14 @@ for (const width of [1440, 390, 320]) {
 				},
 			}),
 		);
-		await page.route("**/api/admin/mixcloud/*", (route) => {
+		for (const resource of ["shows", "djs", "tags"]) {
+			await page.route(`**/api/admin/${resource}`, (route) =>
+				route.fulfill({ json: [] }),
+			);
+		}
+		await page.route("**/api/admin/mixcloud/**", (route) => {
+			if (new URL(route.request().url()).pathname.endsWith("/uploads/pending"))
+				return route.fulfill({ json: [] });
 			const path = new URL(route.request().url()).pathname;
 			if (path.endsWith("/connect"))
 				return route.fulfill({
@@ -59,7 +66,21 @@ for (const width of [1440, 390, 320]) {
 				body: "<h1>Mock consent</h1>",
 			}),
 		);
-		await page.goto("/admin/#upload");
+		await page.goto("/admin/#shows");
+		await expect(page.getByText("UTILS", { exact: true })).toHaveCount(0);
+		await expect(page.getByRole("link", { name: "⤷ upload" })).toHaveCount(0);
+		await expect(
+			page.getByRole("button", { name: "sign into mixcloud" }),
+		).toHaveCount(0);
+		await page.getByRole("button", { name: "+ show", exact: true }).click();
+		await expect(
+			page.getByRole("dialog", { name: "Upload Show", exact: true }),
+		).toBeVisible();
+		await expect(page.locator("#show-title")).toHaveCount(0);
+		await expect(page.locator("#show-mp3")).toHaveCount(0);
+		await expect(
+			page.getByRole("button", { name: "Upload to Mixcloud", exact: true }),
+		).toBeDisabled();
 		await expect(
 			page.getByRole("button", { name: "sign into mixcloud" }),
 		).toBeEnabled();
@@ -68,11 +89,12 @@ for (const width of [1440, 390, 320]) {
 			page.getByRole("heading", { name: "Mock consent" }),
 		).toBeVisible();
 		connected = true;
-		await page.goto("/admin/?mixcloud=connected#upload");
+		await page.goto("/admin/?mixcloud=connected#shows");
 		await expect(
 			page.getByText("Signed into Mixcloud as", { exact: false }),
 		).toBeVisible();
-		await expect(page).toHaveURL(/\/admin\/#upload$/);
+		await expect(page).toHaveURL(/\/admin\/#shows$/);
+		await expect(page.locator("#show-title")).toBeVisible();
 		await page.evaluate(() => document.fonts.ready);
 		expect(
 			await page.evaluate(
@@ -88,12 +110,13 @@ for (const width of [1440, 390, 320]) {
 			page.getByRole("button", { name: "sign into mixcloud" }),
 		).toBeEnabled();
 		expect(disconnects).toBe(1);
-		await page.goto("/admin/?mixcloud=denied#upload");
+		await page.goto("/admin/?mixcloud=denied#shows");
 		await expect(page.getByRole("status")).toHaveText(
 			"Mixcloud sign-in was cancelled.",
 		);
 		fail = true;
 		await page.reload();
+		await page.getByRole("button", { name: "+ show", exact: true }).click();
 		await expect(page.getByRole("alert")).toBeVisible();
 		fail = false;
 		await page.getByRole("button", { name: "reload connection" }).click();

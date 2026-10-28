@@ -309,7 +309,7 @@ test("callback completes authorization and redirects to a fixed upload destinati
 		`${callbackUrl}&returnTo=https://attacker.example&userId=attacker`,
 	);
 	expect(response.statusCode).toBe(303);
-	expect(response.headers.location).toBe("/admin/?mixcloud=connected#upload");
+	expect(response.headers.location).toBe("/admin/?mixcloud=connected#shows");
 	expect(response.headers["cache-control"]).toBe("no-store");
 	expect(response.headers["referrer-policy"]).toBe("no-referrer");
 	expect(calls.completions).toEqual([
@@ -341,13 +341,13 @@ test("callback rejects missing/duplicate state and never exchanges an unknown or
 		expect(
 			(await app.inject(`/api/admin/mixcloud/callback?${query}`)).headers
 				.location,
-		).toBe("/admin/?mixcloud=invalid_attempt#upload");
+		).toBe("/admin/?mixcloud=invalid_attempt#shows");
 	expect(calls.provider).toHaveLength(0);
 	await begin(app);
 	await app.inject(callbackUrl);
 	const replay = await app.inject(callbackUrl);
 	expect(replay.headers.location).toBe(
-		"/admin/?mixcloud=invalid_attempt#upload",
+		"/admin/?mixcloud=invalid_attempt#shows",
 	);
 	expect(calls.provider).toHaveLength(2);
 });
@@ -358,10 +358,10 @@ test("denial consumes the attempt and preserves any previous connection", async 
 	const response = await app.inject(
 		"/api/admin/mixcloud/callback?state=private-state&error=access_denied&error_description=private-provider-text",
 	);
-	expect(response.headers.location).toBe("/admin/?mixcloud=denied#upload");
+	expect(response.headers.location).toBe("/admin/?mixcloud=denied#shows");
 	expect(calls.provider).toHaveLength(0);
 	expect((await app.inject(callbackUrl)).headers.location).toBe(
-		"/admin/?mixcloud=invalid_attempt#upload",
+		"/admin/?mixcloud=invalid_attempt#shows",
 	);
 	expect(
 		(await app.inject("/api/admin/mixcloud/status")).json().connected,
@@ -374,7 +374,7 @@ test("provider and identity failures return safe redirects and preserve existing
 		const { app, logs } = await setup({ ...options, connected: true });
 		await begin(app);
 		const response = await app.inject(callbackUrl);
-		expect(response.headers.location).toBe("/admin/?mixcloud=failed#upload");
+		expect(response.headers.location).toBe("/admin/?mixcloud=failed#shows");
 		expect(
 			(await app.inject("/api/admin/mixcloud/status")).json().connected,
 		).toBe(true);
@@ -388,7 +388,7 @@ test("provider and identity failures return safe redirects and preserve existing
 	}
 	const { app, logs } = await setup({ fail: true });
 	expect((await app.inject(callbackUrl)).headers.location).toBe(
-		"/admin/?mixcloud=failed#upload",
+		"/admin/?mixcloud=failed#shows",
 	);
 	expect(logs.join("")).not.toContain("private-database-error");
 });
@@ -404,7 +404,7 @@ test("duplicate codes and invalid OAuth responses fail before token requests", a
 		expect(
 			(await app.inject(`/api/admin/mixcloud/callback?${query}`)).headers
 				.location,
-		).toBe("/admin/?mixcloud=failed#upload");
+		).toBe("/admin/?mixcloud=failed#shows");
 		expect(calls.provider).toHaveLength(0);
 	}
 });
@@ -427,7 +427,7 @@ test("disconnect clears the acting user's connection and pending attempts and is
 		(await app.inject("/api/admin/mixcloud/status")).json().connected,
 	).toBe(false);
 	expect((await app.inject(callbackUrl)).headers.location).toBe(
-		"/admin/?mixcloud=invalid_attempt#upload",
+		"/admin/?mixcloud=invalid_attempt#shows",
 	);
 	expect(calls.provider).toHaveLength(0);
 });
@@ -449,7 +449,7 @@ test("disconnect requires a trusted browser origin and disabled routes report un
 	expect(logs.join("")).not.toContain("private-state");
 	const disabled = await setup({ configured: false });
 	expect((await disabled.app.inject(callbackUrl)).headers.location).toBe(
-		"/admin/?mixcloud=unavailable#upload",
+		"/admin/?mixcloud=unavailable#shows",
 	);
 	expect(
 		(

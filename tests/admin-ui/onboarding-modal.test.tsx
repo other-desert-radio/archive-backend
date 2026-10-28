@@ -5,6 +5,7 @@ import {
 	SearchableMultiSelect,
 	TagsInput,
 } from "../../src/admin-ui/components/shared/modal/index.js";
+import { ShowFormModal } from "../../src/admin-ui/components/shows/onboarding-modal/show-form-modal/index.js";
 
 const defaults = {
 	isOpen: true,
@@ -96,4 +97,41 @@ test("DJ and tag helpers describe their controls while preserving built-in tag g
 	expect(markup).toContain('aria-describedby="tags-help tags-extra-help"');
 	expect(markup).toContain('id="tags-extra-help"');
 	expect(markup).toContain("Type to search.");
+});
+
+test("Disconnected new shows hide upload fields and retain disabled submission", () => {
+	for (const value of ["new_show", "existing_show"] as const) {
+		const markup = renderToStaticMarkup(
+			<ShowFormModal
+				title="Upload Show"
+				idPrefix="show"
+				djs={[]}
+				isDJsLoading={false}
+				onRetryDJs={() => undefined}
+				onClose={() => undefined}
+				onSubmit={async () => undefined}
+				onboardingMode={{ value, onChange: () => undefined }}
+				initialValues={{
+					title: "",
+					date: "",
+					duration: "",
+					mixcloud_image_small: "",
+					mixcloud_image_large: "",
+					tags: [],
+					tagDraft: "",
+					url: "",
+					selected: [],
+				}}
+			/>,
+		);
+		expect(markup).not.toContain("sign into mixcloud to upload");
+		expect(markup.includes('id="show-title"')).toBe(value === "existing_show");
+		if (value === "new_show") {
+			expect(markup.match(/<button\b[^>]*type="submit"[^>]*>/)?.[0]).toContain(
+				"disabled",
+			);
+		}
+		expect(markup).toContain('aria-label="Close"');
+		expect(markup).toContain(">Cancel</button>");
+	}
 });

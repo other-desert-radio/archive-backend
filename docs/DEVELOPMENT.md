@@ -177,21 +177,23 @@ together, or leave all four blank to disable it. The configuration reader
 rejects partial settings without printing their values. Startup validates these
 settings and constructs the provider client and store once. Partial settings
 prevent startup; complete all four or clear all four. Connect, status, callback,
-and disconnect routes are registered under the admin API boundary. The upload
-page at `/admin/#upload` provides connection status, sign-in, and sign-out.
-Review and explicitly apply migration `0034_add_mixcloud_connections` before
-using configured routes.
+and disconnect routes are registered under the admin API boundary. The Shows
+page at `/admin/#shows` opens an upload modal that provides connection status,
+sign-in, and sign-out. OAuth returns automatically reopen this modal. Review and
+explicitly apply migration `0034_add_mixcloud_connections` before using
+configured routes.
 
 The provider uses `oauth4webapi` for OAuth validation and grant processing, with
 its supported custom-fetch hook adapting Mixcloud's GET token exchange and token
 response format. The store persists connections in PostgreSQL; creating the
 client/store at startup does not perform network or database requests.
 
-For local development, use `http://localhost:43827/api/admin/mixcloud/callback`
-as the redirect URI. Deployment callbacks require HTTPS; HTTP is accepted only
-on loopback hosts. The callback must use `/api/admin/mixcloud/callback` without
-credentials, query, or fragment. The Mixcloud application website field is
-separate from this callback.
+For local development, set
+`MIXCLOUD_REDIRECT_URI=http://localhost:${PORT}/api/admin/mixcloud/callback` in
+`.env` so Bun expands the callback port from `PORT`. Deployment callbacks
+require HTTPS; HTTP is accepted only on loopback hosts. The callback must use
+`/api/admin/mixcloud/callback` without credentials, query, or fragment. The
+Mixcloud application website field is separate from this callback.
 
 Keep the client secret and encryption key in the untracked `.env`. Generate a
 32-byte encryption key with `openssl rand -base64 32` and keep it stable once
