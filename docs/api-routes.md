@@ -572,8 +572,8 @@ retaining search and sort.
 ## Mixcloud import list
 
 `POST /api/admin/refresh-mixcloud` requires an admin or editor session and no
-request body. It fetches
-`https://api.mixcloud.com/otherdesertradio/cloudcasts/?limit=100&offset=0` and
+request body. It derives the API cloudcasts endpoint from the `MIXCLOUD_URL`
+profile setting (default `https://www.mixcloud.com/otherdesertradio/`) and
 follows `paging.next`, combining all source records into `{ data: [...] }` in
 request-local memory. It returns `200 { "status": "ok" }` after all pages
 complete and source metadata is saved, logging start and completion with the

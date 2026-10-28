@@ -1,16 +1,15 @@
 import { isMatching } from "ts-pattern";
+import { readMixcloudSourceUrl } from "../../../mixcloud/index.js";
 import { type MixcloudCloudcasts, PagePattern } from "./types.js";
-
-const cloudcastsUrl =
-	"https://api.mixcloud.com/otherdesertradio/cloudcasts/?limit=100&offset=0";
 
 /** Fetch the complete source JSON into request-local memory without writing files. */
 export const fetchMixcloud = async (
 	fetcher: typeof fetch = fetch,
 	logger?: FastifyBaseLogger,
+	environment: NodeJS.ProcessEnv = process.env,
 ): Promise<MixcloudCloudcasts> => {
 	const data: MixcloudCloudcasts["data"] = [];
-	let url: string | undefined = cloudcastsUrl;
+	let url: string | undefined = readMixcloudSourceUrl(environment);
 	const visited = new Set<string>();
 	while (url) {
 		const pageNumber = visited.size + 1;

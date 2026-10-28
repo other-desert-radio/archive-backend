@@ -149,6 +149,26 @@ Repeat migration steps after each review checkpoint. Use
 `scripts/run-migrations` only when all pending migrations have been reviewed.
 Startup checks PostgreSQL connectivity; `/health` is public.
 
+### Mixcloud source URL
+
+Set `MIXCLOUD_URL` in `.env` to a public profile URL, for example
+`https://www.mixcloud.com/otherdesertradio/`. Missing or blank values default to
+that profile. HTTPS URLs on `mixcloud.com` or `www.mixcloud.com` are accepted,
+with or without a trailing slash; show URLs, credentials, queries, and fragments
+are rejected when fetching. Restart the server after editing `.env`; for
+Compose, recreate the API container so it receives the updated environment.
+
+Both the admin import refresh and `scripts/fetch-mixcloud` use this setting. The
+script runs through Bun, which loads `.env` when run from the repository root,
+and writes `src/res/mixcloud.json` only after a successful fetch. Changing the
+source leaves existing imports and archive records intact; refresh upserts by
+Mixcloud key and may accumulate imports from multiple profiles. No source-change
+warning or automatic cleanup is performed. Existing title parsing still applies.
+
+This setting does not select the upload destination. For a separate test
+instance, set your own profile URL and connect your own Mixcloud account on the
+upload page.
+
 ### Mixcloud OAuth configuration
 
 The optional integration uses `MIXCLOUD_CLIENT_ID`, `MIXCLOUD_CLIENT_SECRET`,
