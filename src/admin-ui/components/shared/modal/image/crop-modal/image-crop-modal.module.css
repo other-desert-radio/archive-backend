@@ -1,9 +1,6 @@
 .overlay {
 	position: fixed;
-	top: 3.0625rem;
-	right: 0;
-	bottom: 0;
-	left: 0;
+	inset: 0;
 	z-index: 5;
 	display: grid;
 	place-items: center;
