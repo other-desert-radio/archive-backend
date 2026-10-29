@@ -1,3 +1,12 @@
+/*
+ * mixcloud_import (preserve then remove)
+ * ┌───────────────────┬────────┬────────────────────────────────────────────────────┐
+ * │ Column / change   │ Type   │ Constraints / purpose                              │
+ * ├───────────────────┼────────┼────────────────────────────────────────────────────┤
+ * │ mixcloud_tag_keys │ text[] │ Merge missing keys into mixcloud_tags; drop column │
+ * │ rollback          │ text[] │ Reconstruct distinct keys from JSON                │
+ * └───────────────────┴────────┴────────────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

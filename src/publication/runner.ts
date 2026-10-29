@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Kysely } from "kysely";
+import { allocateArchiveVersions } from "../db/archive-versions.js";
 import { writeArchiveDocuments } from "../db/export-archive.js";
 import type { Database } from "../db/types.js";
 import { validatePublicationDestination } from "./checkout.js";
@@ -129,6 +130,11 @@ const savePublicationExport = async (
 ): Promise<void> => {
 	const logs: string[] = [];
 	try {
+		const versioned = await allocateArchiveVersions(
+			execution.lease.database,
+			async () => snapshot,
+			execution.job.id,
+		);
 		await writeArchiveDocuments(
 			snapshot.documents,
 			path.join(execution.config.checkoutPath, "src/res"),
@@ -138,6 +144,7 @@ const savePublicationExport = async (
 					logs.push(message);
 				},
 			},
+			versioned.versions,
 		);
 	} finally {
 		if (logs.length) await execution.log(logs.join("\n"));

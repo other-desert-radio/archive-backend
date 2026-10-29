@@ -60,6 +60,20 @@ function add(
 		signature: recordSignature(record, images),
 	});
 }
+function payload(value: unknown): unknown {
+	if (
+		isMatching(
+			{
+				version: P.number.int().positive(),
+				updatedAt: P.string,
+				data: P.unknown,
+			},
+			value,
+		)
+	)
+		return value.data;
+	return value;
+}
 function records(value: unknown): DataRecord[] {
 	if (!isMatching(P.array(identity), value))
 		throw new Error("Invalid archive records");
@@ -79,14 +93,15 @@ export async function readPublicationArchive(
 	for (const resource of ["shows", "tags"] as const) {
 		const value = await json(`src/res/${resource}.json`);
 		if (value !== undefined)
-			for (const record of records(value)) add(archive, resource, record);
+			for (const record of records(payload(value)))
+				add(archive, resource, record);
 	}
 	const brief = await json("src/res/djs_brief.json");
-	if (brief !== undefined) records(brief);
+	if (brief !== undefined) records(payload(brief));
 	for (const file of (await listDJFiles()).sort()) {
 		const name = file.split("/").at(-1) ?? file;
 		if (!name.endsWith(".json")) continue;
-		const [record] = records([await json(`src/res/djs/${name}`)]);
+		const [record] = records([payload(await json(`src/res/djs/${name}`))]);
 		if (!record || name !== `${record.id}.json`)
 			throw new Error("Invalid archive DJ filename");
 		const images: Record<string, string> = {};

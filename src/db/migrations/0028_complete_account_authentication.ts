@@ -1,3 +1,34 @@
+/*
+ * session (added columns)
+ * ┌─────────────────┬──────┬───────────────────────┐
+ * │ Column / change │ Type │ Constraints / purpose │
+ * ├─────────────────┼──────┼───────────────────────┤
+ * │ impersonatedBy  │ text │ Nullable              │
+ * └─────────────────┴──────┴───────────────────────┘
+ *
+ * rateLimit (new table)
+ * ┌─────────────────┬─────────┬───────────────────────┐
+ * │ Column / change │ Type    │ Constraints / purpose │
+ * ├─────────────────┼─────────┼───────────────────────┤
+ * │ id              │ text    │ PRIMARY KEY           │
+ * │ key             │ text    │ NOT NULL; UNIQUE      │
+ * │ count           │ integer │ NOT NULL              │
+ * │ lastRequest     │ bigint  │ NOT NULL              │
+ * └─────────────────┴─────────┴───────────────────────┘
+ *
+ * user (changed columns and constraints)
+ * ┌────────────────────┬─────────────┬───────────────────────────────────────────┐
+ * │ Column / change    │ Type        │ Constraints / purpose                     │
+ * ├────────────────────┼─────────────┼───────────────────────────────────────────┤
+ * │ email              │ text        │ Normalize; UNIQUE lower(btrim(email))     │
+ * │ role               │ text        │ NOT NULL; DEFAULT editor; admin or editor │
+ * │ existing role      │ text        │ NULL becomes admin                        │
+ * │ mustChangePassword │ boolean     │ NOT NULL; DEFAULT false                   │
+ * │ banned             │ boolean     │ NOT NULL; DEFAULT false                   │
+ * │ banReason          │ text        │ Nullable                                  │
+ * │ banExpires         │ timestamptz │ Nullable                                  │
+ * └────────────────────┴─────────────┴───────────────────────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import { sql } from "kysely";
 import type { Database } from "../types.js";

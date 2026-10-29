@@ -1,17 +1,24 @@
+/*
+ * dj_tags (new table)
+ * ┌─────────────────┬─────────┬───────────────────────┐
+ * │ Column / change │ Type    │ Constraints / purpose │
+ * ├─────────────────┼─────────┼───────────────────────┤
+ * │ id              │ integer │ PRIMARY KEY; identity │
+ * │ dj_id           │ integer │ NOT NULL              │
+ * │ tag_id          │ integer │ NOT NULL              │
+ * └─────────────────┴─────────┴───────────────────────┘
+ *
+ * dj_tags
+ * ┌─────────────────┬────────┬──────────────────────────────────────────────┐
+ * │ Column / change │ Type   │ Constraints / purpose                        │
+ * ├─────────────────┼────────┼──────────────────────────────────────────────┤
+ * │ (dj_id, tag_id) │ unique │ One row per pair                             │
+ * │ tag_id          │ index  │ Reverse lookup; foreign keys cascade deletes │
+ * └─────────────────┴────────┴──────────────────────────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 
-/*
- * DJ Tags Database:
- *
- * +--------+---------+--------------------------+
- * | column | type    | constraints               |
- * +--------+---------+--------------------------+
- * | id     | integer | primary key               |
- * | dj_id  | integer | not null, references djs  |
- * | tag_id | integer | not null, references tags |
- * +--------+---------+--------------------------+
- */
 export async function up(db: Kysely<Database>): Promise<void> {
 	await db.schema
 		.createTable("dj_tags")

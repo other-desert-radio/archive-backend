@@ -142,6 +142,37 @@ their semantics actually differ, following the absence conventions above.
 
 ## Functions and organization
 
+### Readable formatting
+
+Write generated and edited code with the same readable layout as handwritten
+code. Expand long query-builder and promise chains onto multiple lines, with one
+chained call per line. Put multi-field objects and nested callbacks on separate
+indented lines so their structure is easy to scan.
+
+Use a braced block when a conditional body contains a multiline operation. Keep
+short expressions compact when they remain easy to read; do not compress
+database writes, nested callbacks, or control flow into a single long line.
+
+```ts
+if (!unchanged) {
+  await transaction
+    .insertInto("archive_dataset_versions")
+    .values({
+      dataset,
+      version,
+      updated_at: new Date(updatedAt),
+      content_hash: hashes[dataset],
+    })
+    .execute();
+}
+```
+
+Follow the repository formatter for indentation and wrapping. Format changed
+TypeScript files before presenting a chunk for review; keep formatting scoped to
+those files to preserve unrelated edits.
+
+### Responsibilities and boundaries
+
 Give functions one understandable responsibility and consistent names throughout
 the call chain. Make inputs, outputs, dependencies, and side effects explicit;
 pass dependencies such as the database rather than reaching for hidden mutable

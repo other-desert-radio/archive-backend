@@ -9,6 +9,7 @@ const managedPaths = [
 	"src/res/djs_brief.json",
 	"src/res/shows.json",
 	"src/res/tags.json",
+	"src/res/data_versions.json",
 	"public/assets/djs",
 ];
 

@@ -1,17 +1,16 @@
+/*
+ * tags (new table)
+ * ┌─────────────────┬─────────┬───────────────────────┐
+ * │ Column / change │ Type    │ Constraints / purpose │
+ * ├─────────────────┼─────────┼───────────────────────┤
+ * │ id              │ integer │ PRIMARY KEY; identity │
+ * │ name            │ text    │ NOT NULL              │
+ * │ color           │ text    │ Nullable              │
+ * └─────────────────┴─────────┴───────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 
-/*
- * Tags Database:
- *
- * +-------+---------+------------+
- * | column | type    | constraints |
- * +-------+---------+------------+
- * | id    | integer | primary key |
- * | name  | text    | not null   |
- * | color | text    | nullable   |
- * +-------+---------+------------+
- */
 export async function up(db: Kysely<Database>): Promise<void> {
 	await db.schema
 		.createTable("tags")

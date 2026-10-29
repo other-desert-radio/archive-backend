@@ -1,3 +1,12 @@
+/*
+ * archive_publication_jobs / archive_publication_logs (added triggers)
+ * ┌──────────────────────────┬─────────────────┬─────────────────────────────────────────────────────┐
+ * │ Column / change          │ Type            │ Constraints / purpose                               │
+ * ├──────────────────────────┼─────────────────┼─────────────────────────────────────────────────────┤
+ * │ INSERT / UPDATE / DELETE │ AFTER statement │ Notify archive_publication_changed with job payload │
+ * │ delivery                 │ on commit       │ Rollback cancels notification                       │
+ * └──────────────────────────┴─────────────────┴─────────────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 
 /** Job/log changes wake browser streams only after their transaction commits. */

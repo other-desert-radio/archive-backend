@@ -1,3 +1,21 @@
+/*
+ * archive_publication_logs (new table)
+ * ┌─────────────────┬─────────────┬────────────────────────────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose                                      │
+ * ├─────────────────┼─────────────┼────────────────────────────────────────────────────────────┤
+ * │ job_id          │ uuid        │ NOT NULL; FK archive_publication_jobs.id ON DELETE CASCADE │
+ * │ sequence        │ integer     │ NOT NULL                                                   │
+ * │ created_at      │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP                        │
+ * │ message         │ text        │ NOT NULL                                                   │
+ * └─────────────────┴─────────────┴────────────────────────────────────────────────────────────┘
+ *
+ * archive_publication_logs (integrity)
+ * ┌──────────────────┬─────────────┬────────────────────────────────────────┐
+ * │ Column / change  │ Type        │ Constraints / purpose                  │
+ * ├──────────────────┼─────────────┼────────────────────────────────────────┤
+ * │ job_id, sequence │ primary key │ Unique sequence per job; sequence >= 0 │
+ * └──────────────────┴─────────────┴────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

@@ -14,6 +14,7 @@ const generatedPaths = [
 	"src/res/djs_brief.json",
 	"src/res/shows.json",
 	"src/res/tags.json",
+	"src/res/data_versions.json",
 	"public/assets/djs",
 ];
 export const generatedPath = (file: string): boolean =>
@@ -21,6 +22,7 @@ export const generatedPath = (file: string): boolean =>
 		"src/res/djs_brief.json",
 		"src/res/shows.json",
 		"src/res/tags.json",
+		"src/res/data_versions.json",
 	].includes(file) ||
 	file.startsWith("src/res/djs/") ||
 	file.startsWith("public/assets/djs/");

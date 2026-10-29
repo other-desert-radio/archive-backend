@@ -243,3 +243,20 @@ row remains; show_id and imported_at become null
 Migration `0026_drop_mixcloud_tag_keys` removes the legacy source key array
 after preserving missing keys in JSON. Missing names and URLs require refresh;
 rollback reconstructs distinct keys from JSON.
+
+## Export revisions
+
+now each export leads to a revision number. these are stored in a database table
+called archive_dataset_versions
+
+`dataset``: Primary key: shows, djs, or tags `version`: Increasing version number `updated_at`: When that dataset’s exported content changed `content_hash`:
+Detects changes without storing the full export
+
+this impacts output:
+
+```
+{
+    version: number,
+    data :{ ...}
+}
+```

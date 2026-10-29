@@ -1,3 +1,12 @@
+/*
+ * tags (changed columns)
+ * ┌─────────────────┬──────┬────────────────────────────┐
+ * │ Column / change │ Type │ Constraints / purpose      │
+ * ├─────────────────┼──────┼────────────────────────────┤
+ * │ name → title    │ text │ Rename; NOT NULL preserved │
+ * │ color           │ text │ Now NOT NULL               │
+ * └─────────────────┴──────┴────────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 

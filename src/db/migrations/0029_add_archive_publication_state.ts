@@ -1,3 +1,22 @@
+/*
+ * archive_publication_state (new table)
+ * ┌────────────────────┬─────────┬────────────────────────┐
+ * │ Column / change    │ Type    │ Constraints / purpose  │
+ * ├────────────────────┼─────────┼────────────────────────┤
+ * │ id                 │ integer │ PRIMARY KEY; DEFAULT 1 │
+ * │ revision           │ bigint  │ NOT NULL; DEFAULT 1    │
+ * │ published_revision │ bigint  │ NOT NULL; DEFAULT 0    │
+ * └────────────────────┴─────────┴────────────────────────┘
+ *
+ * archive writes (added triggers)
+ * ┌────────────────────┬─────────────────┬────────────────────────────────────────────────────────┐
+ * │ Column / change    │ Type            │ Constraints / purpose                                  │
+ * ├────────────────────┼─────────────────┼────────────────────────────────────────────────────────┤
+ * │ six archive tables │ AFTER statement │ INSERT / UPDATE / DELETE / TRUNCATE                    │
+ * │ revision           │ bigint          │ Increment; initially 1; published_revision initially 0 │
+ * │ commit             │ NOTIFY          │ archive_publication_changed; rollback cancels          │
+ * └────────────────────┴─────────────────┴────────────────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

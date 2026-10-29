@@ -5,6 +5,10 @@ import type { Kysely, Selectable, Transaction } from "kysely";
 // Direct import avoids a cycle through the publication runner and its barrel.
 import { readArchiveCheckoutPath } from "../publication/config.js";
 import { sanitizeArchiveHtml } from "../utils/sanitize-html.js";
+import {
+	allocateArchiveVersions,
+	type DatasetVersions,
+} from "./archive-versions.js";
 import { db } from "./db.js";
 import type {
 	Database,
@@ -275,7 +279,14 @@ export const writeArchiveDocuments = async (
 	resourceDirectory: string,
 	assetDirectory: string,
 	reporter: ArchiveExportReporter = { log: console.log },
+	versions?: DatasetVersions,
 ): Promise<void> => {
+	if (!versions) throw new Error("Archive dataset versions are required");
+	const envelope = (dataset: keyof DatasetVersions, data: unknown) => ({
+		version: versions[dataset].id,
+		updatedAt: versions[dataset].updatedAt,
+		data,
+	});
 	if (!path.isAbsolute(resourceDirectory) || !path.isAbsolute(assetDirectory)) {
 		throw new Error("Archive output directories must be absolute paths");
 	}
@@ -308,16 +319,25 @@ export const writeArchiveDocuments = async (
 	await fs.mkdir(path.join(resourceDirectory, "djs"), { recursive: true });
 	await writeJSON(
 		path.join(resourceDirectory, "djs_brief.json"),
-		documents.djsBrief,
+		envelope("djs", documents.djsBrief),
 	);
 	reporter.log(`│  ├─ djs_brief.json: ${documents.djsBrief.length} DJs`);
 	for (const dj of documents.djs) {
-		await writeJSON(path.join(resourceDirectory, "djs", `${dj.id}.json`), dj);
+		await writeJSON(
+			path.join(resourceDirectory, "djs", `${dj.id}.json`),
+			envelope("djs", dj),
+		);
 		reporter.log(`│  ├─ djs/${dj.id}.json`);
 	}
-	await writeJSON(path.join(resourceDirectory, "shows.json"), documents.shows);
+	await writeJSON(
+		path.join(resourceDirectory, "shows.json"),
+		envelope("shows", documents.shows),
+	);
 	reporter.log(`│  ├─ shows.json: ${documents.shows.length} shows`);
-	await writeJSON(path.join(resourceDirectory, "tags.json"), documents.tags);
+	await writeJSON(
+		path.join(resourceDirectory, "tags.json"),
+		envelope("tags", documents.tags),
+	);
 	reporter.log(`│  └─ tags.json: ${documents.tags.length} tags`);
 
 	reporter.log("├─ Writing image assets");
@@ -337,6 +357,7 @@ export const writeArchiveDocuments = async (
 			reporter.log(`│  ${branch} ${relativePath}`);
 		}
 	}
+	await writeJSON(path.join(resourceDirectory, "data_versions.json"), versions);
 	reporter.log(
 		`└─ Complete: ${documents.djs.length} DJs, ${documents.shows.length} shows, ${documents.tags.length} tags, ${documents.images.length} images`,
 	);
@@ -415,17 +436,18 @@ export const exportArchive = async (
 	reporter.log("Archive export");
 	reporter.log(`├─ JSON destination: ${resourceDirectory}`);
 	reporter.log(`├─ Image destination: ${assetDirectory}`);
-	const documents = await database
-		.transaction()
-		.setIsolationLevel("repeatable read")
-		.setAccessMode("read only")
-		.execute((transaction) => loadArchiveDocuments(transaction, reporter));
-
+	const snapshot = await allocateArchiveVersions(
+		database,
+		async (transaction) => ({
+			documents: await loadArchiveDocuments(transaction, reporter),
+		}),
+	);
 	await writeArchiveDocuments(
-		documents,
+		snapshot.documents,
 		resourceDirectory,
 		assetDirectory,
 		reporter,
+		snapshot.versions,
 	);
 };
 

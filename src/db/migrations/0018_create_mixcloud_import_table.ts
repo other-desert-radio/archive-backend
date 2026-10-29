@@ -1,3 +1,24 @@
+/*
+ * mixcloud_import (new table)
+ * ┌─────────────────┬─────────────┬──────────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose                    │
+ * ├─────────────────┼─────────────┼──────────────────────────────────────────┤
+ * │ id              │ integer     │ PRIMARY KEY; identity                    │
+ * │ createdAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP      │
+ * │ key             │ text        │ NOT NULL; UNIQUE                         │
+ * │ show_id         │ integer     │ Nullable; FK shows.id ON DELETE SET NULL │
+ * │ imported_at     │ timestamptz │ Nullable                                 │
+ * └─────────────────┴─────────────┴──────────────────────────────────────────┘
+ *
+ * mixcloud_import (integrity)
+ * ┌─────────────────┬─────────┬───────────────────────────────────────────┐
+ * │ Column / change │ Type    │ Constraints / purpose                     │
+ * ├─────────────────┼─────────┼───────────────────────────────────────────┤
+ * │ import state    │ check   │ show_id and imported_at are NULL together │
+ * │ show_id cleared │ trigger │ Clear imported_at; retain source row      │
+ * │ show_id         │ index   │ Lookup by linked Show                     │
+ * └─────────────────┴─────────┴───────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

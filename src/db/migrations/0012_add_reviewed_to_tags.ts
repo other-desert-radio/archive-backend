@@ -1,3 +1,11 @@
+/*
+ * tags (added columns)
+ * ┌─────────────────┬─────────┬─────────────────────────┐
+ * │ Column / change │ Type    │ Constraints / purpose   │
+ * ├─────────────────┼─────────┼─────────────────────────┤
+ * │ reviewed        │ boolean │ NOT NULL; DEFAULT false │
+ * └─────────────────┴─────────┴─────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 

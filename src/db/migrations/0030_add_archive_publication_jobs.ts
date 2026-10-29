@@ -1,3 +1,32 @@
+/*
+ * archive_publication_jobs (new table)
+ * ┌─────────────────┬─────────────┬─────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose               │
+ * ├─────────────────┼─────────────┼─────────────────────────────────────┤
+ * │ id              │ uuid        │ PRIMARY KEY                         │
+ * │ requested_by    │ text        │ NOT NULL                            │
+ * │ created_at      │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP │
+ * │ completed_at    │ timestamptz │ Nullable                            │
+ * │ repository      │ text        │ NOT NULL                            │
+ * │ checkout_path   │ text        │ NOT NULL                            │
+ * │ branch          │ text        │ NOT NULL                            │
+ * │ retry_job_id    │ uuid        │ Nullable                            │
+ * │ stage           │ text        │ NOT NULL; DEFAULT queued            │
+ * │ outcome         │ text        │ NOT NULL; DEFAULT running           │
+ * │ revision        │ bigint      │ Nullable                            │
+ * │ commit_id       │ text        │ Nullable                            │
+ * │ error           │ text        │ Nullable                            │
+ * └─────────────────┴─────────────┴─────────────────────────────────────┘
+ *
+ * archive_publication_jobs (integrity)
+ * ┌─────────────────┬───────┬──────────────────────────────────────────────────────┐
+ * │ Column / change │ Type  │ Constraints / purpose                                │
+ * ├─────────────────┼───────┼──────────────────────────────────────────────────────┤
+ * │ completion      │ check │ Running: no completion/error; terminal: completed_at │
+ * │ success         │ check │ Revision required; no error; succeeded needs commit  │
+ * │ created_at, id  │ index │ Creation order; requester/retry IDs have no FK       │
+ * └─────────────────┴───────┴──────────────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

@@ -1,3 +1,38 @@
+/*
+ * mixcloud_connections (new table)
+ * ┌────────────────────────┬─────────────┬───────────────────────────────────────────┐
+ * │ Column / change        │ Type        │ Constraints / purpose                     │
+ * ├────────────────────────┼─────────────┼───────────────────────────────────────────┤
+ * │ user_id                │ text        │ PRIMARY KEY; FK user.id ON DELETE CASCADE │
+ * │ mixcloud_key           │ text        │ NOT NULL                                  │
+ * │ display_name           │ text        │ NOT NULL                                  │
+ * │ access_token_encrypted │ text        │ NOT NULL                                  │
+ * │ createdAt              │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP       │
+ * │ updated_at             │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP       │
+ * └────────────────────────┴─────────────┴───────────────────────────────────────────┘
+ *
+ * mixcloud_oauth_attempts (new table)
+ * ┌─────────────────┬─────────────┬─────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose               │
+ * ├─────────────────┼─────────────┼─────────────────────────────────────┤
+ * │ state_hash      │ text        │ PRIMARY KEY                         │
+ * │ user_id         │ text        │ NOT NULL                            │
+ * │ session_id      │ text        │ NOT NULL                            │
+ * │ createdAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP │
+ * │ expires_at      │ timestamptz │ NOT NULL                            │
+ * └─────────────────┴─────────────┴─────────────────────────────────────┘
+ *
+ * OAuth integrity (added constraints and indexes)
+ * ┌──────────────────────┬──────────────┬───────────────────────────────────────────────────────┐
+ * │ Column / change      │ Type         │ Constraints / purpose                                 │
+ * ├──────────────────────┼──────────────┼───────────────────────────────────────────────────────┤
+ * │ session.id, userId   │ unique index │ Composite owner reference; cascading attempt deletion │
+ * │ state_hash           │ text         │ 64 lowercase hex characters                           │
+ * │ expires_at           │ timestamptz  │ After creation; within 10 minutes                     │
+ * │ user_id / session_id │ indexes      │ Attempt lookup                                        │
+ * │ connection fields    │ checks       │ Valid account key; nonblank name/encrypted token      │
+ * └──────────────────────┴──────────────┴───────────────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

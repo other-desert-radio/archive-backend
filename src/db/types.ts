@@ -9,6 +9,7 @@ import type {
 export type Database = {
 	mixcloud_connections: MixcloudConnectionsTable;
 	mixcloud_oauth_attempts: MixcloudOAuthAttemptsTable;
+	archive_dataset_versions: ArchiveDatasetVersionsTable;
 	archive_publication_state: ArchivePublicationStateTable;
 	archive_publication_jobs: ArchivePublicationJobsTable;
 	archive_publication_logs: ArchivePublicationLogsTable;
@@ -72,7 +73,19 @@ export type ArchivePublicationStateTable = {
 	published_target: Generated<PublicationTarget | null>;
 };
 
+export type ArchiveDatasetVersionsTable = {
+	dataset: "shows" | "djs" | "tags";
+	version: number;
+	updated_at: Date;
+	content_hash: string;
+};
+
 export type ArchivePublicationJobsTable = {
+	dataset_versions: ColumnType<
+		import("./archive-versions.js").DatasetVersions | null,
+		string | null | undefined,
+		string | null
+	>;
 	id: string;
 	requested_by: string;
 	created_at: Generated<Date>;

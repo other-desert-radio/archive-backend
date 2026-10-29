@@ -1,3 +1,18 @@
+/*
+ * mixcloud_import (added columns)
+ * ┌───────────────────┬────────┬───────────────────────┐
+ * │ Column / change   │ Type   │ Constraints / purpose │
+ * ├───────────────────┼────────┼───────────────────────┤
+ * │ mixcloud_tag_keys │ text[] │ Nullable              │
+ * └───────────────────┴────────┴───────────────────────┘
+ *
+ * tags (added constraint)
+ * ┌─────────────────┬──────┬────────────────────────────────┐
+ * │ Column / change │ Type │ Constraints / purpose          │
+ * ├─────────────────┼──────┼────────────────────────────────┤
+ * │ mixcloud_key    │ text │ UNIQUE; multiple NULLs allowed │
+ * └─────────────────┴──────┴────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 
