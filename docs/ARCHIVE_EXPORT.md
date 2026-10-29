@@ -54,10 +54,12 @@ consumers require a separate compatibility update. See
 [dataset version storage](DATABASES.md#archive-dataset-versions) for persistence
 and migration requirements.
 
-The manifest is written after all data and image files. Earlier write failures
-leave the previous manifest intact, but the filesystem export is not atomic:
-readers can encounter partial output during a failed or in-progress export.
-Database allocation does not indicate successful publication.
+The manifest is written to a temporary file after all data and image files, then
+replaces the previous manifest by rename. This avoids following a manifest
+symlink and preserves the previous file if writing the new one fails. The
+filesystem export as a whole is not atomic: readers can encounter partial output
+during a failed or in-progress export. Database allocation does not indicate
+successful publication.
 
 ## Export rules
 
@@ -184,6 +186,11 @@ versions without allocating against current data or changing the latest dataset
 state. Legacy jobs without a dataset snapshot retain that absence during
 recovery. Local retries prepare a fresh reviewed snapshot and allocate versions
 for its content. Newer archive edits remain pending after remote recovery.
+
+Publication logs include the captured archive revision and each dataset's
+version number, visible in the existing admin log UI. Recovery logs the original
+revision and dataset versions; legacy jobs explicitly report unavailable dataset
+metadata.
 
 It stages only generated JSON (including `data_versions.json`) and DJ image
 paths, including deletions, commits changed output with a job identifier, and

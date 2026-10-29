@@ -5,6 +5,7 @@ import {
 	sql,
 } from "kysely";
 import { isMatching, P } from "ts-pattern";
+import type { DatasetVersions } from "../db/archive-versions.js";
 import type { ArchivePublicationJobsTable, Database } from "../db/types.js";
 import { readPublicationTarget, samePublicationTarget } from "./target.js";
 import type {
@@ -394,8 +395,8 @@ export const captureRecoveredPublication = async (
 	lease: PublicationLease,
 	jobId: string,
 	previousJobId: string,
-): Promise<void> => {
-	await lease.database.transaction().execute(async (transaction) => {
+): Promise<DatasetVersions | null> => {
+	return lease.database.transaction().execute(async (transaction) => {
 		const previous = await transaction
 			.selectFrom("archive_publication_jobs")
 			.select(["revision", "dataset_versions"])
@@ -421,6 +422,7 @@ export const captureRecoveredPublication = async (
 			.where("outcome", "=", "running")
 			.returning("id")
 			.executeTakeFirstOrThrow();
+		return previous.dataset_versions;
 	});
 };
 

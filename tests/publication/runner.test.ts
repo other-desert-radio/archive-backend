@@ -363,6 +363,13 @@ test.skipIf(!databaseUrl)(
 			const done = await settled(f.database, first.id);
 			expect(done.job.outcome).toBe("succeeded");
 			expect(done.job.revision).toBe("1");
+			expect(
+				done.logs.some(
+					(line) =>
+						line.message ===
+						"Captured archive revision 1; dataset versions: shows 1, DJs 1, tags 1",
+				),
+			).toBe(true);
 			expect(done.job.commitId).toBeDefined();
 			const versions = await jobVersions(f.database, first.id);
 			expect(versions).not.toBeNull();
@@ -499,6 +506,18 @@ test.skipIf(!databaseUrl)(
 			expect(recovered.job.outcome).toBe("succeeded");
 			expect(recovered.job.commitId).toBe(failed.job.commitId);
 			expect(recovered.job.revision).toBe("1");
+			expect(
+				recovered.logs.some(
+					(line) => line.message === "Recovering archive revision 1",
+				),
+			).toBe(true);
+			expect(
+				recovered.logs.some(
+					(line) =>
+						line.message ===
+						"Recovered dataset versions: shows 1, DJs 1, tags 1; newer archive edits remain pending",
+				),
+			).toBe(true);
 			expect(await jobVersions(f.database, retry.id)).toEqual(failedVersions);
 			expect(
 				(
@@ -1029,6 +1048,13 @@ test.skipIf(!databaseUrl)(
 				revision: failed.job.revision,
 			});
 			expect(await jobVersions(f.database, retry.id)).toBeNull();
+			expect(
+				(await readPublicationJob(f.database, retry.id))?.logs.some((line) =>
+					line.message.includes(
+						"Dataset versions unavailable for legacy publication",
+					),
+				),
+			).toBe(true);
 			expect(
 				await f.database
 					.selectFrom("archive_dataset_versions")

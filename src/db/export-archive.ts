@@ -358,7 +358,20 @@ export const writeArchiveDocuments = async (
 		}
 	}
 	// Advertise the versions only after every data and image file has been written.
-	await writeJSON(path.join(resourceDirectory, "data_versions.json"), versions);
+	// Rename replaces the destination itself, preserving any existing symlink target.
+	const temporaryDirectory = await fs.mkdtemp(
+		path.join(resourceDirectory, ".data-versions-"),
+	);
+	try {
+		const manifest = path.join(temporaryDirectory, "data_versions.json");
+		await writeJSON(manifest, versions);
+		await fs.rename(
+			manifest,
+			path.join(resourceDirectory, "data_versions.json"),
+		);
+	} finally {
+		await fs.rm(temporaryDirectory, { recursive: true, force: true });
+	}
 	reporter.log("├─ data_versions.json");
 	reporter.log(
 		`└─ Complete: ${documents.djs.length} DJs, ${documents.shows.length} shows, ${documents.tags.length} tags, ${documents.images.length} images`,

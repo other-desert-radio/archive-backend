@@ -119,7 +119,7 @@ const generatePublicationAssets = async (
 	reviewed?: PublicationSnapshot,
 ): Promise<PublicationSnapshot & { versions: DatasetVersions }> => {
 	await execution.updateStage("exporting");
-	return allocateArchiveVersions(
+	const snapshot = await allocateArchiveVersions(
 		execution.lease.database,
 		async (transaction) => {
 			const snapshot = reviewed ?? (await loadPublicationSnapshot(transaction));
@@ -132,6 +132,10 @@ const generatePublicationAssets = async (
 		},
 		execution.job.id,
 	);
+	await execution.log(
+		`Captured archive revision ${snapshot.revision}; dataset versions: shows ${snapshot.versions.shows.id}, DJs ${snapshot.versions.djs.id}, tags ${snapshot.versions.tags.id}`,
+	);
+	return snapshot;
 };
 
 /** Flush exporter progress even when a filesystem write fails partway through. */
@@ -185,13 +189,16 @@ const captureRecoveredRevision = async (
 ): Promise<PublicationRevision> => {
 	if (previousJob?.revision === undefined)
 		throw new Error("Interrupted publication has no captured revision");
-	await captureRecoveredPublication(
+	const versions = await captureRecoveredPublication(
 		execution.lease,
 		execution.job.id,
 		previousJob.id,
 	);
+	await execution.log(`Recovering archive revision ${previousJob.revision}`);
 	await execution.log(
-		"Retry reconciles the previous snapshot; newer archive edits remain pending",
+		versions
+			? `Recovered dataset versions: shows ${versions.shows.id}, DJs ${versions.djs.id}, tags ${versions.tags.id}; newer archive edits remain pending`
+			: "Dataset versions unavailable for legacy publication; newer archive edits remain pending",
 	);
 	return previousJob.revision;
 };

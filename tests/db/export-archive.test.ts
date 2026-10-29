@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+	mkdir,
+	mkdtemp,
+	readdir,
+	readFile,
+	rm,
+	symlink,
+	writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -743,3 +751,43 @@ test.skipIf(!exportDatabaseUrl)(
 		}
 	},
 );
+
+test("manifest replacement preserves symlink targets and cleans temporary output after failure", async () => {
+	const root = await mkdtemp(path.join(tmpdir(), "archive-export-manifest-"));
+	temporaryDirectories.push(root);
+	const resources = path.join(root, "res");
+	const assets = path.join(root, "assets");
+	const outside = path.join(root, "outside.json");
+	await mkdir(resources);
+	await writeFile(outside, "unrelated data");
+	const manifest = path.join(resources, "data_versions.json");
+	await symlink(outside, manifest);
+	await writeArchiveDocuments(
+		emptyDocuments(),
+		resources,
+		assets,
+		{ log: () => {} },
+		versions,
+	);
+	expect(await readFile(outside, "utf8")).toBe("unrelated data");
+	expect(JSON.parse(await readFile(manifest, "utf8"))).toEqual(versions);
+	// A directory blocks the final rename without following or deleting its contents.
+	await rm(manifest);
+	await mkdir(manifest);
+	await writeFile(path.join(manifest, "sentinel"), "keep");
+	await expect(
+		writeArchiveDocuments(
+			emptyDocuments(),
+			resources,
+			assets,
+			{ log: () => {} },
+			versions,
+		),
+	).rejects.toThrow();
+	expect(await readFile(path.join(manifest, "sentinel"), "utf8")).toBe("keep");
+	expect(
+		(await readdir(resources)).filter((name) =>
+			name.startsWith(".data-versions-"),
+		),
+	).toEqual([]);
+});

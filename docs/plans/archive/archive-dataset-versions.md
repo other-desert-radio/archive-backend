@@ -7,8 +7,8 @@
 - [x] Migration and allocation: implemented and tested; user review pending.
 - [x] Export wrappers, manifest, fixtures, and tests: user review pending.
 - [x] Publication integration and recovery: user review pending.
-- [ ] Focused tests and documentation
-- [ ] Verification
+- [x] Focused tests and documentation
+- [x] Verification
 - User review remains pending.
 
 ## Current checkpoint
@@ -29,7 +29,7 @@
   alone.
 - Verified read-only previews, legacy/wrapped comparisons, manifest staging,
   fingerprints, symlink rejection, and preservation of unrelated files.
-- Next after review: final verification and completion review.
+- Implementation and final verification complete; final user review pending.
 
 ## Publication checkpoint verification
 
@@ -38,5 +38,22 @@
   without version snapshots and snapshot reads after export-lock acquisition.
 - Type checking, scoped Biome checks, documentation checks, Markdown lint, and
   diff whitespace checks passed.
-- Full-suite final verification and user review remain pending; no regular
-  database migration or frontend edits were made.
+- Full-suite final verification completed below; user review remains pending. No
+  regular database migration or frontend edits were made.
+
+## Final verification
+
+- Full suite: 701 passed, 22 unrelated database tests skipped, 0 failed across
+  123 files; publication, export, and version database tests ran on disposable
+  PostgreSQL with isolated schemas.
+- Type checking, repository lint, documentation checks, and whitespace checks
+  passed. The full test command also built the admin bundle.
+- Added backend log messages for archive revision and per-dataset versions,
+  including recovered versions and unavailable metadata on legacy jobs. Existing
+  publication UI displays these messages without frontend edits.
+- Manifest replacement now uses a temporary file and rename, avoiding symlink
+  traversal and truncation of the previous manifest on write failure. The full
+  export remains non-atomic.
+- Migration 0040 has not been applied to the regular database. Existing frontend
+  consumers still require a separate update to unwrap exported `data`.
+- Final user review remains pending; implementation history archived.
