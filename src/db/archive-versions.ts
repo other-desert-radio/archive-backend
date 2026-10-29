@@ -86,7 +86,7 @@ export async function allocateArchiveVersions<
 						versions[dataset] = { id: version, updatedAt };
 					}
 					// Persist the job snapshot atomically; an absent or completed job rolls back allocation.
-					if (jobId)
+					if (jobId) {
 						await transaction
 							.updateTable("archive_publication_jobs")
 							.set({ dataset_versions: JSON.stringify(versions) })
@@ -94,6 +94,7 @@ export async function allocateArchiveVersions<
 							.where("outcome", "=", "running")
 							.returning("id")
 							.executeTakeFirstOrThrow();
+					}
 					return { ...snapshot, versions };
 				});
 		} finally {

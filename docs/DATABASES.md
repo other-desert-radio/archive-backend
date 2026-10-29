@@ -39,6 +39,28 @@ removes dependent association rows. Mixcloud tracking uses `ON DELETE SET NULL`
 and a trigger to retain source rows and clear their import timestamps; see the
 [tracking deletion contract](MIXCLOUD_IMPORT.md#consistency-and-deletion).
 
+## Archive dataset versions
+
+Migration `0040_add_archive_dataset_versions` adds `archive_dataset_versions`,
+keyed by dataset (`shows`, `djs`, or `tags`). Each row stores an integer
+`version`, `updated_at timestamptz`, and a SHA-256 `content_hash`. Rows are
+created on first allocation at version 1. Changed exported content advances only
+that dataset; unchanged content preserves its version and timestamp. DJ content
+includes briefs, details, and image bytes. Shows include their embedded DJ data.
+
+The allocator serializes exporters with a session advisory lock acquired before
+opening a repeatable-read transaction. Callers must load database documents
+through that transaction for a consistent snapshot. The migration also adds
+nullable `archive_publication_jobs.dataset_versions` JSONB, recording the
+manifest-shaped version snapshot atomically with allocation. Dataset rows
+survive publication-job cleanup. Allocation does not acknowledge publication;
+failed filesystem writes can leave allocated versions behind.
+
+Apply the migration explicitly; startup does not migrate. Rollback drops the
+dataset state and job snapshots, losing version history. Tests use
+`ARCHIVE_VERSIONS_TEST_DATABASE_URL` with isolated schemas in disposable
+PostgreSQL and skip database scenarios when it is unset.
+
 ## Mixcloud OAuth connections
 
 Migration `0034_add_mixcloud_connections` adds `mixcloud_connections`, keyed by
