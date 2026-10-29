@@ -189,3 +189,28 @@ test("missing baseline is valid; malformed JSON, identities and duplicate IDs fa
 		}),
 	).rejects.toThrow("Missing archive DJ image");
 });
+
+test("legacy and versioned documents compare equally despite metadata changes", async () => {
+	const data = {
+		"src/res/shows.json": [{ ...show(1, "Show"), djs: [] }],
+		"src/res/djs_brief.json": [],
+		"src/res/djs/1.json": dj(1, "DJ"),
+		"src/res/tags.json": [tag(1, "Tag")],
+	};
+	const legacy = await read(data);
+	for (const version of [1, 2]) {
+		const wrapped = Object.fromEntries(
+			Object.entries(data).map(([file, value]) => [
+				file,
+				{
+					version,
+					updatedAt: `2026-01-0${version}T00:00:00.000Z`,
+					data: value,
+				},
+			]),
+		);
+		const changes = comparePublicationArchives(legacy, await read(wrapped));
+		for (const resource of Object.values(changes))
+			expect(resource).toEqual({ added: [], changed: [], removed: [] });
+	}
+});

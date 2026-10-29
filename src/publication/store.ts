@@ -389,6 +389,41 @@ export const capturePublicationRevision = async (
 		.executeTakeFirstOrThrow();
 };
 
+/** Reuse the committed snapshot's metadata without reallocating against newer archive data. */
+export const captureRecoveredPublication = async (
+	lease: PublicationLease,
+	jobId: string,
+	previousJobId: string,
+): Promise<void> => {
+	await lease.database.transaction().execute(async (transaction) => {
+		const previous = await transaction
+			.selectFrom("archive_publication_jobs")
+			.select(["revision", "dataset_versions"])
+			.where("id", "=", previousJobId)
+			.executeTakeFirstOrThrow();
+		if (previous.revision === null)
+			throw new Error("Interrupted publication has no captured revision");
+		await capturePublicationRevision(
+			{ ...lease, database: transaction },
+			jobId,
+			previous.revision,
+		);
+		// Legacy jobs have no dataset snapshot; recovery must still work for their commits.
+		await transaction
+			.updateTable("archive_publication_jobs")
+			.set({
+				dataset_versions:
+					previous.dataset_versions === null
+						? null
+						: JSON.stringify(previous.dataset_versions),
+			})
+			.where("id", "=", jobId)
+			.where("outcome", "=", "running")
+			.returning("id")
+			.executeTakeFirstOrThrow();
+	});
+};
+
 /** Persist the identified publisher commit before attempting a push. */
 export const recordPublicationCommit = async (
 	lease: PublicationLease,

@@ -1,7 +1,10 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Kysely } from "kysely";
-import { allocateArchiveVersions } from "../db/archive-versions.js";
+import {
+	allocateArchiveVersions,
+	type DatasetVersions,
+} from "../db/archive-versions.js";
 import { writeArchiveDocuments } from "../db/export-archive.js";
 import type { Database } from "../db/types.js";
 import { validatePublicationDestination } from "./checkout.js";
@@ -23,6 +26,7 @@ import {
 	acquirePublicationLease,
 	appendPublicationLog,
 	capturePublicationRevision,
+	captureRecoveredPublication,
 	completePublicationJob,
 	interruptAbandonedPublications,
 	type PublicationLease,
@@ -45,8 +49,8 @@ import type {
 export { readPublicationSnapshot } from "./snapshot.js";
 
 import {
+	loadPublicationSnapshot,
 	type PublicationSnapshot,
-	readPublicationSnapshot,
 } from "./snapshot.js";
 
 export type { PublicationSnapshot } from "./snapshot.js";
@@ -109,32 +113,34 @@ const validateLocalDestination = async (
 	);
 };
 
-/** Read documents and their revision together, then durably capture that revision. */
+/** Allocate the captured or explicitly reviewed snapshot under the shared exporter lock. */
 const generatePublicationAssets = async (
 	execution: PublicationExecution,
-): Promise<PublicationSnapshot> => {
+	reviewed?: PublicationSnapshot,
+): Promise<PublicationSnapshot & { versions: DatasetVersions }> => {
 	await execution.updateStage("exporting");
-	const snapshot = await readPublicationSnapshot(execution.lease.database);
-	await capturePublicationRevision(
-		execution.lease,
+	return allocateArchiveVersions(
+		execution.lease.database,
+		async (transaction) => {
+			const snapshot = reviewed ?? (await loadPublicationSnapshot(transaction));
+			await capturePublicationRevision(
+				{ ...execution.lease, database: transaction },
+				execution.job.id,
+				snapshot.revision,
+			);
+			return snapshot;
+		},
 		execution.job.id,
-		snapshot.revision,
 	);
-	return snapshot;
 };
 
 /** Flush exporter progress even when a filesystem write fails partway through. */
 const savePublicationExport = async (
 	execution: PublicationExecution,
-	snapshot: PublicationSnapshot,
+	snapshot: PublicationSnapshot & { versions: DatasetVersions },
 ): Promise<void> => {
 	const logs: string[] = [];
 	try {
-		const versioned = await allocateArchiveVersions(
-			execution.lease.database,
-			async () => snapshot,
-			execution.job.id,
-		);
 		await writeArchiveDocuments(
 			snapshot.documents,
 			path.join(execution.config.checkoutPath, "src/res"),
@@ -144,7 +150,7 @@ const savePublicationExport = async (
 					logs.push(message);
 				},
 			},
-			versioned.versions,
+			snapshot.versions,
 		);
 	} finally {
 		if (logs.length) await execution.log(logs.join("\n"));
@@ -179,10 +185,10 @@ const captureRecoveredRevision = async (
 ): Promise<PublicationRevision> => {
 	if (previousJob?.revision === undefined)
 		throw new Error("Interrupted publication has no captured revision");
-	await capturePublicationRevision(
+	await captureRecoveredPublication(
 		execution.lease,
 		execution.job.id,
-		previousJob.revision,
+		previousJob.id,
 	);
 	await execution.log(
 		"Retry reconciles the previous snapshot; newer archive edits remain pending",
@@ -260,14 +266,15 @@ export const executePublicationJob = async (
 					if (!prepared.preview.revision)
 						throw new Error("Prepared publication has no revision");
 					revision = prepared.preview.revision;
-					await execution.updateStage("exporting");
-					await capturePublicationRevision(lease, job.id, revision);
 					if (!prepared.documents)
 						throw new Error("Prepared publication documents are unavailable");
-					await savePublicationExport(execution, {
-						revision,
-						documents: prepared.documents,
-					});
+					await savePublicationExport(
+						execution,
+						await generatePublicationAssets(execution, {
+							revision,
+							documents: prepared.documents,
+						}),
+					);
 					await execution.log(
 						"Installed the reviewed publication snapshot in the local checkout",
 					);
@@ -311,18 +318,15 @@ export const executePublicationJob = async (
 							);
 						if (!prepared.preview.revision)
 							throw new Error("Prepared publication has no revision");
-						await execution.updateStage("exporting");
-						await capturePublicationRevision(
-							lease,
-							job.id,
-							prepared.preview.revision,
-						);
 						if (!prepared.documents)
 							throw new Error("Prepared publication documents are unavailable");
-						await savePublicationExport(execution, {
-							revision: prepared.preview.revision,
-							documents: prepared.documents,
-						});
+						await savePublicationExport(
+							execution,
+							await generatePublicationAssets(execution, {
+								revision: prepared.preview.revision,
+								documents: prepared.documents,
+							}),
+						);
 						await execution.log("Installed the reviewed publication snapshot");
 						revision = prepared.preview.revision;
 					} else {

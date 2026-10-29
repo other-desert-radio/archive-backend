@@ -131,7 +131,12 @@ for (const directory of [
 	});
 }
 
-for (const file of ["djs_brief.json", "shows.json", "tags.json"]) {
+for (const file of [
+	"djs_brief.json",
+	"shows.json",
+	"tags.json",
+	"data_versions.json",
+]) {
 	test(`destination validation rejects symlinks and directories at ${file}`, async () => {
 		const target = await fixture();
 		await mkdir(path.join(target.checkoutPath, "src/res"), { recursive: true });

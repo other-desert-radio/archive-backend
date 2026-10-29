@@ -528,6 +528,7 @@ test("publication commits generated additions and deletions while preserving unr
 	await git("push", "origin", "publish-dev");
 	await rm(path.join(checkout, "src/res/djs/old.json"));
 	await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
+	await writeFile(path.join(checkout, "src/res/data_versions.json"), "{}\n");
 	await writeFile(path.join(checkout, "README.md"), "unrelated local edits\n");
 	await writeFile(path.join(checkout, "notes.txt"), "untracked notes\n");
 	const recorded: string[] = [];
@@ -551,7 +552,9 @@ test("publication commits generated additions and deletions while preserving unr
 	expect(stages).toEqual(["committing", "pushing"]);
 	expect(
 		await git("diff-tree", "--no-commit-id", "--name-status", "-r", "HEAD"),
-	).toBe("D\tsrc/res/djs/old.json\nA\tsrc/res/shows.json");
+	).toBe(
+		"A\tsrc/res/data_versions.json\nD\tsrc/res/djs/old.json\nA\tsrc/res/shows.json",
+	);
 	expect(
 		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
 	).toBe(head);

@@ -54,7 +54,10 @@ through that transaction for a consistent snapshot. The migration also adds
 nullable `archive_publication_jobs.dataset_versions` JSONB, recording the
 manifest-shaped version snapshot atomically with allocation. Dataset rows
 survive publication-job cleanup. Allocation does not acknowledge publication;
-failed filesystem writes can leave allocated versions behind.
+failed filesystem writes can leave allocated versions behind. Publication
+execution records its captured revision and dataset snapshot in that allocation
+transaction. Remote commit recovery copies the previous job's snapshot without
+allocating new versions; legacy jobs retain a null snapshot.
 
 Apply the migration explicitly; startup does not migrate. Rollback drops the
 dataset state and job snapshots, losing version history. Tests use

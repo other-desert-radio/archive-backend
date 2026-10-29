@@ -82,10 +82,11 @@ existing output untouched; filesystem failures during writing can still leave
 partial output.
 
 The publisher's `readPublicationSnapshot` reads the singleton revision first,
-then loads the archive documents in that same transaction. Changes committed
-after the snapshot remain pending for a later publication. Snapshot reads do not
-acknowledge revisions or write files. The standalone exporter uses the same
-document loader without requiring the publication-state table.
+then loads the archive documents in that same read-only transaction for
+previews. Changes committed after the snapshot remain pending for a later
+publication. Snapshot reads do not acknowledge revisions or write files. The
+standalone exporter uses the same document loader without requiring the
+publication-state table.
 
 `tags.json` is the canonical tag dictionary. Every other exported document uses
 the `tagIds` field rather than duplicating tag titles and colors. The Astro
@@ -157,10 +158,15 @@ checkout files; remote mode reads the fetched branch. Changes in metadata,
 relationships, or DJ image bytes count as changed records. Ordering and
 duplicate embedded record details are suppressed.
 
-Preparation leaves working-tree files, HEAD, and the Git index untouched.
-Remote-tracking refs can update during fetch. Local preparation works with
-non-Git destinations and makes no network requests. Unrelated checkout files
-stay outside the comparison; symlinks in managed local output are rejected.
+Preparation leaves working-tree files, HEAD, and the Git index untouched. It
+does not allocate dataset versions. On confirmation, allocation and recording of
+the captured revision and dataset versions on the job share one transaction
+under the exporter lock. Reviewed documents stay fixed even when edits commit
+after confirmation; execution without a preview loads the revision and documents
+inside that locked transaction. Remote-tracking refs can update during fetch.
+Local preparation works with non-Git destinations and makes no network requests.
+Unrelated checkout files stay outside the comparison; symlinks in managed local
+output are rejected.
 
 The backend retains reviewed archive documents in memory for up to 15 minutes,
 with at most eight previews per process. No temporary preview files are created.
@@ -173,13 +179,17 @@ summary.
 
 Remote retry preserves existing commit recovery: a recognized outgoing commit is
 summarized against origin and resumed; a push already on origin only needs
-acknowledgement. Newer archive edits remain pending after recovery.
+acknowledgement. The retry job inherits the recovered job's recorded dataset
+versions without allocating against current data or changing the latest dataset
+state. Legacy jobs without a dataset snapshot retain that absence during
+recovery. Local retries prepare a fresh reviewed snapshot and allocate versions
+for its content. Newer archive edits remain pending after remote recovery.
 
-It stages only generated JSON and DJ image paths, including deletions, commits
-changed output with a job identifier, and pushes without force. It acknowledges
-only the captured revision after success or a no-change result; newer edits
-remain pending. Unrelated assets and edits remain outside the generated-file
-commit. Durable jobs allow explicit recovery after restart or a lost response
-from the Git remote. See
+It stages only generated JSON (including `data_versions.json`) and DJ image
+paths, including deletions, commits changed output with a job identifier, and
+pushes without force. It acknowledges only the captured revision after success
+or a no-change result; newer edits remain pending. Unrelated assets and edits
+remain outside the generated-file commit. Durable jobs allow explicit recovery
+after restart or a lost response from the Git remote. See
 [publication operations](DEVELOPMENT.md#publication-operation-and-recovery) for
 setup, branch selection, and retry procedures.
