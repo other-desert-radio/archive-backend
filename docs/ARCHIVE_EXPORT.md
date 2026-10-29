@@ -11,7 +11,8 @@ the following assets to the configured Astro frontend directories:
 - `src/res/djs_brief.json`, the compact DJ index;
 - `src/res/djs/{id}.json`, one detail document per DJ;
 - `src/res/shows.json`, the top-level show index;
-- `src/res/tags.json`, the shared tag dictionary; and
+- `src/res/tags.json`, the shared tag dictionary;
+- `src/res/data_versions.json`, the dataset version manifest; and
 - `public/assets/djs/{id}_small.webp` and `{id}_large.webp`, copied DJ image
   assets.
 
@@ -20,11 +21,49 @@ Astro imports JSON from `src/res/` as part of the site build and copies
 source of truth. Arrays of IDs belong in exported documents, not in the primary
 entity tables.
 
+## JSON version contract
+
+Every generated data document uses `{ version, updatedAt, data }`. The existing
+array or DJ detail object is preserved under `data`; nested records have no
+additional version fields. `version` is a positive integer content revision, and
+`updatedAt` is a UTC ISO 8601 string. Consumers must unwrap `data` before using
+the existing payload. All file paths remain unchanged, including
+`src/res/shows.json`; this backend change adds no runtime GET endpoint.
+
+`src/res/data_versions.json` contains the lightweight manifest:
+
+```json
+{
+  "shows": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
+  "djs": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
+  "tags": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" }
+}
+```
+
+Each manifest `id` matches its data document's `version`. DJ briefs and all DJ
+individual documents share the DJ dataset version. Image files retain their
+existing paths and binary format; changing their bytes advances the DJ version.
+Changes to embedded DJ cards advance the shows version when that payload
+changes.
+
+Versions come from PostgreSQL, starting at 1 on first allocation, rather than
+from destination files. Unchanged exports preserve versions and timestamps,
+including when repairing output after an interrupted write. Empty datasets are
+versioned normally. Legacy destination files are replaced with wrapped output;
+consumers require a separate compatibility update. See
+[dataset version storage](DATABASES.md#archive-dataset-versions) for persistence
+and migration requirements.
+
+The manifest is written after all data and image files. Earlier write failures
+leave the previous manifest intact, but the filesystem export is not atomic:
+readers can encounter partial output during a failed or in-progress export.
+Database allocation does not indicate successful publication.
+
 ## Export rules
 
 The exporter owns the entire `src/res/djs/` and `public/assets/djs/` directories
 and replaces their contents on each export, including stale files. Keep manually
-maintained assets outside those directories. It also owns the three top-level
+maintained assets outside those directories. It also owns the four top-level
 generated JSON files; other files such as `src/res/mixcloud.json` and
 `public/assets/logo.svg` remain untouched and outside publication commits.
 
@@ -34,12 +73,13 @@ current contract. All arrays are ordered deterministically: DJ indexes by title
 then ID, tags by ID, and relationship IDs numerically ascending. The command
 logs its nested progress, including each generated JSON and image file.
 
-Archive reads use one read-only, repeatable-read transaction for all six archive
-tables. Concurrent committed edits cannot mix different versions of DJs, Shows,
-Tags, relationships, or images in a single export. Documents are built inside
-that transaction, then files are written after it completes. A failed read
-leaves existing output untouched; filesystem failures during writing can still
-leave partial output.
+Standalone exports read all six archive tables and allocate dataset versions in
+one repeatable-read transaction under the shared exporter lock. Concurrent
+committed edits cannot mix different versions of DJs, Shows, Tags,
+relationships, or images in a single export. Documents are built inside that
+transaction, then files are written after it completes. A failed read leaves
+existing output untouched; filesystem failures during writing can still leave
+partial output.
 
 The publisher's `readPublicationSnapshot` reads the singleton revision first,
 then loads the archive documents in that same transaction. Changes committed
@@ -69,13 +109,14 @@ cards expose both variants through `image_small` and `image_large`, pointing to
 `assets/djs/{id}_small.webp` and `assets/djs/{id}_large.webp` respectively. DJ
 details use the same fields. Both fields are omitted for DJs without images.
 Exported DJ objects do not include the legacy `image` field. Export never
-processes images or writes to the database. It must never export the private
-`/api/admin/djs/{id}/image` URL. All exported Show documents, including
-`shows.json` and shows embedded in DJ details, expose the stored
-`mixcloud_image_small` and `mixcloud_image_large` URLs through `image_small` and
-`image_large` and omit the legacy JSON `image` field. Migration `0024` removes
-the legacy database `image` column. The nullable binary show image columns added
-by `0037` are reserved for future uploads and are not exported.
+processes images or modifies archive records; it writes dataset version metadata
+to the database. It must never export the private `/api/admin/djs/{id}/image`
+URL. All exported Show documents, including `shows.json` and shows embedded in
+DJ details, expose the stored `mixcloud_image_small` and `mixcloud_image_large`
+URLs through `image_small` and `image_large` and omit the legacy JSON `image`
+field. Migration `0024` removes the legacy database `image` column. The nullable
+binary show image columns added by `0037` are reserved for future uploads and
+are not exported.
 
 The JSON field names and file paths are part of the frontend contract. Keep them
 stable even if internal database column names change. Astro frontend code must

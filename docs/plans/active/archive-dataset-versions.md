@@ -5,7 +5,8 @@
 - Decision: database-backed per-dataset hash/version/timestamp; job snapshot;
   shared allocation lock.
 - [x] Migration and allocation: implemented and tested; user review pending.
-- [ ] Export and publication integration
+- [x] Export wrappers, manifest, fixtures, and tests: user review pending.
+- [ ] Publication integration and recovery
 - [ ] Focused tests and documentation
 - [ ] Verification
 - User review remains pending.
@@ -19,6 +20,9 @@
   migration down/up.
 - No migration applied to the regular database.
 - Export/publication edits from the interrupted one-shot remain unverified.
-- Next after review: export wrappers, manifest, fixtures, and export tests.
+- Export chunk: verified CLI output, manifest agreement, no-op exports,
+  independent changes, empty datasets, stale DJ deletion, and image-write
+  failure behavior.
+- Next after review: publication integration and recovery.
 - Publication chunk must capture snapshots under the shared lock and verify
   recorded-version recovery; current integration is incomplete.

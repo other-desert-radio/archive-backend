@@ -279,7 +279,7 @@ export const writeArchiveDocuments = async (
 	resourceDirectory: string,
 	assetDirectory: string,
 	reporter: ArchiveExportReporter = { log: console.log },
-	versions?: DatasetVersions,
+	versions: DatasetVersions,
 ): Promise<void> => {
 	if (!versions) throw new Error("Archive dataset versions are required");
 	const envelope = (dataset: keyof DatasetVersions, data: unknown) => ({
@@ -357,7 +357,9 @@ export const writeArchiveDocuments = async (
 			reporter.log(`│  ${branch} ${relativePath}`);
 		}
 	}
+	// Advertise the versions only after every data and image file has been written.
 	await writeJSON(path.join(resourceDirectory, "data_versions.json"), versions);
+	reporter.log("├─ data_versions.json");
 	reporter.log(
 		`└─ Complete: ${documents.djs.length} DJs, ${documents.shows.length} shows, ${documents.tags.length} tags, ${documents.images.length} images`,
 	);
