@@ -1,3 +1,19 @@
+/*
+ * shows (added columns)
+ * ┌─────────────────┬──────┬───────────────────────┐
+ * │ Column / change │ Type │ Constraints / purpose │
+ * ├─────────────────┼──────┼───────────────────────┤
+ * │ image_large     │ text │ Nullable              │
+ * │ image_small     │ text │ Nullable              │
+ * └─────────────────┴──────┴───────────────────────┘
+ *
+ * shows (backfill)
+ * ┌───────────────────────────┬──────┬─────────────────────────────────────────────┐
+ * │ Column / change           │ Type │ Constraints / purpose                       │
+ * ├───────────────────────────┼──────┼─────────────────────────────────────────────┤
+ * │ image_large / image_small │ text │ Copy image into both; then require NOT NULL │
+ * └───────────────────────────┴──────┴─────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

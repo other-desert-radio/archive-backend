@@ -1,3 +1,11 @@
+/*
+ * mixcloud_import (added columns)
+ * ┌─────────────────┬─────────┬─────────────────────────┐
+ * │ Column / change │ Type    │ Constraints / purpose   │
+ * ├─────────────────┼─────────┼─────────────────────────┤
+ * │ data_changed    │ boolean │ NOT NULL; DEFAULT false │
+ * └─────────────────┴─────────┴─────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 

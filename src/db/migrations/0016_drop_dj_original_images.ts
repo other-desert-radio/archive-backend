@@ -1,3 +1,12 @@
+/*
+ * djs (removed columns)
+ * ┌─────────────────┬───────┬────────────────────────────────────────────┐
+ * │ Column / change │ Type  │ Constraints / purpose                      │
+ * ├─────────────────┼───────┼────────────────────────────────────────────┤
+ * │ image           │ bytea │ Removed; rollback copies image_large       │
+ * │ image_filename  │ text  │ Removed; rollback uses restored-large.webp │
+ * └─────────────────┴───────┴────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

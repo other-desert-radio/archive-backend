@@ -1,20 +1,19 @@
+/*
+ * shows (new table)
+ * ┌─────────────────┬─────────────┬───────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose │
+ * ├─────────────────┼─────────────┼───────────────────────┤
+ * │ id              │ integer     │ PRIMARY KEY; identity │
+ * │ title           │ text        │ NOT NULL              │
+ * │ date            │ timestamptz │ NOT NULL              │
+ * │ duration        │ integer     │ NOT NULL              │
+ * │ image           │ text        │ Nullable              │
+ * │ url             │ text        │ Nullable              │
+ * └─────────────────┴─────────────┴───────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 
-/*
- * Shows Database:
- *
- * +----------+-------------+-------------+
- * | column   | type        | constraints |
- * +----------+-------------+-------------+
- * | id       | integer     | primary key |
- * | title    | text        | not null    |
- * | date     | timestamptz | not null    |
- * | duration | integer     | not null    |
- * | image    | text        | nullable    |
- * | url      | text        | nullable    |
- * +----------+-------------+-------------+
- */
 export async function up(db: Kysely<Database>): Promise<void> {
 	await db.schema
 		.createTable("shows")

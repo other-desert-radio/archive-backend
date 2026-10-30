@@ -5,6 +5,11 @@ import type { Kysely, Selectable, Transaction } from "kysely";
 // Direct import avoids a cycle through the publication runner and its barrel.
 import { readArchiveCheckoutPath } from "../publication/config.js";
 import { sanitizeArchiveHtml } from "../utils/sanitize-html.js";
+import {
+	allocateArchiveVersions,
+	type DatasetVersions,
+	withArchiveExportLock,
+} from "./archive-versions.js";
 import { db } from "./db.js";
 import type {
 	Database,
@@ -275,7 +280,14 @@ export const writeArchiveDocuments = async (
 	resourceDirectory: string,
 	assetDirectory: string,
 	reporter: ArchiveExportReporter = { log: console.log },
+	versions: DatasetVersions,
 ): Promise<void> => {
+	if (!versions) throw new Error("Archive dataset versions are required");
+	const envelope = (dataset: keyof DatasetVersions, data: unknown) => ({
+		version: versions[dataset].id,
+		updatedAt: versions[dataset].updatedAt,
+		data,
+	});
 	if (!path.isAbsolute(resourceDirectory) || !path.isAbsolute(assetDirectory)) {
 		throw new Error("Archive output directories must be absolute paths");
 	}
@@ -308,16 +320,25 @@ export const writeArchiveDocuments = async (
 	await fs.mkdir(path.join(resourceDirectory, "djs"), { recursive: true });
 	await writeJSON(
 		path.join(resourceDirectory, "djs_brief.json"),
-		documents.djsBrief,
+		envelope("djs", documents.djsBrief),
 	);
 	reporter.log(`│  ├─ djs_brief.json: ${documents.djsBrief.length} DJs`);
 	for (const dj of documents.djs) {
-		await writeJSON(path.join(resourceDirectory, "djs", `${dj.id}.json`), dj);
+		await writeJSON(
+			path.join(resourceDirectory, "djs", `${dj.id}.json`),
+			envelope("djs", dj),
+		);
 		reporter.log(`│  ├─ djs/${dj.id}.json`);
 	}
-	await writeJSON(path.join(resourceDirectory, "shows.json"), documents.shows);
+	await writeJSON(
+		path.join(resourceDirectory, "shows.json"),
+		envelope("shows", documents.shows),
+	);
 	reporter.log(`│  ├─ shows.json: ${documents.shows.length} shows`);
-	await writeJSON(path.join(resourceDirectory, "tags.json"), documents.tags);
+	await writeJSON(
+		path.join(resourceDirectory, "tags.json"),
+		envelope("tags", documents.tags),
+	);
 	reporter.log(`│  └─ tags.json: ${documents.tags.length} tags`);
 
 	reporter.log("├─ Writing image assets");
@@ -337,6 +358,22 @@ export const writeArchiveDocuments = async (
 			reporter.log(`│  ${branch} ${relativePath}`);
 		}
 	}
+	// Advertise the versions only after every data and image file has been written.
+	// Rename replaces the destination itself, preserving any existing symlink target.
+	const temporaryDirectory = await fs.mkdtemp(
+		path.join(resourceDirectory, ".data-versions-"),
+	);
+	try {
+		const manifest = path.join(temporaryDirectory, "data_versions.json");
+		await writeJSON(manifest, versions);
+		await fs.rename(
+			manifest,
+			path.join(resourceDirectory, "data_versions.json"),
+		);
+	} finally {
+		await fs.rm(temporaryDirectory, { recursive: true, force: true });
+	}
+	reporter.log("├─ data_versions.json");
 	reporter.log(
 		`└─ Complete: ${documents.djs.length} DJs, ${documents.shows.length} shows, ${documents.tags.length} tags, ${documents.images.length} images`,
 	);
@@ -415,18 +452,21 @@ export const exportArchive = async (
 	reporter.log("Archive export");
 	reporter.log(`├─ JSON destination: ${resourceDirectory}`);
 	reporter.log(`├─ Image destination: ${assetDirectory}`);
-	const documents = await database
-		.transaction()
-		.setIsolationLevel("repeatable read")
-		.setAccessMode("read only")
-		.execute((transaction) => loadArchiveDocuments(transaction, reporter));
-
-	await writeArchiveDocuments(
-		documents,
-		resourceDirectory,
-		assetDirectory,
-		reporter,
-	);
+	await withArchiveExportLock(database, async (connection) => {
+		const snapshot = await allocateArchiveVersions(
+			connection,
+			async (transaction) => ({
+				documents: await loadArchiveDocuments(transaction, reporter),
+			}),
+		);
+		await writeArchiveDocuments(
+			snapshot.documents,
+			resourceDirectory,
+			assetDirectory,
+			reporter,
+			snapshot.versions,
+		);
+	});
 };
 
 if (import.meta.main) {

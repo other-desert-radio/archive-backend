@@ -1,4 +1,4 @@
-import type { Kysely } from "kysely";
+import type { Kysely, Transaction } from "kysely";
 import {
 	type ArchiveDocuments,
 	loadArchiveDocuments,
@@ -11,7 +11,22 @@ export type PublicationSnapshot = {
 	documents: ArchiveDocuments;
 };
 
-/** Revision and all exported data share one read-only repeatable-read snapshot. */
+/** Load through the caller's transaction, including version allocation transactions. */
+export const loadPublicationSnapshot = async (
+	transaction: Transaction<Database>,
+): Promise<PublicationSnapshot> => {
+	const { revision } = await transaction
+		.selectFrom("archive_publication_state")
+		.select("revision")
+		.where("id", "=", 1)
+		.executeTakeFirstOrThrow();
+	return {
+		revision,
+		documents: await loadArchiveDocuments(transaction, { log: () => {} }),
+	};
+};
+
+/** Previews read consistently without allocating versions or modifying publication state. */
 export const readPublicationSnapshot = (
 	database: Kysely<Database>,
 ): Promise<PublicationSnapshot> =>
@@ -19,14 +34,4 @@ export const readPublicationSnapshot = (
 		.transaction()
 		.setIsolationLevel("repeatable read")
 		.setAccessMode("read only")
-		.execute(async (transaction) => {
-			const { revision } = await transaction
-				.selectFrom("archive_publication_state")
-				.select("revision")
-				.where("id", "=", 1)
-				.executeTakeFirstOrThrow();
-			return {
-				revision,
-				documents: await loadArchiveDocuments(transaction, { log: () => {} }),
-			};
-		});
+		.execute(loadPublicationSnapshot);

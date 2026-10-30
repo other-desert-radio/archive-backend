@@ -1,3 +1,11 @@
+/*
+ * shows (removed column)
+ * ┌─────────────────┬──────┬──────────────────────────────────────┐
+ * │ Column / change │ Type │ Constraints / purpose                │
+ * ├─────────────────┼──────┼──────────────────────────────────────┤
+ * │ image           │ text │ Removed; rollback copies image_large │
+ * └─────────────────┴──────┴──────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

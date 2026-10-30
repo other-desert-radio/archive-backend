@@ -1,22 +1,24 @@
+/*
+ * show_djs (new table)
+ * ┌─────────────────┬─────────┬───────────────────────┐
+ * │ Column / change │ Type    │ Constraints / purpose │
+ * ├─────────────────┼─────────┼───────────────────────┤
+ * │ id              │ integer │ PRIMARY KEY; identity │
+ * │ show_id         │ integer │ NOT NULL              │
+ * │ dj_id           │ integer │ NOT NULL              │
+ * └─────────────────┴─────────┴───────────────────────┘
+ *
+ * show_djs
+ * ┌──────────────────┬────────┬──────────────────────────────────────────────┐
+ * │ Column / change  │ Type   │ Constraints / purpose                        │
+ * ├──────────────────┼────────┼──────────────────────────────────────────────┤
+ * │ (show_id, dj_id) │ unique │ One row per pair                             │
+ * │ dj_id            │ index  │ Reverse lookup; foreign keys cascade deletes │
+ * └──────────────────┴────────┴──────────────────────────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 
-/*
- * Show DJs Database:
- *
- * > this maps a show to a DJ id, a show can have multiple DJs:
- *   ID | show_id | dj_id
- *   1  |   5     |  2
- *   2  |   5     |  3
- *
- * +---------+---------+---------------------------+
- * | column  | type    | constraints                |
- * +---------+---------+---------------------------+
- * | id      | integer | primary key                |
- * | show_id | integer | not null, references shows |
- * | dj_id   | integer | not null, references djs   |
- * +---------+---------+---------------------------+
- */
 export async function up(db: Kysely<Database>): Promise<void> {
 	await db.schema
 		.createTable("show_djs")

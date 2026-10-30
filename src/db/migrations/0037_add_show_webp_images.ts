@@ -1,3 +1,19 @@
+/*
+ * shows (added columns)
+ * ┌─────────────────┬───────┬───────────────────────┐
+ * │ Column / change │ Type  │ Constraints / purpose │
+ * ├─────────────────┼───────┼───────────────────────┤
+ * │ image_small     │ bytea │ Nullable              │
+ * │ image_large     │ bytea │ Nullable              │
+ * └─────────────────┴───────┴───────────────────────┘
+ *
+ * shows (added constraint)
+ * ┌─────────────────┬───────┬──────────────────────────────────────────┐
+ * │ Column / change │ Type  │ Constraints / purpose                    │
+ * ├─────────────────┼───────┼──────────────────────────────────────────┤
+ * │ image pair      │ check │ Both NULL or both populated; no backfill │
+ * └─────────────────┴───────┴──────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

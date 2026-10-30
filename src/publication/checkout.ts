@@ -63,6 +63,7 @@ export const validatePublicationDestination = async ({
 		"src/res/djs_brief.json",
 		"src/res/shows.json",
 		"src/res/tags.json",
+		"src/res/data_versions.json",
 	]) {
 		const entry = await entryAt(path.join(checkout, file));
 		if (entry !== undefined && (!entry.isFile() || entry.isSymbolicLink()))

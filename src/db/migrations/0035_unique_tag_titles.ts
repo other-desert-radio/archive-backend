@@ -1,3 +1,13 @@
+/*
+ * tags (added constraints and changed trigger)
+ * ┌──────────────────────┬──────────────────┬──────────────────────────────────────────────────┐
+ * │ Column / change      │ Type             │ Constraints / purpose                            │
+ * ├──────────────────────┼──────────────────┼──────────────────────────────────────────────────┤
+ * │ title                │ check            │ Nonblank; trimmed using JavaScript whitespace    │
+ * │ lower(title)         │ unique index     │ Reject existing duplicates; no rewrite or merge  │
+ * │ publication revision │ BEFORE statement │ Acquire publication lock before uniqueness locks │
+ * └──────────────────────┴──────────────────┴──────────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

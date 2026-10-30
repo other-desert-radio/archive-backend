@@ -1,3 +1,12 @@
+/*
+ * tags (added columns)
+ * ┌─────────────────┬──────┬───────────────────────┐
+ * │ Column / change │ Type │ Constraints / purpose │
+ * ├─────────────────┼──────┼───────────────────────┤
+ * │ mixcloud_key    │ text │ Nullable              │
+ * │ mixcloud_url    │ text │ Nullable              │
+ * └─────────────────┴──────┴───────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 

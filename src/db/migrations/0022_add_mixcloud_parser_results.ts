@@ -1,3 +1,23 @@
+/*
+ * mixcloud_import (added columns)
+ * ┌─────────────────┬─────────────┬───────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose │
+ * ├─────────────────┼─────────────┼───────────────────────┤
+ * │ derived_title   │ text        │ Nullable              │
+ * │ derived_date    │ timestamptz │ Nullable              │
+ * │ decoded_djs     │ text[]      │ Nullable              │
+ * │ parser_version  │ integer     │ Nullable              │
+ * │ parser_key      │ text        │ Nullable              │
+ * │ date_source     │ text        │ Nullable              │
+ * └─────────────────┴─────────────┴───────────────────────┘
+ *
+ * mixcloud_import (added constraint)
+ * ┌─────────────────┬──────┬──────────────────────────────┐
+ * │ Column / change │ Type │ Constraints / purpose        │
+ * ├─────────────────┼──────┼──────────────────────────────┤
+ * │ date_source     │ text │ NULL, title, or created_time │
+ * └─────────────────┴──────┴──────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

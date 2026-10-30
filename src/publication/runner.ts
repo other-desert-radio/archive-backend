@@ -1,6 +1,11 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Kysely } from "kysely";
+import {
+	allocateArchiveVersions,
+	type DatasetVersions,
+	withArchiveExportLock,
+} from "../db/archive-versions.js";
 import { writeArchiveDocuments } from "../db/export-archive.js";
 import type { Database } from "../db/types.js";
 import { validatePublicationDestination } from "./checkout.js";
@@ -22,6 +27,7 @@ import {
 	acquirePublicationLease,
 	appendPublicationLog,
 	capturePublicationRevision,
+	captureRecoveredPublication,
 	completePublicationJob,
 	interruptAbandonedPublications,
 	type PublicationLease,
@@ -44,8 +50,8 @@ import type {
 export { readPublicationSnapshot } from "./snapshot.js";
 
 import {
+	loadPublicationSnapshot,
 	type PublicationSnapshot,
-	readPublicationSnapshot,
 } from "./snapshot.js";
 
 export type { PublicationSnapshot } from "./snapshot.js";
@@ -108,16 +114,27 @@ const validateLocalDestination = async (
 	);
 };
 
-/** Read documents and their revision together, then durably capture that revision. */
+/** Allocate the captured or explicitly reviewed snapshot under the shared exporter lock. */
 const generatePublicationAssets = async (
 	execution: PublicationExecution,
-): Promise<PublicationSnapshot> => {
+	reviewed?: PublicationSnapshot,
+): Promise<PublicationSnapshot & { versions: DatasetVersions }> => {
 	await execution.updateStage("exporting");
-	const snapshot = await readPublicationSnapshot(execution.lease.database);
-	await capturePublicationRevision(
-		execution.lease,
+	const snapshot = await allocateArchiveVersions(
+		execution.lease.database,
+		async (transaction) => {
+			const snapshot = reviewed ?? (await loadPublicationSnapshot(transaction));
+			await capturePublicationRevision(
+				{ ...execution.lease, database: transaction },
+				execution.job.id,
+				snapshot.revision,
+			);
+			return snapshot;
+		},
 		execution.job.id,
-		snapshot.revision,
+	);
+	await execution.log(
+		`Captured archive revision ${snapshot.revision}; dataset versions: shows ${snapshot.versions.shows.id}, DJs ${snapshot.versions.djs.id}, tags ${snapshot.versions.tags.id}`,
 	);
 	return snapshot;
 };
@@ -125,7 +142,7 @@ const generatePublicationAssets = async (
 /** Flush exporter progress even when a filesystem write fails partway through. */
 const savePublicationExport = async (
 	execution: PublicationExecution,
-	snapshot: PublicationSnapshot,
+	snapshot: PublicationSnapshot & { versions: DatasetVersions },
 ): Promise<void> => {
 	const logs: string[] = [];
 	try {
@@ -138,6 +155,7 @@ const savePublicationExport = async (
 					logs.push(message);
 				},
 			},
+			snapshot.versions,
 		);
 	} finally {
 		if (logs.length) await execution.log(logs.join("\n"));
@@ -172,13 +190,16 @@ const captureRecoveredRevision = async (
 ): Promise<PublicationRevision> => {
 	if (previousJob?.revision === undefined)
 		throw new Error("Interrupted publication has no captured revision");
-	await capturePublicationRevision(
+	const versions = await captureRecoveredPublication(
 		execution.lease,
 		execution.job.id,
-		previousJob.revision,
+		previousJob.id,
 	);
+	await execution.log(`Recovering archive revision ${previousJob.revision}`);
 	await execution.log(
-		"Retry reconciles the previous snapshot; newer archive edits remain pending",
+		versions
+			? `Recovered dataset versions: shows ${versions.shows.id}, DJs ${versions.djs.id}, tags ${versions.tags.id}; newer archive edits remain pending`
+			: "Dataset versions unavailable for legacy publication; newer archive edits remain pending",
 	);
 	return previousJob.revision;
 };
@@ -235,103 +256,116 @@ export const executePublicationJob = async (
 ): Promise<void> => {
 	const execution = createPublicationExecution(lease, config, job);
 	try {
-		await execution.updateStage("validating");
-		await verifyPublicationTarget(execution);
-		switch (config.mode) {
-			case "local": {
-				// A local retry exports anew to repair any partially written files.
-				await validateLocalDestination(execution);
-				let revision: string;
-				if (prepared) {
-					if (
-						(await snapshotLocalPublicationFiles(config.checkoutPath)) !==
-						prepared.localFingerprint
-					)
-						throw new Error(
-							"Local archive files changed after preview. Refresh preview before retrying",
-						);
-					if (!prepared.preview.revision)
-						throw new Error("Prepared publication has no revision");
-					revision = prepared.preview.revision;
-					await execution.updateStage("exporting");
-					await capturePublicationRevision(lease, job.id, revision);
-					if (!prepared.documents)
-						throw new Error("Prepared publication documents are unavailable");
-					await savePublicationExport(execution, {
-						revision,
-						documents: prepared.documents,
-					});
-					await execution.log(
-						"Installed the reviewed publication snapshot in the local checkout",
-					);
-				} else {
-					const snapshot = await generatePublicationAssets(execution);
-					await savePublicationExport(execution, snapshot);
-					revision = snapshot.revision;
-				}
-				await verifyPublicationTarget(execution);
-				await acknowledgePublication(execution, revision, {
-					kind: "local",
-				});
-				break;
-			}
-			case "remote": {
-				const git = createGitContext(execution, config);
-				// Validate the checkout and origin before any remote contact.
-				await validatePublicationCheckout(git);
-				const recovery = await reconcilePublicationGit(git, previousJob);
-				if (
-					prepared &&
-					(recovery.kind !== prepared.recovery?.kind ||
-						(recovery.kind !== "ready" &&
-							prepared.recovery?.kind !== "ready" &&
-							recovery.commitId !== prepared.recovery?.commitId))
-				)
-					throw new Error(
-						"Publication recovery changed after preview. Refresh preview before retrying",
-					);
-				let revision: PublicationRevision;
-				if (recovery.kind === "ready") {
-					await execution.updateStage("synchronizing");
-					await synchronizePublicationCheckout(git);
+		// The publication lease already pins this session; standalone exports share this lock.
+		await withArchiveExportLock(lease.database, async (database) => {
+			// Use this handle while the outer connection callback owns the lease provider.
+			const execution = createPublicationExecution(
+				{ ...lease, database },
+				config,
+				job,
+			);
+			await execution.updateStage("validating");
+			await verifyPublicationTarget(execution);
+			switch (config.mode) {
+				case "local": {
+					// A local retry exports anew to repair any partially written files.
+					await validateLocalDestination(execution);
+					let revision: string;
 					if (prepared) {
 						if (
-							(await inspectGit(config.checkoutPath, ["rev-parse", "HEAD"])) !==
-							prepared.baseline?.commit
+							(await snapshotLocalPublicationFiles(config.checkoutPath)) !==
+							prepared.localFingerprint
 						)
 							throw new Error(
-								"Target branch changed after preview. Refresh preview before retrying",
+								"Local archive files changed after preview. Refresh preview before retrying",
 							);
 						if (!prepared.preview.revision)
 							throw new Error("Prepared publication has no revision");
-						await execution.updateStage("exporting");
-						await capturePublicationRevision(
-							lease,
-							job.id,
-							prepared.preview.revision,
-						);
+						revision = prepared.preview.revision;
 						if (!prepared.documents)
 							throw new Error("Prepared publication documents are unavailable");
-						await savePublicationExport(execution, {
-							revision: prepared.preview.revision,
-							documents: prepared.documents,
-						});
-						await execution.log("Installed the reviewed publication snapshot");
-						revision = prepared.preview.revision;
+						await savePublicationExport(
+							execution,
+							await generatePublicationAssets(execution, {
+								revision,
+								documents: prepared.documents,
+							}),
+						);
+						await execution.log(
+							"Installed the reviewed publication snapshot in the local checkout",
+						);
 					} else {
 						const snapshot = await generatePublicationAssets(execution);
 						await savePublicationExport(execution, snapshot);
 						revision = snapshot.revision;
 					}
-				} else {
-					revision = await captureRecoveredRevision(execution, previousJob);
+					await verifyPublicationTarget(execution);
+					await acknowledgePublication(execution, revision, {
+						kind: "local",
+					});
+					break;
 				}
-				git.job = { ...git.job, revision };
-				const result = await commitAndPushPublication(git, recovery);
-				await acknowledgePublication(execution, revision, result);
-				break;
+				case "remote": {
+					const git = createGitContext(execution, config);
+					// Validate the checkout and origin before any remote contact.
+					await validatePublicationCheckout(git);
+					const recovery = await reconcilePublicationGit(git, previousJob);
+					if (
+						prepared &&
+						(recovery.kind !== prepared.recovery?.kind ||
+							(recovery.kind !== "ready" &&
+								prepared.recovery?.kind !== "ready" &&
+								recovery.commitId !== prepared.recovery?.commitId))
+					)
+						throw new Error(
+							"Publication recovery changed after preview. Refresh preview before retrying",
+						);
+					let revision: PublicationRevision;
+					if (recovery.kind === "ready") {
+						await execution.updateStage("synchronizing");
+						await synchronizePublicationCheckout(git);
+						if (prepared) {
+							if (
+								(await inspectGit(config.checkoutPath, [
+									"rev-parse",
+									"HEAD",
+								])) !== prepared.baseline?.commit
+							)
+								throw new Error(
+									"Target branch changed after preview. Refresh preview before retrying",
+								);
+							if (!prepared.preview.revision)
+								throw new Error("Prepared publication has no revision");
+							if (!prepared.documents)
+								throw new Error(
+									"Prepared publication documents are unavailable",
+								);
+							await savePublicationExport(
+								execution,
+								await generatePublicationAssets(execution, {
+									revision: prepared.preview.revision,
+									documents: prepared.documents,
+								}),
+							);
+							await execution.log(
+								"Installed the reviewed publication snapshot",
+							);
+							revision = prepared.preview.revision;
+						} else {
+							const snapshot = await generatePublicationAssets(execution);
+							await savePublicationExport(execution, snapshot);
+							revision = snapshot.revision;
+						}
+					} else {
+						revision = await captureRecoveredRevision(execution, previousJob);
+					}
+					git.job = { ...git.job, revision };
+					const result = await commitAndPushPublication(git, recovery);
+					await acknowledgePublication(execution, revision, result);
+					break;
+				}
 			}
-		}
+		});
 	} catch (error) {
 		await recordPublicationFailure(execution, error);
 	}

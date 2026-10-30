@@ -1,3 +1,21 @@
+/*
+ * archive_publication_jobs (changed columns)
+ * ┌─────────────────────┬──────┬───────────────────────────────────────────┐
+ * │ Column / change     │ Type │ Constraints / purpose                     │
+ * ├─────────────────────┼──────┼───────────────────────────────────────────┤
+ * │ mode                │ text │ NOT NULL; DEFAULT remote; local or remote │
+ * │ repository / branch │ text │ Nullable; required for remote jobs        │
+ * │ commit_id           │ text │ Local success no longer requires commit   │
+ * └─────────────────────┴──────┴───────────────────────────────────────────┘
+ *
+ * archive_publication_state (added column)
+ * ┌──────────────────┬───────┬───────────────────────────────────────────────────────────┐
+ * │ Column / change  │ Type  │ Constraints / purpose                                     │
+ * ├──────────────────┼───────┼───────────────────────────────────────────────────────────┤
+ * │ published_target │ jsonb │ Nullable validated target; backfill from matching success │
+ * │ rollback         │ guard │ Reject local jobs or acknowledged local target            │
+ * └──────────────────┴───────┴───────────────────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

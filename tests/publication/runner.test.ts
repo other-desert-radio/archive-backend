@@ -14,17 +14,20 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { Kysely, PostgresDialect, sql } from "kysely";
 import { Pool } from "pg";
+import { exportArchive } from "../../src/db/export-archive.js";
 import { up as revisions } from "../../src/db/migrations/0029_add_archive_publication_state.js";
 import { up as jobs } from "../../src/db/migrations/0030_add_archive_publication_jobs.js";
 import { up as logs } from "../../src/db/migrations/0031_add_archive_publication_logs.js";
 import { up as notifications } from "../../src/db/migrations/0032_notify_publication_jobs.js";
 import { up as publicationModes } from "../../src/db/migrations/0033_add_publication_modes.js";
+import { up as datasetVersions } from "../../src/db/migrations/0040_add_archive_dataset_versions.js";
 import type { Database } from "../../src/db/types.js";
 import {
 	acquirePublicationLease,
 	capturePublicationRevision,
 	completePublicationJob,
 	createPublicationRunner,
+	executePublicationJob,
 	type PublicationConfig,
 	type PublicationRunner,
 	type PublicationStart,
@@ -32,6 +35,16 @@ import {
 	readPublicationStatus,
 	reservePublicationJob,
 } from "../../src/publication/index.js";
+
+async function jobVersions(database: Kysely<Database>, id: string) {
+	return (
+		await database
+			.selectFrom("archive_publication_jobs")
+			.select("dataset_versions")
+			.where("id", "=", id)
+			.executeTakeFirstOrThrow()
+	).dataset_versions;
+}
 
 const execute = promisify(execFile);
 const databaseUrl = process.env.PUBLICATION_RUNNER_TEST_DATABASE_URL;
@@ -116,6 +129,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 		logs,
 		notifications,
 		publicationModes,
+		datasetVersions,
 	])
 		await database.transaction().execute(migration);
 	const config: PublicationConfig = {
@@ -259,7 +273,7 @@ process.exit(result.status ?? 1);
 			expect(
 				JSON.parse(
 					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
-				)[0].title,
+				).data[0].title,
 			).toBe("Original Tag");
 			expect((await readPublicationStatus(f.database, f.config)).pending).toBe(
 				true,
@@ -350,7 +364,23 @@ test.skipIf(!databaseUrl)(
 			const done = await settled(f.database, first.id);
 			expect(done.job.outcome).toBe("succeeded");
 			expect(done.job.revision).toBe("1");
+			expect(
+				done.logs.some(
+					(line) =>
+						line.message ===
+						"Captured archive revision 1; dataset versions: shows 1, DJs 1, tags 1",
+				),
+			).toBe(true);
 			expect(done.job.commitId).toBeDefined();
+			const versions = await jobVersions(f.database, first.id);
+			expect(versions).not.toBeNull();
+			expect(
+				JSON.parse(await f.git("show", "HEAD:src/res/data_versions.json")),
+			).toEqual(versions);
+			expect(
+				JSON.parse(await f.git("show", "HEAD:src/res/shows.json")).version,
+			).toBe(versions?.shows.id);
+
 			expect(
 				(
 					await f.database
@@ -384,7 +414,7 @@ test.skipIf(!databaseUrl)(
 			expect(
 				JSON.parse(
 					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
-				)[0].title,
+				).data[0].title,
 			).toBe("Original Tag");
 			expect(await f.git("show", "-s", "--format=%B", "HEAD")).toContain(
 				`Archive-Publication-Job: ${first.id}`,
@@ -393,11 +423,13 @@ test.skipIf(!databaseUrl)(
 			expect((await settled(f.database, second.id)).job.outcome).toBe(
 				"succeeded",
 			);
+			const secondVersions = await jobVersions(f.database, second.id);
 			const head = await f.git("rev-parse", "HEAD");
 			const third = await publishReviewed(runner);
 			expect((await settled(f.database, third.id)).job.outcome).toBe(
 				"no-change",
 			);
+			expect(await jobVersions(f.database, third.id)).toEqual(secondVersions);
 			expect(await f.git("rev-parse", "HEAD")).toBe(head);
 			expect(
 				(
@@ -430,6 +462,8 @@ test.skipIf(!databaseUrl)(
 			const failed = await settled(f.database, first.id);
 			expect(failed.job.outcome).toBe("failed");
 			expect(failed.job.commitId).toBe(await f.git("rev-parse", "HEAD"));
+			const failedVersions = await jobVersions(f.database, first.id);
+			expect(failedVersions).not.toBeNull();
 			expect(
 				(
 					await f.database
@@ -460,6 +494,8 @@ test.skipIf(!databaseUrl)(
 			expect(
 				(await readPublicationStatus(f.database, f.config)).latestJob?.id,
 			).toBe(first.id);
+			const newerVersions = await jobVersions(f.database, localJob.id);
+			expect(newerVersions?.tags.id).toBe((failedVersions?.tags.id ?? 0) + 1);
 			await localRunner.close();
 			await rm(hook);
 			runner = await f.create();
@@ -471,6 +507,28 @@ test.skipIf(!databaseUrl)(
 			expect(recovered.job.outcome).toBe("succeeded");
 			expect(recovered.job.commitId).toBe(failed.job.commitId);
 			expect(recovered.job.revision).toBe("1");
+			expect(
+				recovered.logs.some(
+					(line) => line.message === "Recovering archive revision 1",
+				),
+			).toBe(true);
+			expect(
+				recovered.logs.some(
+					(line) =>
+						line.message ===
+						"Recovered dataset versions: shows 1, DJs 1, tags 1; newer archive edits remain pending",
+				),
+			).toBe(true);
+			expect(await jobVersions(f.database, retry.id)).toEqual(failedVersions);
+			expect(
+				(
+					await f.database
+						.selectFrom("archive_dataset_versions")
+						.select("version")
+						.where("dataset", "=", "tags")
+						.executeTakeFirstOrThrow()
+				).version,
+			).toBe(newerVersions?.tags.id);
 			expect(
 				await f.database
 					.selectFrom("archive_publication_state")
@@ -497,6 +555,7 @@ test.skipIf(!databaseUrl)(
 				commitId: failed.job.commitId,
 				revision: "1",
 			});
+			expect(await jobVersions(f.database, again.id)).toEqual(failedVersions);
 			expect(await f.git("rev-parse", "HEAD")).toBe(failed.job.commitId);
 		} finally {
 			await f.close();
@@ -568,6 +627,12 @@ test.skipIf(!databaseUrl)(
 			const preview = await readyPreview(runner);
 			expect(preview.changes.djs.removed).toEqual(["Removed DJ"]);
 			expect(preview.changes.djs.added).toEqual(["Runner DJ"]);
+			expect(
+				await f.database
+					.selectFrom("archive_dataset_versions")
+					.selectAll()
+					.execute(),
+			).toEqual([]);
 			await expect(
 				runner.start({ requestedBy: "another-admin", previewId: preview.id }),
 			).rejects.toThrow("fresh preview");
@@ -807,7 +872,7 @@ test.skipIf(!databaseUrl)(
 			expect(
 				JSON.parse(
 					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
-				)[0].title,
+				).data[0].title,
 			).toBe("Original Tag");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
 				true,
@@ -879,12 +944,220 @@ test.skipIf(!databaseUrl)(
 			expect(
 				JSON.parse(
 					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
-				)[0].title,
+				).data[0].title,
 			).toBe("Fresh retry title");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
 				false,
 			);
 		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"unprepared execution captures revision and documents after acquiring the export lock",
+	async () => {
+		const f = await fixture();
+		let lease: Awaited<ReturnType<typeof acquirePublicationLease>>;
+		try {
+			let edited = false;
+			const source = f.database.withPlugin({
+				transformQuery: ({ node }) => node,
+				transformResult: async ({ result }) => {
+					if (!edited && result.rows.some((row) => "pg_advisory_lock" in row)) {
+						edited = true;
+						await f.database
+							.updateTable("tags")
+							.set({ title: "Changed under export lock" })
+							.execute();
+					}
+					return result;
+				},
+			});
+			const local: PublicationConfig = {
+				mode: "local",
+				checkoutPath: f.checkout,
+			};
+			const reservation = await reservePublicationJob({
+				database: source,
+				request: { requestedBy: "admin" },
+				config: local,
+			});
+			lease = reservation.lease;
+			await executePublicationJob(lease, local, reservation.job, undefined);
+			expect(edited).toBe(true);
+			const completed = await readPublicationJob(
+				f.database,
+				reservation.job.id,
+			);
+			expect(completed?.job).toMatchObject({
+				outcome: "succeeded",
+				revision: "2",
+			});
+			const tags = JSON.parse(
+				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+			);
+			expect(tags.data[0].title).toBe("Changed under export lock");
+			const versions = await jobVersions(f.database, reservation.job.id);
+			expect(tags.version).toBe(versions?.tags.id);
+			expect(
+				JSON.parse(
+					await readFile(
+						path.join(f.checkout, "src/res/data_versions.json"),
+						"utf8",
+					),
+				),
+			).toEqual(versions);
+		} finally {
+			await lease?.release();
+			await f.close();
+		}
+	},
+);
+
+test.skipIf(!databaseUrl)(
+	"recovery accepts legacy jobs without a dataset version snapshot",
+	async () => {
+		const f = await fixture();
+		try {
+			const hook = path.join(f.remote, "hooks/pre-receive");
+			await writeFile(hook, "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+			const runner = await f.create();
+			const first = await publishReviewed(runner);
+			const failed = await settled(f.database, first.id);
+			expect(failed.job.outcome).toBe("failed");
+			await f.database
+				.updateTable("archive_publication_jobs")
+				.set({ dataset_versions: null })
+				.where("id", "=", first.id)
+				.execute();
+			const before = await f.database
+				.selectFrom("archive_dataset_versions")
+				.selectAll()
+				.orderBy("dataset")
+				.execute();
+			await rm(hook);
+			const retry = await publishReviewed(runner, {
+				requestedBy: "admin",
+				retryJobId: first.id,
+			});
+			expect((await settled(f.database, retry.id)).job).toMatchObject({
+				outcome: "succeeded",
+				commitId: failed.job.commitId,
+				revision: failed.job.revision,
+			});
+			expect(await jobVersions(f.database, retry.id)).toBeNull();
+			expect(
+				(await readPublicationJob(f.database, retry.id))?.logs.some((line) =>
+					line.message.includes(
+						"Dataset versions unavailable for legacy publication",
+					),
+				),
+			).toBe(true);
+			expect(
+				await f.database
+					.selectFrom("archive_dataset_versions")
+					.selectAll()
+					.orderBy("dataset")
+					.execute(),
+			).toEqual(before);
+		} finally {
+			await f.close();
+		}
+	},
+);
+
+test.skipIf(!databaseUrl)(
+	"standalone export cannot replace publisher files before staging and commit",
+	async () => {
+		const f = await fixture();
+		const paused = Promise.withResolvers<void>();
+		const resume = Promise.withResolvers<void>();
+		const attempted = Promise.withResolvers<void>();
+		let standalone: Promise<void> | undefined;
+		try {
+			let stagingQuery: unknown;
+			const source = f.database.withPlugin({
+				transformQuery: ({ node, queryId }) => {
+					if (
+						node.kind === "UpdateQueryNode" &&
+						JSON.stringify(node).includes('"value":"committing"')
+					)
+						stagingQuery = queryId;
+					return node;
+				},
+				transformResult: async ({ result, queryId }) => {
+					if (queryId === stagingQuery) {
+						paused.resolve();
+						await resume.promise;
+					}
+					return result;
+				},
+			});
+			const runner = await f.create(source);
+			const first = await publishReviewed(runner);
+			await paused.promise;
+			await f.database
+				.updateTable("tags")
+				.set({ title: "New standalone snapshot" })
+				.execute();
+			const exporting = f.database.withPlugin({
+				transformQuery: ({ node }) => {
+					if (JSON.stringify(node).includes("pg_advisory_lock"))
+						attempted.resolve();
+					return node;
+				},
+				transformResult: async ({ result }) => result,
+			});
+			standalone = exportArchive(
+				exporting,
+				path.join(f.checkout, "src/res"),
+				path.join(f.checkout, "public/assets"),
+				{ log: () => {} },
+			);
+			await attempted.promise;
+			await f.database.connection().execute(async (connection) => {
+				const result = await sql<{
+					locked: boolean;
+				}>`SELECT pg_try_advisory_lock(184728, 40) AS locked`.execute(
+					connection,
+				);
+				if (result.rows[0]?.locked)
+					await sql`SELECT pg_advisory_unlock(184728, 40)`.execute(connection);
+				expect(result.rows[0]?.locked).toBe(false);
+			});
+			resume.resolve();
+			const done = await settled(f.database, first.id);
+			expect(done.job.outcome).toBe("succeeded");
+			await standalone;
+			const committed = JSON.parse(
+				await f.git("show", "HEAD:src/res/tags.json"),
+			);
+			expect(committed.data[0].title).toBe("Original Tag");
+			expect(committed.version).toBe(1);
+			const written = JSON.parse(
+				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+			);
+			const manifest = JSON.parse(
+				await readFile(
+					path.join(f.checkout, "src/res/data_versions.json"),
+					"utf8",
+				),
+			);
+			expect(written.data[0].title).toBe("New standalone snapshot");
+			expect(written.version).toBe(2);
+			expect(manifest.tags.id).toBe(written.version);
+			expect((await jobVersions(f.database, first.id))?.tags.id).toBe(
+				committed.version,
+			);
+			expect((await readPublicationStatus(f.database, f.config)).pending).toBe(
+				true,
+			);
+		} finally {
+			resume.resolve();
+			await Promise.allSettled([standalone]);
 			await f.close();
 		}
 	},

@@ -1,18 +1,17 @@
+/*
+ * djs (new table)
+ * ┌─────────────────┬─────────┬───────────────────────┐
+ * │ Column / change │ Type    │ Constraints / purpose │
+ * ├─────────────────┼─────────┼───────────────────────┤
+ * │ id              │ integer │ PRIMARY KEY; identity │
+ * │ title           │ text    │ NOT NULL              │
+ * │ bio             │ text    │ NOT NULL              │
+ * │ image           │ text    │ Nullable              │
+ * └─────────────────┴─────────┴───────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 
-/*
- * DJs Database:
- *
- * +--------+---------+------------+
- * | column | type    | constraints |
- * +--------+---------+------------+
- * | id     | integer | primary key |
- * | title  | text    | not null   |
- * | bio    | text    | not null   |
- * | image  | text    | nullable   |
- * +--------+---------+------------+
- */
 export async function up(db: Kysely<Database>): Promise<void> {
 	await db.schema
 		.createTable("djs")

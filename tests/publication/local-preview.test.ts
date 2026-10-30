@@ -86,3 +86,19 @@ test("managed directory and nested file symlinks are rejected", async () => {
 		"symlinks",
 	);
 });
+
+test("manifest bytes participate in the baseline and manifest symlinks are rejected", async () => {
+	const empty = await snapshotLocalPublicationFiles(checkout);
+	await put("src/res/data_versions.json", "{}");
+	const first = await snapshotLocalPublicationFiles(checkout);
+	expect(first).not.toBe(empty);
+	await put("src/res/data_versions.json", '{"shows":{"id":2}}');
+	expect(await snapshotLocalPublicationFiles(checkout)).not.toBe(first);
+	await rm(path.join(checkout, "src/res/data_versions.json"));
+	const outside = path.join(directory, "outside.json");
+	await writeFile(outside, "{}");
+	await symlink(outside, path.join(checkout, "src/res/data_versions.json"));
+	await expect(snapshotLocalPublicationFiles(checkout)).rejects.toThrow(
+		"symlinks",
+	);
+});

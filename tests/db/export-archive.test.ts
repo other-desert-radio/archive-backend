@@ -1,10 +1,20 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
+import { promises as fs, mkdirSync } from "node:fs";
+import {
+	mkdir,
+	mkdtemp,
+	readdir,
+	readFile,
+	rm,
+	symlink,
+	writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Kysely, PostgresDialect } from "kysely";
+import { Kysely, PostgresDialect, sql } from "kysely";
 import { Pool } from "pg";
+import type { DatasetVersions } from "../../src/db/archive-versions.js";
 import {
 	archiveExportDirectories,
 	buildArchiveDocuments,
@@ -12,10 +22,25 @@ import {
 	writeArchiveDocuments,
 } from "../../src/db/export-archive.js";
 import { up as createPublicationState } from "../../src/db/migrations/0029_add_archive_publication_state.js";
+import { up as createJobs } from "../../src/db/migrations/0030_add_archive_publication_jobs.js";
+import { up as createVersions } from "../../src/db/migrations/0040_add_archive_dataset_versions.js";
 import type { Database } from "../../src/db/types.js";
 import { readPublicationSnapshot } from "../../src/publication/index.js";
 
 const temporaryDirectories: string[] = [];
+
+const versions: DatasetVersions = {
+	shows: { id: 3, updatedAt: "2026-01-01T00:00:00.000Z" },
+	djs: { id: 5, updatedAt: "2026-01-02T00:00:00.000Z" },
+	tags: { id: 8, updatedAt: "2026-01-03T00:00:00.000Z" },
+};
+const emptyDocuments = () => ({
+	djsBrief: [],
+	djs: [],
+	shows: [],
+	tags: [],
+	images: [],
+});
 
 const exportDatabaseUrl = process.env.ARCHIVE_EXPORT_TEST_DATABASE_URL;
 
@@ -36,6 +61,11 @@ const createArchiveFixture = async (pool: Pool): Promise<void> => {
 	INSERT INTO show_djs VALUES (1, 1);
 	INSERT INTO show_tags VALUES (1, 1);
 		`);
+	const database = new Kysely<Database>({
+		dialect: new PostgresDialect({ pool }),
+	});
+	await database.transaction().execute(createJobs);
+	await database.transaction().execute(createVersions);
 };
 
 test.skipIf(!exportDatabaseUrl)(
@@ -62,6 +92,8 @@ test.skipIf(!exportDatabaseUrl)(
 				path.join(checkout, "public/assets/djs/stale.webp"),
 				"stale",
 			);
+			await mkdir(path.join(checkout, "src/res"), { recursive: true });
+			await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
 			const connection = new URL(exportDatabaseUrl ?? "");
 			connection.searchParams.set("options", `-c search_path=${schema}`);
 			const process = Bun.spawn(["bun", "run", "publish-locally"], {
@@ -87,7 +119,7 @@ test.skipIf(!exportDatabaseUrl)(
 			expect(
 				JSON.parse(
 					await readFile(path.join(checkout, "src/res/djs_brief.json"), "utf8"),
-				),
+				).data,
 			).toEqual([
 				{
 					id: 1,
@@ -182,13 +214,13 @@ test.skipIf(!exportDatabaseUrl)(
 			);
 			const originalDJ = JSON.parse(
 				await readFile(path.join(resources, "djs/1.json"), "utf8"),
-			);
+			).data;
 			expect(originalDJ.title).toBe("CLI DJ");
 			expect(originalDJ.tagIds).toEqual([1]);
 			expect(originalDJ.shows[0].title).toBe("CLI Show");
 			expect(
-				JSON.parse(await readFile(path.join(resources, "tags.json"), "utf8"))[0]
-					.title,
+				JSON.parse(await readFile(path.join(resources, "tags.json"), "utf8"))
+					.data[0].title,
 			).toBe("CLI Tag");
 			// The next read sees the committed changes, not a retained snapshot.
 			const changed = await readPublicationSnapshot(database);
@@ -244,7 +276,8 @@ test.skipIf(!exportDatabaseUrl)(
 				),
 			).rejects.toThrow();
 			expect(
-				JSON.parse(await readFile(path.join(resources, "djs/1.json"), "utf8")),
+				JSON.parse(await readFile(path.join(resources, "djs/1.json"), "utf8"))
+					.data,
 			).toEqual(originalDJ);
 			await pool.query("ALTER TABLE unavailable_show_tags RENAME TO show_tags");
 			await pool.query("DELETE FROM archive_publication_state");
@@ -522,12 +555,13 @@ describe("archive export writer", () => {
 			resourceDirectory,
 			assetDirectory,
 			{ log: (message) => logs.push(message) },
+			versions,
 		);
 
 		expect(
 			JSON.parse(
 				await readFile(path.join(resourceDirectory, "djs_brief.json"), "utf8"),
-			),
+			).data,
 		).toEqual([{ id: 1, title: "DJ One", tagIds: [] }]);
 		expect(
 			await readFile(path.join(resourceDirectory, "djs", "1.json"), "utf8"),
@@ -535,7 +569,7 @@ describe("archive export writer", () => {
 		expect(
 			JSON.parse(
 				await readFile(path.join(resourceDirectory, "shows.json"), "utf8"),
-			),
+			).data,
 		).toEqual([
 			{
 				id: 10,
@@ -558,6 +592,26 @@ describe("archive export writer", () => {
 		expect(
 			await readFile(path.join(resourceDirectory, "shows", "10.json"), "utf8"),
 		).toBe("future show");
+		const manifest = JSON.parse(
+			await readFile(
+				path.join(resourceDirectory, "data_versions.json"),
+				"utf8",
+			),
+		);
+		expect(manifest).toEqual(versions);
+		for (const [file, dataset] of [
+			["shows.json", "shows"],
+			["tags.json", "tags"],
+			["djs_brief.json", "djs"],
+			["djs/1.json", "djs"],
+		] as const) {
+			const document = JSON.parse(
+				await readFile(path.join(resourceDirectory, file), "utf8"),
+			);
+			expect(document.version).toBe(manifest[dataset].id);
+			expect(document.updatedAt).toBe(manifest[dataset].updatedAt);
+			expect(document).toHaveProperty("data");
+		}
 		expect(logs).toContain("├─ Refreshing managed JSON output");
 		expect(logs).toContain("│  ├─ djs/1.json");
 		expect(logs).toContain("│  └─ assets/djs/1_large.webp");
@@ -565,3 +619,267 @@ describe("archive export writer", () => {
 		expect(logs.at(-1)).toBe("└─ Complete: 1 DJs, 1 shows, 1 tags, 2 images");
 	});
 });
+
+test("writes empty versioned datasets and preserves the previous manifest on write failure", async () => {
+	const root = await mkdtemp(path.join(tmpdir(), "archive-export-empty-"));
+	temporaryDirectories.push(root);
+	const resources = path.join(root, "res");
+	const assets = path.join(root, "assets");
+	await writeArchiveDocuments(
+		emptyDocuments(),
+		resources,
+		assets,
+		{ log: () => {} },
+		versions,
+	);
+	for (const [file, dataset] of [
+		["shows.json", "shows"],
+		["tags.json", "tags"],
+		["djs_brief.json", "djs"],
+	] as const) {
+		expect(
+			JSON.parse(await readFile(path.join(resources, file), "utf8")),
+		).toEqual({
+			version: versions[dataset].id,
+			updatedAt: versions[dataset].updatedAt,
+			data: [],
+		});
+	}
+	const manifest = await readFile(
+		path.join(resources, "data_versions.json"),
+		"utf8",
+	);
+	await expect(
+		writeArchiveDocuments(
+			{
+				...emptyDocuments(),
+				images: [{ id: 1, variant: "small", bytes: Buffer.from("image") }],
+			},
+			resources,
+			assets,
+			{
+				log: (message) => {
+					// Force a real image-write failure after JSON succeeds.
+					if (message === "├─ Writing image assets") {
+						mkdirSync(path.join(assets, "djs", "1_small.webp"), {
+							recursive: true,
+						});
+					}
+				},
+			},
+			{ ...versions, shows: { ...versions.shows, id: 4 } },
+		),
+	).rejects.toThrow();
+	expect(
+		await readFile(path.join(resources, "data_versions.json"), "utf8"),
+	).toBe(manifest);
+});
+
+test.skipIf(!exportDatabaseUrl)(
+	"exports retain metadata on retries and version only changed public datasets",
+	async () => {
+		const schema = `export_${crypto.randomUUID().replaceAll("-", "")}`;
+		const pool = new Pool({
+			connectionString: exportDatabaseUrl,
+			options: `-c search_path=${schema}`,
+		});
+		const database = new Kysely<Database>({
+			dialect: new PostgresDialect({ pool }),
+		});
+		const root = await mkdtemp(path.join(tmpdir(), "archive-export-versions-"));
+		temporaryDirectories.push(root);
+		const resources = path.join(root, "res");
+		const assets = path.join(root, "assets");
+		const publish = () =>
+			exportArchive(database, resources, assets, { log: () => {} });
+		const manifest = async (): Promise<DatasetVersions> =>
+			JSON.parse(
+				await readFile(path.join(resources, "data_versions.json"), "utf8"),
+			);
+		try {
+			await pool.query(`CREATE SCHEMA ${schema}`);
+			await createArchiveFixture(pool);
+			await publish();
+			const first = await manifest();
+			for (const entry of Object.values(first)) expect(entry.id).toBe(1);
+			const firstShows = await readFile(
+				path.join(resources, "shows.json"),
+				"utf8",
+			);
+			await publish();
+			expect(await manifest()).toEqual(first);
+			expect(await readFile(path.join(resources, "shows.json"), "utf8")).toBe(
+				firstShows,
+			);
+			await pool.query("UPDATE tags SET title = 'Renamed tag'");
+			await publish();
+			const tagChange = await manifest();
+			expect(tagChange).toEqual({
+				...first,
+				tags: { id: 2, updatedAt: expect.any(String) },
+			});
+			await pool.query("UPDATE djs SET image_small = decode('6e6577', 'hex')");
+			await publish();
+			const imageChange = await manifest();
+			expect(imageChange.djs.id).toBe(2);
+			expect(imageChange.shows).toEqual(first.shows);
+			expect(imageChange.tags).toEqual(tagChange.tags);
+			await pool.query("UPDATE djs SET title = 'Renamed DJ'");
+			await publish();
+			expect((await manifest()).shows.id).toBe(2);
+			expect((await manifest()).djs.id).toBe(3);
+			await pool.query(
+				"DELETE FROM show_djs; DELETE FROM show_tags; DELETE FROM shows; DELETE FROM djs; DELETE FROM tags",
+			);
+			await publish();
+			expect(
+				JSON.parse(await readFile(path.join(resources, "shows.json"), "utf8"))
+					.data,
+			).toEqual([]);
+			expect(await Bun.file(path.join(resources, "djs/1.json")).exists()).toBe(
+				false,
+			);
+			const empty = await manifest();
+			await publish();
+			expect(await manifest()).toEqual(empty);
+			expect(
+				(await pool.query("SELECT * FROM archive_publication_state")).rows,
+			).toEqual([{ id: 1, revision: "7", published_revision: "2" }]);
+		} finally {
+			await pool.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
+			await database.destroy();
+		}
+	},
+);
+
+test("manifest replacement preserves symlink targets and cleans temporary output after failure", async () => {
+	const root = await mkdtemp(path.join(tmpdir(), "archive-export-manifest-"));
+	temporaryDirectories.push(root);
+	const resources = path.join(root, "res");
+	const assets = path.join(root, "assets");
+	const outside = path.join(root, "outside.json");
+	await mkdir(resources);
+	await writeFile(outside, "unrelated data");
+	const manifest = path.join(resources, "data_versions.json");
+	await symlink(outside, manifest);
+	await writeArchiveDocuments(
+		emptyDocuments(),
+		resources,
+		assets,
+		{ log: () => {} },
+		versions,
+	);
+	expect(await readFile(outside, "utf8")).toBe("unrelated data");
+	expect(JSON.parse(await readFile(manifest, "utf8"))).toEqual(versions);
+	// A directory blocks the final rename without following or deleting its contents.
+	await rm(manifest);
+	await mkdir(manifest);
+	await writeFile(path.join(manifest, "sentinel"), "keep");
+	await expect(
+		writeArchiveDocuments(
+			emptyDocuments(),
+			resources,
+			assets,
+			{ log: () => {} },
+			versions,
+		),
+	).rejects.toThrow();
+	expect(await readFile(path.join(manifest, "sentinel"), "utf8")).toBe("keep");
+	expect(
+		(await readdir(resources)).filter((name) =>
+			name.startsWith(".data-versions-"),
+		),
+	).toEqual([]);
+});
+
+test.skipIf(!exportDatabaseUrl)(
+	"overlapping standalone exports finish in allocation order with a matching manifest",
+	async () => {
+		const schema = `export_${crypto.randomUUID().replaceAll("-", "")}`;
+		const pool = new Pool({
+			connectionString: exportDatabaseUrl,
+			options: `-c search_path=${schema}`,
+		});
+		const database = new Kysely<Database>({
+			dialect: new PostgresDialect({ pool }),
+		});
+		const root = await mkdtemp(path.join(tmpdir(), "archive-export-overlap-"));
+		temporaryDirectories.push(root);
+		const resources = path.join(root, "res");
+		const assets = path.join(root, "assets");
+		const paused = Promise.withResolvers<void>();
+		const resume = Promise.withResolvers<void>();
+		const attempted = Promise.withResolvers<void>();
+		const write = fs.writeFile;
+		let held = false;
+		const writer = spyOn(fs, "writeFile").mockImplementation(
+			async (...args: Parameters<typeof fs.writeFile>) => {
+				if (!held && args[0] === path.join(resources, "shows.json")) {
+					held = true;
+					paused.resolve();
+					await resume.promise;
+				}
+				return write(...args);
+			},
+		);
+		let first: Promise<void> | undefined;
+		let second: Promise<void> | undefined;
+		try {
+			await pool.query(`CREATE SCHEMA ${schema}`);
+			await createArchiveFixture(pool);
+			first = exportArchive(database, resources, assets, { log: () => {} });
+			await paused.promise;
+			await pool.query("UPDATE shows SET title = 'Newer show'");
+			const source = database.withPlugin({
+				transformQuery: ({ node }) => {
+					if (JSON.stringify(node).includes("pg_advisory_lock"))
+						attempted.resolve();
+					return node;
+				},
+				transformResult: async ({ result }) => result,
+			});
+			second = exportArchive(source, resources, assets, { log: () => {} });
+			await attempted.promise;
+			// The first export has committed its version but is still blocked inside its writer.
+			await database.connection().execute(async (connection) => {
+				const result = await sql<{
+					locked: boolean;
+				}>`SELECT pg_try_advisory_lock(184728, 40) AS locked`.execute(
+					connection,
+				);
+				if (result.rows[0]?.locked)
+					await sql`SELECT pg_advisory_unlock(184728, 40)`.execute(connection);
+				expect(result.rows[0]?.locked).toBe(false);
+			});
+			resume.resolve();
+			await Promise.all([first, second]);
+			const manifest = JSON.parse(
+				await readFile(path.join(resources, "data_versions.json"), "utf8"),
+			);
+			expect(manifest.shows.id).toBe(2);
+			expect(manifest.djs.id).toBe(2);
+			for (const [file, dataset] of [
+				["shows.json", "shows"],
+				["djs_brief.json", "djs"],
+				["djs/1.json", "djs"],
+				["tags.json", "tags"],
+			] as const) {
+				const data = JSON.parse(
+					await readFile(path.join(resources, file), "utf8"),
+				);
+				expect(data.version).toBe(manifest[dataset].id);
+				expect(data.updatedAt).toBe(manifest[dataset].updatedAt);
+			}
+			expect(
+				JSON.parse(await readFile(path.join(resources, "shows.json"), "utf8"))
+					.data[0].title,
+			).toBe("Newer show");
+		} finally {
+			resume.resolve();
+			await Promise.allSettled([first, second]);
+			writer.mockRestore();
+			await pool.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
+			await database.destroy();
+		}
+	},
+);

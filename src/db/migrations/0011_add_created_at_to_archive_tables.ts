@@ -1,3 +1,11 @@
+/*
+ * djs, shows, tags, show_djs, show_tags, dj_tags (added column)
+ * ┌─────────────────┬─────────────┬─────────────────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose                           │
+ * ├─────────────────┼─────────────┼─────────────────────────────────────────────────┤
+ * │ createdAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP; backfilled │
+ * └─────────────────┴─────────────┴─────────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

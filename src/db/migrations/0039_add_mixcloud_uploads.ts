@@ -1,3 +1,22 @@
+/*
+ * mixcloud_uploads (new table)
+ * ┌─────────────────┬─────────────┬──────────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose                    │
+ * ├─────────────────┼─────────────┼──────────────────────────────────────────┤
+ * │ id              │ integer     │ PRIMARY KEY; identity                    │
+ * │ createdAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP      │
+ * │ created_by      │ text        │ Nullable; FK user.id ON DELETE SET NULL  │
+ * │ mixcloud_key    │ text        │ NOT NULL; UNIQUE                         │
+ * │ title           │ text        │ NOT NULL                                 │
+ * │ description     │ text        │ Nullable                                 │
+ * │ date            │ timestamptz │ NOT NULL                                 │
+ * │ djs             │ integer[]   │ NOT NULL                                 │
+ * │ mixcloud_title  │ text        │ NOT NULL                                 │
+ * │ tags            │ text[]      │ NOT NULL                                 │
+ * │ mixcloud_data   │ jsonb       │ Nullable                                 │
+ * │ show_id         │ integer     │ Nullable; FK shows.id ON DELETE SET NULL │
+ * └─────────────────┴─────────────┴──────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

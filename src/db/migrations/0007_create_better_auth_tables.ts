@@ -1,3 +1,62 @@
+/*
+ * user (new table)
+ * ┌─────────────────┬─────────────┬─────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose               │
+ * ├─────────────────┼─────────────┼─────────────────────────────────────┤
+ * │ id              │ text        │ PRIMARY KEY                         │
+ * │ name            │ text        │ NOT NULL                            │
+ * │ email           │ text        │ NOT NULL; UNIQUE                    │
+ * │ emailVerified   │ boolean     │ NOT NULL                            │
+ * │ image           │ text        │ Nullable                            │
+ * │ createdAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP │
+ * │ updatedAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP │
+ * └─────────────────┴─────────────┴─────────────────────────────────────┘
+ *
+ * session (new table)
+ * ┌─────────────────┬─────────────┬────────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose                  │
+ * ├─────────────────┼─────────────┼────────────────────────────────────────┤
+ * │ id              │ text        │ PRIMARY KEY                            │
+ * │ expiresAt       │ timestamptz │ NOT NULL                               │
+ * │ token           │ text        │ NOT NULL; UNIQUE                       │
+ * │ createdAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP    │
+ * │ updatedAt       │ timestamptz │ NOT NULL                               │
+ * │ ipAddress       │ text        │ Nullable                               │
+ * │ userAgent       │ text        │ Nullable                               │
+ * │ userId          │ text        │ NOT NULL; FK user.id ON DELETE CASCADE │
+ * └─────────────────┴─────────────┴────────────────────────────────────────┘
+ *
+ * account (new table)
+ * ┌───────────────────────┬─────────────┬────────────────────────────────────────┐
+ * │ Column / change       │ Type        │ Constraints / purpose                  │
+ * ├───────────────────────┼─────────────┼────────────────────────────────────────┤
+ * │ id                    │ text        │ PRIMARY KEY                            │
+ * │ accountId             │ text        │ NOT NULL                               │
+ * │ providerId            │ text        │ NOT NULL                               │
+ * │ userId                │ text        │ NOT NULL; FK user.id ON DELETE CASCADE │
+ * │ accessToken           │ text        │ Nullable                               │
+ * │ refreshToken          │ text        │ Nullable                               │
+ * │ idToken               │ text        │ Nullable                               │
+ * │ accessTokenExpiresAt  │ timestamptz │ Nullable                               │
+ * │ refreshTokenExpiresAt │ timestamptz │ Nullable                               │
+ * │ scope                 │ text        │ Nullable                               │
+ * │ password              │ text        │ Nullable                               │
+ * │ createdAt             │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP    │
+ * │ updatedAt             │ timestamptz │ NOT NULL                               │
+ * └───────────────────────┴─────────────┴────────────────────────────────────────┘
+ *
+ * verification (new table)
+ * ┌─────────────────┬─────────────┬─────────────────────────────────────┐
+ * │ Column / change │ Type        │ Constraints / purpose               │
+ * ├─────────────────┼─────────────┼─────────────────────────────────────┤
+ * │ id              │ text        │ PRIMARY KEY                         │
+ * │ identifier      │ text        │ NOT NULL                            │
+ * │ value           │ text        │ NOT NULL                            │
+ * │ expiresAt       │ timestamptz │ NOT NULL                            │
+ * │ createdAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP │
+ * │ updatedAt       │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP │
+ * └─────────────────┴─────────────┴─────────────────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import { sql } from "kysely";
 import type { Database } from "../types.js";

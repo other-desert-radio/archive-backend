@@ -1,3 +1,21 @@
+/*
+ * djs (added columns)
+ * ┌─────────────────┬───────┬───────────────────────┐
+ * │ Column / change │ Type  │ Constraints / purpose │
+ * ├─────────────────┼───────┼───────────────────────┤
+ * │ image_small     │ bytea │ Nullable              │
+ * │ image_large     │ bytea │ Nullable              │
+ * └─────────────────┴───────┴───────────────────────┘
+ *
+ * djs (backfill and constraint)
+ * ┌─────────────────┬───────┬──────────────────────────────────────┐
+ * │ Column / change │ Type  │ Constraints / purpose                │
+ * ├─────────────────┼───────┼──────────────────────────────────────┤
+ * │ image_small     │ bytea │ 400 × 400 WebP from original image   │
+ * │ image_large     │ bytea │ 1024 × 1024 WebP from original image │
+ * │ image pair      │ check │ Both NULL or both populated          │
+ * └─────────────────┴───────┴──────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import { generateSquareWebPImages } from "../../utils/images/index.js";
 import type { Database, DJsTable } from "../types.js";

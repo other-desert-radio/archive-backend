@@ -1,3 +1,11 @@
+/*
+ * mixcloud_import (added constraint)
+ * ┌─────────────────┬───────┬─────────────────────────────────────────────┐
+ * │ Column / change │ Type  │ Constraints / purpose                       │
+ * ├─────────────────┼───────┼─────────────────────────────────────────────┤
+ * │ mixcloud_tags   │ jsonb │ Every array entry must contain a string url │
+ * └─────────────────┴───────┴─────────────────────────────────────────────┘
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 

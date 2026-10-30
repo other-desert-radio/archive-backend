@@ -1,3 +1,12 @@
+/*
+ * djs (replacement)
+ * ┌─────────────────┬──────────────┬────────────────────────────────────┐
+ * │ Column / change │ Type         │ Constraints / purpose              │
+ * ├─────────────────┼──────────────┼────────────────────────────────────┤
+ * │ image           │ text → bytea │ Old URLs discarded; nullable bytes │
+ * │ image_filename  │ text         │ Added; nullable                    │
+ * └─────────────────┴──────────────┴────────────────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 

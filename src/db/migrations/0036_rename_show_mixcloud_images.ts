@@ -1,3 +1,12 @@
+/*
+ * shows (renamed columns)
+ * ┌────────────────────────────────────┬──────┬───────────────────────────────────┐
+ * │ Column / change                    │ Type │ Constraints / purpose             │
+ * ├────────────────────────────────────┼──────┼───────────────────────────────────┤
+ * │ image_small → mixcloud_image_small │ text │ NOT NULL; existing URLs preserved │
+ * │ image_large → mixcloud_image_large │ text │ NOT NULL; existing URLs preserved │
+ * └────────────────────────────────────┴──────┴───────────────────────────────────┘
+ */
 import type { Kysely } from "kysely";
 import type { Database } from "../types.js";
 
