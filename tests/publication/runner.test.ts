@@ -14,6 +14,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { Kysely, PostgresDialect, sql } from "kysely";
 import { Pool } from "pg";
+import { exportArchive } from "../../src/db/export-archive.js";
 import { up as revisions } from "../../src/db/migrations/0029_add_archive_publication_state.js";
 import { up as jobs } from "../../src/db/migrations/0030_add_archive_publication_jobs.js";
 import { up as logs } from "../../src/db/migrations/0031_add_archive_publication_logs.js";
@@ -1066,4 +1067,99 @@ test.skipIf(!databaseUrl)(
 			await f.close();
 		}
 	},
+);
+
+test.skipIf(!databaseUrl)(
+	"standalone export cannot replace publisher files before staging and commit",
+	async () => {
+		const f = await fixture();
+		const paused = Promise.withResolvers<void>();
+		const resume = Promise.withResolvers<void>();
+		const attempted = Promise.withResolvers<void>();
+		let standalone: Promise<void> | undefined;
+		try {
+			let stagingQuery: unknown;
+			const source = f.database.withPlugin({
+				transformQuery: ({ node, queryId }) => {
+					if (
+						node.kind === "UpdateQueryNode" &&
+						JSON.stringify(node).includes('"value":"committing"')
+					)
+						stagingQuery = queryId;
+					return node;
+				},
+				transformResult: async ({ result, queryId }) => {
+					if (queryId === stagingQuery) {
+						paused.resolve();
+						await resume.promise;
+					}
+					return result;
+				},
+			});
+			const runner = await f.create(source);
+			const first = await publishReviewed(runner);
+			await paused.promise;
+			await f.database
+				.updateTable("tags")
+				.set({ title: "New standalone snapshot" })
+				.execute();
+			const exporting = f.database.withPlugin({
+				transformQuery: ({ node }) => {
+					if (JSON.stringify(node).includes("pg_advisory_lock"))
+						attempted.resolve();
+					return node;
+				},
+				transformResult: async ({ result }) => result,
+			});
+			standalone = exportArchive(
+				exporting,
+				path.join(f.checkout, "src/res"),
+				path.join(f.checkout, "public/assets"),
+				{ log: () => {} },
+			);
+			await attempted.promise;
+			await f.database.connection().execute(async (connection) => {
+				const result = await sql<{
+					locked: boolean;
+				}>`SELECT pg_try_advisory_lock(184728, 40) AS locked`.execute(
+					connection,
+				);
+				if (result.rows[0]?.locked)
+					await sql`SELECT pg_advisory_unlock(184728, 40)`.execute(connection);
+				expect(result.rows[0]?.locked).toBe(false);
+			});
+			resume.resolve();
+			const done = await settled(f.database, first.id);
+			expect(done.job.outcome).toBe("succeeded");
+			await standalone;
+			const committed = JSON.parse(
+				await f.git("show", "HEAD:src/res/tags.json"),
+			);
+			expect(committed.data[0].title).toBe("Original Tag");
+			expect(committed.version).toBe(1);
+			const written = JSON.parse(
+				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+			);
+			const manifest = JSON.parse(
+				await readFile(
+					path.join(f.checkout, "src/res/data_versions.json"),
+					"utf8",
+				),
+			);
+			expect(written.data[0].title).toBe("New standalone snapshot");
+			expect(written.version).toBe(2);
+			expect(manifest.tags.id).toBe(written.version);
+			expect((await jobVersions(f.database, first.id))?.tags.id).toBe(
+				committed.version,
+			);
+			expect((await readPublicationStatus(f.database, f.config)).pending).toBe(
+				true,
+			);
+		} finally {
+			resume.resolve();
+			await Promise.allSettled([standalone]);
+			await f.close();
+		}
+	},
+	20000,
 );

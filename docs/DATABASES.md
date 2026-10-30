@@ -48,14 +48,20 @@ created on first allocation at version 1. Changed exported content advances only
 that dataset; unchanged content preserves its version and timestamp. DJ content
 includes briefs, details, and image bytes. Shows include their embedded DJ data.
 
-The allocator serializes exporters with a session advisory lock acquired before
-opening a repeatable-read transaction. Callers must load database documents
-through that transaction for a consistent snapshot. The migration also adds
-nullable `archive_publication_jobs.dataset_versions` JSONB, recording the
-manifest-shaped version snapshot atomically with allocation. Dataset rows
-survive publication-job cleanup. Allocation does not acknowledge publication;
-failed filesystem writes can leave allocated versions behind. Publication
-execution records its captured revision and dataset snapshot in that allocation
+A shared session advisory lock serializes exports. Both entry points hold it
+before version allocation and through all filesystem writes; publication also
+holds it through Git synchronization, staging, commit, push, and
+acknowledgement. Allocation opens a repeatable-read transaction inside that
+lock. Nested allocation uses the locked connection; session locks are reentrant.
+Callers must load database documents through the allocation transaction for a
+consistent snapshot. The database transaction commits before filesystem writes
+and Git staging/commit. The session lock is released in `finally`, including on
+failure. The migration also adds nullable
+`archive_publication_jobs.dataset_versions` JSONB, recording the manifest-shaped
+version snapshot atomically with allocation. Dataset rows survive
+publication-job cleanup. Allocation does not acknowledge publication; failed
+filesystem writes can leave allocated versions behind. Publication execution
+records its captured revision and dataset snapshot in that allocation
 transaction. Remote commit recovery copies the previous job's snapshot without
 allocating new versions; legacy jobs retain a null snapshot.
 

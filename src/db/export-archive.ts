@@ -8,6 +8,7 @@ import { sanitizeArchiveHtml } from "../utils/sanitize-html.js";
 import {
 	allocateArchiveVersions,
 	type DatasetVersions,
+	withArchiveExportLock,
 } from "./archive-versions.js";
 import { db } from "./db.js";
 import type {
@@ -451,19 +452,21 @@ export const exportArchive = async (
 	reporter.log("Archive export");
 	reporter.log(`├─ JSON destination: ${resourceDirectory}`);
 	reporter.log(`├─ Image destination: ${assetDirectory}`);
-	const snapshot = await allocateArchiveVersions(
-		database,
-		async (transaction) => ({
-			documents: await loadArchiveDocuments(transaction, reporter),
-		}),
-	);
-	await writeArchiveDocuments(
-		snapshot.documents,
-		resourceDirectory,
-		assetDirectory,
-		reporter,
-		snapshot.versions,
-	);
+	await withArchiveExportLock(database, async (connection) => {
+		const snapshot = await allocateArchiveVersions(
+			connection,
+			async (transaction) => ({
+				documents: await loadArchiveDocuments(transaction, reporter),
+			}),
+		);
+		await writeArchiveDocuments(
+			snapshot.documents,
+			resourceDirectory,
+			assetDirectory,
+			reporter,
+			snapshot.versions,
+		);
+	});
 };
 
 if (import.meta.main) {

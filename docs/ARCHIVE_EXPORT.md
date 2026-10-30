@@ -61,6 +61,12 @@ filesystem export as a whole is not atomic: readers can encounter partial output
 during a failed or in-progress export. Database allocation does not indicate
 successful publication.
 
+DJ hashing feeds image identity, variant, byte length, and raw bytes into
+SHA-256 incrementally; it never serializes image buffers as JSON byte arrays.
+Switching from the previous buffer-JSON hash representation advances an existing
+DJ version once on its next allocation, even if its public content is unchanged.
+Subsequent unchanged exports retain that version.
+
 ## Export rules
 
 The exporter owns the entire `src/res/djs/` and `public/assets/djs/` directories
@@ -76,7 +82,12 @@ then ID, tags by ID, and relationship IDs numerically ascending. The command
 logs its nested progress, including each generated JSON and image file.
 
 Standalone exports read all six archive tables and allocate dataset versions in
-one repeatable-read transaction under the shared exporter lock. Concurrent
+one repeatable-read transaction under the shared exporter lock. The same session
+holds the lock until all data, images, and the manifest are written. Publisher
+execution takes that same lock before checkout validation and holds it through
+synchronization, staging, commit, push, and acknowledgement. A standalone export
+therefore cannot overwrite files while the publisher is preparing its commit,
+and overlapping standalone exports cannot interleave writes. Concurrent
 committed edits cannot mix different versions of DJs, Shows, Tags,
 relationships, or images in a single export. Documents are built inside that
 transaction, then files are written after it completes. A failed read leaves

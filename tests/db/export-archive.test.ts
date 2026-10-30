@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
+import { promises as fs, mkdirSync } from "node:fs";
 import {
 	mkdir,
 	mkdtemp,
@@ -12,7 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Kysely, PostgresDialect } from "kysely";
+import { Kysely, PostgresDialect, sql } from "kysely";
 import { Pool } from "pg";
 import type { DatasetVersions } from "../../src/db/archive-versions.js";
 import {
@@ -791,3 +791,95 @@ test("manifest replacement preserves symlink targets and cleans temporary output
 		),
 	).toEqual([]);
 });
+
+test.skipIf(!exportDatabaseUrl)(
+	"overlapping standalone exports finish in allocation order with a matching manifest",
+	async () => {
+		const schema = `export_${crypto.randomUUID().replaceAll("-", "")}`;
+		const pool = new Pool({
+			connectionString: exportDatabaseUrl,
+			options: `-c search_path=${schema}`,
+		});
+		const database = new Kysely<Database>({
+			dialect: new PostgresDialect({ pool }),
+		});
+		const root = await mkdtemp(path.join(tmpdir(), "archive-export-overlap-"));
+		temporaryDirectories.push(root);
+		const resources = path.join(root, "res");
+		const assets = path.join(root, "assets");
+		const paused = Promise.withResolvers<void>();
+		const resume = Promise.withResolvers<void>();
+		const attempted = Promise.withResolvers<void>();
+		const write = fs.writeFile;
+		let held = false;
+		const writer = spyOn(fs, "writeFile").mockImplementation(
+			async (...args: Parameters<typeof fs.writeFile>) => {
+				if (!held && args[0] === path.join(resources, "shows.json")) {
+					held = true;
+					paused.resolve();
+					await resume.promise;
+				}
+				return write(...args);
+			},
+		);
+		let first: Promise<void> | undefined;
+		let second: Promise<void> | undefined;
+		try {
+			await pool.query(`CREATE SCHEMA ${schema}`);
+			await createArchiveFixture(pool);
+			first = exportArchive(database, resources, assets, { log: () => {} });
+			await paused.promise;
+			await pool.query("UPDATE shows SET title = 'Newer show'");
+			const source = database.withPlugin({
+				transformQuery: ({ node }) => {
+					if (JSON.stringify(node).includes("pg_advisory_lock"))
+						attempted.resolve();
+					return node;
+				},
+				transformResult: async ({ result }) => result,
+			});
+			second = exportArchive(source, resources, assets, { log: () => {} });
+			await attempted.promise;
+			// The first export has committed its version but is still blocked inside its writer.
+			await database.connection().execute(async (connection) => {
+				const result = await sql<{
+					locked: boolean;
+				}>`SELECT pg_try_advisory_lock(184728, 40) AS locked`.execute(
+					connection,
+				);
+				if (result.rows[0]?.locked)
+					await sql`SELECT pg_advisory_unlock(184728, 40)`.execute(connection);
+				expect(result.rows[0]?.locked).toBe(false);
+			});
+			resume.resolve();
+			await Promise.all([first, second]);
+			const manifest = JSON.parse(
+				await readFile(path.join(resources, "data_versions.json"), "utf8"),
+			);
+			expect(manifest.shows.id).toBe(2);
+			expect(manifest.djs.id).toBe(2);
+			for (const [file, dataset] of [
+				["shows.json", "shows"],
+				["djs_brief.json", "djs"],
+				["djs/1.json", "djs"],
+				["tags.json", "tags"],
+			] as const) {
+				const data = JSON.parse(
+					await readFile(path.join(resources, file), "utf8"),
+				);
+				expect(data.version).toBe(manifest[dataset].id);
+				expect(data.updatedAt).toBe(manifest[dataset].updatedAt);
+			}
+			expect(
+				JSON.parse(await readFile(path.join(resources, "shows.json"), "utf8"))
+					.data[0].title,
+			).toBe("Newer show");
+		} finally {
+			resume.resolve();
+			await Promise.allSettled([first, second]);
+			writer.mockRestore();
+			await pool.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
+			await database.destroy();
+		}
+	},
+);

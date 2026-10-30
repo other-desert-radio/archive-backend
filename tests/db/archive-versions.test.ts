@@ -1,9 +1,10 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { Kysely, PostgresDialect, sql } from "kysely";
 import { Pool } from "pg";
 import {
 	allocateArchiveVersions,
 	archiveContentHashes,
+	withArchiveExportLock,
 } from "../../src/db/archive-versions.js";
 import type { ArchiveDocuments } from "../../src/db/export-archive.js";
 import { up as createJobs } from "../../src/db/migrations/0030_add_archive_publication_jobs.js";
@@ -250,6 +251,77 @@ test.skipIf(!databaseUrl)(
 						.execute()
 				).map((row) => row.id),
 			).toEqual([pending.id]);
+		});
+	},
+);
+
+test("image hashing streams raw bytes with identity and length framing", () => {
+	const data = documents();
+	data.images = [
+		{ id: 1, variant: "small", bytes: Buffer.from("ab") },
+		{ id: 2, variant: "large", bytes: Buffer.from("c") },
+	];
+	const toJSON = spyOn(Buffer.prototype, "toJSON").mockImplementation(() => {
+		throw new Error("Image buffers must not be serialized");
+	});
+	try {
+		const original = archiveContentHashes(data).djs;
+		expect(archiveContentHashes(data).djs).toBe(original);
+		data.images = [
+			{ id: 1, variant: "small", bytes: Buffer.from("a") },
+			{ id: 2, variant: "large", bytes: Buffer.from("bc") },
+		];
+		expect(archiveContentHashes(data).djs).not.toBe(original);
+		data.images = [
+			{ id: 2, variant: "small", bytes: Buffer.from("ab") },
+			{ id: 2, variant: "large", bytes: Buffer.from("c") },
+		];
+		expect(archiveContentHashes(data).djs).not.toBe(original);
+		data.images = [
+			{ id: 1, variant: "large", bytes: Buffer.from("ab") },
+			{ id: 2, variant: "large", bytes: Buffer.from("c") },
+		];
+		expect(archiveContentHashes(data).djs).not.toBe(original);
+		expect(toJSON).not.toHaveBeenCalled();
+	} finally {
+		toJSON.mockRestore();
+	}
+});
+
+test.skipIf(!databaseUrl)(
+	"outer export lock survives nested allocation and is released after write failure",
+	async () => {
+		await withDatabase(async (database) => {
+			// Keep the observer pinned so it cannot accidentally reuse the lock-owning session.
+			await database.connection().execute(async (observer) => {
+				await expect(
+					withArchiveExportLock(database, async (connection) => {
+						await allocateArchiveVersions(connection, async () => ({
+							documents: documents(),
+						}));
+						const result = await sql<{
+							locked: boolean;
+						}>`SELECT pg_try_advisory_lock(184728, 40) AS locked`.execute(
+							observer,
+						);
+						if (result.rows[0]?.locked)
+							await sql`SELECT pg_advisory_unlock(184728, 40)`.execute(
+								observer,
+							);
+						expect(result.rows[0]?.locked).toBe(false);
+						throw new Error("write failed");
+					}),
+				).rejects.toThrow("write failed");
+				const result = await sql<{
+					locked: boolean;
+				}>`SELECT pg_try_advisory_lock(184728, 40) AS locked`.execute(observer);
+				try {
+					expect(result.rows[0]?.locked).toBe(true);
+				} finally {
+					if (result.rows[0]?.locked)
+						await sql`SELECT pg_advisory_unlock(184728, 40)`.execute(observer);
+				}
+			});
 		});
 	},
 );
