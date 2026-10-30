@@ -450,7 +450,7 @@ test.skipIf(!databaseUrl)(
 			expect(responses[1]?.json().show).toEqual(saved);
 			expect(saved).toMatchObject({
 				title: "Reviewed title",
-				description: "Our description\nSecond line",
+				description: "<p>Our description<br />Second line</p>",
 				date: "2026-10-25T00:00:00.000Z",
 				djs: [1],
 				duration: 120,
@@ -504,6 +504,44 @@ test.skipIf(!databaseUrl)(
 			});
 			expect(edited.statusCode).toBe(200);
 			expect(edited.json().description).toBe(saved.description);
+			for (const description of [
+				"Literal <script>bad()</script>\nSecond & line",
+				"",
+			]) {
+				const response = await app.inject({
+					method: "POST",
+					url: "/api/admin/modify-show",
+					headers: { origin: authOrigin },
+					payload: {
+						id: saved.id,
+						title: saved.title,
+						date: "2026-10-25",
+						djs: [1],
+						duration: 120,
+						url: cloudcast.url,
+						mixcloud_image_small: cloudcast.pictures.large,
+						mixcloud_image_large: cloudcast.pictures["1024wx1024h"],
+						tags: ["House"],
+						description,
+					},
+				});
+				expect(response.statusCode).toBe(200);
+				const expected =
+					description === ""
+						? ""
+						: "<p>Literal &lt;script&gt;bad()&lt;/script&gt;<br />Second &amp; line</p>";
+				expect(response.json().description).toBe(expected);
+				expect(
+					(
+						await db
+							.selectFrom("shows")
+							.select("description")
+							.where("id", "=", saved.id)
+							.executeTakeFirstOrThrow()
+					).description,
+				).toBe(expected);
+			}
+
 			// Race the existing import route against the upload save for one source row.
 			const other = await record("/odr/other/");
 			expect((await post(other.id, "prepare")).statusCode).toBe(200);

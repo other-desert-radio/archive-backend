@@ -9,6 +9,7 @@ import { buildCreateShowRequest } from "../onboard-show-modal/onboard-show-utils
 /** Editable Show values shared by creation, editing, and Mixcloud import forms. */
 export type ShowFormValues = {
 	title: string;
+	description?: string;
 	/** UTC calendar date in YYYY-MM-DD input format, or empty before selection. */
 	date: string;
 	/** Seconds kept as input text until request validation. */

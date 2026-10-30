@@ -1,4 +1,4 @@
-import { isHttpUrl } from "../../../../utils/index.js";
+import { isHttpUrl, safeHtmlToPlainText } from "../../../../utils/index.js";
 import type { ShowsAdminRow } from "../../../loaders/shows.js";
 import {
 	formatDuration,
@@ -8,6 +8,7 @@ import {
 	formatUTCDateTime,
 	ResourceTable,
 	type ResourceTableColumn,
+	SanitizedHTML,
 } from "../../shared/resource-views/index.js";
 import type { ShowSortColumn, SortDirection } from "./shows-table-utils.js";
 
@@ -53,8 +54,17 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 		{
 			key: "description",
 			label: "description",
-			render: (show) => formatMissing(show.description),
-			compare: (a, b) => compareText(a.description, b.description),
+			render: (show) =>
+				show.description ? (
+					<SanitizedHTML html={show.description} />
+				) : (
+					formatMissing(undefined)
+				),
+			compare: (a, b) =>
+				compareText(
+					safeHtmlToPlainText(a.description ?? ""),
+					safeHtmlToPlainText(b.description ?? ""),
+				),
 		},
 		{
 			key: "date",

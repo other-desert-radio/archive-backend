@@ -367,3 +367,87 @@ for (const width of [390, 320]) {
 		await expect(form).toBeHidden();
 	});
 }
+
+test("description saves safe HTML, renders in table/grid, reopens and clears", async ({
+	page,
+	request,
+	show,
+}) => {
+	const text = "First & second\n<script>literal</script>";
+	const form = await openShowEditor(page, show.id);
+	const input = page.locator("#edit-show-description");
+	await expect(input).toHaveValue("");
+	await input.fill(text);
+	await form.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.getByRole("alertdialog")).toBeVisible();
+	await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+	await saveShow(page);
+	expect((await loadShow(request, show.id)).description).toBe(
+		"<p>First &amp; second<br />&lt;script&gt;literal&lt;/script&gt;</p>",
+	);
+	await expect(showRow(page, show.id)).toContainText(
+		"<script>literal</script>",
+	);
+	expect(await showRow(page, show.id).locator("script").count()).toBe(0);
+	await page.getByRole("button", { name: "grid", exact: true }).click();
+	const card = page.locator("article").filter({
+		has: page.getByRole("button", {
+			name: `Edit ${show.title}`,
+			exact: true,
+		}),
+	});
+	await expect(card).toContainText("<script>literal</script>");
+	await card
+		.getByRole("button", { name: `Edit ${show.title}`, exact: true })
+		.click();
+	await expect(input).toHaveValue(text);
+	await expect(
+		page
+			.getByRole("dialog", { name: "Edit Show", exact: true })
+			.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
+	await input.fill("Changed");
+	await input.fill(text);
+	await page
+		.getByRole("dialog", { name: "Edit Show", exact: true })
+		.getByRole("button", { name: "Cancel", exact: true })
+		.click();
+	await expect(page.getByRole("alertdialog")).toBeHidden();
+	await card
+		.getByRole("button", { name: `Edit ${show.title}`, exact: true })
+		.click();
+	await input.fill("");
+	await saveShow(page);
+	expect((await loadShow(request, show.id)).description).toBe("");
+});
+
+test("description survives onboarding mode changes and reverting clears dirty state", async ({
+	page,
+}) => {
+	await page.route("**/api/admin/mixcloud/status", (route) =>
+		route.fulfill({
+			json: {
+				configured: true,
+				connected: true,
+				account: { key: "/test/", displayName: "Test" },
+			},
+		}),
+	);
+	await page.getByRole("button", { name: "+ show", exact: true }).click();
+	const description = page.getByRole("textbox", {
+		name: "description",
+		exact: true,
+	});
+	await description.fill("A draft\nSecond line");
+	await page
+		.getByRole("button", { name: "existing show", exact: true })
+		.click();
+	await expect(description).toHaveValue("A draft\nSecond line");
+	await description.fill("");
+	await page
+		.getByRole("dialog", { name: "Onboard Show", exact: true })
+		.getByRole("button", { name: "Cancel", exact: true })
+		.click();
+	await expect(page.getByRole("alertdialog")).toBeHidden();
+	await expect(page.getByRole("dialog")).toBeHidden();
+});

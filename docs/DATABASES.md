@@ -345,12 +345,19 @@ createdAt   timestamptz not null
 title       text not null
 date        timestamptz
 duration    integer       -- seconds
+description text          -- nullable sanitized HTML
 mixcloud_image_large text not null -- Mixcloud image URL
 mixcloud_image_small text not null -- Mixcloud image URL
 image_small bytea         -- nullable stored WebP
 image_large bytea         -- nullable stored WebP
 url         text          -- audio source URL
 ```
+
+`description` is nullable text containing sanitized HTML, using the DJ bio
+format. Migration `0038` adds the column; `0041` converts existing plain text
+while preserving NULL and empty strings. Rollback of `0041` restores readable
+text, with normalized whitespace. Apply migrations before deploying the matching
+application.
 
 `duration` is measured in whole seconds. `date` represents a broadcast calendar
 day and is stored explicitly at midnight UTC, so its timestamp remains

@@ -1,6 +1,10 @@
 import type { ShowsAdminRow } from "../../../loaders/shows.js";
 import type { TagsAdminRow } from "../../../loaders/tags.js";
-import { Tag, TagsContainer } from "../../shared/resource-views/index.js";
+import {
+	SanitizedHTML,
+	Tag,
+	TagsContainer,
+} from "../../shared/resource-views/index.js";
 import styles from "./show-card.module.css";
 
 type ShowCardTag = Pick<TagsAdminRow, "color" | "title">;
@@ -66,7 +70,9 @@ export const renderShowCard = (
 			{showDJs(show, djsById)}
 			{showTags(show, tagsById)}
 			{show.description && (
-				<p className={styles.description}>{show.description}</p>
+				<div className={styles.description}>
+					<SanitizedHTML html={show.description} />
+				</div>
 			)}
 			<button
 				type="button"

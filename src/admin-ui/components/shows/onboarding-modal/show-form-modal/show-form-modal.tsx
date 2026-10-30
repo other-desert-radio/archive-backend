@@ -107,7 +107,15 @@ export const ShowFormModal = ({
 		fields.date,
 	);
 	const mixcloudTitle = mixcloudTitleOverride ?? generatedTitle;
-	const [description, setDescription] = useState("");
+	const description = fields.description ?? "";
+	const setDescription = (description: string) => {
+		setFields((current) => {
+			const { description: _description, ...rest } = current;
+			return description === "" && initialValues.description === undefined
+				? rest
+				: { ...current, description };
+		});
+	};
 	const [mp3, setMP3] = useState<File>();
 	const [mp3Error, setMP3Error] = useState<string>();
 	const [pendingTagIds, setPendingTagIds] = useState(unresolvedTagIds);
@@ -189,6 +197,16 @@ export const ShowFormModal = ({
 				setFields={setFields}
 				idPrefix={idPrefix}
 			/>
+			<LabeledFormControl
+				id={`${idPrefix}-description`}
+				name="description"
+				label="description"
+				value={description}
+				onChange={setDescription}
+				textarea
+				maxLength={1000}
+				helper="Up to 1000 characters."
+			/>
 			<ShowDurationField
 				fields={fields}
 				setFields={setFields}
@@ -253,7 +271,6 @@ export const ShowFormModal = ({
 						<MixcloudConnectionBanner onConnected={setMixcloudConnected} />
 						{mixcloudConnected &&
 							(hasUnsavedChanges ||
-								description !== "" ||
 								mp3 !== undefined ||
 								image !== undefined ||
 								mixcloudTitleOverride !== undefined) && (
@@ -398,7 +415,6 @@ export const ShowFormModal = ({
 					hasUnsavedChanges ||
 					mp3 !== undefined ||
 					image !== undefined ||
-					description !== "" ||
 					mixcloudTitleOverride !== undefined
 				}
 				isCovered={imageCandidate !== undefined}

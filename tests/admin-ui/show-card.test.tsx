@@ -27,7 +27,7 @@ describe("Show card", () => {
 		);
 
 		const [image, _title, djs, tags, description, edit] = card.props.children;
-		expect(description.props.children).toBe("A late night journey");
+		expect(description.props.children.props.html).toBe("A late night journey");
 		expect(image.props.src).toBe("https://example.com/show.webp");
 		expect(image.props.alt).toBe("Show One");
 		expect(djs.props.children).toBe("DJ One");

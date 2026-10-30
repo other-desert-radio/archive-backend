@@ -77,3 +77,28 @@ test("rejects blank, relative, or non-HTTP image URLs independently", () => {
 				"image must be an absolute HTTP(S) URL",
 			);
 });
+
+test("preserves optional description text and rejects overlong input", () => {
+	const fields = {
+		title: "Night",
+		date: "2026-02-03",
+		duration: "60",
+		mixcloud_image_small: "https://example.test/small",
+		mixcloud_image_large: "https://example.test/large",
+		tags: "",
+		url: "https://example.test/show",
+		djs: [1],
+	};
+	expect(
+		buildCreateShowRequest({
+			...fields,
+			description: "Line one\n<script>literal</script>",
+		}).description,
+	).toBe("Line one\n<script>literal</script>");
+	expect(
+		buildCreateShowRequest({ ...fields, description: "" }).description,
+	).toBe("");
+	expect(() =>
+		buildCreateShowRequest({ ...fields, description: "x".repeat(1001) }),
+	).toThrow("1000");
+});

@@ -157,6 +157,11 @@ in use even for editing.
 
 ### Show create/edit reuse
 
+The Show editor includes an optional description textarea (up to 1000 input
+characters). It loads stored HTML as plain text and tracks unsaved edits.
+Descriptions render as sanitized HTML in both Shows table and grid views,
+preserving paragraphs and line breaks; search and sorting use readable text.
+
 Resource grid/table controls use `SegmentedPicker` from `shared/resource-views`.
 Callers own selection and persistence. The picker provides labeled grouped
 buttons with pressed states, optional disabled state, and native browser

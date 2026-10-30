@@ -363,12 +363,13 @@ compatibility.
 one or more existing DJ IDs in `djs`, and required absolute HTTP(S)
 `mixcloud_image_small` and `mixcloud_image_large` URLs. Optional `tags` are
 titles. Optional `description` accepts up to 1000 characters and normalizes CRLF
-to LF. Omission preserves an existing description on edit; an empty string
-clears its text. The route trims text, validates real calendar dates and URLs,
-deduplicates DJ IDs and tag titles, and stores the date at midnight UTC. It
-creates the Show, relationships, and any missing unreviewed tags in one
-transaction, returning `201` with the same admin Show shape as the list
-response.
+to LF. Like DJ bios, descriptions are edited as plain text and stored and
+returned as sanitized HTML with preserved line breaks. Omission preserves an
+existing description on edit; an empty string clears its text. The route trims
+text, validates real calendar dates and URLs, deduplicates DJ IDs and tag
+titles, and stores the date at midnight UTC. It creates the Show, relationships,
+and any missing unreviewed tags in one transaction, returning `201` with the
+same admin Show shape as the list response.
 
 Creation also accepts optional positive safe-integer `mixcloud_import_id`. After
 validating submitted metadata, an import locks that tracking row with

@@ -6,6 +6,7 @@ export type CreateShowForm = CreateShowRequest;
 
 export const buildCreateShowRequest = (fields: {
 	title: string;
+	description?: string;
 	date: string;
 	duration: string;
 	mixcloud_image_small: string;
@@ -14,6 +15,8 @@ export const buildCreateShowRequest = (fields: {
 	url: string;
 	djs: number[];
 }): CreateShowForm => {
+	if ((fields.description?.length ?? 0) > 1000)
+		throw new Error("Description must be at most 1000 characters.");
 	const duration = Number(fields.duration);
 	if (!isMatching(P.number.int().between(1, 2_147_483_647), duration))
 		throw new Error("Duration must be a positive whole number of seconds.");
@@ -29,6 +32,9 @@ export const buildCreateShowRequest = (fields: {
 	const tags = splitCommaSeparated(fields.tags);
 	return {
 		title: fields.title.trim(),
+		...(fields.description === undefined
+			? {}
+			: { description: fields.description }),
 		date: fields.date,
 		duration,
 		url: fields.url.trim(),
