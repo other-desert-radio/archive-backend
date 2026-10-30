@@ -3,6 +3,7 @@ import { MessageModal } from "../../../shared/modal/index.js";
 import {
 	formatDuration,
 	formatUTCDateTime,
+	SanitizedHTML,
 } from "../../../shared/resource-views/index.js";
 import styles from "./uploaded-show-modal.module.css";
 
@@ -52,7 +53,13 @@ export const SavedShowModal = ({
 				</div>
 				<div>
 					<dt>description</dt>
-					<dd className={styles.description}>{show.description || "None"}</dd>
+					<dd className={styles.description}>
+						{show.description ? (
+							<SanitizedHTML html={show.description} />
+						) : (
+							"None"
+						)}
+					</dd>
 				</div>
 				<div>
 					<dt>date</dt>

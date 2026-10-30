@@ -1,3 +1,4 @@
+import { safeHtmlToPlainText } from "../../../../utils/index.js";
 import type { ShowsAdminRow } from "../../../loaders/shows.js";
 import {
 	filterResourceRows,
@@ -33,7 +34,7 @@ export const getShowSearchValue = (
 		show.id,
 		show.createdAt,
 		show.title,
-		show.description,
+		safeHtmlToPlainText(show.description ?? ""),
 		formatUTCDate(show.date),
 		formatDuration(show.duration),
 		show.image_small,

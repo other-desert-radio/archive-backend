@@ -69,6 +69,10 @@ Subsequent unchanged exports retain that version.
 
 ## Export rules
 
+Show records in `shows.json` and nested DJ detail records include optional
+`description` containing sanitized HTML, using the same allowed formatting as DJ
+bios. NULL descriptions are omitted; empty descriptions remain empty strings.
+
 The exporter owns the entire `src/res/djs/` and `public/assets/djs/` directories
 and replaces their contents on each export, including stale files. Keep manually
 maintained assets outside those directories. It also owns the four top-level

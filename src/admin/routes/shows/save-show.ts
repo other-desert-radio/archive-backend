@@ -1,5 +1,7 @@
 import type { Transaction } from "kysely";
 import type { Database } from "../../../db/types.js";
+import { plainTextToSafeHtml } from "../../../utils/plain-text-to-safe-html.js";
+import { sanitizeArchiveHtml } from "../../../utils/sanitize-html.js";
 import { createTags } from "../tags/tag-service.js";
 import type { TypedDatabase } from "../types.js";
 import type { NormalizedCreateShowRequest } from "./normalize-create-show-request.js";
@@ -39,7 +41,12 @@ export const saveShowInTransaction = async (
 		title: normalized.title,
 		...(normalized.description === undefined
 			? {}
-			: { description: normalized.description }),
+			: {
+					description:
+						normalized.description === ""
+							? ""
+							: plainTextToSafeHtml(normalized.description),
+				}),
 		date: normalized.date,
 		duration: normalized.duration,
 		mixcloud_image_small: normalized.mixcloud_image_small,
@@ -98,7 +105,9 @@ export const saveShowInTransaction = async (
 	return {
 		id: show.id,
 		createdAt: show.createdAt,
-		...(show.description == null ? {} : { description: show.description }),
+		...(show.description == null
+			? {}
+			: { description: sanitizeArchiveHtml(show.description) }),
 		title: normalized.title,
 		date: normalized.date,
 		duration: normalized.duration,
@@ -146,7 +155,9 @@ export const loadSavedShow = async (
 	const { description, ...fields } = show;
 	return {
 		...fields,
-		...(description == null ? {} : { description }),
+		...(description == null
+			? {}
+			: { description: sanitizeArchiveHtml(description) }),
 		image: show.mixcloud_image_large,
 		djs: djs.map(({ dj_id }) => dj_id),
 		tags: tags.map(({ tag_id }) => tag_id),

@@ -7,6 +7,7 @@ export type Show = {
 	id: number;
 	createdAt: string;
 	title: string;
+	description?: string;
 	date: string;
 	duration: number;
 	image?: string;

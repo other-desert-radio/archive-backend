@@ -48,7 +48,7 @@ const createArchiveFixture = async (pool: Pool): Promise<void> => {
 	// Minimal current archive schema: fixtures exercise export reads, not historical schema migrations.
 	await pool.query(`
 	CREATE TABLE djs (id integer, title text, bio text, image_small bytea, image_large bytea, socials text, "showTitle" text, "showDescription" text);
-	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea);
+	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea, description text);
 	CREATE TABLE tags (id integer, title text, color text, mixcloud_key text, mixcloud_url text);
 	CREATE TABLE show_djs (dj_id integer, show_id integer);
 	CREATE TABLE dj_tags (dj_id integer, tag_id integer);
@@ -377,6 +377,7 @@ describe("archive export documents", () => {
 					id: 10,
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
 					title: "Newer Show",
+					description: "<p>Our show</p><script>bad()</script>",
 					date: new Date("2026-02-01T00:00:00.000Z"),
 					duration: 3600,
 					mixcloud_image_small: "https://example.com/show-small.jpg",
@@ -433,6 +434,7 @@ describe("archive export documents", () => {
 				{
 					id: 10,
 					title: "Newer Show",
+					description: "<p>Our show</p>",
 					date: new Date("2026-02-01T00:00:00.000Z"),
 					duration: 3600,
 					image_small: "https://example.com/show-small.jpg",
@@ -449,6 +451,7 @@ describe("archive export documents", () => {
 			{
 				id: 10,
 				title: "Newer Show",
+				description: "<p>Our show</p>",
 				date: new Date("2026-02-01T00:00:00.000Z"),
 				duration: 3600,
 				image_small: "https://example.com/show-small.jpg",

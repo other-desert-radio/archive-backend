@@ -46,6 +46,7 @@ type ArchiveDJImage = {
 };
 
 type ArchiveShow = {
+	description?: string;
 	id: number;
 	title: string;
 	date: Date;
@@ -194,6 +195,9 @@ export const buildArchiveDocuments = ({
 				(show): ArchiveShow => ({
 					id: show.id,
 					title: show.title,
+					...(show.description == null
+						? {}
+						: { description: sanitizeArchiveHtml(show.description) }),
 					date: show.date,
 					duration: show.duration,
 					image_small: show.mixcloud_image_small,
@@ -234,6 +238,9 @@ export const buildArchiveDocuments = ({
 	const archiveShows = shows.map((show) => ({
 		id: show.id,
 		title: show.title,
+		...(show.description == null
+			? {}
+			: { description: sanitizeArchiveHtml(show.description) }),
 		date: show.date,
 		duration: show.duration,
 		image_small: show.mixcloud_image_small,

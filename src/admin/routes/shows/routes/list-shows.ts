@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { sql } from "kysely";
 import { transformShows } from "../../../../json-transformers/index.js";
+import { sanitizeArchiveHtml } from "../../../../utils/sanitize-html.js";
 import type { TypedDatabase } from "../../types.js";
 import type { ListShowsRoute } from "../types.js";
 
@@ -53,7 +54,9 @@ export const listShowsHandler =
 				return {
 					...show,
 					createdAt: row.createdAt,
-					...(row.description == null ? {} : { description: row.description }),
+					...(row.description == null
+						? {}
+						: { description: sanitizeArchiveHtml(row.description) }),
 					...(row.has_images
 						? {
 								image_small: `/api/admin/shows/${row.id}/image/small`,

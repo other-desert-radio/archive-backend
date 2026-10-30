@@ -5,5 +5,6 @@ export * from "./logger.js";
 export * from "./mixcloud-import-status.js";
 export * from "./mixcloud-parser/index.js";
 export * from "./request-path-for-log.js";
+export * from "./safe-html-to-plain-text.js";
 export * from "./split-comma-separated.js";
 export * from "./undefined-or-empty.js";

@@ -131,7 +131,9 @@ test("stored image columns match DJs: named links or None, searchable and sortab
 test("displays, searches, and sorts descriptions with missing values", () => {
 	const column = showColumns.find((column) => column.key === "description");
 	if (!column) throw new Error("Missing description column");
-	expect(column.render(shows[0])).toBe("Late night journey");
+	expect(renderToStaticMarkup(column.render(shows[0]))).toContain(
+		"Late night journey",
+	);
 	expect(renderToStaticMarkup(column.render(shows[1]))).toContain("None");
 	expect(filterShows(shows, "journey", new Map(), new Map())).toEqual([
 		shows[0],
@@ -139,4 +141,20 @@ test("displays, searches, and sorts descriptions with missing values", () => {
 	expect(sortShows(shows, "description", "asc").map((show) => show.id)).toEqual(
 		[1, 2],
 	);
+});
+
+test("description search and sorting use visible text rather than HTML markup", () => {
+	const rows = [
+		{ ...shows[0], id: 1, description: "<p>Zebra</p>" },
+		{ ...shows[0], id: 2, description: "<strong>Apple &amp; pear</strong>" },
+	];
+	expect(sortShows(rows, "description", "asc").map((show) => show.id)).toEqual([
+		2, 1,
+	]);
+	expect(
+		filterShows(rows, "Apple & pear", new Map(), new Map()).map(
+			(show) => show.id,
+		),
+	).toEqual([2]);
+	expect(filterShows(rows, "strong", new Map(), new Map())).toEqual([]);
 });

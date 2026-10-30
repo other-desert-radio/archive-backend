@@ -39,12 +39,4 @@ export const buildEditDJRequest = (fields: EditDJFieldValues): EditDJForm => {
 	};
 };
 
-/** Converts the archive's constrained safe HTML fields into editable text. */
-export const safeHtmlToPlainText = (html: string): string => {
-	const container = document.createElement("div");
-	container.innerHTML = html
-		.replaceAll(/<br\s*\/?\s*>/giu, "\n")
-		.replaceAll(/<\/(?:p|li)\s*>/giu, "\n");
-
-	return (container.textContent ?? "").replace(/\n{3,}/gu, "\n\n").trim();
-};
+export { safeHtmlToPlainText } from "../../../../../utils/index.js";

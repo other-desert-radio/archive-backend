@@ -1,4 +1,5 @@
 import type { ModifyShowRequest } from "../../../../../admin/routes/shows/index.js";
+import { safeHtmlToPlainText } from "../../../../../utils/index.js";
 import type { ShowsAdminRow } from "../../../../loaders/shows.js";
 import type { TagsAdminRow } from "../../../../loaders/tags.js";
 import {
@@ -23,6 +24,9 @@ export const EditShowModal = ({ show, tags, onSubmit, ...props }: Props) => {
 			submittingLabel="Saving…"
 			initialValues={{
 				title: show.title,
+				...(show.description === undefined
+					? {}
+					: { description: safeHtmlToPlainText(show.description) }),
 				date: show.date.slice(0, 10),
 				duration: String(show.duration),
 				mixcloud_image_small: show.mixcloud_image_small,
