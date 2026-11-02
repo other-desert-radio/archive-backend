@@ -30,6 +30,13 @@ export const manualDJOverrides = new Map<string, string | string[]>([
 	["Nazmi + Caroline", ["Nazmi", "Caroline"]],
 	["Nathan Ober aka DJ NASTY NATE", "Nathan Ober"],
 	["Peacetime Product X Lodi Dottie B2B", ["Peacetime Product", "Lodi Dottie"]],
+	["Desert Dove Radio Hour", "Desert Dove Radio"],
+	["The Desert Dove", "Desert Dove Radio"],
+	["Dev.01d", "DEV01D"],
+	["Devoid Divine", "DEV01D"],
+	["Pequeña Cretina", "DJ Pequeña Cretina aka Alexandra Martinez"],
+	["Nathaniel I. Ober", "DJ Nasty Nate"],
+	["Nathan Ober", "DJ Nasty Nate"],
 	[
 		"John Zoon (hans f wagner) and General Baby (jon nielson)",
 		["Hans F. Wagner", "Jon Nielson"],
