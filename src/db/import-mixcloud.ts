@@ -1,10 +1,9 @@
+import { readFileSync } from "node:fs";
 import { isMatching } from "ts-pattern";
 import {
 	type MixcloudCloudcasts,
 	PagePattern,
 } from "../admin/routes/mixcloud-imports/types.js";
-// @ts-ignore: Local, gitignored input is absent in CI; runtime validation handles its shape.
-import mixcloudCloudcastsJson from "../res/mixcloud.json" with { type: "json" };
 import {
 	type MixcloudParserResult,
 	parseMixcloudEntry,
@@ -19,7 +18,9 @@ export const validateMixcloudCloudcasts = (
 };
 
 export const mixcloudCloudcasts = validateMixcloudCloudcasts(
-	mixcloudCloudcastsJson,
+	JSON.parse(
+		readFileSync(new URL("../res/mixcloud.json", import.meta.url), "utf8"),
+	),
 );
 
 /** Format an application error message in red terminal text. */
