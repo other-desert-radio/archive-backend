@@ -54,3 +54,20 @@ Markdown. The authoritative rule configuration is `biome.json` and
 files, stages those formatting edits, then runs repository-wide lint. Unstaged
 files are not formatted or added. Partially staged files stop the commit before
 formatting: stage remaining changes or stash unstaged changes before retrying.
+
+## GitHub merge checks
+
+`.github/workflows/tests.yml` runs the `Tests` job on every pull request, push,
+and merge queue group. It installs locked dependencies with Bun 1.4.2 (matching
+the Docker runtime), then runs typecheck, lint, documentation checks, and
+`bun run test`, including the admin build. Database tests without their explicit
+test URLs skip; Playwright integration suites remain a separate check.
+
+To enforce this before merging, configure an active branch ruleset for the
+default branch in GitHub **Settings → Rules → Rulesets**. Enable **Require
+status checks to pass**, select the `Tests` check from GitHub Actions, and
+require branches to be up to date. Keep the bypass list empty if the rule must
+apply to administrators too. The workflow must run on GitHub once before its
+check can be selected. A workflow file alone does not enforce merge protection;
+the repository ruleset must also be enabled. If the job name changes, update the
+required check in the ruleset at the same time.

@@ -74,7 +74,7 @@ export const createDJHandler =
 			}
 			const normalized = normalizeCreateDJRequest(textRequest);
 			const safeBio =
-				normalized.bio === "" ? "" : plainTextToSafeHtml(normalized.bio);
+				normalized.bio === "" ? null : plainTextToSafeHtml(normalized.bio);
 			const created = await database
 				.transaction()
 				.execute(async (transaction) => {
@@ -121,7 +121,7 @@ export const createDJHandler =
 						id: insertedDJ.id,
 						createdAt: insertedDJ.createdAt,
 						title: normalized.title,
-						bio: safeBio,
+						bio: safeBio ?? "",
 						...(imageVariants === undefined
 							? {}
 							: {

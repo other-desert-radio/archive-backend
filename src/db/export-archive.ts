@@ -223,7 +223,7 @@ export const buildArchiveDocuments = ({
 			id: dj.id,
 			title: dj.title,
 			...imageVariantsForDJ(dj.id),
-			bio: sanitizeArchiveHtml(dj.bio),
+			bio: sanitizeArchiveHtml(dj.bio ?? ""),
 			...(dj.socials === null
 				? {}
 				: { socials: sanitizeArchiveHtml(dj.socials) }),

@@ -82,7 +82,7 @@ export const modifyDJHandler =
 
 			const normalized = normalizeCreateDJRequest(textRequest);
 			const safeBio =
-				normalized.bio === "" ? "" : plainTextToSafeHtml(normalized.bio);
+				normalized.bio === "" ? null : plainTextToSafeHtml(normalized.bio);
 			const safeSocials =
 				normalized.socials === null
 					? null
@@ -174,7 +174,7 @@ export const modifyDJHandler =
 				id: modified.updated.id,
 				createdAt: modified.updated.createdAt,
 				title: modified.updated.title,
-				bio: modified.updated.bio,
+				bio: modified.updated.bio ?? "",
 				...(modified.updated.image_small === null ||
 				modified.updated.image_large === null
 					? {}

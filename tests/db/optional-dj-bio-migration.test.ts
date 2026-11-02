@@ -22,7 +22,7 @@ test.skipIf(!databaseUrl)(
 			await sql`CREATE TABLE djs (id serial primary key, title text NOT NULL, bio text NOT NULL)`.execute(
 				db,
 			);
-			await sql`INSERT INTO djs (title, bio) VALUES ('Existing', '<p>Bio</p>')`.execute(
+			await sql`INSERT INTO djs (title, bio) VALUES ('Existing', '<p>Bio</p>'), ('Empty', ''), ('Blank', '   ')`.execute(
 				db,
 			);
 			await db.transaction().execute(up);
@@ -31,7 +31,7 @@ test.skipIf(!databaseUrl)(
 				.values({ title: "No bio" })
 				.returning("bio")
 				.executeTakeFirstOrThrow();
-			expect(inserted.bio).toBe("");
+			expect(inserted.bio).toBeNull();
 			await db.transaction().execute(down);
 			await expect(
 				db.insertInto("djs").values({ title: "Missing" }).execute(),
@@ -45,12 +45,12 @@ test.skipIf(!databaseUrl)(
 						.returning("bio")
 						.executeTakeFirstOrThrow()
 				).bio,
-			).toBe("");
+			).toBeNull();
 			expect(
 				(await db.selectFrom("djs").select("bio").orderBy("id").execute()).map(
 					(row) => row.bio,
 				),
-			).toEqual(["<p>Bio</p>", "", ""]);
+			).toEqual(["<p>Bio</p>", null, null, null, null]);
 		} finally {
 			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(db);
 			await db.destroy();

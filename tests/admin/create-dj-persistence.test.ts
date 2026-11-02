@@ -26,7 +26,7 @@ type DJRow = {
 	id: number;
 	createdAt: Date;
 	title: string;
-	bio: string;
+	bio: string | null;
 	image_small: Buffer | null;
 	image_large: Buffer | null;
 	socials: string | null;
@@ -142,7 +142,7 @@ describe("DJ creation persistence", () => {
 			});
 			expect(response.statusCode).toBe(201);
 			expect(response.json().bio).toBe("");
-			expect(state.djs[0]?.bio).toBe("");
+			expect(state.djs[0]?.bio).toBeNull();
 		});
 	}
 

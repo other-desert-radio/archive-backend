@@ -100,7 +100,7 @@ describe("required DJ text", () => {
 			expect(set).toHaveBeenCalledWith(
 				expect.objectContaining({
 					title: "DJ Updated",
-					bio: (bio?.trim() ?? "") === "" ? "" : "<p>Updated bio</p>",
+					bio: (bio?.trim() ?? "") === "" ? null : "<p>Updated bio</p>",
 				}),
 			);
 		});
