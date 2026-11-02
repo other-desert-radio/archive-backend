@@ -1,9 +1,9 @@
+import { readFileSync } from "node:fs";
 import { isMatching } from "ts-pattern";
 import {
 	type MixcloudCloudcasts,
 	PagePattern,
 } from "../admin/routes/mixcloud-imports/types.js";
-import mixcloudCloudcastsJson from "../res/mixcloud.json" with { type: "json" };
 import {
 	type MixcloudParserResult,
 	parseMixcloudEntry,
@@ -16,10 +16,6 @@ export const validateMixcloudCloudcasts = (
 	if (!isMatching(PagePattern, value)) throw new Error("Invalid Mixcloud JSON");
 	return value;
 };
-
-export const mixcloudCloudcasts = validateMixcloudCloudcasts(
-	mixcloudCloudcastsJson,
-);
 
 /** Format an application error message in red terminal text. */
 const red = (text: string): string => `\u001b[31m${text}\u001b[0m`;
@@ -36,6 +32,14 @@ type ParsedShow = MixcloudParserResult & {
 };
 
 if (import.meta.main) {
+	const mixcloudCloudcasts = validateMixcloudCloudcasts(
+		JSON.parse(
+			readFileSync(
+				process.argv[2] ?? new URL("../res/mixcloud.json", import.meta.url),
+				"utf8",
+			),
+		),
+	);
 	console.log(`Loaded ${mixcloudCloudcasts.data.length} Mixcloud shows.`);
 
 	const collection: ParsedShow[] = [];

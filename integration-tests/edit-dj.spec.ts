@@ -76,8 +76,8 @@ test("displays every column and preserves linked shows and inherited tags", asyn
 	const inheritedTitle = `Inherited ${dj.title}`;
 	const response = await request.post("/api/admin/create-show", {
 		data: {
-			image_small: "https://example.test/small.jpg",
-			image_large: "https://example.test/large.jpg",
+			mixcloud_image_small: "https://example.test/small.jpg",
+			mixcloud_image_large: "https://example.test/large.jpg",
 			title: `Show ${dj.title}`,
 			date: "2026-09-24",
 			duration: 3600,
@@ -267,7 +267,7 @@ test("undoes removal, cancels cropping, then removes both image variants", async
 	await expect((await openEditor(page, dj.id)).getByRole("img")).toHaveCount(0);
 });
 
-for (const label of ["title", "bio"])
+for (const label of ["title"])
 	for (const value of ["", "   "]) {
 		test(`rejects ${value === "" ? "empty" : "whitespace"} ${label}`, async ({
 			page,
@@ -293,7 +293,7 @@ for (const label of ["title", "bio"])
 				).toBe(true);
 			else
 				await expect(dialog.getByRole("alert")).toHaveText(
-					"Title and bio are required.",
+					"Title is required.",
 				);
 			await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
 			expect(submissions).toBe(0);
@@ -387,4 +387,46 @@ test("commits a focused draft before removing a tag chip", async ({
 			exact: true,
 		}),
 	).toBeVisible();
+});
+
+for (const bio of ["", "   "]) {
+	test(`clears optional bio: ${JSON.stringify(bio)}`, async ({
+		page,
+		request,
+		dj,
+	}) => {
+		const dialog = await openEditor(page, dj.id);
+		await expect(dialog.getByLabel("bio", { exact: true })).not.toHaveAttribute(
+			"required",
+		);
+		await dialog.getByLabel("bio", { exact: true }).fill(bio);
+		await save(page);
+		expect((await loadDJ(request, dj.id)).bio).toBeNull();
+		await page.reload();
+		await expect(
+			(await openEditor(page, dj.id)).getByLabel("bio", { exact: true }),
+		).toHaveValue("");
+	});
+}
+
+test("creates a DJ with only a title", async ({ page, request }) => {
+	const title = `No bio ${crypto.randomUUID()}`;
+	await page.getByRole("button", { name: "+ DJ", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Onboard DJ", exact: true });
+	await expect(dialog.getByLabel("bio", { exact: true })).not.toHaveAttribute(
+		"required",
+	);
+	await dialog.getByLabel("title", { exact: true }).fill(title);
+	const responsePromise = page.waitForResponse(
+		(response) =>
+			response.url().endsWith("/api/admin/create-dj") &&
+			response.request().method() === "POST",
+	);
+	await dialog.getByRole("button", { name: "Submit", exact: true }).click();
+	const response = await responsePromise;
+	expect(response.status()).toBe(201);
+	const dj = await response.json();
+	expect(dj.bio).toBeNull();
+	await expect(dialog).toBeHidden();
+	expect((await loadDJ(request, dj.id)).bio).toBeNull();
 });

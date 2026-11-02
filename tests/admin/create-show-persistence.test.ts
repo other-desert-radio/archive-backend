@@ -353,37 +353,38 @@ describe("Show editing persistence", () => {
 			expect(state.tags).toHaveLength(1);
 		}
 	});
-	test("rejects invalid shapes and values without writing", async () => {
-		for (const changes of [
-			{ id: undefined },
-			{ id: "1" },
-			{ id: 0 },
-			{ id: 1.5 },
-			{ id: Number.MAX_SAFE_INTEGER + 1 },
-			{ title: " " },
-			{ date: "2024-02-30" },
-			{ date: "2023-02-29" },
-			{ url: "ftp://example.com/show" },
-			{ mixcloud_image_small: undefined },
-			{ mixcloud_image_small: null },
-			{ mixcloud_image_small: "" },
-			{ mixcloud_image_small: " " },
-			{ mixcloud_image_small: "relative.jpg" },
-			{ mixcloud_image_small: "ftp://example.test/image" },
-			{ mixcloud_image_large: undefined },
-			{ mixcloud_image_large: null },
-			{ mixcloud_image_large: "" },
-			{ mixcloud_image_large: " " },
-			{ mixcloud_image_large: "relative.jpg" },
-			{ mixcloud_image_large: "ftp://example.test/image" },
-			{ duration: 0 },
-			{ duration: 1.5 },
-			{ duration: 2147483648 },
-			{ djs: [] },
-			{ djs: [0] },
-			{ djs: [99] },
-			{ tags: [1] },
-		]) {
+	test.each([
+		{ id: undefined },
+		{ id: "1" },
+		{ id: 0 },
+		{ id: 1.5 },
+		{ id: Number.MAX_SAFE_INTEGER + 1 },
+		{ title: " " },
+		{ date: "2024-02-30" },
+		{ date: "2023-02-29" },
+		{ url: "ftp://example.com/show" },
+		{ mixcloud_image_small: undefined },
+		{ mixcloud_image_small: null },
+		{ mixcloud_image_small: "" },
+		{ mixcloud_image_small: " " },
+		{ mixcloud_image_small: "relative.jpg" },
+		{ mixcloud_image_small: "ftp://example.test/image" },
+		{ mixcloud_image_large: undefined },
+		{ mixcloud_image_large: null },
+		{ mixcloud_image_large: "" },
+		{ mixcloud_image_large: " " },
+		{ mixcloud_image_large: "relative.jpg" },
+		{ mixcloud_image_large: "ftp://example.test/image" },
+		{ duration: 0 },
+		{ duration: 1.5 },
+		{ duration: 2147483648 },
+		{ djs: [] },
+		{ djs: [0] },
+		{ djs: [99] },
+		{ tags: [1] },
+	])(
+		"rejects invalid shapes and values without writing: %j",
+		async (changes) => {
 			const { database, state } = editingDatabase();
 			const before = structuredClone(state);
 			const response = await modifyShow(database, {
@@ -392,8 +393,8 @@ describe("Show editing persistence", () => {
 			});
 			expect(response.statusCode, response.body).toBe(400);
 			expect(state).toEqual(before);
-		}
-	});
+		},
+	);
 	test("returns 404 without creating tags for an unknown Show", async () => {
 		const { database, state } = editingDatabase();
 		const before = structuredClone(state);

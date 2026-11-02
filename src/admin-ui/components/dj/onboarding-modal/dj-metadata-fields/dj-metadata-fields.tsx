@@ -57,7 +57,6 @@ export const DJMetadataFields = ({
 			label="bio"
 			{...bio}
 			textarea
-			required
 		/>
 	</>
 );

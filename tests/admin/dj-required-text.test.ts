@@ -31,7 +31,6 @@ const submit = async (
 				? { id: "42", removeImage: "false", tags: "" }
 				: {}),
 			title: "DJ",
-			bio: "Bio",
 			...fields,
 		})),
 	});
@@ -39,7 +38,7 @@ const submit = async (
 
 describe("required DJ text", () => {
 	for (const route of ["create-dj", "modify-dj"])
-		for (const field of ["title", "bio"])
+		for (const field of ["title"])
 			for (const blank of ["", " \t\n\r ", "\u00a0\u2003"])
 				test(`${route} rejects blank ${field}: ${JSON.stringify(blank)}`, async () => {
 					const transaction = mock(() => {
@@ -53,53 +52,56 @@ describe("required DJ text", () => {
 					expect(transaction).not.toHaveBeenCalled();
 				});
 
-	test("editing saves trimmed title and biography", async () => {
-		const set = mock((values: Record<string, unknown>) => {
-			return {
-				where: () => ({
-					returning: () => ({
-						executeTakeFirst: async () => ({
-							id: 42,
-							createdAt: new Date("2026-01-01"),
-							image_small: null,
-							image_large: null,
-							...values,
+	for (const bio of [undefined, " \nUpdated bio\t ", "", "   "])
+		test(`editing saves trimmed title and biography: ${JSON.stringify(bio)}`, async () => {
+			const set = mock((values: Record<string, unknown>) => {
+				return {
+					where: () => ({
+						returning: () => ({
+							executeTakeFirst: async () => ({
+								id: 42,
+								createdAt: new Date("2026-01-01"),
+								image_small: null,
+								image_large: null,
+								...values,
+							}),
 						}),
 					}),
-				}),
+				};
+			});
+			const query = {
+				select: () => query,
+				where: () => query,
+				orderBy: () => query,
+				innerJoin: () => query,
+				execute: async () => [],
 			};
-		});
-		const query = {
-			select: () => query,
-			where: () => query,
-			orderBy: () => query,
-			innerJoin: () => query,
-			execute: async () => [],
-		};
-		const database = {
-			transaction: () => ({
-				execute: async (callback: (transaction: unknown) => Promise<unknown>) =>
-					callback({
-						updateTable: () => ({ set }),
-						deleteFrom: () => query,
-						selectFrom: () => query,
-					}),
-			}),
-		} as never;
-		const response = await submit("modify-dj", database, {
-			title: " \tDJ Updated\n ",
-			bio: " \nUpdated bio\t ",
-		});
-		expect(response.statusCode).toBe(200);
-		expect(response.json()).toMatchObject({
-			title: "DJ Updated",
-			bio: "<p>Updated bio</p>",
-		});
-		expect(set).toHaveBeenCalledWith(
-			expect.objectContaining({
+			const database = {
+				transaction: () => ({
+					execute: async (
+						callback: (transaction: unknown) => Promise<unknown>,
+					) =>
+						callback({
+							updateTable: () => ({ set }),
+							deleteFrom: () => query,
+							selectFrom: () => query,
+						}),
+				}),
+			} as never;
+			const response = await submit("modify-dj", database, {
+				title: " \tDJ Updated\n ",
+				...(bio === undefined ? {} : { bio }),
+			});
+			expect(response.statusCode).toBe(200);
+			expect(response.json()).toMatchObject({
 				title: "DJ Updated",
-				bio: "<p>Updated bio</p>",
-			}),
-		);
-	});
+				bio: (bio?.trim() ?? "") === "" ? null : "<p>Updated bio</p>",
+			});
+			expect(set).toHaveBeenCalledWith(
+				expect.objectContaining({
+					title: "DJ Updated",
+					bio: (bio?.trim() ?? "") === "" ? null : "<p>Updated bio</p>",
+				}),
+			);
+		});
 });

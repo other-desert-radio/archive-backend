@@ -33,7 +33,7 @@ export const createDJHandler =
 
 			const { image: uploadedImage, ...textRequest } = parsed.form;
 			textRequest.title = textRequest.title.trim();
-			textRequest.bio = textRequest.bio.trim();
+			textRequest.bio = textRequest.bio?.trim() ?? "";
 
 			if (!isMatching(CreateDJRequestPattern, textRequest)) {
 				request.log.warn(
@@ -73,6 +73,8 @@ export const createDJHandler =
 				}
 			}
 			const normalized = normalizeCreateDJRequest(textRequest);
+			const safeBio =
+				normalized.bio === "" ? null : plainTextToSafeHtml(normalized.bio);
 			const created = await database
 				.transaction()
 				.execute(async (transaction) => {
@@ -86,7 +88,7 @@ export const createDJHandler =
 						.insertInto("djs")
 						.values({
 							title: normalized.title,
-							bio: plainTextToSafeHtml(normalized.bio),
+							bio: safeBio,
 							image_small: imageVariants?.small ?? null,
 							image_large: imageVariants?.large ?? null,
 							socials:
@@ -119,7 +121,7 @@ export const createDJHandler =
 						id: insertedDJ.id,
 						createdAt: insertedDJ.createdAt,
 						title: normalized.title,
-						bio: plainTextToSafeHtml(normalized.bio),
+						bio: safeBio,
 						...(imageVariants === undefined
 							? {}
 							: {

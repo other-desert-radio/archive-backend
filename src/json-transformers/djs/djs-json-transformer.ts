@@ -71,7 +71,7 @@ export const transformDJs = ({
 		id: dj.id,
 		createdAt: dj.createdAt,
 		title: dj.title,
-		bio: sanitizeArchiveHtml(dj.bio),
+		bio: dj.bio === null ? null : sanitizeArchiveHtml(dj.bio),
 		...(dj.image_small === null || dj.image_large === null
 			? {}
 			: {

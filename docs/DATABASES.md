@@ -26,6 +26,12 @@ reviewed migrations explicitly, one step at a time; API startup checks
 connectivity and does not run migrations. Commands are in the
 [development guide](DEVELOPMENT.md#local-environment-and-startup).
 
+Start every new migration with a block comment describing the affected tables
+and changes. Follow the existing box-table style: list each column/change, its
+SQL type, and its constraints or purpose. Include data conversion/preservation
+behavior and any rollback data loss when relevant. Keep this comment accurate
+when changing a migration before it is applied.
+
 Archive tables use `createdAt timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP`.
 Existing rows received the migration time when this column was introduced.
 Authentication tables manage their own creation timestamps.
@@ -318,6 +324,12 @@ socials     text
 showTitle   text
 showDescription text
 ```
+
+Migration `0042_optional_dj_bio` makes `bio` nullable so inserts may omit it.
+Omitted, empty, or whitespace-only input is stored as SQL `NULL`; existing blank
+biographies are converted to `NULL`, preserving other text. API and archive JSON
+return `null` for absent bios. Rollback converts `NULL` to an empty string
+before restoring `NOT NULL`.
 
 `bio` and `socials` may contain limited HTML. Both are sanitized before they are
 exposed to the frontend; supported formatting is paragraphs, line breaks,

@@ -1,13 +1,18 @@
 import { expect, test } from "bun:test";
-import {
-	mixcloudCloudcasts,
-	validateMixcloudCloudcasts,
-} from "../../src/db/import-mixcloud.js";
+import { validateMixcloudCloudcasts } from "../../src/db/import-mixcloud.js";
 import { parseMixcloudEntry } from "../../src/utils/index.js";
+import fixture from "../fixtures/mixcloud-diagnostics.json";
+
+const mixcloudCloudcasts = validateMixcloudCloudcasts(fixture);
+
+const fixturePath = new URL(
+	"../fixtures/mixcloud-diagnostics.json",
+	import.meta.url,
+).pathname;
 
 test("diagnostic import uses shared suggestions and reports failures and missing dates", () => {
 	const result = Bun.spawnSync(
-		[process.execPath, "src/db/import-mixcloud.ts"],
+		[process.execPath, "src/db/import-mixcloud.ts", fixturePath],
 		{
 			env: {
 				...process.env,
@@ -22,6 +27,8 @@ test("diagnostic import uses shared suggestions and reports failures and missing
 		.filter((entry) => entry !== undefined);
 
 	expect(result.exitCode).toBe(0);
+	expect(suggestions).toHaveLength(2);
+	expect(stdout).toContain("Loaded 3 Mixcloud shows.");
 	expect(stdout).toContain(`success count: ${suggestions.length}`);
 	expect(stderr).toContain(
 		`failure count: ${mixcloudCloudcasts.data.length - suggestions.length}`,
@@ -42,8 +49,8 @@ test("diagnostic import uses shared suggestions and reports failures and missing
 	expect(stdout).toContain("key: /otherdesertradio/");
 });
 
-test("validates bundled JSON and rejects invalid source data before parsing", () => {
-	expect(mixcloudCloudcasts.data).toHaveLength(402);
+test("validates fixture JSON and rejects invalid source data before parsing", () => {
+	expect(mixcloudCloudcasts.data).toHaveLength(3);
 	expect(validateMixcloudCloudcasts(mixcloudCloudcasts)).toBe(
 		mixcloudCloudcasts,
 	);

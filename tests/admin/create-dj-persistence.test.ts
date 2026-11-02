@@ -26,7 +26,7 @@ type DJRow = {
 	id: number;
 	createdAt: Date;
 	title: string;
-	bio: string;
+	bio: string | null;
 	image_small: Buffer | null;
 	image_large: Buffer | null;
 	socials: string | null;
@@ -133,6 +133,19 @@ const createSourceImage = () =>
 		.toBuffer();
 
 describe("DJ creation persistence", () => {
+	for (const bio of [undefined, "", " \t\n "]) {
+		test(`creates a DJ without a biography: ${JSON.stringify(bio)}`, async () => {
+			const { database, state } = buildDatabase();
+			const response = await createDJ(database, {
+				title: "DJ No Bio",
+				...(bio === undefined ? {} : { bio }),
+			});
+			expect(response.statusCode).toBe(201);
+			expect(response.json().bio).toBeNull();
+			expect(state.djs[0]?.bio).toBeNull();
+		});
+	}
+
 	test("persists WebP variants without retaining the uploaded source", async () => {
 		const { database, state } = buildDatabase();
 		const response = await createDJ(database, {

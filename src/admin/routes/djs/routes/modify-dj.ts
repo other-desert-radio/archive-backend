@@ -33,7 +33,7 @@ export const modifyDJHandler =
 
 			const { image: uploadedImage, ...textRequest } = parsed.form;
 			textRequest.title = textRequest.title.trim();
-			textRequest.bio = textRequest.bio.trim();
+			textRequest.bio = textRequest.bio?.trim() ?? "";
 			if (!isMatching(ModifyDJRequestPattern, textRequest)) {
 				request.log.warn(
 					"DJ modification request rejected during field validation",
@@ -81,7 +81,8 @@ export const modifyDJHandler =
 			}
 
 			const normalized = normalizeCreateDJRequest(textRequest);
-			const safeBio = plainTextToSafeHtml(normalized.bio);
+			const safeBio =
+				normalized.bio === "" ? null : plainTextToSafeHtml(normalized.bio);
 			const safeSocials =
 				normalized.socials === null
 					? null

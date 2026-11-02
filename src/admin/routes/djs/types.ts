@@ -9,7 +9,7 @@ export const CreateDJRequestPattern = {
 	socials: P.optional(P.string.minLength(1)),
 	showTitle: P.optional(P.string.minLength(1)),
 	showDescription: P.optional(P.string.minLength(1)),
-	bio: P.string.minLength(1),
+	bio: P.optional(P.string),
 } as const;
 
 export type CreateDJRequest = P.infer<typeof CreateDJRequestPattern>;
@@ -24,7 +24,7 @@ export const ModifyDJRequestPattern = {
 	socials: P.optional(P.string.minLength(1)),
 	showTitle: P.optional(P.string.minLength(1)),
 	showDescription: P.optional(P.string.minLength(1)),
-	bio: P.string.minLength(1),
+	bio: P.optional(P.string),
 	removeImage: P.boolean,
 } as const;
 

@@ -300,7 +300,7 @@ export const CreateDJRequestPattern = {
   socials: P.optional(P.string.minLength(1)),
   showTitle: P.optional(P.string.minLength(1)),
   showDescription: P.optional(P.string.minLength(1)),
-  bio: P.string.minLength(1),
+  bio: P.optional(P.string),
 } as const;
 
 export type CreateDJRequest = P.infer<typeof CreateDJRequestPattern>;
@@ -418,31 +418,32 @@ when a tag is associated with a Mixcloud genre; absent database values are
 omitted from the JSON response.
 
 `POST /api/admin/create-dj` accepts `multipart/form-data` with required `title`
-and `bio` text fields, optional `tags`, `socials`, `showTitle`, and
-`showDescription` text fields, and an optional `image` file field. Tags are
-submitted as a comma-separated string. JSON requests are no longer accepted by
-this route. Admin API request logs include the request method, URL, content
-type, content length, and user agent. DJ multipart logs include field names and
-safe file metadata such as filename, MIME type, and byte length, but never image
-bytes or form contents. Application events use readable labels such as
-`[DJ Creation]` and `[DJ Creation [image upload]]` and include a shortened
-browser identifier.
+and optional `bio`, `tags`, `socials`, `showTitle`, and `showDescription` text
+fields, and an optional `image` file field. Tags are submitted as a
+comma-separated string. JSON requests are no longer accepted by this route.
+Admin API request logs include the request method, URL, content type, content
+length, and user agent. DJ multipart logs include field names and safe file
+metadata such as filename, MIME type, and byte length, but never image bytes or
+form contents. Application events use readable labels such as `[DJ Creation]`
+and `[DJ Creation [image upload]]` and include a shortened browser identifier.
 
 `POST /api/admin/modify-dj` accepts multipart form data with required numeric
-`id`, `title`, `bio`, `tags`, and boolean `removeImage` fields. It replaces all
-editable DJ metadata and direct DJ tags in one transaction: blank optional text
-fields clear their stored values, and `tags` replaces the direct-tag set without
-changing tags inherited from linked shows. An optional `image` is validated and
-processed like DJ creation; omitting it preserves the current image unless
-`removeImage` is true, which clears both stored WebP variants. A request cannot
-both upload an image and request its removal. The multipart limit permits all
-eight documented text fields and one optional image file. Successful edits
-return `200` with the admin DJ shape; an unknown DJ returns
-`404 { "error": "Not Found" }`.
+`id`, `title`, `tags`, and boolean `removeImage` fields, plus optional `bio`. It
+replaces all editable DJ metadata and direct DJ tags in one transaction: blank
+optional text fields clear their stored values, and `tags` replaces the
+direct-tag set without changing tags inherited from linked shows. An optional
+`image` is validated and processed like DJ creation; omitting it preserves the
+current image unless `removeImage` is true, which clears both stored WebP
+variants. A request cannot both upload an image and request its removal. The
+multipart limit permits all eight documented text fields and one optional image
+file. Successful edits return `200` with the admin DJ shape; an unknown DJ
+returns `404 { "error": "Not Found" }`.
 
-Both DJ mutation routes trim `title` and `bio` before validating them. Blank or
-whitespace-only required text returns `400 { "error": "Validation error" }`
-before image processing or database writes.
+Both DJ mutation routes trim `title` and `bio` before validating them. Omitted,
+blank, or whitespace-only bios are stored as SQL `NULL` and returned as JSON
+`null`; on edit this clears the previous bio. Blank or whitespace-only titles
+return `400 { "error": "Validation error" }` before image processing or database
+writes.
 
 `GET /api/admin/djs/:id/image/small` and `GET /api/admin/djs/:id/image/large`
 return the corresponding stored WebP image using the authenticated admin
@@ -604,8 +605,8 @@ their `P.infer` types. The combined fetch result uses the inferred page's `data`
 type. `created_time` must match the shared ISO timestamp regex (seconds and an
 explicit `Z` or numeric timezone, optional fractional seconds) and pass calendar
 and time-range validation. Invalid cloudcast data rejects the entire refresh.
-The diagnostic import script validates its bundled JSON with `PagePattern`
-before parsing; malformed source data throws `Invalid Mixcloud JSON`.
+The diagnostic import script validates its input JSON with `PagePattern` before
+parsing; malformed source data throws `Invalid Mixcloud JSON`.
 
 After fetching and validation, one transaction upserts `mixcloud_import` by
 exact source key. It maps source URL, name, and creation timestamp directly,

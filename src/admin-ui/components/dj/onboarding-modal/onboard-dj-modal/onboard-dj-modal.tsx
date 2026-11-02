@@ -74,8 +74,8 @@ export const OnboardDJModal = ({
 	}, [isOpen]);
 
 	const submit = async () => {
-		if (title.trim() === "" || bio.trim() === "") {
-			throw new Error("Title and bio are required.");
+		if (title.trim() === "") {
+			throw new Error("Title is required.");
 		}
 		if (imageError !== undefined) throw new Error(imageError);
 		await onSubmit(

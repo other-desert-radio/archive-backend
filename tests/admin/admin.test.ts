@@ -632,7 +632,7 @@ describe("admin route boundary", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: "/api/admin/create-dj",
-			...(await multipartPayload({ title: "DJ New" })),
+			...(await multipartPayload({ bio: "Bio" })),
 		});
 
 		expect(response.statusCode).toBe(400);

@@ -37,6 +37,6 @@ export const normalizeCreateDJRequest = (
 		socials: undefinedOrEmpty(socials) ? null : socials,
 		showTitle: undefinedOrEmpty(showTitle) ? null : showTitle,
 		showDescription: undefinedOrEmpty(showDescription) ? null : showDescription,
-		bio: request.bio.trim(),
+		bio: request.bio?.trim() ?? "",
 	};
 };
