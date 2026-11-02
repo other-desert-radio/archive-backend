@@ -38,3 +38,34 @@ describe("DJ card", () => {
 		expect(tags.props.children[0].props.children).toBe("Tag #4");
 	});
 });
+
+test("DJ card exposes separate Edit and Delete actions", () => {
+	const dj = {
+		id: 1,
+		createdAt: "2026-09-29T00:00:00.000Z",
+		title: "DJ One",
+		bio: "Bio",
+		shows: [],
+		tags: [],
+	};
+	let edited = false;
+	let deleted = false;
+	const card = renderDJCard(
+		dj,
+		new Map(),
+		dj.id,
+		(selected) => {
+			edited = selected === dj;
+		},
+		(selected) => {
+			deleted = selected === dj;
+		},
+	);
+	const actions = card.props.children[3].props.children;
+	expect(actions[0].props["aria-label"]).toBe("Edit DJ One");
+	expect(actions[1].props["aria-label"]).toBe("Delete DJ One");
+	actions[0].props.onClick();
+	actions[1].props.onClick();
+	expect(edited).toBe(true);
+	expect(deleted).toBe(true);
+});

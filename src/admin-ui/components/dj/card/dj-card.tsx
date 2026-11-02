@@ -44,20 +44,33 @@ export const renderDJCard = (
 	tagsById: ReadonlyMap<number, DJCardTag> = new Map(),
 	key: string | number = dj.id,
 	onEdit: (dj: DJsAdminRow) => void = editDJ,
+	onDelete?: (dj: DJsAdminRow) => void,
 ) => {
 	return (
 		<article className={styles.card} key={key}>
 			{djImage(dj)}
 			<h2 className={styles.title}>{dj.title}</h2>
 			{djTags(dj, tagsById)}
-			<button
-				type="button"
-				className={styles.edit}
-				onClick={() => onEdit(dj)}
-				aria-label={`Edit ${dj.title}`}
-			>
-				Edit
-			</button>
+			<div className={styles.actions}>
+				<button
+					type="button"
+					className={styles.edit}
+					onClick={() => onEdit(dj)}
+					aria-label={`Edit ${dj.title}`}
+				>
+					Edit
+				</button>
+				{onDelete && (
+					<button
+						type="button"
+						className={styles.delete}
+						onClick={() => onDelete(dj)}
+						aria-label={`Delete ${dj.title}`}
+					>
+						Delete
+					</button>
+				)}
+			</div>
 		</article>
 	);
 };

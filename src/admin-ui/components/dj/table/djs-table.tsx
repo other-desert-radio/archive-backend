@@ -14,6 +14,7 @@ type DJsTableProps = {
 	sortDirection: SortDirection;
 	onSort: (column: DJSortColumn) => void;
 	onEdit: (dj: DJsAdminRow) => void;
+	onDelete?: (dj: DJsAdminRow) => void;
 };
 
 const SanitizedHTML = ({ html }: { html: string }) => (
@@ -114,6 +115,7 @@ export const DJsTable = ({
 	sortDirection,
 	onSort,
 	onEdit,
+	onDelete,
 }: DJsTableProps) => (
 	<ResourceTable
 		rows={djs}
@@ -124,5 +126,6 @@ export const DJsTable = ({
 		sortDirection={sortDirection}
 		onSort={onSort}
 		onEdit={onEdit}
+		{...(onDelete === undefined ? {} : { onDelete })}
 	/>
 );

@@ -40,9 +40,12 @@ Migration `0038_add_show_description` adds nullable `shows.description` text for
 Mixcloud descriptions. Existing rows start with `NULL`; rollback drops the
 column and any stored descriptions.
 
-Relationship foreign keys use `ON DELETE CASCADE`. Deleting a DJ, show, or tag
-removes dependent association rows. Mixcloud tracking uses `ON DELETE SET NULL`
-and a trigger to retain source rows and clear their import timestamps; see the
+Relationship foreign keys use `ON DELETE CASCADE`, except `show_djs.dj_id`,
+which uses `ON DELETE RESTRICT`. A DJ cannot be deleted while any Show refers to
+them; first remove those associations or delete the Shows separately. Deleting a
+Show or tag removes dependent association rows; deleting an eligible DJ removes
+their direct tag associations. Mixcloud tracking uses `ON DELETE SET NULL` and a
+trigger to retain source rows and clear their import timestamps; see the
 [tracking deletion contract](MIXCLOUD_IMPORT.md#consistency-and-deletion).
 
 ## Archive dataset versions
@@ -458,6 +461,15 @@ dj_id       integer not null references djs(id)
 ```
 
 `UNIQUE (show_id, dj_id)` is required to prevent duplicate associations.
+
+Migration `0043_restrict_dj_deletion` replaces the DJ foreign key's cascading
+delete with `ON DELETE RESTRICT`, preserving all existing rows. This applies to
+API requests, direct SQL, and the bulk DJ deletion CLI: bulk deletion fails
+while any targeted DJ has linked Shows. Show deletion still cascades to its
+associations. Apply the migration before deploying DJ deletion; startup does not
+migrate. Rollback restores cascading DJ deletion without changing existing rows.
+The focused migration test uses `DJ_MIGRATION_TEST_DATABASE_URL` with an
+isolated schema in a disposable database.
 
 Example:
 
