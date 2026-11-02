@@ -51,6 +51,7 @@ for (const width of [1280, 390, 320]) {
 		await expect(dialog).toBeVisible();
 		release();
 		await expect(dialog.getByRole("alert")).toBeVisible();
+		await expect(page.getByText("Successfully deleted show.")).toHaveCount(0);
 		await page.route("**/api/admin/shows", (route) =>
 			route.fulfill({ status: 500 }),
 		);
@@ -66,6 +67,13 @@ for (const width of [1280, 390, 320]) {
 				"Show changes saved, but the latest resource lists could not be loaded.",
 			),
 		).toBeVisible();
+		const toast = page
+			.getByRole("status")
+			.filter({ hasText: "Successfully deleted show." });
+		await expect(toast).toContainText(show.title);
+		await page.screenshot({ path: `/tmp/delete-show-toast-${width}.png` });
+		await page.getByRole("button", { name: "Dismiss notification" }).click();
+		await expect(toast).toBeHidden();
 		expect(attempts).toBe(2);
 	});
 }

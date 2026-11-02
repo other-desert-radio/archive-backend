@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ToastModal } from "../components/shared/modal/index.js";
 import type { ResourceViewMode } from "../components/shared/resource-views/index.js";
 import {
 	ResourceGrid,
@@ -48,6 +49,7 @@ export const ShowsPage = () => {
 			typeof window !== "undefined" &&
 			new URLSearchParams(window.location.search).has("mixcloud"),
 	);
+	const [deletedShow, setDeletedShow] = useState<ShowsAdminRow>();
 	const [deletingShow, setDeletingShow] = useState<ShowsAdminRow>();
 	const [editingShow, setEditingShow] = useState<ShowsAdminRow>();
 	const loadVersion = useRef(0);
@@ -321,12 +323,25 @@ export const ShowsPage = () => {
 					}}
 				/>
 			)}
+			{deletedShow !== undefined && (
+				<ToastModal
+					key={deletedShow.id}
+					onDismiss={() => setDeletedShow(undefined)}
+					message={
+						<>
+							<strong>Successfully deleted show.</strong>
+							<div>{deletedShow.title}</div>
+						</>
+					}
+				/>
+			)}
 			{deletingShow !== undefined && (
 				<DeleteShowModal
 					key={deletingShow.id}
 					show={deletingShow}
 					onClose={() => setDeletingShow(undefined)}
 					onDeleted={(id) => {
+						setDeletedShow(deletingShow);
 						setDeletingShow(undefined);
 						requestAnimationFrame(() =>
 							resourceRef.current
