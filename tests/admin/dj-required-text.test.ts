@@ -95,7 +95,7 @@ describe("required DJ text", () => {
 			expect(response.statusCode).toBe(200);
 			expect(response.json()).toMatchObject({
 				title: "DJ Updated",
-				bio: (bio?.trim() ?? "") === "" ? "" : "<p>Updated bio</p>",
+				bio: (bio?.trim() ?? "") === "" ? null : "<p>Updated bio</p>",
 			});
 			expect(set).toHaveBeenCalledWith(
 				expect.objectContaining({
