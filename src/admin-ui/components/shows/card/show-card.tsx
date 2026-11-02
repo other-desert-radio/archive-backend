@@ -87,6 +87,7 @@ export const renderShowCard = (
 				{onDelete && (
 					<button
 						type="button"
+						className={styles.delete}
 						onClick={() => onDelete(show)}
 						aria-label={`Delete ${show.title}`}
 					>

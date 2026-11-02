@@ -63,6 +63,7 @@ export const renderDJCard = (
 				{onDelete && (
 					<button
 						type="button"
+						className={styles.delete}
 						onClick={() => onDelete(dj)}
 						aria-label={`Delete ${dj.title}`}
 					>
