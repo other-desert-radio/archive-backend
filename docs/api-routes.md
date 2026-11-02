@@ -605,8 +605,8 @@ their `P.infer` types. The combined fetch result uses the inferred page's `data`
 type. `created_time` must match the shared ISO timestamp regex (seconds and an
 explicit `Z` or numeric timezone, optional fractional seconds) and pass calendar
 and time-range validation. Invalid cloudcast data rejects the entire refresh.
-The diagnostic import script validates its bundled JSON with `PagePattern`
-before parsing; malformed source data throws `Invalid Mixcloud JSON`.
+The diagnostic import script validates its input JSON with `PagePattern` before
+parsing; malformed source data throws `Invalid Mixcloud JSON`.
 
 After fetching and validation, one transaction upserts `mixcloud_import` by
 exact source key. It maps source URL, name, and creation timestamp directly,

@@ -17,12 +17,6 @@ export const validateMixcloudCloudcasts = (
 	return value;
 };
 
-export const mixcloudCloudcasts = validateMixcloudCloudcasts(
-	JSON.parse(
-		readFileSync(new URL("../res/mixcloud.json", import.meta.url), "utf8"),
-	),
-);
-
 /** Format an application error message in red terminal text. */
 const red = (text: string): string => `\u001b[31m${text}\u001b[0m`;
 
@@ -38,6 +32,14 @@ type ParsedShow = MixcloudParserResult & {
 };
 
 if (import.meta.main) {
+	const mixcloudCloudcasts = validateMixcloudCloudcasts(
+		JSON.parse(
+			readFileSync(
+				process.argv[2] ?? new URL("../res/mixcloud.json", import.meta.url),
+				"utf8",
+			),
+		),
+	);
 	console.log(`Loaded ${mixcloudCloudcasts.data.length} Mixcloud shows.`);
 
 	const collection: ParsedShow[] = [];

@@ -12,9 +12,11 @@ from `human_docs/databases_human.md`. Show creation now supports transactional
 import; see the API contract. This branch includes the WIP parser and launcher.
 `./scripts/import-mixcloud` runs `src/db/import-mixcloud.ts`, which reads
 `src/res/mixcloud.json`, parses cloudcast names, and prints diagnostics without
-database writes. Keep that diagnostic parsing workflow read-only; UI/API imports
-are separate. The following documents the tracking schema and import
-requirements; the migration does not enable imports or add show soft deletion.
+database writes. When invoked directly, `bun src/db/import-mixcloud.ts <path>`
+reads an alternate JSON file; unit tests use a small tracked fixture. Keep that
+diagnostic parsing workflow read-only; UI/API imports are separate. The
+following documents the tracking schema and import requirements; the migration
+does not enable imports or add show soft deletion.
 
 ### `mixcloud_import`
 
