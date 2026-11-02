@@ -11,6 +11,8 @@ for (const scenario of [
 	"invalid",
 	"oversized",
 	"failure",
+	"unknown failure",
+	"empty failure",
 ] as const) {
 	test(`DJ deletion preview: ${scenario}`, async () => {
 		const queries: string[] = [];
@@ -21,6 +23,8 @@ for (const scenario of [
 						query: async (query: string) => {
 							queries.push(query);
 							if (scenario === "failure") throw new Error("offline");
+							if (scenario === "unknown failure") throw "offline";
+							if (scenario === "empty failure") throw new Error(" ");
 							return {
 								rows: query.includes('from "djs"')
 									? scenario === "missing"
@@ -56,6 +60,8 @@ for (const scenario of [
 					invalid: 400,
 					oversized: 404,
 					failure: 500,
+					"unknown failure": 500,
+					"empty failure": 500,
 				}[scenario],
 			);
 			if (scenario === "success")
@@ -71,7 +77,13 @@ for (const scenario of [
 			if (scenario === "invalid" || scenario === "oversized")
 				expect(queries).toEqual([]);
 			if (scenario === "failure")
-				expect(response.json()).toEqual({ error: "Internal Server Error" });
+				expect(response.json()).toEqual({
+					error: "Unable to load DJ deletion preview. offline",
+				});
+			if (scenario === "unknown failure" || scenario === "empty failure")
+				expect(response.json()).toEqual({
+					error: "Unable to load DJ deletion preview. Please try again.",
+				});
 		} finally {
 			await app.close();
 			await db.destroy();

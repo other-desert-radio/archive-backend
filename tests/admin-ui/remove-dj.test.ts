@@ -46,3 +46,14 @@ test("surfaces preview and deletion failures for retry", async () => {
 	await expect(loadDJDeleteImpact(42, failure)).rejects.toThrow("loaded");
 	await expect(removeDJ({ id: 42 }, failure)).rejects.toThrow("deleted");
 });
+
+test("surfaces the deletion preview error detail in the dialog message", async () => {
+	await expect(
+		loadDJDeleteImpact(42, async () =>
+			Response.json(
+				{ error: "Unable to load DJ deletion preview. offline" },
+				{ status: 500 },
+			),
+		),
+	).rejects.toThrow("Unable to load DJ deletion preview. offline");
+});

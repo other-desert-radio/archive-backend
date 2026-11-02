@@ -60,6 +60,9 @@ export const getDJDeleteImpactHandler =
 				{ err: error },
 				`[DJ Deletion Preview] failed -- id: ${id}`,
 			);
-			return reply.code(500).send({ error: "Internal Server Error" });
+			const detail = error instanceof Error ? error.message.trim() : "";
+			return reply.code(500).send({
+				error: `Unable to load DJ deletion preview. ${detail || "Please try again."}`,
+			});
 		}
 	};

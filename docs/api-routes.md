@@ -327,8 +327,17 @@ app.post<{
 ```
 
 Use `400` for invalid client input and `500` for unexpected database or server
-failures. Log unexpected failures with `request.log.error` before returning the
-generic internal-error response.
+failures. Log unexpected failures with `request.log.error` before responding.
+Authenticated admin errors should identify the failed operation and include
+useful error detail in the existing `{ error: string }` response so the website
+can display the cause, rather than only "Internal Server Error". The DJ deletion
+preview includes a non-empty `Error.message`, with a retry message for empty or
+unknown errors. Keep the stack and full error object in server logs; never
+serialize the entire exception into a response. Only expose messages appropriate
+for the caller: messages containing credentials, SQL, or private data must be
+replaced with safe detail. Public endpoints retain generic unexpected errors.
+Admin UI loaders should preserve the server's error text in the visible error
+message instead of replacing it with a generic failure.
 
 The current authenticated mutation routes are:
 
@@ -488,8 +497,8 @@ field names, status codes, filenames, sizes, and a shortened client identifier
 where applicable. Keep additional machine-readable context in the structured
 object; the server formats it underneath the message in gray text. Use `info`
 for normal lifecycle events, `warn` for rejected input, and `error` with
-`{ err: error }` for unexpected failures before returning a generic server
-error.
+`{ err: error }` for unexpected failures before returning an error response
+following the admin error guidance above.
 
 Never log passwords, authorization headers, full request bodies, form values,
 image/audio bytes, or other secrets. For uploads, log only safe metadata such as
