@@ -759,3 +759,13 @@ Unexpected publication failures are logged and return an operation-specific
 Stream failures close the connection for browser reconnection. Revisions remain
 decimal strings throughout JSON to preserve bigint precision. No endpoint
 accepts Git commands, repository paths, or branch overrides from clients.
+
+### Show deletion
+
+`POST /api/admin/remove-show` accepts `{id}` and returns `{id}` for admins and
+editors. Invalid request shapes return 400; missing or out-of-range database IDs
+return 404; transaction failures return 500. Deletion atomically removes
+completed upload tracking and the Show. Existing cascades remove DJ/tag
+associations and clear the retained Mixcloud source's `show_id` and
+`imported_at`. Source metadata, DJs, and tags remain. No Mixcloud provider
+request is made.

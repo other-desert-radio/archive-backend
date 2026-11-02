@@ -3,4 +3,6 @@ export type {
 	AdminShowsJSON,
 	CreateShowRequest,
 	ModifyShowRequest,
+	RemoveShowRequest,
+	RemoveShowResponse,
 } from "./types.js";

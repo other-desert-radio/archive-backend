@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ToastModal } from "../components/shared/modal/index.js";
 import type { ResourceViewMode } from "../components/shared/resource-views/index.js";
 import {
 	ResourceGrid,
 	ResourceView,
 } from "../components/shared/resource-views/index.js";
 import {
+	DeleteShowModal,
 	EditShowModal,
 	filterShows,
 	OnboardShowModal,
@@ -47,8 +49,11 @@ export const ShowsPage = () => {
 			typeof window !== "undefined" &&
 			new URLSearchParams(window.location.search).has("mixcloud"),
 	);
+	const [deletedShow, setDeletedShow] = useState<ShowsAdminRow>();
+	const [deletingShow, setDeletingShow] = useState<ShowsAdminRow>();
 	const [editingShow, setEditingShow] = useState<ShowsAdminRow>();
 	const loadVersion = useRef(0);
+	const resourceRef = useRef<HTMLDivElement>(null);
 	const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
 	const [pendingLoaded, setPendingLoaded] = useState(false);
 	const [pendingLoading, setPendingLoading] = useState(false);
@@ -97,7 +102,7 @@ export const ShowsPage = () => {
 				if (version === loadVersion.current) {
 					if (keepResults)
 						setReloadError(
-							"Show saved, but the latest resource lists could not be loaded.",
+							"Show changes saved, but the latest resource lists could not be loaded.",
 						);
 					else setError("The shows could not be loaded.");
 				}
@@ -172,7 +177,15 @@ export const ShowsPage = () => {
 
 	return (
 		<>
-			<div inert={isModalOpen || pendingOpen || editingShow !== undefined}>
+			<div
+				ref={resourceRef}
+				inert={
+					isModalOpen ||
+					pendingOpen ||
+					editingShow !== undefined ||
+					deletingShow !== undefined
+				}
+			>
 				<ResourceView
 					title="SHOWS"
 					isLoading={isLoading}
@@ -233,6 +246,7 @@ export const ShowsPage = () => {
 												djsById,
 												key,
 												handleEditShow,
+												setDeletingShow,
 											)
 										}
 									/>
@@ -245,6 +259,7 @@ export const ShowsPage = () => {
 										sortDirection={sortDirection}
 										onSort={handleSort}
 										onEdit={handleEditShow}
+										onDelete={setDeletingShow}
 									/>
 								);
 						}
@@ -305,6 +320,37 @@ export const ShowsPage = () => {
 							...items.filter((item) => item.id !== show.id),
 						]);
 						refreshShows(true);
+					}}
+				/>
+			)}
+			{deletedShow !== undefined && (
+				<ToastModal
+					key={deletedShow.id}
+					onDismiss={() => setDeletedShow(undefined)}
+					message={
+						<>
+							<strong>Successfully deleted show.</strong>
+							<div>{deletedShow.title}</div>
+						</>
+					}
+				/>
+			)}
+			{deletingShow !== undefined && (
+				<DeleteShowModal
+					key={deletingShow.id}
+					show={deletingShow}
+					onClose={() => setDeletingShow(undefined)}
+					onDeleted={(id) => {
+						setDeletedShow(deletingShow);
+						setDeletingShow(undefined);
+						requestAnimationFrame(() =>
+							resourceRef.current
+								?.querySelector<HTMLButtonElement>("button")
+								?.focus(),
+						);
+						setShows((items) => items.filter((show) => show.id !== id));
+						refreshShows(true);
+						refreshPending();
 					}}
 				/>
 			)}

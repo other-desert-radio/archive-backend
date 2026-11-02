@@ -62,6 +62,7 @@ export const renderShowCard = (
 	djsById: ReadonlyMap<number, ShowCardDJ> = new Map(),
 	key: string | number = show.id,
 	onEdit: (show: ShowsAdminRow) => void,
+	onDelete?: (show: ShowsAdminRow) => void,
 ) => {
 	return (
 		<article className={styles.card} key={key}>
@@ -74,14 +75,25 @@ export const renderShowCard = (
 					<SanitizedHTML html={show.description} />
 				</div>
 			)}
-			<button
-				type="button"
-				className={styles.edit}
-				onClick={() => onEdit(show)}
-				aria-label={`Edit ${show.title}`}
-			>
-				Edit
-			</button>
+			<div className={styles.actions}>
+				<button
+					type="button"
+					className={styles.edit}
+					onClick={() => onEdit(show)}
+					aria-label={`Edit ${show.title}`}
+				>
+					Edit
+				</button>
+				{onDelete && (
+					<button
+						type="button"
+						onClick={() => onDelete(show)}
+						aria-label={`Delete ${show.title}`}
+					>
+						Delete
+					</button>
+				)}
+			</div>
 		</article>
 	);
 };
