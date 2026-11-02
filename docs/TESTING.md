@@ -61,7 +61,11 @@ formatting: stage remaining changes or stash unstaged changes before retrying.
 and merge queue group. It installs locked dependencies with Bun 1.4.2 (matching
 the Docker runtime), then runs typecheck, lint, documentation checks, and
 `bun run test`, including the admin build. Database tests without their explicit
-test URLs skip; Playwright integration suites remain a separate check.
+test URLs skip; Playwright integration suites remain a separate check. The test
+step supplies a dummy `DATABASE_URL` on a closed port so modules can initialize
+their pools while unit tests use injected database doubles. It does not provide
+a live database or enable the opt-in database tests. It also supplies test-only
+auth settings for modules that initialize Better Auth.
 
 To enforce this before merging, configure an active branch ruleset for the
 default branch in GitHub **Settings → Rules → Rulesets**. Enable **Require

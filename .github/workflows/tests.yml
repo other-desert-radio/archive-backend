@@ -23,3 +23,7 @@ jobs:
       - run: bun run lint
       - run: bun run docs:check
       - run: bun run test
+        env:
+          DATABASE_URL: postgres://test:test@127.0.0.1:1/archive_test
+          BETTER_AUTH_SECRET: test-secret-that-is-at-least-32-characters-long
+          BETTER_AUTH_URL: http://localhost:3000
