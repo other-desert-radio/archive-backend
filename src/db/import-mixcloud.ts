@@ -3,6 +3,7 @@ import {
 	type MixcloudCloudcasts,
 	PagePattern,
 } from "../admin/routes/mixcloud-imports/types.js";
+// @ts-ignore: Local, gitignored input is absent in CI; runtime validation handles its shape.
 import mixcloudCloudcastsJson from "../res/mixcloud.json" with { type: "json" };
 import {
 	type MixcloudParserResult,
