@@ -401,7 +401,7 @@ for (const bio of ["", "   "]) {
 		);
 		await dialog.getByLabel("bio", { exact: true }).fill(bio);
 		await save(page);
-		expect((await loadDJ(request, dj.id)).bio).toBe("");
+		expect((await loadDJ(request, dj.id)).bio).toBeNull();
 		await page.reload();
 		await expect(
 			(await openEditor(page, dj.id)).getByLabel("bio", { exact: true }),
@@ -426,7 +426,7 @@ test("creates a DJ with only a title", async ({ page, request }) => {
 	const response = await responsePromise;
 	expect(response.status()).toBe(201);
 	const dj = await response.json();
-	expect(dj.bio).toBe("");
+	expect(dj.bio).toBeNull();
 	await expect(dialog).toBeHidden();
-	expect((await loadDJ(request, dj.id)).bio).toBe("");
+	expect((await loadDJ(request, dj.id)).bio).toBeNull();
 });

@@ -411,7 +411,7 @@ describe("archive export documents", () => {
 			],
 		});
 
-		expect(documents.djs.find((dj) => dj.id === 2)?.bio).toBe("");
+		expect(documents.djs.find((dj) => dj.id === 2)?.bio).toBeNull();
 
 		expect(documents.djsBrief).toEqual([
 			{

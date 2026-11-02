@@ -174,7 +174,7 @@ export const modifyDJHandler =
 				id: modified.updated.id,
 				createdAt: modified.updated.createdAt,
 				title: modified.updated.title,
-				bio: modified.updated.bio ?? "",
+				bio: modified.updated.bio,
 				...(modified.updated.image_small === null ||
 				modified.updated.image_large === null
 					? {}

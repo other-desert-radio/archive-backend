@@ -141,7 +141,7 @@ describe("DJ creation persistence", () => {
 				...(bio === undefined ? {} : { bio }),
 			});
 			expect(response.statusCode).toBe(201);
-			expect(response.json().bio).toBe("");
+			expect(response.json().bio).toBeNull();
 			expect(state.djs[0]?.bio).toBeNull();
 		});
 	}

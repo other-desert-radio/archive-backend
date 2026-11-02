@@ -63,7 +63,7 @@ describe("DJ JSON transformer", () => {
 		);
 	});
 
-	test("exposes stored images and converts a null bio to empty JSON text", () => {
+	test("exposes stored images and preserves a null bio in JSON", () => {
 		expect(
 			transformDJs({
 				djs: [
@@ -88,7 +88,7 @@ describe("DJ JSON transformer", () => {
 				id: 42,
 				createdAt: new Date("2026-01-02T00:00:00.000Z"),
 				title: "DJ Image",
-				bio: "",
+				bio: null,
 				image_small: "/api/admin/djs/42/image/small",
 				image_large: "/api/admin/djs/42/image/large",
 				shows: [],

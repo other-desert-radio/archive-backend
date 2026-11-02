@@ -328,8 +328,8 @@ showDescription text
 Migration `0042_optional_dj_bio` makes `bio` nullable so inserts may omit it.
 Omitted, empty, or whitespace-only input is stored as SQL `NULL`; existing blank
 biographies are converted to `NULL`, preserving other text. API and archive JSON
-continue returning an empty string for absent bios. Rollback converts `NULL` to
-an empty string before restoring `NOT NULL`.
+return `null` for absent bios. Rollback converts `NULL` to an empty string
+before restoring `NOT NULL`.
 
 `bio` and `socials` may contain limited HTML. Both are sanitized before they are
 exposed to the frontend; supported formatting is paragraphs, line breaks,

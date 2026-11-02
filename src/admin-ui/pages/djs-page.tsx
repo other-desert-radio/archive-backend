@@ -101,7 +101,7 @@ export const DJsPage = () => {
 		return {
 			id: editingDJ.id,
 			title: editingDJ.title,
-			bio: editingDJ.bio,
+			bio: editingDJ.bio ?? "",
 			...(editingDJ.socials === undefined
 				? {}
 				: { socials: editingDJ.socials }),

@@ -121,7 +121,7 @@ export const createDJHandler =
 						id: insertedDJ.id,
 						createdAt: insertedDJ.createdAt,
 						title: normalized.title,
-						bio: safeBio ?? "",
+						bio: safeBio,
 						...(imageVariants === undefined
 							? {}
 							: {

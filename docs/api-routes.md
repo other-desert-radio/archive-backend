@@ -440,8 +440,8 @@ file. Successful edits return `200` with the admin DJ shape; an unknown DJ
 returns `404 { "error": "Not Found" }`.
 
 Both DJ mutation routes trim `title` and `bio` before validating them. Omitted,
-blank, or whitespace-only bios are stored as SQL `NULL` and returned as an empty
-string; on edit this clears the previous bio. Blank or whitespace-only titles
+blank, or whitespace-only bios are stored as SQL `NULL` and returned as JSON
+`null`; on edit this clears the previous bio. Blank or whitespace-only titles
 return `400 { "error": "Validation error" }` before image processing or database
 writes.
 

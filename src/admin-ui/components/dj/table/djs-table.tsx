@@ -97,8 +97,8 @@ export const djColumns: ResourceTableColumn<DJsAdminRow, DJSortColumn>[] = [
 	{
 		key: "bio",
 		label: "bio",
-		render: (dj) => <SanitizedHTML html={dj.bio} />,
-		compare: (left, right) => compareText(left.bio, right.bio),
+		render: (dj) => <SanitizedHTML html={dj.bio ?? ""} />,
+		compare: (left, right) => compareText(left.bio ?? "", right.bio ?? ""),
 	},
 	{
 		key: "shows",
