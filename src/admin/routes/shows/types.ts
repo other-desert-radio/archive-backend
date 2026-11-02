@@ -1,7 +1,6 @@
 import { P } from "ts-pattern";
 import type { ShowsJSON } from "../../../json-transformers/index.js";
 import type { AdminApiReply } from "../types.js";
-import type { RemoveShowRequestPattern } from "./routes/remove-show.js";
 
 /** Admin list responses retain the creation timestamp selected from the database. */
 export type AdminShowsJSON = ShowsJSON & {
@@ -56,6 +55,9 @@ export type GetShowImageRoute = {
 	Reply: AdminApiReply<Buffer>;
 };
 
+export const RemoveShowRequestPattern = {
+	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
+} as const;
 export type RemoveShowRequest = P.infer<typeof RemoveShowRequestPattern>;
 export type RemoveShowResponse = { id: number };
 export type RemoveShowRoute = {

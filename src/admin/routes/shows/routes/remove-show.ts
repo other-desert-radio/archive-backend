@@ -1,13 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { isMatching, P } from "ts-pattern";
+import { isMatching } from "ts-pattern";
 import { isDatabaseId } from "../../../../utils/index.js";
 import { clientDescription } from "../../../logging.js";
 import type { TypedDatabase } from "../../types.js";
 import type { RemoveShowRoute } from "../types.js";
-
-export const RemoveShowRequestPattern = {
-	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
-} as const;
+import { RemoveShowRequestPattern } from "../types.js";
 
 export const removeShowHandler =
 	(database: TypedDatabase) =>
