@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+	DeleteDJModal,
 	type DJSortColumn,
 	DJsTable,
 	DJToolbar,
@@ -11,6 +12,7 @@ import {
 	type SortDirection,
 	sortDJs,
 } from "../components/dj/index.js";
+import { ToastModal } from "../components/shared/modal/index.js";
 import type { ResourceViewMode } from "../components/shared/resource-views/index.js";
 import {
 	ResourceGrid,
@@ -32,25 +34,45 @@ export const DJsPage = () => {
 	const [sortColumn, setSortColumn] = useState<DJSortColumn>("id");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [deletingDJ, setDeletingDJ] = useState<DJsAdminRow>();
+	const [deletedDJ, setDeletedDJ] = useState<DJsAdminRow>();
+	const [reloadError, setReloadError] = useState<string>();
+	const loadVersion = useRef(0);
+	const resourceRef = useRef<HTMLDivElement>(null);
 	const [editingDJ, setEditingDJ] = useState<DJsAdminRow>();
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string>();
 
-	const refreshDJs = useCallback(() => {
-		setIsLoading(true);
+	const refreshDJs = useCallback((keepResults = false) => {
+		const version = ++loadVersion.current;
+		if (!keepResults) setIsLoading(true);
+		setReloadError(undefined);
 		setError(undefined);
 
 		Promise.all([loadDJs(), loadTags()])
 			.then(([loadedDJs, loadedTags]) => {
+				if (version !== loadVersion.current) return;
 				setDJs(loadedDJs);
 				setTags(loadedTags);
 			})
-			.catch(() => setError("The DJs could not be loaded."))
-			.finally(() => setIsLoading(false));
+			.catch(() => {
+				if (version !== loadVersion.current) return;
+				if (keepResults)
+					setReloadError(
+						"DJ changes saved, but the latest resource lists could not be loaded.",
+					);
+				else setError("The DJs could not be loaded.");
+			})
+			.finally(() => {
+				if (version === loadVersion.current) setIsLoading(false);
+			});
 	}, []);
 
 	useEffect(() => {
 		refreshDJs();
+		return () => {
+			loadVersion.current += 1;
+		};
 	}, [refreshDJs]);
 
 	const visibleDJs = useMemo(
@@ -120,51 +142,76 @@ export const DJsPage = () => {
 	}, [editingDJ, tagsById]);
 
 	return (
-		<div className="dj-page">
-			<ResourceView
-				title="DJs"
-				isLoading={isLoading}
-				error={error}
-				onRetry={refreshDJs}
-				isEmpty={djs.length === 0}
-				emptyMessage="No DJs have been added yet."
-				hasNoResults={djs.length > 0 && visibleDJs.length === 0}
-				noResultsMessage="No DJs match your search."
-				toolbar={
-					<DJToolbar
-						query={query}
-						onQueryChange={setQuery}
-						viewMode={viewMode}
-						onViewModeChange={handleViewModeChange}
-						onAddDJ={() => setIsModalOpen(true)}
-					/>
+		<>
+			<div
+				className="dj-page"
+				ref={resourceRef}
+				inert={
+					isModalOpen || editingDJ !== undefined || deletingDJ !== undefined
 				}
 			>
-				{(() => {
-					switch (viewMode) {
-						case "grid":
-							return (
-								<ResourceGrid
-									rows={visibleDJs}
-									rowKey={(dj) => dj.id}
-									renderCard={(dj, key) =>
-										renderDJCard(dj, tagsById, key, handleEditDJ)
-									}
-								/>
-							);
-						case "table":
-							return (
-								<DJsTable
-									djs={visibleDJs}
-									sortColumn={sortColumn}
-									sortDirection={sortDirection}
-									onSort={handleSort}
-									onEdit={handleEditDJ}
-								/>
-							);
+				<ResourceView
+					title="DJs"
+					isLoading={isLoading}
+					error={error}
+					onRetry={() => refreshDJs()}
+					banner={
+						reloadError && (
+							<div role="status">
+								<p>{reloadError}</p>
+								<button type="button" onClick={() => refreshDJs(true)}>
+									Reload lists
+								</button>
+							</div>
+						)
 					}
-				})()}
-			</ResourceView>
+					isEmpty={djs.length === 0}
+					emptyMessage="No DJs have been added yet."
+					hasNoResults={djs.length > 0 && visibleDJs.length === 0}
+					noResultsMessage="No DJs match your search."
+					toolbar={
+						<DJToolbar
+							query={query}
+							onQueryChange={setQuery}
+							viewMode={viewMode}
+							onViewModeChange={handleViewModeChange}
+							onAddDJ={() => setIsModalOpen(true)}
+						/>
+					}
+				>
+					{(() => {
+						switch (viewMode) {
+							case "grid":
+								return (
+									<ResourceGrid
+										rows={visibleDJs}
+										rowKey={(dj) => dj.id}
+										renderCard={(dj, key) =>
+											renderDJCard(
+												dj,
+												tagsById,
+												key,
+												handleEditDJ,
+												setDeletingDJ,
+											)
+										}
+									/>
+								);
+							case "table":
+								return (
+									<DJsTable
+										djs={visibleDJs}
+										sortColumn={sortColumn}
+										sortDirection={sortDirection}
+										onSort={handleSort}
+										onEdit={handleEditDJ}
+										onDelete={setDeletingDJ}
+									/>
+								);
+						}
+					})()}
+				</ResourceView>
+			</div>
 			<OnboardDJModal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
@@ -176,6 +223,36 @@ export const DJsPage = () => {
 				onClose={() => setEditingDJ(undefined)}
 				onSubmit={handleModifyDJ}
 			/>
-		</div>
+			{deletedDJ !== undefined && (
+				<ToastModal
+					key={deletedDJ.id}
+					onDismiss={() => setDeletedDJ(undefined)}
+					message={
+						<>
+							<strong>Successfully deleted DJ.</strong>
+							<div>{deletedDJ.title}</div>
+						</>
+					}
+				/>
+			)}
+			{deletingDJ !== undefined && (
+				<DeleteDJModal
+					key={deletingDJ.id}
+					dj={deletingDJ}
+					onClose={() => setDeletingDJ(undefined)}
+					onDeleted={(id) => {
+						setDeletedDJ(deletingDJ);
+						setDeletingDJ(undefined);
+						setDJs((items) => items.filter((dj) => dj.id !== id));
+						refreshDJs(true);
+						requestAnimationFrame(() =>
+							resourceRef.current
+								?.querySelector<HTMLButtonElement>("button")
+								?.focus(),
+						);
+					}}
+				/>
+			)}
+		</>
 	);
 };

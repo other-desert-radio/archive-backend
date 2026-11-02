@@ -96,3 +96,8 @@
 	background: transparent;
 	font-weight: bold;
 }
+
+.actions button.destructive:disabled {
+	color: #888;
+	border-color: #888;
+}

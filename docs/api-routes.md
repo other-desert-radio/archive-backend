@@ -769,3 +769,17 @@ completed upload tracking and the Show. Existing cascades remove DJ/tag
 associations and clear the retained Mixcloud source's `show_id` and
 `imported_at`. Source metadata, DJs, and tags remain. No Mixcloud provider
 request is made.
+
+### DJ deletion
+
+`GET /api/admin/djs/:id/delete-impact` returns
+`{dj:{id,title},shows:{id,title}[]}` with linked Shows sorted by title then ID.
+`POST /api/admin/remove-dj` accepts `{id}` and returns `{id}` after hard
+deletion. Both inherit the admin/editor session boundary. Invalid IDs return
+400, missing DJs return 404, and deletion with linked Shows returns 409. The
+database foreign key also rejects concurrent associations; callers must remove
+those associations or delete the Shows separately. Eligible deletion removes
+stored DJ images and direct tag links, preserving tag records. Mixcloud name
+matching continues to apply its usual import review rules. Apply migration
+`0043_restrict_dj_deletion` before deploying this route; startup never applies
+migrations automatically.

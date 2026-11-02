@@ -825,3 +825,14 @@ lists; reload failures remain separate from committed deletion. Completed upload
 tracking is removed to avoid reopening Pending uploads. Shows without retained
 sources require a Mixcloud refresh to appear in the import table. Publication
 continues through the ordinary explicit publish flow.
+
+### DJ deletion
+
+DJs table and grid expose Delete beside Edit, using the shared confirmation and
+success toast. Each opening fetches linked Show titles as a scrolling, read-only
+list. Delete has gray text and border and is disabled while loading, after
+preview failure, or while any Shows remain linked. Users edit or delete Shows
+separately, then close and reopen the confirmation. A concurrent link conflict
+refreshes the blocking list. Cancel receives focus, pending deletion locks
+dismissal, and errors allow retry. Success removes the DJ locally and announces
+their name; list refresh failures remain separate from deletion.

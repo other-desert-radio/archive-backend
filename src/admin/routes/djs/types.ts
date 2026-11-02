@@ -51,3 +51,21 @@ export type CreateDJRoute = {
 export type ModifyDJRoute = {
 	Reply: AdminApiReply<AdminDJJSON> & { 413: ErrorResponse };
 };
+
+export const RemoveDJRequestPattern = {
+	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
+} as const;
+export type RemoveDJRequest = P.infer<typeof RemoveDJRequestPattern>;
+export type RemoveDJResponse = { id: number };
+export type RemoveDJRoute = {
+	Body: RemoveDJRequest;
+	Reply: AdminApiReply<RemoveDJResponse> & { 409: ErrorResponse };
+};
+export type DJDeleteImpact = {
+	dj: { id: number; title: string };
+	shows: { id: number; title: string }[];
+};
+export type GetDJDeleteImpactRoute = {
+	Params: { id: string };
+	Reply: AdminApiReply<DJDeleteImpact>;
+};

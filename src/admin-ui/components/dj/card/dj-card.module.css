@@ -39,8 +39,13 @@
 	font-size: 0.875rem;
 }
 
-.edit {
+.actions {
 	margin-top: auto;
+	display: flex;
+	gap: 8px;
+}
+
+.edit {
 	justify-self: start;
 	border: 1px solid black;
 	border-radius: 0;

@@ -9,7 +9,13 @@ export type {
 	ModifyDJMultipartResult,
 } from "./parse-modify-dj-multipart.js";
 export { parseModifyDJMultipart } from "./parse-modify-dj-multipart.js";
-export type { CreateDJRequest, ModifyDJRequest } from "./types.js";
+export type {
+	CreateDJRequest,
+	DJDeleteImpact,
+	ModifyDJRequest,
+	RemoveDJRequest,
+	RemoveDJResponse,
+} from "./types.js";
 export type {
 	DJImageUpload,
 	DJImageValidationResult,
