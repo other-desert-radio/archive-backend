@@ -5,6 +5,7 @@ import type { ShowsAdminRow } from "../../src/admin-ui/loaders/shows.js";
 describe("Show card", () => {
 	test("renders the available image and tag titles", () => {
 		let editedShow: ShowsAdminRow | undefined;
+		let deletedShow: ShowsAdminRow | undefined;
 		const card = renderShowCard(
 			{
 				id: 1,
@@ -24,15 +25,21 @@ describe("Show card", () => {
 			(show) => {
 				editedShow = show;
 			},
+			(show) => {
+				deletedShow = show;
+			},
 		);
 
-		const [image, _title, djs, tags, description, edit] = card.props.children;
+		const [image, _title, djs, tags, description, actions] =
+			card.props.children;
 		expect(description.props.children.props.html).toBe("A late night journey");
 		expect(image.props.src).toBe("https://example.com/show.webp");
 		expect(image.props.alt).toBe("Show One");
 		expect(djs.props.children).toBe("DJ One");
 		expect(tags.props.children[0].props.children).toBe("Ambient");
-		edit.props.onClick();
+		actions.props.children[0].props.onClick();
+		actions.props.children[1].props.onClick();
+		expect(deletedShow?.id).toBe(1);
 		expect(editedShow?.id).toBe(1);
 	});
 

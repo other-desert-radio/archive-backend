@@ -49,8 +49,13 @@
 	color: #555;
 }
 
-.edit {
+.actions {
+	display: flex;
+	gap: 0.5rem;
 	margin-top: auto;
+}
+
+.edit {
 	justify-self: start;
 	border: 1px solid black;
 	border-radius: 0;

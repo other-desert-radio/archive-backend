@@ -5,6 +5,7 @@ import {
 	ResourceView,
 } from "../components/shared/resource-views/index.js";
 import {
+	DeleteShowModal,
 	EditShowModal,
 	filterShows,
 	OnboardShowModal,
@@ -47,8 +48,10 @@ export const ShowsPage = () => {
 			typeof window !== "undefined" &&
 			new URLSearchParams(window.location.search).has("mixcloud"),
 	);
+	const [deletingShow, setDeletingShow] = useState<ShowsAdminRow>();
 	const [editingShow, setEditingShow] = useState<ShowsAdminRow>();
 	const loadVersion = useRef(0);
+	const resourceRef = useRef<HTMLDivElement>(null);
 	const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
 	const [pendingLoaded, setPendingLoaded] = useState(false);
 	const [pendingLoading, setPendingLoading] = useState(false);
@@ -97,7 +100,7 @@ export const ShowsPage = () => {
 				if (version === loadVersion.current) {
 					if (keepResults)
 						setReloadError(
-							"Show saved, but the latest resource lists could not be loaded.",
+							"Show changes saved, but the latest resource lists could not be loaded.",
 						);
 					else setError("The shows could not be loaded.");
 				}
@@ -172,7 +175,15 @@ export const ShowsPage = () => {
 
 	return (
 		<>
-			<div inert={isModalOpen || pendingOpen || editingShow !== undefined}>
+			<div
+				ref={resourceRef}
+				inert={
+					isModalOpen ||
+					pendingOpen ||
+					editingShow !== undefined ||
+					deletingShow !== undefined
+				}
+			>
 				<ResourceView
 					title="SHOWS"
 					isLoading={isLoading}
@@ -233,6 +244,7 @@ export const ShowsPage = () => {
 												djsById,
 												key,
 												handleEditShow,
+												setDeletingShow,
 											)
 										}
 									/>
@@ -245,6 +257,7 @@ export const ShowsPage = () => {
 										sortDirection={sortDirection}
 										onSort={handleSort}
 										onEdit={handleEditShow}
+										onDelete={setDeletingShow}
 									/>
 								);
 						}
@@ -305,6 +318,24 @@ export const ShowsPage = () => {
 							...items.filter((item) => item.id !== show.id),
 						]);
 						refreshShows(true);
+					}}
+				/>
+			)}
+			{deletingShow !== undefined && (
+				<DeleteShowModal
+					key={deletingShow.id}
+					show={deletingShow}
+					onClose={() => setDeletingShow(undefined)}
+					onDeleted={(id) => {
+						setDeletingShow(undefined);
+						requestAnimationFrame(() =>
+							resourceRef.current
+								?.querySelector<HTMLButtonElement>("button")
+								?.focus(),
+						);
+						setShows((items) => items.filter((show) => show.id !== id));
+						refreshShows(true);
+						refreshPending();
 					}}
 				/>
 			)}

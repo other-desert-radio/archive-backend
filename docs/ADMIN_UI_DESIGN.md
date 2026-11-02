@@ -811,3 +811,17 @@ edits, stale preparation, dirty dismissal, persisted success, missing labels,
 post-save reload failures, focus restoration, and manual create/edit regression.
 Visual acceptance uses both browser automation screenshots and agent-browser
 inspection; no live provider upload is needed for these checks.
+
+### Show deletion
+
+Shows table and grid expose Delete beside Edit. The shared alert dialog names
+the Show. A separate gray note explains permanent loss of archive edits and
+DJ/tag links, unchanged Mixcloud content, and return to the usual import review.
+Retained sources return to ready for import or needs review under the existing
+classifier. Cancel receives initial focus; Cancel, Escape, and backdrop restore
+focus to the opener. While deleting, actions and dismissal are locked. Errors
+retain the dialog for retry. Success removes the Show locally and refreshes
+lists; reload failures remain separate from committed deletion. Completed upload
+tracking is removed to avoid reopening Pending uploads. Shows without retained
+sources require a Mixcloud refresh to appear in the import table. Publication
+continues through the ordinary explicit publish flow.

@@ -4,11 +4,13 @@ import { createShowHandler } from "./routes/create-show.js";
 import { getShowImageHandler } from "./routes/get-show-image.js";
 import { listShowsHandler } from "./routes/list-shows.js";
 import { modifyShowHandler } from "./routes/modify-show.js";
+import { removeShowHandler } from "./routes/remove-show.js";
 import type {
 	CreateShowRoute,
 	GetShowImageRoute,
 	ListShowsRoute,
 	ModifyShowRoute,
+	RemoveShowRoute,
 } from "./types.js";
 
 /** Registers authenticated Shows API routes. */
@@ -23,6 +25,8 @@ export const showRoutes =
 		);
 
 		app.post<CreateShowRoute>("/create-show", createShowHandler(database));
+
+		app.post<RemoveShowRoute>("/remove-show", removeShowHandler(database));
 
 		app.post<ModifyShowRoute>("/modify-show", modifyShowHandler(database));
 	};

@@ -54,3 +54,13 @@ export type GetShowImageRoute = {
 	Params: { id: string; variant: "small" | "large" };
 	Reply: AdminApiReply<Buffer>;
 };
+
+export const RemoveShowRequestPattern = {
+	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
+} as const;
+export type RemoveShowRequest = P.infer<typeof RemoveShowRequestPattern>;
+export type RemoveShowResponse = { id: number };
+export type RemoveShowRoute = {
+	Body: RemoveShowRequest;
+	Reply: AdminApiReply<RemoveShowResponse>;
+};
