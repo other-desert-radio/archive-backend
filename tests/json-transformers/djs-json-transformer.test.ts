@@ -63,7 +63,7 @@ describe("DJ JSON transformer", () => {
 		);
 	});
 
-	test("exposes stored images as image paths", () => {
+	test("exposes stored images and converts a null bio to empty JSON text", () => {
 		expect(
 			transformDJs({
 				djs: [
@@ -71,7 +71,7 @@ describe("DJ JSON transformer", () => {
 						id: 42,
 						createdAt: new Date("2026-01-02T00:00:00.000Z"),
 						title: "DJ Image",
-						bio: "Bio",
+						bio: null,
 						image_small: Buffer.from("small image bytes"),
 						image_large: Buffer.from("large image bytes"),
 						socials: null,
@@ -88,7 +88,7 @@ describe("DJ JSON transformer", () => {
 				id: 42,
 				createdAt: new Date("2026-01-02T00:00:00.000Z"),
 				title: "DJ Image",
-				bio: "Bio",
+				bio: "",
 				image_small: "/api/admin/djs/42/image/small",
 				image_large: "/api/admin/djs/42/image/large",
 				shows: [],

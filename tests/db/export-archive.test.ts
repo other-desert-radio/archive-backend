@@ -364,7 +364,7 @@ describe("archive export documents", () => {
 					id: 2,
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
 					title: "DJ Two",
-					bio: "Bio",
+					bio: null,
 					image_small: null,
 					image_large: null,
 					socials: null,
@@ -410,6 +410,8 @@ describe("archive export documents", () => {
 				{ show_id: 10, tag_id: 4 },
 			],
 		});
+
+		expect(documents.djs.find((dj) => dj.id === 2)?.bio).toBe("");
 
 		expect(documents.djsBrief).toEqual([
 			{
