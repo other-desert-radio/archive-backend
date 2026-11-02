@@ -105,8 +105,7 @@ export const EditDJModal = ({
 
 	const submit = async () => {
 		if (dj === undefined) throw new Error("The DJ could not be loaded.");
-		if (title.trim() === "" || bio.trim() === "")
-			throw new Error("Title and bio are required.");
+		if (title.trim() === "") throw new Error("Title is required.");
 		if (imageError !== undefined) throw new Error(imageError);
 		await onSubmit(
 			buildEditDJRequest({

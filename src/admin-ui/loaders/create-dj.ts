@@ -17,7 +17,7 @@ export const createDJ = async (
 ): Promise<DJsAdminRow> => {
 	const form = new FormData();
 	form.append("title", request.title);
-	form.append("bio", request.bio);
+	form.append("bio", request.bio ?? "");
 	if (request.tags !== undefined) form.append("tags", request.tags.join(","));
 	if (request.socials !== undefined) form.append("socials", request.socials);
 	if (request.showTitle !== undefined)

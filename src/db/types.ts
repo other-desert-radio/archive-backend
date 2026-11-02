@@ -146,7 +146,7 @@ export type DJsTable = {
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	title: string;
-	bio: string;
+	bio: Generated<string>;
 	image_small: Buffer | null;
 	image_large: Buffer | null;
 	socials: string | null;

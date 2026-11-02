@@ -3,7 +3,7 @@ import { splitCommaSeparated } from "../../../../../utils/index.js";
 export type EditDJForm = {
 	id: number;
 	title: string;
-	bio: string;
+	bio?: string;
 	tags: string[];
 	socials?: string;
 	showTitle?: string;
@@ -27,7 +27,7 @@ export const buildEditDJRequest = (fields: EditDJFieldValues): EditDJForm => {
 	return {
 		id: fields.id,
 		title: fields.title.trim(),
-		bio: fields.bio.trim(),
+		bio: fields.bio?.trim() ?? "",
 		tags: splitCommaSeparated([...fields.tags, fields.tagDraft].join(",")),
 		...(socials === "" || socials === undefined ? {} : { socials }),
 		...(showTitle === "" || showTitle === undefined ? {} : { showTitle }),

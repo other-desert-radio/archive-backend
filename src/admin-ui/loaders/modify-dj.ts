@@ -11,7 +11,7 @@ export const modifyDJ = async (
 	const form = new FormData();
 	form.append("id", String(request.id));
 	form.append("title", request.title);
-	form.append("bio", request.bio);
+	form.append("bio", request.bio ?? "");
 	form.append("tags", request.tags.join(","));
 	form.append("socials", request.socials ?? "");
 	form.append("showTitle", request.showTitle ?? "");

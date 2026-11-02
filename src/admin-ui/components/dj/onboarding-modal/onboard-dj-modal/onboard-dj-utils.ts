@@ -2,7 +2,7 @@ import { splitCommaSeparated } from "../../../../../utils/index.js";
 
 export type CreateDJForm = {
 	title: string;
-	bio: string;
+	bio?: string;
 	tags?: string[];
 	socials?: string;
 	showTitle?: string;

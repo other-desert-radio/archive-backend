@@ -319,6 +319,11 @@ showTitle   text
 showDescription text
 ```
 
+Migration `0042_optional_dj_bio` gives `bio` an empty-string default so inserts
+may omit it. It remains non-null text; empty strings represent absent bios in
+the database and exported JSON. Existing biographies are preserved. Rollback
+removes only the default.
+
 `bio` and `socials` may contain limited HTML. Both are sanitized before they are
 exposed to the frontend; supported formatting is paragraphs, line breaks,
 strong/emphasis text, and basic lists.
