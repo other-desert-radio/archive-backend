@@ -40,13 +40,17 @@ test("destination validation needs no Git repository and creates no output", asy
 
 test("destination validation preserves generated and unrelated files", async () => {
 	const target = await fixture();
-	await mkdir(path.join(target.checkoutPath, "src/res/djs"), {
+	await mkdir(path.join(target.checkoutPath, "public/resources/djs"), {
 		recursive: true,
 	});
 	await mkdir(path.join(target.checkoutPath, "public/assets/djs"), {
 		recursive: true,
 	});
-	const files = ["src/res/shows.json", "src/res/djs/1.json", "notes.txt"];
+	const files = [
+		"public/resources/shows.json",
+		"public/resources/djs/1.json",
+		"notes.txt",
+	];
 	for (const file of files)
 		await writeFile(path.join(target.checkoutPath, file), "existing content");
 	await validatePublicationDestination(target);
@@ -103,9 +107,8 @@ test("destination validation rejects overlap after resolving symlinks", async ()
 });
 
 for (const directory of [
-	"src",
-	"src/res",
-	"src/res/djs",
+	"public/resources",
+	"public/resources/djs",
 	"public",
 	"public/assets",
 	"public/assets/djs",
@@ -139,8 +142,10 @@ for (const file of [
 ]) {
 	test(`destination validation rejects symlinks and directories at ${file}`, async () => {
 		const target = await fixture();
-		await mkdir(path.join(target.checkoutPath, "src/res"), { recursive: true });
-		const output = path.join(target.checkoutPath, "src/res", file);
+		await mkdir(path.join(target.checkoutPath, "public/resources"), {
+			recursive: true,
+		});
+		const output = path.join(target.checkoutPath, "public/resources", file);
 		const outside = path.join(target.directory, "outside.json");
 		await writeFile(outside, "keep");
 		await symlink(outside, output);

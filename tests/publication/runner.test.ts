@@ -62,7 +62,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 	});
 	const checkout = path.join(directory, "checkout");
 	const remote = path.join(directory, "remote.git");
-	await mkdir(path.join(checkout, "src/res/djs"), { recursive: true });
+	await mkdir(path.join(checkout, "public/resources/djs"), { recursive: true });
 	await mkdir(path.join(checkout, "public/assets/djs"), { recursive: true });
 	const git = async (...args: string[]) =>
 		(
@@ -83,7 +83,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 	await git("config", "user.email", "runner@example.test");
 	await git("config", "core.hooksPath", "/dev/null");
 	await writeFile(
-		path.join(checkout, "src/res/mixcloud.json"),
+		path.join(checkout, "public/resources/mixcloud.json"),
 		"unrelated resource\n",
 	);
 	await writeFile(
@@ -91,7 +91,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 		"unrelated asset\n",
 	);
 	await writeFile(
-		path.join(checkout, "src/res/djs/99.json"),
+		path.join(checkout, "public/resources/djs/99.json"),
 		JSON.stringify({
 			id: 99,
 			title: "Removed DJ",
@@ -263,7 +263,9 @@ process.exit(result.status ?? 1);
 				"unstaged work",
 			);
 			expect(
-				await Bun.file(path.join(f.checkout, "src/res/djs/99.json")).exists(),
+				await Bun.file(
+					path.join(f.checkout, "public/resources/djs/99.json"),
+				).exists(),
 			).toBe(false);
 			expect(
 				await Bun.file(
@@ -272,7 +274,10 @@ process.exit(result.status ?? 1);
 			).toBe(true);
 			expect(
 				JSON.parse(
-					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+					await readFile(
+						path.join(f.checkout, "public/resources/tags.json"),
+						"utf8",
+					),
 				).data[0].title,
 			).toBe("Original Tag");
 			expect((await readPublicationStatus(f.database, f.config)).pending).toBe(
@@ -303,7 +308,10 @@ test.skipIf(!databaseUrl)(
 			};
 			const outside = path.join(f.directory, "outside.json");
 			await writeFile(outside, "keep me");
-			await symlink(outside, path.join(f.checkout, "src/res/shows.json"));
+			await symlink(
+				outside,
+				path.join(f.checkout, "public/resources/shows.json"),
+			);
 			const runner = await f.create(f.database, local);
 			await expect(readyPreview(runner)).rejects.toThrow();
 			expect(
@@ -313,11 +321,13 @@ test.skipIf(!databaseUrl)(
 				true,
 			);
 			expect(await readFile(outside, "utf8")).toBe("keep me");
-			await rm(path.join(f.checkout, "src/res/shows.json"));
+			await rm(path.join(f.checkout, "public/resources/shows.json"));
 			const preview = await readyPreview(runner);
 			expect(preview.changes.djs.removed).toEqual(["Removed DJ"]);
 			expect(
-				await Bun.file(path.join(f.checkout, "src/res/djs/99.json")).exists(),
+				await Bun.file(
+					path.join(f.checkout, "public/resources/djs/99.json"),
+				).exists(),
 			).toBe(true);
 			const job = await runner.start({
 				requestedBy: "admin",
@@ -375,10 +385,13 @@ test.skipIf(!databaseUrl)(
 			const versions = await jobVersions(f.database, first.id);
 			expect(versions).not.toBeNull();
 			expect(
-				JSON.parse(await f.git("show", "HEAD:src/res/data_versions.json")),
+				JSON.parse(
+					await f.git("show", "HEAD:public/resources/data_versions.json"),
+				),
 			).toEqual(versions);
 			expect(
-				JSON.parse(await f.git("show", "HEAD:src/res/shows.json")).version,
+				JSON.parse(await f.git("show", "HEAD:public/resources/shows.json"))
+					.version,
 			).toBe(versions?.shows.id);
 
 			expect(
@@ -398,13 +411,18 @@ test.skipIf(!databaseUrl)(
 				),
 			).toBe(done.job.commitId);
 			expect(
-				await readFile(path.join(f.checkout, "src/res/mixcloud.json"), "utf8"),
+				await readFile(
+					path.join(f.checkout, "public/resources/mixcloud.json"),
+					"utf8",
+				),
 			).toBe("unrelated resource\n");
 			expect(
 				await readFile(path.join(f.checkout, "public/assets/logo.svg"), "utf8"),
 			).toBe("unrelated asset\n");
 			expect(
-				await Bun.file(path.join(f.checkout, "src/res/djs/99.json")).exists(),
+				await Bun.file(
+					path.join(f.checkout, "public/resources/djs/99.json"),
+				).exists(),
 			).toBe(false);
 			expect(
 				await Bun.file(
@@ -413,7 +431,10 @@ test.skipIf(!databaseUrl)(
 			).toBe(false);
 			expect(
 				JSON.parse(
-					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+					await readFile(
+						path.join(f.checkout, "public/resources/tags.json"),
+						"utf8",
+					),
 				).data[0].title,
 			).toBe("Original Tag");
 			expect(await f.git("show", "-s", "--format=%B", "HEAD")).toContain(
@@ -622,7 +643,7 @@ test.skipIf(!databaseUrl)(
 			const status = await f.git("status", "--porcelain=v1");
 			const index = await readFile(path.join(f.checkout, ".git/index"));
 			const original = await readFile(
-				path.join(f.checkout, "src/res/djs/99.json"),
+				path.join(f.checkout, "public/resources/djs/99.json"),
 			);
 			const preview = await readyPreview(runner);
 			expect(preview.changes.djs.removed).toEqual(["Removed DJ"]);
@@ -642,7 +663,7 @@ test.skipIf(!databaseUrl)(
 				index,
 			);
 			expect(
-				await readFile(path.join(f.checkout, "src/res/djs/99.json")),
+				await readFile(path.join(f.checkout, "public/resources/djs/99.json")),
 			).toEqual(original);
 			expect(
 				(await readPublicationStatus(f.database, f.config)).latestJob,
@@ -728,8 +749,11 @@ test.skipIf(!databaseUrl)(
 	async () => {
 		const f = await fixture();
 		try {
-			await writeFile(path.join(f.checkout, "src/res/tags.json"), "{ invalid");
-			await f.git("add", "src/res/tags.json");
+			await writeFile(
+				path.join(f.checkout, "public/resources/tags.json"),
+				"{ invalid",
+			);
+			await f.git("add", "public/resources/tags.json");
 			await f.git("commit", "-m", "Malformed archive baseline");
 			await f.git("push", "origin", "publish-dev");
 			const runner = await f.create();
@@ -740,7 +764,10 @@ test.skipIf(!databaseUrl)(
 				(await readPublicationStatus(f.database, f.config)).latestJob,
 			).toBeUndefined();
 			expect(
-				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				await readFile(
+					path.join(f.checkout, "public/resources/tags.json"),
+					"utf8",
+				),
 			).toBe("{ invalid");
 			expect(await f.git("status", "--porcelain=v1")).toBe("");
 		} finally {
@@ -802,7 +829,10 @@ test.skipIf(!databaseUrl)(
 				(await readPublicationStatus(f.database, local)).latestJob,
 			).toBeUndefined();
 			const second = await readyPreview(runner);
-			await writeFile(path.join(f.checkout, "src/res/tags.json"), "[]\n");
+			await writeFile(
+				path.join(f.checkout, "public/resources/tags.json"),
+				"[]\n",
+			);
 			await expect(
 				runner.start({ requestedBy: "admin", previewId: second.id }),
 			).rejects.toThrow("changed");
@@ -871,7 +901,10 @@ test.skipIf(!databaseUrl)(
 			});
 			expect(
 				JSON.parse(
-					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+					await readFile(
+						path.join(f.checkout, "public/resources/tags.json"),
+						"utf8",
+					),
 				).data[0].title,
 			).toBe("Original Tag");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
@@ -908,7 +941,10 @@ test.skipIf(!databaseUrl)(
 						)
 					) {
 						changed = true;
-						await symlink(outside, path.join(f.checkout, "src/res/shows.json"));
+						await symlink(
+							outside,
+							path.join(f.checkout, "public/resources/shows.json"),
+						);
 					}
 					return result;
 				},
@@ -924,7 +960,7 @@ test.skipIf(!databaseUrl)(
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
 				true,
 			);
-			await rm(path.join(f.checkout, "src/res/shows.json"));
+			await rm(path.join(f.checkout, "public/resources/shows.json"));
 			await f.database
 				.updateTable("tags")
 				.set({ title: "Fresh retry title" })
@@ -943,7 +979,10 @@ test.skipIf(!databaseUrl)(
 			});
 			expect(
 				JSON.parse(
-					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+					await readFile(
+						path.join(f.checkout, "public/resources/tags.json"),
+						"utf8",
+					),
 				).data[0].title,
 			).toBe("Fresh retry title");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
@@ -997,7 +1036,10 @@ test.skipIf(!databaseUrl)(
 				revision: "2",
 			});
 			const tags = JSON.parse(
-				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				await readFile(
+					path.join(f.checkout, "public/resources/tags.json"),
+					"utf8",
+				),
 			);
 			expect(tags.data[0].title).toBe("Changed under export lock");
 			const versions = await jobVersions(f.database, reservation.job.id);
@@ -1005,7 +1047,7 @@ test.skipIf(!databaseUrl)(
 			expect(
 				JSON.parse(
 					await readFile(
-						path.join(f.checkout, "src/res/data_versions.json"),
+						path.join(f.checkout, "public/resources/data_versions.json"),
 						"utf8",
 					),
 				),
@@ -1113,7 +1155,7 @@ test.skipIf(!databaseUrl)(
 			});
 			standalone = exportArchive(
 				exporting,
-				path.join(f.checkout, "src/res"),
+				path.join(f.checkout, "public/resources"),
 				path.join(f.checkout, "public/assets"),
 				{ log: () => {} },
 			);
@@ -1133,16 +1175,19 @@ test.skipIf(!databaseUrl)(
 			expect(done.job.outcome).toBe("succeeded");
 			await standalone;
 			const committed = JSON.parse(
-				await f.git("show", "HEAD:src/res/tags.json"),
+				await f.git("show", "HEAD:public/resources/tags.json"),
 			);
 			expect(committed.data[0].title).toBe("Original Tag");
 			expect(committed.version).toBe(1);
 			const written = JSON.parse(
-				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				await readFile(
+					path.join(f.checkout, "public/resources/tags.json"),
+					"utf8",
+				),
 			);
 			const manifest = JSON.parse(
 				await readFile(
-					path.join(f.checkout, "src/res/data_versions.json"),
+					path.join(f.checkout, "public/resources/data_versions.json"),
 					"utf8",
 				),
 			);

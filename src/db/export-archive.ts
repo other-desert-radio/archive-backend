@@ -34,7 +34,7 @@ export const archiveExportDirectories = ({
 		repositoryRoot,
 	});
 	return {
-		resourceDirectory: path.join(checkoutPath, "src/res"),
+		resourceDirectory: path.join(checkoutPath, "public/resources"),
 		assetDirectory: path.join(checkoutPath, "public/assets"),
 	};
 };

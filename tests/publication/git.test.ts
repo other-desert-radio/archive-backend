@@ -476,15 +476,15 @@ test("output symlinks and non-directory ancestors are rejected without touching 
 	const outside = path.join(directory, "outside");
 	await mkdir(outside);
 	await writeFile(path.join(outside, "keep.txt"), "preserved");
-	await symlink(outside, path.join(checkout, "src"));
+	await symlink(outside, path.join(checkout, "public"));
 	await expect(validatePublicationCheckout(context)).rejects.toThrow(
 		"without symlinks",
 	);
-	await rm(path.join(checkout, "src"));
-	await mkdir(path.join(checkout, "src/res"), { recursive: true });
+	await rm(path.join(checkout, "public"));
+	await mkdir(path.join(checkout, "public/resources"), { recursive: true });
 	await symlink(
 		path.join(outside, "keep.txt"),
-		path.join(checkout, "src/res/shows.json"),
+		path.join(checkout, "public/resources/shows.json"),
 	);
 	await expect(validatePublicationCheckout(context)).rejects.toThrow(
 		"JSON destinations",
@@ -492,7 +492,8 @@ test("output symlinks and non-directory ancestors are rejected without touching 
 	expect(await readFile(path.join(outside, "keep.txt"), "utf8")).toBe(
 		"preserved",
 	);
-	await rm(path.join(checkout, "src/res/shows.json"));
+	await rm(path.join(checkout, "public/resources/shows.json"));
+	await rm(path.join(checkout, "public"), { recursive: true });
 	await writeFile(path.join(checkout, "public"), "not a directory");
 	await expect(validatePublicationCheckout(context)).rejects.toThrow(
 		"real directories",
@@ -521,14 +522,20 @@ test("linked worktrees are rejected because they share repository administration
 
 test("publication commits generated additions and deletions while preserving unrelated work", async () => {
 	const { checkout, context, git, remote } = await remoteFixture();
-	await mkdir(path.join(checkout, "src/res/djs"), { recursive: true });
-	await writeFile(path.join(checkout, "src/res/djs/old.json"), "old\n");
-	await git("add", "src/res/djs/old.json");
+	await mkdir(path.join(checkout, "public/resources/djs"), { recursive: true });
+	await writeFile(
+		path.join(checkout, "public/resources/djs/old.json"),
+		"old\n",
+	);
+	await git("add", "public/resources/djs/old.json");
 	await git("commit", "-m", "Existing generated document");
 	await git("push", "origin", "publish-dev");
-	await rm(path.join(checkout, "src/res/djs/old.json"));
-	await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
-	await writeFile(path.join(checkout, "src/res/data_versions.json"), "{}\n");
+	await rm(path.join(checkout, "public/resources/djs/old.json"));
+	await writeFile(path.join(checkout, "public/resources/shows.json"), "[]\n");
+	await writeFile(
+		path.join(checkout, "public/resources/data_versions.json"),
+		"{}\n",
+	);
 	await writeFile(path.join(checkout, "README.md"), "unrelated local edits\n");
 	await writeFile(path.join(checkout, "notes.txt"), "untracked notes\n");
 	const recorded: string[] = [];
@@ -553,7 +560,7 @@ test("publication commits generated additions and deletions while preserving unr
 	expect(
 		await git("diff-tree", "--no-commit-id", "--name-status", "-r", "HEAD"),
 	).toBe(
-		"A\tsrc/res/data_versions.json\nD\tsrc/res/djs/old.json\nA\tsrc/res/shows.json",
+		"A\tpublic/resources/data_versions.json\nD\tpublic/resources/djs/old.json\nA\tpublic/resources/shows.json",
 	);
 	expect(
 		await git("--git-dir", remote, "rev-parse", "refs/heads/publish-dev"),
@@ -591,8 +598,8 @@ test("publication refuses unrelated staged work without committing or changing i
 test("recovery discovers a trailer commit after durable commit recording fails and resumes only that push", async () => {
 	const { checkout, context, git, remote } = await remoteFixture();
 	const before = await git("rev-parse", "HEAD");
-	await mkdir(path.join(checkout, "src/res"), { recursive: true });
-	await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
+	await mkdir(path.join(checkout, "public/resources"), { recursive: true });
+	await writeFile(path.join(checkout, "public/resources/shows.json"), "[]\n");
 	const previous = { ...context.job, revision: "8" };
 	await expect(
 		commitAndPushPublication(
@@ -701,8 +708,8 @@ test("publication creates author and committer from configured identity without 
 	const { checkout, context, git } = await remoteFixture();
 	await git("config", "--local", "--unset", "user.name");
 	await git("config", "--local", "--unset", "user.email");
-	await mkdir(path.join(checkout, "src/res"), { recursive: true });
-	await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
+	await mkdir(path.join(checkout, "public/resources"), { recursive: true });
+	await writeFile(path.join(checkout, "public/resources/shows.json"), "[]\n");
 	const result = await commitAndPushPublication(
 		{
 			...context,

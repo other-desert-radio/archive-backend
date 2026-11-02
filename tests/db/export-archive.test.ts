@@ -92,8 +92,11 @@ test.skipIf(!exportDatabaseUrl)(
 				path.join(checkout, "public/assets/djs/stale.webp"),
 				"stale",
 			);
-			await mkdir(path.join(checkout, "src/res"), { recursive: true });
-			await writeFile(path.join(checkout, "src/res/shows.json"), "[]\n");
+			await mkdir(path.join(checkout, "public/resources"), { recursive: true });
+			await writeFile(
+				path.join(checkout, "public/resources/shows.json"),
+				"[]\n",
+			);
 			const connection = new URL(exportDatabaseUrl ?? "");
 			connection.searchParams.set("options", `-c search_path=${schema}`);
 			const process = Bun.spawn(["bun", "run", "publish-locally"], {
@@ -118,7 +121,10 @@ test.skipIf(!exportDatabaseUrl)(
 			expect(stdout).toContain("Complete: 1 DJs, 1 shows, 1 tags, 2 images");
 			expect(
 				JSON.parse(
-					await readFile(path.join(checkout, "src/res/djs_brief.json"), "utf8"),
+					await readFile(
+						path.join(checkout, "public/resources/djs_brief.json"),
+						"utf8",
+					),
 				).data,
 			).toEqual([
 				{
@@ -205,7 +211,7 @@ test.skipIf(!exportDatabaseUrl)(
 						.execute();
 				});
 			});
-			const resources = path.join(checkout, "src/res");
+			const resources = path.join(checkout, "public/resources");
 			await exportArchive(
 				exportDatabase,
 				resources,
@@ -310,7 +316,7 @@ test("export destinations require a checkout and honor its configuration", () =>
 			repositoryRoot: "/work/backend",
 		}),
 	).toEqual({
-		resourceDirectory: "/work/archive-site/src/res",
+		resourceDirectory: "/work/archive-site/public/resources",
 		assetDirectory: "/work/archive-site/public/assets",
 	});
 	expect(
@@ -323,7 +329,7 @@ test("export destinations require a checkout and honor its configuration", () =>
 			repositoryRoot: "/work/backend",
 		}),
 	).toEqual({
-		resourceDirectory: "/archive-site/src/res",
+		resourceDirectory: "/archive-site/public/resources",
 		assetDirectory: "/archive-site/public/assets",
 	});
 	expect(() =>

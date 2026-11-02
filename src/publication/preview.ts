@@ -22,6 +22,7 @@ import {
 	comparePublicationArchives,
 	documentsPublicationArchive,
 	type PublicationArchive,
+	publicationDJFiles,
 	readPublicationArchive,
 } from "./preview-diff.js";
 import { readPublicationSnapshot } from "./snapshot.js";
@@ -65,11 +66,11 @@ const readCommitArchive = async (checkout: string, commit: string) => {
 			"-z",
 			commit,
 			"--",
-			"src/res/djs",
-			"src/res/djs_brief.json",
-			"src/res/shows.json",
-			"src/res/tags.json",
-			"src/res/data_versions.json",
+			"public/resources/djs",
+			"public/resources/djs_brief.json",
+			"public/resources/shows.json",
+			"public/resources/tags.json",
+			"public/resources/data_versions.json",
 			"public/assets/djs",
 		]),
 	)) {
@@ -100,10 +101,7 @@ const readCommitArchive = async (checkout: string, commit: string) => {
 				throw new Error("Publication preview exceeds the 256 MB limit");
 			return bytes;
 		},
-		async () =>
-			[...files]
-				.filter((file) => /^src\/res\/djs\/[^/]+\.json$/.test(file))
-				.map((file) => file.slice("src/res/djs/".length)),
+		async () => publicationDJFiles(files),
 	);
 };
 
@@ -206,10 +204,7 @@ export const createPublicationPreviews = (
 				localFingerprint = local.fingerprint;
 				before = await readPublicationArchive(
 					async (file) => local.files.get(file),
-					async () =>
-						[...local.files.keys()]
-							.filter((file) => /^src\/res\/djs\/[^/]+\.json$/.test(file))
-							.map((file) => file.slice("src/res/djs/".length)),
+					async () => publicationDJFiles(local.files.keys()),
 				);
 			} else {
 				const context = contextFor(id, request.requestedBy, target);

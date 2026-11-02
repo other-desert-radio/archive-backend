@@ -3,6 +3,7 @@ import type { ArchiveDocuments } from "../../src/db/export-archive.js";
 import {
 	comparePublicationArchives,
 	documentsPublicationArchive,
+	publicationDJFiles,
 	readPublicationArchive,
 } from "../../src/publication/preview-diff.js";
 
@@ -41,8 +42,7 @@ const read = async (
 			(files[file] === undefined
 				? undefined
 				: Buffer.from(JSON.stringify(files[file]))),
-		async () =>
-			Object.keys(files).filter((file) => file.startsWith("src/res/djs/")),
+		async () => publicationDJFiles(Object.keys(files)),
 	);
 
 test("compares additions changes removals by ID and returns sorted names", () => {
@@ -80,9 +80,9 @@ test("reading serialized exports matches database documents, including dates and
 	data.images = [{ id: 1, variant: "small", bytes: Buffer.from("image") }];
 	const baseline = await read(
 		{
-			"src/res/shows.json": data.shows,
-			"src/res/tags.json": data.tags,
-			"src/res/djs/1.json": data.djs[0],
+			"public/resources/shows.json": data.shows,
+			"public/resources/tags.json": data.tags,
+			"public/resources/djs/1.json": data.djs[0],
 		},
 		{ "public/assets/djs/1_small.webp": Buffer.from("image") },
 	);
@@ -175,14 +175,14 @@ test("missing baseline is valid; malformed JSON, identities and duplicate IDs fa
 		),
 	).rejects.toThrow();
 	await expect(
-		read({ "src/res/tags.json": [{ id: "1", title: "Wrong" }] }),
+		read({ "public/resources/tags.json": [{ id: "1", title: "Wrong" }] }),
 	).rejects.toThrow("Invalid archive records");
 	await expect(
-		read({ "src/res/tags.json": [tag(1, "One"), tag(1, "Two")] }),
+		read({ "public/resources/tags.json": [tag(1, "One"), tag(1, "Two")] }),
 	).rejects.toThrow("Duplicate");
 	await expect(
 		read({
-			"src/res/djs/1.json": {
+			"public/resources/djs/1.json": {
 				...dj(1, "DJ"),
 				image_small: "assets/djs/1_small.webp",
 			},
@@ -192,10 +192,10 @@ test("missing baseline is valid; malformed JSON, identities and duplicate IDs fa
 
 test("legacy and versioned documents compare equally despite metadata changes", async () => {
 	const data = {
-		"src/res/shows.json": [{ ...show(1, "Show"), djs: [] }],
-		"src/res/djs_brief.json": [],
-		"src/res/djs/1.json": dj(1, "DJ"),
-		"src/res/tags.json": [tag(1, "Tag")],
+		"public/resources/shows.json": [{ ...show(1, "Show"), djs: [] }],
+		"public/resources/djs_brief.json": [],
+		"public/resources/djs/1.json": dj(1, "DJ"),
+		"public/resources/tags.json": [tag(1, "Tag")],
 	};
 	const legacy = await read(data);
 	for (const version of [1, 2]) {
@@ -213,4 +213,25 @@ test("legacy and versioned documents compare equally despite metadata changes", 
 		for (const resource of Object.values(changes))
 			expect(resource).toEqual({ added: [], changed: [], removed: [] });
 	}
+});
+
+test("baseline selects only DJ details under public/resources", async () => {
+	const data = documents();
+	data.djs = [dj(1, "Already exported")];
+	const files = {
+		"public/resources/djs/1.json": data.djs[0],
+		"public/resources/djs_brief.json": [],
+		"public/resources/djs/nested/2.json": dj(2, "Nested"),
+		"src/res/djs/3.json": dj(3, "Old path"),
+		"public/assets/djs/1_small.webp": "image",
+	};
+	expect(publicationDJFiles(new Set(Object.keys(files)))).toEqual([
+		"public/resources/djs/1.json",
+	]);
+	expect(
+		comparePublicationArchives(
+			await read(files),
+			documentsPublicationArchive(data),
+		).djs,
+	).toEqual({ added: [], changed: [], removed: [] });
 });
