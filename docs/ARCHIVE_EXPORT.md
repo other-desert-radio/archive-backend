@@ -8,18 +8,18 @@ For schema invariants, see [DATABASES.md](DATABASES.md).
 The backend stores archive data in PostgreSQL. `bun run publish-locally` writes
 the following assets to the configured Astro frontend directories:
 
-- `src/res/djs_brief.json`, the compact DJ index;
-- `src/res/djs/{id}.json`, one detail document per DJ;
-- `src/res/shows.json`, the top-level show index;
-- `src/res/tags.json`, the shared tag dictionary;
-- `src/res/data_versions.json`, the dataset version manifest; and
+- `public/resources/djs_brief.json`, the compact DJ index;
+- `public/resources/djs/{id}.json`, one detail document per DJ;
+- `public/resources/shows.json`, the top-level show index;
+- `public/resources/tags.json`, the shared tag dictionary;
+- `public/resources/data_versions.json`, the dataset version manifest; and
 - `public/assets/djs/{id}_small.webp` and `{id}_large.webp`, copied DJ image
   assets.
 
-Astro imports JSON from `src/res/` as part of the site build and copies
-`public/assets/` into the deployed site unchanged. The database remains the
-source of truth. Arrays of IDs belong in exported documents, not in the primary
-entity tables.
+Astro reads JSON from `public/resources/` during the site build and serves
+`public/resources/` and `public/assets/` as static files. The database remains
+the source of truth. Arrays of IDs belong in exported documents, not in the
+primary entity tables.
 
 ## JSON version contract
 
@@ -27,10 +27,10 @@ Every generated data document uses `{ version, updatedAt, data }`. The existing
 array or DJ detail object is preserved under `data`; nested records have no
 additional version fields. `version` is a positive integer content revision, and
 `updatedAt` is a UTC ISO 8601 string. Consumers must unwrap `data` before using
-the existing payload. All file paths remain unchanged, including
-`src/res/shows.json`; this backend change adds no runtime GET endpoint.
+the existing payload. Archive JSON lives in `public/resources/`, including
+`public/resources/shows.json`. The backend adds no runtime GET endpoint.
 
-`src/res/data_versions.json` contains the lightweight manifest:
+`public/resources/data_versions.json` contains the lightweight manifest:
 
 ```json
 {
@@ -73,11 +73,12 @@ Show records in `shows.json` and nested DJ detail records include optional
 `description` containing sanitized HTML, using the same allowed formatting as DJ
 bios. NULL descriptions are omitted; empty descriptions remain empty strings.
 
-The exporter owns the entire `src/res/djs/` and `public/assets/djs/` directories
-and replaces their contents on each export, including stale files. Keep manually
-maintained assets outside those directories. It also owns the four top-level
-generated JSON files; other files such as `src/res/mixcloud.json` and
-`public/assets/logo.svg` remain untouched and outside publication commits.
+The exporter owns the entire `public/resources/djs/` and `public/assets/djs/`
+directories and replaces their contents on each export, including stale files.
+Keep manually maintained assets outside those directories. It also owns the four
+top-level generated JSON files; other files such as
+`public/resources/notes.json` and `public/assets/logo.svg` remain untouched and
+outside publication commits.
 
 The exporter produces the asset layout above. Original design intent lives in
 [historical notes](../human_docs/databases_human.md); this document owns the
@@ -148,7 +149,7 @@ checkout. It preserves the existing progress output and unrelated assets.
 
 Set `ARCHIVE_CHECKOUT_PATH` to choose the destination checkout. Relative paths
 resolve from this backend repository root, regardless of the launcher's working
-directory. JSON goes to `<checkout>/src/res` and images to
+directory. JSON goes to `<checkout>/public/resources` and images to
 `<checkout>/public/assets`. The checkout must be separate from the backend. When
 unset or blank, export fails with a setting-specific error. There is no
 hardcoded checkout fallback. The tracked `.env.example` selects

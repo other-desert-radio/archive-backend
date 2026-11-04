@@ -148,7 +148,7 @@ const savePublicationExport = async (
 	try {
 		await writeArchiveDocuments(
 			snapshot.documents,
-			path.join(execution.config.checkoutPath, "src/res"),
+			path.join(execution.config.checkoutPath, "public/resources"),
 			path.join(execution.config.checkoutPath, "public/assets"),
 			{
 				log: (message) => {

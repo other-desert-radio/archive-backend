@@ -34,60 +34,66 @@ test("missing generated files are a valid empty baseline", async () => {
 	const empty = await snapshotLocalPublicationFiles(checkout);
 	expect(empty).toMatch(/^[a-f0-9]{64}$/);
 	await put("notes.txt", "local work");
-	await put("src/res/mixcloud.json", "unrelated");
+	await put("public/resources/mixcloud.json", "unrelated");
 	expect(await snapshotLocalPublicationFiles(checkout)).toBe(empty);
 });
 
 test("local baseline reads exact managed bytes and excludes unrelated files", async () => {
-	await put("src/res/tags.json", '[{"id":1}]\n');
-	await put("src/res/djs/1.json", '{"id":1}\n');
+	await put("public/resources/tags.json", '[{"id":1}]\n');
+	await put("public/resources/djs/1.json", '{"id":1}\n');
 	const bytes = Buffer.from([0, 1, 255, 42]);
 	await put("public/assets/djs/1_small.webp", bytes);
-	await put("src/res/mixcloud.json", "unrelated resource");
+	await put("public/resources/mixcloud.json", "unrelated resource");
 	await put("public/assets/logo.svg", "unrelated asset");
 	await put("notes.txt", "unrelated text");
 	const { files, fingerprint } = await readLocalPublicationFiles(checkout);
-	expect(files.get("src/res/tags.json")?.toString("utf8")).toBe('[{"id":1}]\n');
-	expect(files.get("src/res/djs/1.json")?.toString("utf8")).toBe('{"id":1}\n');
+	expect(files.get("public/resources/tags.json")?.toString("utf8")).toBe(
+		'[{"id":1}]\n',
+	);
+	expect(files.get("public/resources/djs/1.json")?.toString("utf8")).toBe(
+		'{"id":1}\n',
+	);
 	expect(files.get("public/assets/djs/1_small.webp")).toEqual(bytes);
 	expect([...files.keys()].sort()).toEqual([
 		"public/assets/djs/1_small.webp",
-		"src/res/djs/1.json",
-		"src/res/tags.json",
+		"public/resources/djs/1.json",
+		"public/resources/tags.json",
 	]);
 	expect(await snapshotLocalPublicationFiles(checkout)).toBe(fingerprint);
 });
 
 test("fingerprints detect additions, byte replacements, renames, and deletions", async () => {
 	const empty = await snapshotLocalPublicationFiles(checkout);
-	await put("src/res/tags.json", "[]");
+	await put("public/resources/tags.json", "[]");
 	const added = await snapshotLocalPublicationFiles(checkout);
 	expect(added).not.toBe(empty);
-	await put("src/res/tags.json", "{} ");
+	await put("public/resources/tags.json", "{} ");
 	const replaced = await snapshotLocalPublicationFiles(checkout);
 	expect(replaced).not.toBe(added);
-	await rm(path.join(checkout, "src/res/tags.json"));
-	await put("src/res/shows.json", "{} ");
+	await rm(path.join(checkout, "public/resources/tags.json"));
+	await put("public/resources/shows.json", "{} ");
 	const renamed = await snapshotLocalPublicationFiles(checkout);
 	expect(renamed).not.toBe(replaced);
-	await rm(path.join(checkout, "src/res/shows.json"));
+	await rm(path.join(checkout, "public/resources/shows.json"));
 	expect(await snapshotLocalPublicationFiles(checkout)).toBe(empty);
 });
 
 test("managed directory and nested file symlinks are rejected", async () => {
 	const outside = path.join(directory, "outside");
 	await mkdir(outside);
-	await mkdir(path.join(checkout, "src/res"), { recursive: true });
-	await symlink(outside, path.join(checkout, "src/res/djs"));
+	await mkdir(path.join(checkout, "public/resources"), { recursive: true });
+	await symlink(outside, path.join(checkout, "public/resources/djs"));
 	await expect(snapshotLocalPublicationFiles(checkout)).rejects.toThrow(
 		"symlinks",
 	);
-	await rm(path.join(checkout, "src/res/djs"));
-	await mkdir(path.join(checkout, "src/res/djs/nested"), { recursive: true });
+	await rm(path.join(checkout, "public/resources/djs"));
+	await mkdir(path.join(checkout, "public/resources/djs/nested"), {
+		recursive: true,
+	});
 	await writeFile(path.join(outside, "data.json"), "private data");
 	await symlink(
 		path.join(outside, "data.json"),
-		path.join(checkout, "src/res/djs/nested/1.json"),
+		path.join(checkout, "public/resources/djs/nested/1.json"),
 	);
 	await expect(snapshotLocalPublicationFiles(checkout)).rejects.toThrow(
 		"symlinks",
@@ -96,31 +102,37 @@ test("managed directory and nested file symlinks are rejected", async () => {
 
 test("manifest bytes participate in the baseline and manifest symlinks are rejected", async () => {
 	const empty = await snapshotLocalPublicationFiles(checkout);
-	await put("src/res/data_versions.json", "{}");
+	await put("public/resources/data_versions.json", "{}");
 	const first = await snapshotLocalPublicationFiles(checkout);
 	expect(first).not.toBe(empty);
-	await put("src/res/data_versions.json", '{"shows":{"id":2}}');
+	await put("public/resources/data_versions.json", '{"shows":{"id":2}}');
 	expect(await snapshotLocalPublicationFiles(checkout)).not.toBe(first);
-	await rm(path.join(checkout, "src/res/data_versions.json"));
+	await rm(path.join(checkout, "public/resources/data_versions.json"));
 	const outside = path.join(directory, "outside.json");
 	await writeFile(outside, "{}");
-	await symlink(outside, path.join(checkout, "src/res/data_versions.json"));
+	await symlink(
+		outside,
+		path.join(checkout, "public/resources/data_versions.json"),
+	);
 	await expect(snapshotLocalPublicationFiles(checkout)).rejects.toThrow(
 		"symlinks",
 	);
 });
 
 test("local baseline rejects oversized individual files and cumulative bytes", async () => {
-	await put("src/res/shows.json", "");
+	await put("public/resources/shows.json", "");
 	await truncate(
-		path.join(checkout, "src/res/shows.json"),
+		path.join(checkout, "public/resources/shows.json"),
 		32 * 1024 * 1024 + 1,
 	);
 	await expect(readLocalPublicationFiles(checkout)).rejects.toThrow("32 MiB");
-	await truncate(path.join(checkout, "src/res/shows.json"), 16 * 1024 * 1024);
-	await put("src/res/tags.json", "");
 	await truncate(
-		path.join(checkout, "src/res/tags.json"),
+		path.join(checkout, "public/resources/shows.json"),
+		16 * 1024 * 1024,
+	);
+	await put("public/resources/tags.json", "");
+	await truncate(
+		path.join(checkout, "public/resources/tags.json"),
 		16 * 1024 * 1024 + 1,
 	);
 	await expect(readLocalPublicationFiles(checkout)).rejects.toThrow("32 MiB");

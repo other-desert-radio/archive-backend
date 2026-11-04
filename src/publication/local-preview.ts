@@ -9,11 +9,11 @@ import {
 } from "./preview-limits.js";
 
 const managedPaths = [
-	"src/res/djs",
-	"src/res/djs_brief.json",
-	"src/res/shows.json",
-	"src/res/tags.json",
-	"src/res/data_versions.json",
+	"public/resources/djs",
+	"public/resources/djs_brief.json",
+	"public/resources/shows.json",
+	"public/resources/tags.json",
+	"public/resources/data_versions.json",
 	"public/assets/djs",
 ];
 
