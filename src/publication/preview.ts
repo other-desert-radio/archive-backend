@@ -24,6 +24,10 @@ import {
 	type PublicationArchive,
 	readPublicationArchive,
 } from "./preview-diff.js";
+import {
+	maxPublicationPreviewBytes,
+	publicationPreviewSizeError,
+} from "./preview-limits.js";
 import { readPublicationSnapshot } from "./snapshot.js";
 import {
 	acquirePublicationLease,
@@ -96,8 +100,8 @@ const readCommitArchive = async (checkout: string, commit: string) => {
 				operation: "read publication baseline",
 			});
 			totalBytes += bytes.length;
-			if (totalBytes > 256 * 1024 * 1024)
-				throw new Error("Publication preview exceeds the 256 MB limit");
+			if (totalBytes > maxPublicationPreviewBytes)
+				throw new Error(publicationPreviewSizeError);
 			return bytes;
 		},
 		async () =>
@@ -189,9 +193,9 @@ export const createPublicationPreviews = (
 			for (const entry of entries.values())
 				if (entry.requestedBy === request.requestedBy && !entry.inUse)
 					entries.delete(entry.preview.id);
-			if (entries.size >= 8)
+			if (entries.size >= 1)
 				throw new PublicationRequestError(
-					"Too many publication previews. Try again after an existing preview expires.",
+					"Another administrator has a publication preview. Try again after it is published or expires.",
 					409,
 				);
 			const id = crypto.randomUUID();
@@ -234,8 +238,8 @@ export const createPublicationPreviews = (
 				const size =
 					documents.images.reduce((sum, image) => sum + image.bytes.length, 0) +
 					Buffer.byteLength(JSON.stringify({ ...documents, images: [] }));
-				if (size > 256 * 1024 * 1024)
-					throw new Error("Publication preview exceeds the 256 MB limit");
+				if (size > maxPublicationPreviewBytes)
+					throw new Error(publicationPreviewSizeError);
 				after = documentsPublicationArchive(documents);
 			} else {
 				if (!previous?.revision)

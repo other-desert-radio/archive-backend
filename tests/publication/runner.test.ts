@@ -1163,3 +1163,59 @@ test.skipIf(!databaseUrl)(
 	},
 	20000,
 );
+
+test.skipIf(!databaseUrl)(
+	"only one administrator retains a preview, with refresh and expiry releasing capacity",
+	async () => {
+		const f = await fixture();
+		try {
+			const runner = await f.create();
+			const first = await runner.preparePreview({ requestedBy: "admin" });
+			await expect(
+				runner.preparePreview({ requestedBy: "another-admin" }),
+			).rejects.toThrow("Another administrator");
+			const refreshed = await runner.preparePreview({ requestedBy: "admin" });
+			expect(refreshed.id).not.toBe(first.id);
+			await expect(
+				runner.start({ requestedBy: "admin", previewId: first.id }),
+			).rejects.toThrow("fresh preview");
+			const clock = spyOn(Date, "now").mockReturnValue(
+				Date.parse(refreshed.expiresAt) + 1,
+			);
+			try {
+				const next = await runner.preparePreview({
+					requestedBy: "another-admin",
+				});
+				expect(next.id).not.toBe(refreshed.id);
+			} finally {
+				clock.mockRestore();
+			}
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"oversized proposed documents reject preview without creating a publication job",
+	async () => {
+		const f = await fixture();
+		try {
+			await f.database
+				.updateTable("djs")
+				.set({ image_large: Buffer.alloc(32 * 1024 * 1024) })
+				.execute();
+			const runner = await f.create();
+			await expect(
+				runner.preparePreview({ requestedBy: "admin" }),
+			).rejects.toThrow("32 MiB");
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob,
+			).toBeUndefined();
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);

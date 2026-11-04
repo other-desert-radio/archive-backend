@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import {
+	mkdir,
+	mkdtemp,
+	rm,
+	symlink,
+	truncate,
+	writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -101,4 +108,20 @@ test("manifest bytes participate in the baseline and manifest symlinks are rejec
 	await expect(snapshotLocalPublicationFiles(checkout)).rejects.toThrow(
 		"symlinks",
 	);
+});
+
+test("local baseline rejects oversized individual files and cumulative bytes", async () => {
+	await put("src/res/shows.json", "");
+	await truncate(
+		path.join(checkout, "src/res/shows.json"),
+		32 * 1024 * 1024 + 1,
+	);
+	await expect(readLocalPublicationFiles(checkout)).rejects.toThrow("32 MiB");
+	await truncate(path.join(checkout, "src/res/shows.json"), 16 * 1024 * 1024);
+	await put("src/res/tags.json", "");
+	await truncate(
+		path.join(checkout, "src/res/tags.json"),
+		16 * 1024 * 1024 + 1,
+	);
+	await expect(readLocalPublicationFiles(checkout)).rejects.toThrow("32 MiB");
 });

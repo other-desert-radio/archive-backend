@@ -186,13 +186,17 @@ Unrelated checkout files stay outside the comparison; symlinks in managed local
 output are rejected.
 
 The backend retains reviewed archive documents in memory for up to 15 minutes,
-with at most eight previews per process. No temporary preview files are created.
-Confirmation validates ownership, target, database revision, and the baseline
-before creating a job. Local mode checks current generated-file contents; remote
-mode checks the fetched branch commit. Changed baselines require a fresh
-preview. The existing exporter writes the reviewed documents after confirmation,
-and newer database edits remain pending. Restart requires preparing a new
-summary.
+with at most one preview per process. The same administrator can replace their
+unused preview; another administrator must wait until it is published or
+expires. Proposed documents and each comparison baseline have a 32 MiB size
+limit. These limits do not bound peak process memory: proposed documents are
+loaded before their size is checked, and parsing/comparison requires additional
+memory. No temporary preview files are created. Confirmation validates
+ownership, target, database revision, and the baseline before creating a job.
+Local mode checks current generated-file contents; remote mode checks the
+fetched branch commit. Changed baselines require a fresh preview. The existing
+exporter writes the reviewed documents after confirmation, and newer database
+edits remain pending. Restart requires preparing a new summary.
 
 Remote retry preserves existing commit recovery: a recognized outgoing commit is
 summarized against origin and resumed; a push already on origin only needs
