@@ -4,7 +4,7 @@ import { excludedShowNames, manualDJOverrides, renameDJ } from "./shared.js";
 import type { MixcloudParserInput, ParseEntryResult } from "./types.js";
 
 /** Versions the title, DJ normalization, and date extraction pipeline together. */
-export const MIXCLOUD_PARSER_VERSION = 1;
+export const MIXCLOUD_PARSER_VERSION = 2;
 
 /** Returns the first title match, or undefined for excluded or unmatched titles. */
 export const parseMixcloudEntry = (

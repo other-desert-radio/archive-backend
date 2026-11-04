@@ -12,8 +12,33 @@ export const excludedShowNames = new Set([
 ]);
 
 // Repair exact parsed DJ names or split explicitly listed collaborations.
-// parsed DJ -> trim -> manualDJOverrides -> individual DJs -> trim
-//           -> remove empty names -> renameDJ -> deduplicate -> decoded_djs
+// +-------------------------------------------+
+// | Parsed DJ: "Caroline + Ethan"              |
+// +-------------------------------------------+
+//                       |
+//                       v
+//              Trim parsed DJ name
+//                       |
+//                       v
+// +-------------------------------------------+
+// | manualDJOverrides                         |
+// | Repair / split; keep original if unmatched |
+// +-------------------------------------------+
+//                       |
+//                       v
+//             ["Caroline", "Ethan"]
+//                       |
+//                       v
+//       Trim each name; remove empty names
+//                       |
+//                       v
+//            Apply renameDJ to each name
+//                       |
+//                       v
+//       ["Caroline", "Ethan Primason"]
+//                       |
+//                       v
+//         Deduplicate -> decoded_djs
 export const manualDJOverrides = new Map<string, string | string[]>([
 	["Caroline + Ethan", ["Caroline", "Ethan"]],
 	["Caroline and Ethan", ["Caroline", "Ethan"]],
@@ -55,6 +80,22 @@ export const djRenames = new Map<string, string>([
 	["Aidan", "Desert Dove Radio"],
 ]);
 
-// parsed DJ -> manualDJOverrides -> individual DJ -> trim -> djRenames
-//           -> current DJ name (or unchanged name) -> deduplicate
+//       One trimmed DJ name after overrides
+//                       |
+//                       v
+//          +-------------------------+
+//          | Exact match in djRenames?|
+//          +-------------------------+
+//                 /           \
+//               yes            no
+//                |              |
+//                v              v
+//       Return current name   Return input
+//       "Emma Palm"           "Caroline"
+//              |                  |
+//              v                  v
+//       "No Translation"      "Caroline"
+//                 \           /
+//                  v         v
+//          Caller deduplicates all names
 export const renameDJ = (name: string): string => djRenames.get(name) ?? name;

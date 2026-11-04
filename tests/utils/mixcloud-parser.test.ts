@@ -13,7 +13,7 @@ test("matching titles preserve source identity and return title/DJ suggestions",
 		created_time: "2020-04-07T12:00:00Z",
 	});
 	const before = { ...entry };
-	expect(MIXCLOUD_PARSER_VERSION).toBe(1);
+	expect(MIXCLOUD_PARSER_VERSION).toBe(2);
 	expect(parseMixcloudEntry(entry)).toEqual({
 		key: entry.key,
 		derived_title: "Side A",
@@ -112,6 +112,33 @@ test("specific apostrophe and date matchers win over broad fallbacks", () => {
 });
 
 for (const [djName, expected] of [
+	["Ethan", ["Ethan Primason"]],
+	["Andrew Storrs", ["DJ PUBLIC ROAD"]],
+	["Devoid Divine", ["DEV01D"]],
+	["Nathaniel I. Ober", ["DJ Nasty Nate"]],
+	["Nathan Ober", ["DJ Nasty Nate"]],
+	["Lara", ["Lara Wilson"]],
+	["Aidan", ["Desert Dove Radio"]],
+	["  Emma Palm  ", ["No Translation"]],
+	["Emma Palm Guest", ["Emma Palm Guest"]],
+	["emma palm", ["emma palm"]],
+	["No Translation", ["No Translation"]],
+	["Ethan Primason", ["Ethan Primason"]],
+	["Modular Monday (prepared by Caroline)", ["Modular Monday"]],
+	[
+		"Pequeña Cretina + Axaxaxas Mlö (Justin Paszul)",
+		["Pequeña Cretina", "Justin Paszul"],
+	],
+	["HQ Pequeña Cretina", ["Pequeña Cretina"]],
+	["Pequeña Cretina", ["Pequeña Cretina"]],
+	["Nazmi + Caroline", ["Nazmi", "Caroline"]],
+	["Desert Dove Radio Hour", ["Desert Dove Radio"]],
+	["The Desert Dove", ["Desert Dove Radio"]],
+	["Dev.01d", ["DEV01D"]],
+	[
+		"John Zoon (hans f wagner) and General Baby (jon nielson)",
+		["Hans F. Wagner", "Jon Nielson"],
+	],
 	["Emma Palm", ["No Translation"]],
 	["Nathan Ober aka DJ NASTY NATE", ["DJ Nasty Nate"]],
 	["Peacetime Product", ["LUVWAVE"]],

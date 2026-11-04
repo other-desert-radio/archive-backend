@@ -210,7 +210,7 @@ test.skipIf(!databaseUrl)(
 			const updatedResult = {
 				...parsed,
 				derived_title: "Updated suggestion",
-				parser_version: 2,
+				parser_version: MIXCLOUD_PARSER_VERSION + 1,
 			};
 			await persistMixcloud(
 				db,
@@ -220,7 +220,7 @@ test.skipIf(!databaseUrl)(
 			);
 			expect(await read()).toMatchObject({
 				derived_title: "Updated suggestion",
-				parser_version: 2,
+				parser_version: MIXCLOUD_PARSER_VERSION + 1,
 				data_changed: false,
 				show_id: showId,
 				imported_at: importedAt,
@@ -317,7 +317,9 @@ for (const [name, source, date] of [
 					new Date(`${date}T00:00:00Z`),
 				);
 				expect(insert?.parameters).toContainEqual(
-					source === "title" ? ["Ethan"] : ["Caroline", "Ethan"],
+					source === "title"
+						? ["Ethan Primason"]
+						: ["Caroline", "Ethan Primason"],
 				);
 			}
 			expect(queries.at(-1)?.sql).toBe("commit");
