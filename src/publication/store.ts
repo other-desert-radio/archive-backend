@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import {
 	type ExpressionBuilder,
 	type Kysely,
@@ -178,12 +179,43 @@ export const readPublicationStatus = async (
 							/^public\/resources\/djs\/[^/]+\.json$/.test(file),
 						),
 				);
-				const after = documentsPublicationArchive(
-					await loadArchiveDocuments(transaction, { log: () => {} }),
-				);
+				const documents = await loadArchiveDocuments(transaction, {
+					log: () => {},
+				});
+				const after = documentsPublicationArchive(documents);
 				pending = Object.values(comparePublicationArchives(before, after)).some(
 					(changes) => Object.values(changes).some((names) => names.length > 0),
 				);
+				if (!pending) {
+					const rows = await transaction
+						.selectFrom("archive_dataset_versions")
+						.select(["dataset", "version", "updated_at"])
+						.execute();
+					const versions = Object.fromEntries(
+						rows.map((row) => [
+							row.dataset,
+							{ id: row.version, updatedAt: row.updated_at.toISOString() },
+						]),
+					);
+					const json = (file: string): unknown => {
+						const bytes = files.get(`public/resources/${file}.json`);
+						try {
+							return bytes === undefined
+								? undefined
+								: JSON.parse(bytes.toString("utf8"));
+						} catch {
+							return undefined;
+						}
+					};
+					pending =
+						rows.length !== 3 ||
+						!isDeepStrictEqual(json("data_versions"), versions) ||
+						!isDeepStrictEqual(json("djs_brief"), {
+							version: versions.djs?.id,
+							updatedAt: versions.djs?.updatedAt,
+							data: documents.djsBrief,
+						});
+				}
 			}
 			return {
 				mode: config.mode,

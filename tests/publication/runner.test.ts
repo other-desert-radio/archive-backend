@@ -321,6 +321,69 @@ process.exit(result.status ?? 1);
 	20000,
 );
 
+for (const file of ["djs_brief", "data_versions"] as const) {
+	for (const damage of ["missing", "stale", "stale timestamp"] as const) {
+		test.skipIf(!databaseUrl)(
+			`local publication repairs ${damage} ${file} even before the first publication`,
+			async () => {
+				const f = await fixture();
+				try {
+					const local: PublicationConfig = {
+						mode: "local",
+						checkoutPath: f.checkout,
+					};
+					await exportArchive(
+						f.database,
+						path.join(f.checkout, "public/resources"),
+						path.join(f.checkout, "public/assets"),
+						{ log: () => {} },
+					);
+					const clean = await readPublicationStatus(f.database, local);
+					expect(clean.pending).toBe(false);
+					expect(clean.latestJob).toBeUndefined();
+					const destination = path.join(
+						f.checkout,
+						`public/resources/${file}.json`,
+					);
+					const original = await readFile(destination, "utf8");
+					if (damage === "missing") await rm(destination);
+					else {
+						const value = JSON.parse(original);
+						if (damage === "stale timestamp") {
+							if (file === "djs_brief")
+								value.updatedAt = "2000-01-01T00:00:00.000Z";
+							else value.djs.updatedAt = "2000-01-01T00:00:00.000Z";
+						} else if (file === "djs_brief") value.data = [];
+						else value.djs.id += 1;
+						await writeFile(destination, JSON.stringify(value));
+					}
+					expect((await readPublicationStatus(f.database, local)).pending).toBe(
+						true,
+					);
+					const runner = await f.create(f.database, local);
+					const preview = await readyPreview(runner);
+					for (const resource of Object.values(preview.changes))
+						expect(resource).toEqual({ added: [], changed: [], removed: [] });
+					const job = await runner.start({
+						requestedBy: "admin",
+						previewId: preview.id,
+					});
+					expect((await settled(f.database, job.id)).job.outcome).toBe(
+						"succeeded",
+					);
+					expect(await readFile(destination, "utf8")).toBe(original);
+					expect((await readPublicationStatus(f.database, local)).pending).toBe(
+						false,
+					);
+				} finally {
+					await f.close();
+				}
+			},
+			20000,
+		);
+	}
+}
+
 test.skipIf(!databaseUrl)(
 	"local preview rejects unsafe destinations without creating a job and supports repaired non-Git directories",
 	async () => {
