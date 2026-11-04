@@ -10,21 +10,21 @@ import { validatePublicationCheckout } from "./validation.js";
 
 /** Exporter-owned paths only, including deleted files and ignored new assets. */
 const generatedPaths = [
-	"src/res/djs",
-	"src/res/djs_brief.json",
-	"src/res/shows.json",
-	"src/res/tags.json",
-	"src/res/data_versions.json",
+	"public/resources/djs",
+	"public/resources/djs_brief.json",
+	"public/resources/shows.json",
+	"public/resources/tags.json",
+	"public/resources/data_versions.json",
 	"public/assets/djs",
 ];
 export const generatedPath = (file: string): boolean =>
 	[
-		"src/res/djs_brief.json",
-		"src/res/shows.json",
-		"src/res/tags.json",
-		"src/res/data_versions.json",
+		"public/resources/djs_brief.json",
+		"public/resources/shows.json",
+		"public/resources/tags.json",
+		"public/resources/data_versions.json",
 	].includes(file) ||
-	file.startsWith("src/res/djs/") ||
+	file.startsWith("public/resources/djs/") ||
 	file.startsWith("public/assets/djs/");
 
 /** Verify job/revision trailers, one parent, and generated-only changes before trust. */

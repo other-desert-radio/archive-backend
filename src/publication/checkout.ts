@@ -46,10 +46,9 @@ export const validatePublicationDestination = async ({
 	if (!(await entryAt(checkout))?.isDirectory())
 		throw new Error("Publication checkout must be a directory");
 	for (const directory of [
-		"src",
-		"src/res",
-		"src/res/djs",
 		"public",
+		"public/resources",
+		"public/resources/djs",
 		"public/assets",
 		"public/assets/djs",
 	]) {
@@ -60,10 +59,10 @@ export const validatePublicationDestination = async ({
 			);
 	}
 	for (const file of [
-		"src/res/djs_brief.json",
-		"src/res/shows.json",
-		"src/res/tags.json",
-		"src/res/data_versions.json",
+		"public/resources/djs_brief.json",
+		"public/resources/shows.json",
+		"public/resources/tags.json",
+		"public/resources/data_versions.json",
 	]) {
 		const entry = await entryAt(path.join(checkout, file));
 		if (entry !== undefined && (!entry.isFile() || entry.isSymbolicLink()))

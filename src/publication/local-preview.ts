@@ -3,13 +3,17 @@ import type { Stats } from "node:fs";
 import { lstat, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { isMatching } from "ts-pattern";
+import {
+	maxPublicationPreviewBytes,
+	publicationPreviewSizeError,
+} from "./preview-limits.js";
 
 const managedPaths = [
-	"src/res/djs",
-	"src/res/djs_brief.json",
-	"src/res/shows.json",
-	"src/res/tags.json",
-	"src/res/data_versions.json",
+	"public/resources/djs",
+	"public/resources/djs_brief.json",
+	"public/resources/shows.json",
+	"public/resources/tags.json",
+	"public/resources/data_versions.json",
 	"public/assets/djs",
 ];
 
@@ -36,12 +40,12 @@ export const readLocalPublicationFiles = async (checkout: string) => {
 		}
 		if (!entry.isFile())
 			throw new Error("Local preview files must be regular files");
-		if (totalBytes + entry.size > 256 * 1024 * 1024)
-			throw new Error("Publication preview exceeds the 256 MB limit");
+		if (totalBytes + entry.size > maxPublicationPreviewBytes)
+			throw new Error(publicationPreviewSizeError);
 		const bytes = await readFile(source);
 		totalBytes += bytes.length;
-		if (totalBytes > 256 * 1024 * 1024)
-			throw new Error("Publication preview exceeds the 256 MB limit");
+		if (totalBytes > maxPublicationPreviewBytes)
+			throw new Error(publicationPreviewSizeError);
 		hash.update(`${relative.length}:${relative}:${bytes.length}:`);
 		hash.update(bytes);
 		files.set(relative, bytes);

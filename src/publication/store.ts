@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import {
 	type ExpressionBuilder,
 	type Kysely,
@@ -6,7 +8,15 @@ import {
 } from "kysely";
 import { isMatching, P } from "ts-pattern";
 import type { DatasetVersions } from "../db/archive-versions.js";
+import { loadArchiveDocuments } from "../db/export-archive.js";
 import type { ArchivePublicationJobsTable, Database } from "../db/types.js";
+import { validatePublicationDestination } from "./checkout.js";
+import { readLocalPublicationFiles } from "./local-preview.js";
+import {
+	comparePublicationArchives,
+	documentsPublicationArchive,
+	readPublicationArchive,
+} from "./preview-diff.js";
 import { readPublicationTarget, samePublicationTarget } from "./target.js";
 import type {
 	PublicationConfig,
@@ -147,15 +157,74 @@ export const readPublicationStatus = async (
 					samePublicationTarget(latest.target, target))
 					? latest
 					: undefined;
+			let pending =
+				state.published_target === null ||
+				!samePublicationTarget(state.published_target, target) ||
+				BigInt(state.revision) > BigInt(state.published_revision);
+			if (
+				config.mode === "local" &&
+				(latestJob === undefined ||
+					latestJob.outcome === "succeeded" ||
+					latestJob.outcome === "no-change")
+			) {
+				await validatePublicationDestination({
+					checkoutPath: config.checkoutPath,
+					repositoryRoot: fileURLToPath(new URL("../../", import.meta.url)),
+				});
+				const { files } = await readLocalPublicationFiles(config.checkoutPath);
+				const before = await readPublicationArchive(
+					async (file) => files.get(file),
+					async () =>
+						[...files.keys()].filter((file) =>
+							/^public\/resources\/djs\/[^/]+\.json$/.test(file),
+						),
+				);
+				const documents = await loadArchiveDocuments(transaction, {
+					log: () => {},
+				});
+				const after = documentsPublicationArchive(documents);
+				pending = Object.values(comparePublicationArchives(before, after)).some(
+					(changes) => Object.values(changes).some((names) => names.length > 0),
+				);
+				if (!pending) {
+					const rows = await transaction
+						.selectFrom("archive_dataset_versions")
+						.select(["dataset", "version", "updated_at"])
+						.execute();
+					const versions = Object.fromEntries(
+						rows.map((row) => [
+							row.dataset,
+							{ id: row.version, updatedAt: row.updated_at.toISOString() },
+						]),
+					);
+					const json = (file: string): unknown => {
+						const bytes = files.get(`public/resources/${file}.json`);
+						try {
+							return bytes === undefined
+								? undefined
+								: JSON.parse(bytes.toString("utf8"));
+						} catch {
+							return undefined;
+						}
+					};
+					pending =
+						!files.has("public/resources/shows.json") ||
+						!files.has("public/resources/tags.json") ||
+						rows.length !== 3 ||
+						!isDeepStrictEqual(json("data_versions"), versions) ||
+						!isDeepStrictEqual(json("djs_brief"), {
+							version: versions.djs?.id,
+							updatedAt: versions.djs?.updatedAt,
+							data: documents.djsBrief,
+						});
+				}
+			}
 			return {
 				mode: config.mode,
 				target,
 				revision: state.revision,
 				publishedRevision: state.published_revision,
-				pending:
-					state.published_target === null ||
-					!samePublicationTarget(state.published_target, target) ||
-					BigInt(state.revision) > BigInt(state.published_revision),
+				pending,
 				...(latestJob ? { latestJob } : {}),
 			};
 		});

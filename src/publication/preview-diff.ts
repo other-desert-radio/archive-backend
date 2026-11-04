@@ -91,17 +91,19 @@ export async function readPublicationArchive(
 		return bytes === undefined ? undefined : JSON.parse(bytes.toString("utf8"));
 	};
 	for (const resource of ["shows", "tags"] as const) {
-		const value = await json(`src/res/${resource}.json`);
+		const value = await json(`public/resources/${resource}.json`);
 		if (value !== undefined)
 			for (const record of records(payload(value)))
 				add(archive, resource, record);
 	}
-	const brief = await json("src/res/djs_brief.json");
+	const brief = await json("public/resources/djs_brief.json");
 	if (brief !== undefined) records(payload(brief));
 	for (const file of (await listDJFiles()).sort()) {
 		const name = file.split("/").at(-1) ?? file;
 		if (!name.endsWith(".json")) continue;
-		const [record] = records([payload(await json(`src/res/djs/${name}`))]);
+		const [record] = records([
+			payload(await json(`public/resources/djs/${name}`)),
+		]);
 		if (!record || name !== `${record.id}.json`)
 			throw new Error("Invalid archive DJ filename");
 		const images: Record<string, string> = {};

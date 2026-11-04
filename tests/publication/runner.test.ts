@@ -62,7 +62,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 	});
 	const checkout = path.join(directory, "checkout");
 	const remote = path.join(directory, "remote.git");
-	await mkdir(path.join(checkout, "src/res/djs"), { recursive: true });
+	await mkdir(path.join(checkout, "public/resources/djs"), { recursive: true });
 	await mkdir(path.join(checkout, "public/assets/djs"), { recursive: true });
 	const git = async (...args: string[]) =>
 		(
@@ -83,7 +83,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 	await git("config", "user.email", "runner@example.test");
 	await git("config", "core.hooksPath", "/dev/null");
 	await writeFile(
-		path.join(checkout, "src/res/mixcloud.json"),
+		path.join(checkout, "public/resources/mixcloud.json"),
 		"unrelated resource\n",
 	);
 	await writeFile(
@@ -91,7 +91,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 		"unrelated asset\n",
 	);
 	await writeFile(
-		path.join(checkout, "src/res/djs/99.json"),
+		path.join(checkout, "public/resources/djs/99.json"),
 		JSON.stringify({
 			id: 99,
 			title: "Removed DJ",
@@ -188,7 +188,7 @@ const publishReviewed = async (
 };
 
 test.skipIf(!databaseUrl)(
-	"local publication exports on the current branch without fetch, push, or index changes; mode and branch switches stay pending",
+	"local publication exports without changing Git; mode switches stay pending and unchanged branch switches stay clean",
 	async () => {
 		const f = await fixture();
 		const originalPath = process.env.PATH;
@@ -263,7 +263,9 @@ process.exit(result.status ?? 1);
 				"unstaged work",
 			);
 			expect(
-				await Bun.file(path.join(f.checkout, "src/res/djs/99.json")).exists(),
+				await Bun.file(
+					path.join(f.checkout, "public/resources/djs/99.json"),
+				).exists(),
 			).toBe(false);
 			expect(
 				await Bun.file(
@@ -272,7 +274,10 @@ process.exit(result.status ?? 1);
 			).toBe(true);
 			expect(
 				JSON.parse(
-					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+					await readFile(
+						path.join(f.checkout, "public/resources/tags.json"),
+						"utf8",
+					),
 				).data[0].title,
 			).toBe("Original Tag");
 			expect((await readPublicationStatus(f.database, f.config)).pending).toBe(
@@ -280,8 +285,33 @@ process.exit(result.status ?? 1);
 			);
 			await f.git("switch", "-c", "feature/another");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				false,
+			);
+			const tagsFile = path.join(f.checkout, "public/resources/tags.json");
+			const originalTags = await readFile(tagsFile, "utf8");
+			const changedTags = JSON.parse(originalTags);
+			changedTags.data[0].title = "Changed checkout tag";
+			await writeFile(tagsFile, JSON.stringify(changedTags));
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
 				true,
 			);
+			await writeFile(tagsFile, originalTags);
+			await f.database
+				.updateTable("tags")
+				.set({ title: "Edited tag" })
+				.execute();
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				true,
+			);
+			await f.database
+				.updateTable("tags")
+				.set({ title: "Original Tag" })
+				.execute();
+			const restored = await readPublicationStatus(f.database, local);
+			expect(BigInt(restored.revision)).toBeGreaterThan(
+				BigInt(restored.publishedRevision),
+			);
+			expect(restored.pending).toBe(false);
 		} finally {
 			if (originalPath === undefined) delete process.env.PATH;
 			else process.env.PATH = originalPath;
@@ -290,6 +320,79 @@ process.exit(result.status ?? 1);
 	},
 	20000,
 );
+
+for (const file of ["djs_brief", "data_versions", "shows", "tags"] as const) {
+	const damageCases =
+		file === "shows" || file === "tags"
+			? (["missing"] as const)
+			: (["missing", "stale", "stale timestamp"] as const);
+	for (const damage of damageCases) {
+		test.skipIf(!databaseUrl)(
+			`local publication repairs ${damage} ${file} even before the first publication`,
+			async () => {
+				const f = await fixture();
+				try {
+					const local: PublicationConfig = {
+						mode: "local",
+						checkoutPath: f.checkout,
+					};
+					if (file === "shows" || file === "tags") {
+						await sql`DELETE FROM show_djs; DELETE FROM show_tags; DELETE FROM dj_tags;
+							DELETE FROM shows; DELETE FROM tags`.execute(f.database);
+					}
+					await exportArchive(
+						f.database,
+						path.join(f.checkout, "public/resources"),
+						path.join(f.checkout, "public/assets"),
+						{ log: () => {} },
+					);
+					const clean = await readPublicationStatus(f.database, local);
+					expect(clean.pending).toBe(false);
+					expect(clean.latestJob).toBeUndefined();
+					const destination = path.join(
+						f.checkout,
+						`public/resources/${file}.json`,
+					);
+					const original = await readFile(destination, "utf8");
+					if (file === "shows" || file === "tags")
+						expect(JSON.parse(original).data).toEqual([]);
+					if (damage === "missing") await rm(destination);
+					else {
+						const value = JSON.parse(original);
+						if (damage === "stale timestamp") {
+							if (file === "djs_brief")
+								value.updatedAt = "2000-01-01T00:00:00.000Z";
+							else value.djs.updatedAt = "2000-01-01T00:00:00.000Z";
+						} else if (file === "djs_brief") value.data = [];
+						else value.djs.id += 1;
+						await writeFile(destination, JSON.stringify(value));
+					}
+					expect((await readPublicationStatus(f.database, local)).pending).toBe(
+						true,
+					);
+					const runner = await f.create(f.database, local);
+					const preview = await readyPreview(runner);
+					for (const resource of Object.values(preview.changes))
+						expect(resource).toEqual({ added: [], changed: [], removed: [] });
+					const job = await runner.start({
+						requestedBy: "admin",
+						previewId: preview.id,
+					});
+					expect((await settled(f.database, job.id)).job.outcome).toBe(
+						"succeeded",
+					);
+					expect(await readFile(destination, "utf8")).toBe(original);
+					expect((await readPublicationStatus(f.database, local)).pending).toBe(
+						false,
+					);
+				} finally {
+					await f.close();
+				}
+			},
+			20000,
+		);
+	}
+}
 
 test.skipIf(!databaseUrl)(
 	"local preview rejects unsafe destinations without creating a job and supports repaired non-Git directories",
@@ -303,21 +406,29 @@ test.skipIf(!databaseUrl)(
 			};
 			const outside = path.join(f.directory, "outside.json");
 			await writeFile(outside, "keep me");
-			await symlink(outside, path.join(f.checkout, "src/res/shows.json"));
+			await symlink(
+				outside,
+				path.join(f.checkout, "public/resources/shows.json"),
+			);
 			const runner = await f.create(f.database, local);
 			await expect(readyPreview(runner)).rejects.toThrow();
-			expect(
-				(await readPublicationStatus(f.database, local)).latestJob,
-			).toBeUndefined();
-			expect((await readPublicationStatus(f.database, local)).pending).toBe(
-				true,
+			await expect(readPublicationStatus(f.database, local)).rejects.toThrow(
+				"without symlinks",
 			);
+			expect(
+				await f.database
+					.selectFrom("archive_publication_jobs")
+					.selectAll()
+					.execute(),
+			).toEqual([]);
 			expect(await readFile(outside, "utf8")).toBe("keep me");
-			await rm(path.join(f.checkout, "src/res/shows.json"));
+			await rm(path.join(f.checkout, "public/resources/shows.json"));
 			const preview = await readyPreview(runner);
 			expect(preview.changes.djs.removed).toEqual(["Removed DJ"]);
 			expect(
-				await Bun.file(path.join(f.checkout, "src/res/djs/99.json")).exists(),
+				await Bun.file(
+					path.join(f.checkout, "public/resources/djs/99.json"),
+				).exists(),
 			).toBe(true);
 			const job = await runner.start({
 				requestedBy: "admin",
@@ -375,10 +486,13 @@ test.skipIf(!databaseUrl)(
 			const versions = await jobVersions(f.database, first.id);
 			expect(versions).not.toBeNull();
 			expect(
-				JSON.parse(await f.git("show", "HEAD:src/res/data_versions.json")),
+				JSON.parse(
+					await f.git("show", "HEAD:public/resources/data_versions.json"),
+				),
 			).toEqual(versions);
 			expect(
-				JSON.parse(await f.git("show", "HEAD:src/res/shows.json")).version,
+				JSON.parse(await f.git("show", "HEAD:public/resources/shows.json"))
+					.version,
 			).toBe(versions?.shows.id);
 
 			expect(
@@ -398,13 +512,18 @@ test.skipIf(!databaseUrl)(
 				),
 			).toBe(done.job.commitId);
 			expect(
-				await readFile(path.join(f.checkout, "src/res/mixcloud.json"), "utf8"),
+				await readFile(
+					path.join(f.checkout, "public/resources/mixcloud.json"),
+					"utf8",
+				),
 			).toBe("unrelated resource\n");
 			expect(
 				await readFile(path.join(f.checkout, "public/assets/logo.svg"), "utf8"),
 			).toBe("unrelated asset\n");
 			expect(
-				await Bun.file(path.join(f.checkout, "src/res/djs/99.json")).exists(),
+				await Bun.file(
+					path.join(f.checkout, "public/resources/djs/99.json"),
+				).exists(),
 			).toBe(false);
 			expect(
 				await Bun.file(
@@ -413,7 +532,10 @@ test.skipIf(!databaseUrl)(
 			).toBe(false);
 			expect(
 				JSON.parse(
-					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+					await readFile(
+						path.join(f.checkout, "public/resources/tags.json"),
+						"utf8",
+					),
 				).data[0].title,
 			).toBe("Original Tag");
 			expect(await f.git("show", "-s", "--format=%B", "HEAD")).toContain(
@@ -622,7 +744,7 @@ test.skipIf(!databaseUrl)(
 			const status = await f.git("status", "--porcelain=v1");
 			const index = await readFile(path.join(f.checkout, ".git/index"));
 			const original = await readFile(
-				path.join(f.checkout, "src/res/djs/99.json"),
+				path.join(f.checkout, "public/resources/djs/99.json"),
 			);
 			const preview = await readyPreview(runner);
 			expect(preview.changes.djs.removed).toEqual(["Removed DJ"]);
@@ -642,7 +764,7 @@ test.skipIf(!databaseUrl)(
 				index,
 			);
 			expect(
-				await readFile(path.join(f.checkout, "src/res/djs/99.json")),
+				await readFile(path.join(f.checkout, "public/resources/djs/99.json")),
 			).toEqual(original);
 			expect(
 				(await readPublicationStatus(f.database, f.config)).latestJob,
@@ -728,8 +850,11 @@ test.skipIf(!databaseUrl)(
 	async () => {
 		const f = await fixture();
 		try {
-			await writeFile(path.join(f.checkout, "src/res/tags.json"), "{ invalid");
-			await f.git("add", "src/res/tags.json");
+			await writeFile(
+				path.join(f.checkout, "public/resources/tags.json"),
+				"{ invalid",
+			);
+			await f.git("add", "public/resources/tags.json");
 			await f.git("commit", "-m", "Malformed archive baseline");
 			await f.git("push", "origin", "publish-dev");
 			const runner = await f.create();
@@ -740,7 +865,10 @@ test.skipIf(!databaseUrl)(
 				(await readPublicationStatus(f.database, f.config)).latestJob,
 			).toBeUndefined();
 			expect(
-				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				await readFile(
+					path.join(f.checkout, "public/resources/tags.json"),
+					"utf8",
+				),
 			).toBe("{ invalid");
 			expect(await f.git("status", "--porcelain=v1")).toBe("");
 		} finally {
@@ -802,7 +930,10 @@ test.skipIf(!databaseUrl)(
 				(await readPublicationStatus(f.database, local)).latestJob,
 			).toBeUndefined();
 			const second = await readyPreview(runner);
-			await writeFile(path.join(f.checkout, "src/res/tags.json"), "[]\n");
+			await writeFile(
+				path.join(f.checkout, "public/resources/tags.json"),
+				"[]\n",
+			);
 			await expect(
 				runner.start({ requestedBy: "admin", previewId: second.id }),
 			).rejects.toThrow("changed");
@@ -871,7 +1002,10 @@ test.skipIf(!databaseUrl)(
 			});
 			expect(
 				JSON.parse(
-					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+					await readFile(
+						path.join(f.checkout, "public/resources/tags.json"),
+						"utf8",
+					),
 				).data[0].title,
 			).toBe("Original Tag");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
@@ -908,7 +1042,10 @@ test.skipIf(!databaseUrl)(
 						)
 					) {
 						changed = true;
-						await symlink(outside, path.join(f.checkout, "src/res/shows.json"));
+						await symlink(
+							outside,
+							path.join(f.checkout, "public/resources/shows.json"),
+						);
 					}
 					return result;
 				},
@@ -924,7 +1061,7 @@ test.skipIf(!databaseUrl)(
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
 				true,
 			);
-			await rm(path.join(f.checkout, "src/res/shows.json"));
+			await rm(path.join(f.checkout, "public/resources/shows.json"));
 			await f.database
 				.updateTable("tags")
 				.set({ title: "Fresh retry title" })
@@ -943,7 +1080,10 @@ test.skipIf(!databaseUrl)(
 			});
 			expect(
 				JSON.parse(
-					await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+					await readFile(
+						path.join(f.checkout, "public/resources/tags.json"),
+						"utf8",
+					),
 				).data[0].title,
 			).toBe("Fresh retry title");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
@@ -997,7 +1137,10 @@ test.skipIf(!databaseUrl)(
 				revision: "2",
 			});
 			const tags = JSON.parse(
-				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				await readFile(
+					path.join(f.checkout, "public/resources/tags.json"),
+					"utf8",
+				),
 			);
 			expect(tags.data[0].title).toBe("Changed under export lock");
 			const versions = await jobVersions(f.database, reservation.job.id);
@@ -1005,7 +1148,7 @@ test.skipIf(!databaseUrl)(
 			expect(
 				JSON.parse(
 					await readFile(
-						path.join(f.checkout, "src/res/data_versions.json"),
+						path.join(f.checkout, "public/resources/data_versions.json"),
 						"utf8",
 					),
 				),
@@ -1113,7 +1256,7 @@ test.skipIf(!databaseUrl)(
 			});
 			standalone = exportArchive(
 				exporting,
-				path.join(f.checkout, "src/res"),
+				path.join(f.checkout, "public/resources"),
 				path.join(f.checkout, "public/assets"),
 				{ log: () => {} },
 			);
@@ -1133,16 +1276,19 @@ test.skipIf(!databaseUrl)(
 			expect(done.job.outcome).toBe("succeeded");
 			await standalone;
 			const committed = JSON.parse(
-				await f.git("show", "HEAD:src/res/tags.json"),
+				await f.git("show", "HEAD:public/resources/tags.json"),
 			);
 			expect(committed.data[0].title).toBe("Original Tag");
 			expect(committed.version).toBe(1);
 			const written = JSON.parse(
-				await readFile(path.join(f.checkout, "src/res/tags.json"), "utf8"),
+				await readFile(
+					path.join(f.checkout, "public/resources/tags.json"),
+					"utf8",
+				),
 			);
 			const manifest = JSON.parse(
 				await readFile(
-					path.join(f.checkout, "src/res/data_versions.json"),
+					path.join(f.checkout, "public/resources/data_versions.json"),
 					"utf8",
 				),
 			);
@@ -1158,6 +1304,62 @@ test.skipIf(!databaseUrl)(
 		} finally {
 			resume.resolve();
 			await Promise.allSettled([standalone]);
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"only one administrator retains a preview, with refresh and expiry releasing capacity",
+	async () => {
+		const f = await fixture();
+		try {
+			const runner = await f.create();
+			const first = await runner.preparePreview({ requestedBy: "admin" });
+			await expect(
+				runner.preparePreview({ requestedBy: "another-admin" }),
+			).rejects.toThrow("Another administrator");
+			const refreshed = await runner.preparePreview({ requestedBy: "admin" });
+			expect(refreshed.id).not.toBe(first.id);
+			await expect(
+				runner.start({ requestedBy: "admin", previewId: first.id }),
+			).rejects.toThrow("fresh preview");
+			const clock = spyOn(Date, "now").mockReturnValue(
+				Date.parse(refreshed.expiresAt) + 1,
+			);
+			try {
+				const next = await runner.preparePreview({
+					requestedBy: "another-admin",
+				});
+				expect(next.id).not.toBe(refreshed.id);
+			} finally {
+				clock.mockRestore();
+			}
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"oversized proposed documents reject preview without creating a publication job",
+	async () => {
+		const f = await fixture();
+		try {
+			await f.database
+				.updateTable("djs")
+				.set({ image_large: Buffer.alloc(32 * 1024 * 1024) })
+				.execute();
+			const runner = await f.create();
+			await expect(
+				runner.preparePreview({ requestedBy: "admin" }),
+			).rejects.toThrow("32 MiB");
+			expect(
+				(await readPublicationStatus(f.database, f.config)).latestJob,
+			).toBeUndefined();
+		} finally {
 			await f.close();
 		}
 	},
