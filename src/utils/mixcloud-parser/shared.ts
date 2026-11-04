@@ -16,6 +16,8 @@ export const manualDJOverrides = new Map<string, string | string[]>([
 	["Caroline + Ethan", ["Caroline", "Ethan"]],
 	["Caroline and Ethan", ["Caroline", "Ethan"]],
 	["Ethan and Caroline", ["Caroline", "Ethan"]],
+	// rename
+	["Ethan", "Ethan Primason"],
 	["Tara Jane O'Neil (TJO)", "Tara Jane O'Neil"],
 	["Lodi Dottie X Muzizmu", ["Lodi Dottie", "Muzizmu"]],
 	["Modular Monday (prepared by Caroline)", "Modular Monday"],
@@ -26,19 +28,32 @@ export const manualDJOverrides = new Map<string, string | string[]>([
 
 	["HQ Pequeña Cretina", "Pequeña Cretina"],
 	["K Serah Sarah", "K Sera Sarah"],
-	["Lodi Dottie X Peacetime Product B2B", ["Lodi Dottie", "Peacetime Product"]],
+	// Peacetime Product is LUVWAVE
+	["Lodi Dottie X Peacetime Product B2B", ["Lodi Dottie", "LUVWAVE"]],
+	// Peacetime Product is LUVWAVE
+	["Peacetime Product X Lodi Dottie B2B", ["LUVWAVE", "Lodi Dottie"]],
+	// Peacetime Product is LUVWAVE
+	["Peacetime Product", "LUVWAVE"],
+
+	// rename
+	["Andrew Storrs", "DJ PUBLIC ROAD"],
 	["Nazmi + Caroline", ["Nazmi", "Caroline"]],
 	["Nathan Ober aka DJ NASTY NATE", "Nathan Ober"],
-	["Peacetime Product X Lodi Dottie B2B", ["Peacetime Product", "Lodi Dottie"]],
+	["Aidan", "Desert Dove Radio"],
 	["Desert Dove Radio Hour", "Desert Dove Radio"],
 	["The Desert Dove", "Desert Dove Radio"],
 	["Dev.01d", "DEV01D"],
+	// rename
 	["Devoid Divine", "DEV01D"],
-	["Pequeña Cretina", "DJ Pequeña Cretina aka Alexandra Martinez"],
+	// rename
 	["Nathaniel I. Ober", "DJ Nasty Nate"],
+	// rename
 	["Nathan Ober", "DJ Nasty Nate"],
 	[
 		"John Zoon (hans f wagner) and General Baby (jon nielson)",
 		["Hans F. Wagner", "Jon Nielson"],
 	],
+	// rename
+	["Emma Palm", "No Translation"],
+	["Lara", "Lara Wilson"],
 ]);
