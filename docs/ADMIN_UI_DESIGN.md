@@ -708,8 +708,10 @@ management header. The header is 66px tall, leaving 12px above and below its
 show publish changes; a running job shows Publishing… and failed, interrupted,
 or unavailable status keeps the publish changes label. Clean state keeps the
 control visible with “all changes saved” in local mode or “all changes pushed”
-in remote mode, italic gray text, and no border. The title and control fit 390px
-and 320px headers.
+in remote mode, italic gray text, and no border. Local pending status reflects
+actual generated-content differences, so branch switches with identical files
+and reverted edits keep this clean state. The title and control fit 390px and
+320px headers.
 
 The shared message modal confirms pending changes with “Publish latest changes
 to github.” in remote mode and names the target branch. Local mode shows the

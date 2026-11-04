@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import {
 	type ExpressionBuilder,
 	type Kysely,
@@ -6,7 +7,15 @@ import {
 } from "kysely";
 import { isMatching, P } from "ts-pattern";
 import type { DatasetVersions } from "../db/archive-versions.js";
+import { loadArchiveDocuments } from "../db/export-archive.js";
 import type { ArchivePublicationJobsTable, Database } from "../db/types.js";
+import { validatePublicationDestination } from "./checkout.js";
+import { readLocalPublicationFiles } from "./local-preview.js";
+import {
+	comparePublicationArchives,
+	documentsPublicationArchive,
+	readPublicationArchive,
+} from "./preview-diff.js";
 import { readPublicationTarget, samePublicationTarget } from "./target.js";
 import type {
 	PublicationConfig,
@@ -147,15 +156,41 @@ export const readPublicationStatus = async (
 					samePublicationTarget(latest.target, target))
 					? latest
 					: undefined;
+			let pending =
+				state.published_target === null ||
+				!samePublicationTarget(state.published_target, target) ||
+				BigInt(state.revision) > BigInt(state.published_revision);
+			if (
+				config.mode === "local" &&
+				(latestJob === undefined ||
+					latestJob.outcome === "succeeded" ||
+					latestJob.outcome === "no-change")
+			) {
+				await validatePublicationDestination({
+					checkoutPath: config.checkoutPath,
+					repositoryRoot: fileURLToPath(new URL("../../", import.meta.url)),
+				});
+				const { files } = await readLocalPublicationFiles(config.checkoutPath);
+				const before = await readPublicationArchive(
+					async (file) => files.get(file),
+					async () =>
+						[...files.keys()].filter((file) =>
+							/^public\/resources\/djs\/[^/]+\.json$/.test(file),
+						),
+				);
+				const after = documentsPublicationArchive(
+					await loadArchiveDocuments(transaction, { log: () => {} }),
+				);
+				pending = Object.values(comparePublicationArchives(before, after)).some(
+					(changes) => Object.values(changes).some((names) => names.length > 0),
+				);
+			}
 			return {
 				mode: config.mode,
 				target,
 				revision: state.revision,
 				publishedRevision: state.published_revision,
-				pending:
-					state.published_target === null ||
-					!samePublicationTarget(state.published_target, target) ||
-					BigInt(state.revision) > BigInt(state.published_revision),
+				pending,
 				...(latestJob ? { latestJob } : {}),
 			};
 		});

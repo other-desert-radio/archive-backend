@@ -188,7 +188,7 @@ const publishReviewed = async (
 };
 
 test.skipIf(!databaseUrl)(
-	"local publication exports on the current branch without fetch, push, or index changes; mode and branch switches stay pending",
+	"local publication exports without changing Git; mode switches stay pending and unchanged branch switches stay clean",
 	async () => {
 		const f = await fixture();
 		const originalPath = process.env.PATH;
@@ -285,8 +285,33 @@ process.exit(result.status ?? 1);
 			);
 			await f.git("switch", "-c", "feature/another");
 			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				false,
+			);
+			const tagsFile = path.join(f.checkout, "public/resources/tags.json");
+			const originalTags = await readFile(tagsFile, "utf8");
+			const changedTags = JSON.parse(originalTags);
+			changedTags.data[0].title = "Changed checkout tag";
+			await writeFile(tagsFile, JSON.stringify(changedTags));
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
 				true,
 			);
+			await writeFile(tagsFile, originalTags);
+			await f.database
+				.updateTable("tags")
+				.set({ title: "Edited tag" })
+				.execute();
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				true,
+			);
+			await f.database
+				.updateTable("tags")
+				.set({ title: "Original Tag" })
+				.execute();
+			const restored = await readPublicationStatus(f.database, local);
+			expect(BigInt(restored.revision)).toBeGreaterThan(
+				BigInt(restored.publishedRevision),
+			);
+			expect(restored.pending).toBe(false);
 		} finally {
 			if (originalPath === undefined) delete process.env.PATH;
 			else process.env.PATH = originalPath;
@@ -314,12 +339,15 @@ test.skipIf(!databaseUrl)(
 			);
 			const runner = await f.create(f.database, local);
 			await expect(readyPreview(runner)).rejects.toThrow();
-			expect(
-				(await readPublicationStatus(f.database, local)).latestJob,
-			).toBeUndefined();
-			expect((await readPublicationStatus(f.database, local)).pending).toBe(
-				true,
+			await expect(readPublicationStatus(f.database, local)).rejects.toThrow(
+				"without symlinks",
 			);
+			expect(
+				await f.database
+					.selectFrom("archive_publication_jobs")
+					.selectAll()
+					.execute(),
+			).toEqual([]);
 			expect(await readFile(outside, "utf8")).toBe("keep me");
 			await rm(path.join(f.checkout, "public/resources/shows.json"));
 			const preview = await readyPreview(runner);
