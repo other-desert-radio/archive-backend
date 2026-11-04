@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
 import { validateMixcloudCloudcasts } from "../../src/db/import-mixcloud.js";
-import { parseMixcloudEntry } from "../../src/utils/index.js";
+import {
+	MIXCLOUD_PARSER_VERSION,
+	parseMixcloudEntry,
+} from "../../src/utils/index.js";
 import fixture from "../fixtures/mixcloud-diagnostics.json";
 
 const mixcloudCloudcasts = validateMixcloudCloudcasts(fixture);
@@ -40,12 +43,12 @@ test("diagnostic import uses shared suggestions and reports failures and missing
 		"Failed to parse show name: \"K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't\"",
 	);
 	expect(stdout).toContain(
-		"parser: common-comma-date-with-flexible-spacing (version 1)",
+		`parser: common-comma-date-with-flexible-spacing (version ${MIXCLOUD_PARSER_VERSION})`,
 	);
 	expect(stdout).toContain("derived_date: 2020-04-06T00:00:00.000Z");
 	expect(stdout).toContain("date_source: title");
 	expect(stdout).toContain("date_source: created_time");
-	expect(stdout).toContain("dj_names: Caroline, Ethan");
+	expect(stdout).toContain("dj_names: Caroline, Ethan Primason");
 	expect(stdout).toContain("key: /otherdesertradio/");
 });
 
