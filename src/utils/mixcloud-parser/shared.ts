@@ -11,13 +11,13 @@ export const excludedShowNames = new Set([
 	"K Sera Sarah's Beyond Karaoke Episode 12 - Free Will or Free Won't",
 ]);
 
-// Exact parsed DJ names can be renamed to one DJ or split into multiple DJs.
+// Repair exact parsed DJ names or split explicitly listed collaborations.
+// parsed DJ -> trim -> manualDJOverrides -> individual DJs -> trim
+//           -> remove empty names -> renameDJ -> deduplicate -> decoded_djs
 export const manualDJOverrides = new Map<string, string | string[]>([
 	["Caroline + Ethan", ["Caroline", "Ethan"]],
 	["Caroline and Ethan", ["Caroline", "Ethan"]],
 	["Ethan and Caroline", ["Caroline", "Ethan"]],
-	// rename
-	["Ethan", "Ethan Primason"],
 	["Tara Jane O'Neil (TJO)", "Tara Jane O'Neil"],
 	["Lodi Dottie X Muzizmu", ["Lodi Dottie", "Muzizmu"]],
 	["Modular Monday (prepared by Caroline)", "Modular Monday"],
@@ -28,32 +28,33 @@ export const manualDJOverrides = new Map<string, string | string[]>([
 
 	["HQ Pequeña Cretina", "Pequeña Cretina"],
 	["K Serah Sarah", "K Sera Sarah"],
-	// Peacetime Product is LUVWAVE
-	["Lodi Dottie X Peacetime Product B2B", ["Lodi Dottie", "LUVWAVE"]],
-	// Peacetime Product is LUVWAVE
-	["Peacetime Product X Lodi Dottie B2B", ["LUVWAVE", "Lodi Dottie"]],
-	// Peacetime Product is LUVWAVE
-	["Peacetime Product", "LUVWAVE"],
+	["Lodi Dottie X Peacetime Product B2B", ["Lodi Dottie", "Peacetime Product"]],
+	["Peacetime Product X Lodi Dottie B2B", ["Peacetime Product", "Lodi Dottie"]],
 
-	// rename
-	["Andrew Storrs", "DJ PUBLIC ROAD"],
 	["Nazmi + Caroline", ["Nazmi", "Caroline"]],
 	["Nathan Ober aka DJ NASTY NATE", "Nathan Ober"],
-	["Aidan", "Desert Dove Radio"],
 	["Desert Dove Radio Hour", "Desert Dove Radio"],
 	["The Desert Dove", "Desert Dove Radio"],
 	["Dev.01d", "DEV01D"],
-	// rename
-	["Devoid Divine", "DEV01D"],
-	// rename
-	["Nathaniel I. Ober", "DJ Nasty Nate"],
-	// rename
-	["Nathan Ober", "DJ Nasty Nate"],
 	[
 		"John Zoon (hans f wagner) and General Baby (jon nielson)",
 		["Hans F. Wagner", "Jon Nielson"],
 	],
-	// rename
+]);
+
+// Exact DJ identities mapped to their current names.
+export const djRenames = new Map<string, string>([
+	["Ethan", "Ethan Primason"],
+	["Peacetime Product", "LUVWAVE"],
+	["Andrew Storrs", "DJ PUBLIC ROAD"],
+	["Devoid Divine", "DEV01D"],
+	["Nathaniel I. Ober", "DJ Nasty Nate"],
+	["Nathan Ober", "DJ Nasty Nate"],
 	["Emma Palm", "No Translation"],
 	["Lara", "Lara Wilson"],
+	["Aidan", "Desert Dove Radio"],
 ]);
+
+// parsed DJ -> manualDJOverrides -> individual DJ -> trim -> djRenames
+//           -> current DJ name (or unchanged name) -> deduplicate
+export const renameDJ = (name: string): string => djRenames.get(name) ?? name;

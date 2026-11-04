@@ -4,6 +4,7 @@ import {
 	parseMixcloudEntry,
 	parsers,
 } from "../../src/utils/index.js";
+import { djRenames } from "../../src/utils/mixcloud-parser/shared.js";
 
 test("matching titles preserve source identity and return title/DJ suggestions", () => {
 	const entry = Object.freeze({
@@ -17,7 +18,7 @@ test("matching titles preserve source identity and return title/DJ suggestions",
 		key: entry.key,
 		derived_title: "Side A",
 		derived_date: new Date("2020-04-06T00:00:00Z"),
-		decoded_djs: ["Ethan"],
+		decoded_djs: ["Ethan Primason"],
 		parser_version: MIXCLOUD_PARSER_VERSION,
 		parser_key: "common-comma-date-with-flexible-spacing",
 		date_source: "title",
@@ -94,7 +95,7 @@ test("specific apostrophe and date matchers win over broad fallbacks", () => {
 		}),
 	).toMatchObject({
 		derived_title: "From the Vault 5",
-		decoded_djs: ["Andrew Storrs"],
+		decoded_djs: ["DJ PUBLIC ROAD"],
 		parser_key: "trailing-apostrophe-dj-name-with-month-and-year",
 	});
 	expect(
@@ -111,12 +112,17 @@ test("specific apostrophe and date matchers win over broad fallbacks", () => {
 });
 
 for (const [djName, expected] of [
+	["Emma Palm", ["No Translation"]],
+	["Nathan Ober aka DJ NASTY NATE", ["DJ Nasty Nate"]],
+	["Peacetime Product", ["LUVWAVE"]],
+	["Lodi Dottie X Peacetime Product B2B", ["Lodi Dottie", "LUVWAVE"]],
+	["Peacetime Product X Lodi Dottie B2B", ["LUVWAVE", "Lodi Dottie"]],
 	["Tara Jane O'Neil (TJO)", ["Tara Jane O'Neil"]],
 	["K Serah Sarah", ["K Sera Sarah"]],
-	["Caroline + Ethan", ["Caroline", "Ethan"]],
-	["Ethan and Caroline", ["Caroline", "Ethan"]],
+	["Caroline + Ethan", ["Caroline", "Ethan Primason"]],
+	["Ethan and Caroline", ["Caroline", "Ethan Primason"]],
 	["Lodi Dottie X Muzizmu", ["Lodi Dottie", "Muzizmu"]],
-	["  Caroline and Ethan  ", ["Caroline", "Ethan"]],
+	["  Caroline and Ethan  ", ["Caroline", "Ethan Primason"]],
 	["Mellow and Normal", ["Mellow and Normal"]],
 	["Unknown + Collaborator", ["Unknown + Collaborator"]],
 	["   ", []],
@@ -138,7 +144,10 @@ test("returned DJ names do not mutate shared override arrays", () => {
 		created_time: "2026-01-01T00:00:00Z",
 	};
 	parseMixcloudEntry(entry)?.decoded_djs?.push("Changed");
-	expect(parseMixcloudEntry(entry)?.decoded_djs).toEqual(["Caroline", "Ethan"]);
+	expect(parseMixcloudEntry(entry)?.decoded_djs).toEqual([
+		"Caroline",
+		"Ethan Primason",
+	]);
 });
 
 for (const [name, createdTime, expected, source] of [
@@ -195,3 +204,27 @@ for (const [name, createdTime, expected, source] of [
 		expect(result?.date_source).toBe(source);
 	});
 }
+
+test("deduplicates DJ identities after renaming", () => {
+	const parser = {
+		key: "test-rename-deduplication",
+		parse: () => ({ title: "Test", djName: "Caroline and Ethan" }),
+	};
+	// Reuse an existing split, temporarily mapping Ethan to its collaborator.
+	const previous = djRenames.get("Ethan");
+	djRenames.set("Ethan", "Caroline");
+	parsers.unshift(parser);
+	try {
+		expect(
+			parseMixcloudEntry({
+				key: "/dedup/",
+				name: "Test",
+				created_time: "2020-01-01T00:00:00Z",
+			})?.decoded_djs,
+		).toEqual(["Caroline"]);
+	} finally {
+		parsers.shift();
+		if (previous === undefined) djRenames.delete("Ethan");
+		else djRenames.set("Ethan", previous);
+	}
+});

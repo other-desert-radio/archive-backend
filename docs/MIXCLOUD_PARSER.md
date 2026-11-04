@@ -21,17 +21,19 @@ invalid title dates fall back to a valid ISO `created_time` timestamp with an
 explicit timezone. Both sources produce the UTC calendar day at midnight,
 matching `shows.date`; `date_source` identifies the source used. If neither is
 valid, both date fields remain null while the title/DJ suggestions are retained.
-DJ overrides in `shared.ts` rename exact names or split explicitly listed
-collaborations; unlisted names are not split. Names are trimmed before lookup,
-and output names are trimmed, stripped of empty entries, and deduplicated in
-their original order. It has no file, network, or database side effects and is
-called by refresh persistence. The read-only diagnostic import script calls this
-shared function, retains source keys, reports stable parser keys and versions,
-and treats undefined results as parse failures. DJ listings use the shared
-normalized names without script-local overrides. Missing date suggestions are
-reported explicitly; all date conversion and upload-date fallback use the shared
-parser. Refresh persists these suggestions; see the tracking reference.
-`tests/utils/mixcloud-parser.test.ts` checks this contract.
+DJ overrides in `shared.ts` repair exact parsed names or split explicitly listed
+collaborations; unlisted names are not split. Names are trimmed before lookup.
+Each resulting name is trimmed and empty entries are removed, then `renameDJ`
+applies a single exact lookup in `djRenames` to resolve current DJ identities.
+Renamed names are deduplicated in their original order. It has no file, network,
+or database side effects and is called by refresh persistence. The read-only
+diagnostic import script calls this shared function, retains source keys,
+reports stable parser keys and versions, and treats undefined results as parse
+failures. DJ listings use the shared normalized names without script-local
+overrides. Missing date suggestions are reported explicitly; all date conversion
+and upload-date fallback use the shared parser. Refresh persists these
+suggestions; see the tracking reference. `tests/utils/mixcloud-parser.test.ts`
+checks this contract.
 
 `src/utils/mixcloud-parser/parsers.ts` contains all fourteen regex matchers,
 known-DJ prefix fallbacks and their comments from the diagnostic script.

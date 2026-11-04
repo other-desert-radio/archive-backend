@@ -1,6 +1,6 @@
 import { parseCreatedTimeDate, parseTitleDate } from "./dates.js";
 import { parsers } from "./parsers.js";
-import { excludedShowNames, manualDJOverrides } from "./shared.js";
+import { excludedShowNames, manualDJOverrides, renameDJ } from "./shared.js";
 import type { MixcloudParserInput, ParseEntryResult } from "./types.js";
 
 /** Versions the title, DJ normalization, and date extraction pipeline together. */
@@ -20,14 +20,14 @@ export const parseMixcloudEntry = (
 			continue;
 		}
 
-		// path DJ names
+		// Repair parsed names before resolving DJ identities.
 		const djName = parsed.djName.trim();
 		const resolvedDJNames = manualDJOverrides.get(djName) ?? djName;
 		const djNames = Array.isArray(resolvedDJNames)
 			? resolvedDJNames
 			: [resolvedDJNames];
 		const nonEmptyDJNames = djNames.map((name) => name.trim()).filter(Boolean);
-		const decodedDJs = [...new Set(nonEmptyDJNames)];
+		const decodedDJs = [...new Set(nonEmptyDJNames.map(renameDJ))];
 
 		const titleDate = parseTitleDate(parsed.date);
 		const derivedDate = titleDate ?? parseCreatedTimeDate(entry.created_time);
