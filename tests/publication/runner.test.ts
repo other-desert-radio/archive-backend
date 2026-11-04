@@ -321,8 +321,12 @@ process.exit(result.status ?? 1);
 	20000,
 );
 
-for (const file of ["djs_brief", "data_versions"] as const) {
-	for (const damage of ["missing", "stale", "stale timestamp"] as const) {
+for (const file of ["djs_brief", "data_versions", "shows", "tags"] as const) {
+	const damageCases =
+		file === "shows" || file === "tags"
+			? (["missing"] as const)
+			: (["missing", "stale", "stale timestamp"] as const);
+	for (const damage of damageCases) {
 		test.skipIf(!databaseUrl)(
 			`local publication repairs ${damage} ${file} even before the first publication`,
 			async () => {
@@ -332,6 +336,10 @@ for (const file of ["djs_brief", "data_versions"] as const) {
 						mode: "local",
 						checkoutPath: f.checkout,
 					};
+					if (file === "shows" || file === "tags") {
+						await sql`DELETE FROM show_djs; DELETE FROM show_tags; DELETE FROM dj_tags;
+							DELETE FROM shows; DELETE FROM tags`.execute(f.database);
+					}
 					await exportArchive(
 						f.database,
 						path.join(f.checkout, "public/resources"),
@@ -346,6 +354,8 @@ for (const file of ["djs_brief", "data_versions"] as const) {
 						`public/resources/${file}.json`,
 					);
 					const original = await readFile(destination, "utf8");
+					if (file === "shows" || file === "tags")
+						expect(JSON.parse(original).data).toEqual([]);
 					if (damage === "missing") await rm(destination);
 					else {
 						const value = JSON.parse(original);

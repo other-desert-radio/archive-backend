@@ -52,9 +52,10 @@ archive-site Pages workflow deploys only `main`. Remote development publication
 defaults to `publish-dev`; local mode leaves the actual checked-out branch
 unchanged. Local pending status compares exported content with the current
 generated checkout files; branch metadata and reverted edits alone are not
-pending changes. A clean local destination also requires the DJ brief index and
-dataset version manifest to match the database export and allocated versions.
-Remote pending status tracks acknowledged revisions and targets.
+pending changes. A clean local destination requires show and tag documents even
+for empty datasets, plus a DJ brief index and dataset version manifest matching
+the database export and allocated versions. Remote pending status tracks
+acknowledged revisions and targets.
 
 Inspect `Dockerfile`, `compose.yml`, `compose.remote.yml`, and `.env.example`
 for runtime configuration. Use the manual

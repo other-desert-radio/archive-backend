@@ -208,6 +208,8 @@ export const readPublicationStatus = async (
 						}
 					};
 					pending =
+						!files.has("public/resources/shows.json") ||
+						!files.has("public/resources/tags.json") ||
 						rows.length !== 3 ||
 						!isDeepStrictEqual(json("data_versions"), versions) ||
 						!isDeepStrictEqual(json("djs_brief"), {
