@@ -70,14 +70,22 @@ export const manualDJOverrides = new Map<string, string | string[]>([
 // Exact DJ identities mapped to their current names.
 export const djRenames = new Map<string, string>([
 	["Ethan", "Ethan Primason"],
+
 	["Peacetime Product", "LUVWAVE"],
+
 	["Andrew Storrs", "DJ PUBLIC ROAD"],
+
 	["Devoid Divine", "DEV01D"],
+
 	["Nathaniel I. Ober", "DJ Nasty Nate"],
 	["Nathan Ober", "DJ Nasty Nate"],
+
 	["Emma Palm", "No Translation"],
+
 	["Lara", "Lara Wilson"],
+
 	["Aidan", "Desert Dove Radio"],
+	["DJ CHRI$TYLE", "Dana"],
 ]);
 
 //       One trimmed DJ name after overrides
