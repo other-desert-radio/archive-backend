@@ -4,6 +4,7 @@ import { Kysely, PostgresDialect } from "kysely";
 import { adminRoutes } from "../../src/admin/admin.js";
 import { mixcloudImportRoutes } from "../../src/admin/routes/mixcloud-imports/index.js";
 import type { Database, MixcloudImportTable } from "../../src/db/types.js";
+import { MIXCLOUD_PARSER_VERSION } from "../../src/utils/index.js";
 
 const timestamp = new Date("2026-09-01T12:00:00Z");
 const emptyParserFields: Pick<
@@ -200,7 +201,7 @@ describe("Mixcloud import list", () => {
 				"fetching page 1",
 				"page 1 response -- status: 200",
 				"page 1 validated -- records: 1",
-				"parsing completed -- 1/1 matched, 0 unmatched or excluded, parser version: 1",
+				`parsing completed -- 1/1 matched, 0 unmatched or excluded, parser version: ${MIXCLOUD_PARSER_VERSION}`,
 				"saving started -- 1 cloudcasts",
 				"saving progress -- 1/1",
 				"completed -- committed 1 cloudcasts",
