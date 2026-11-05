@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
-	OnboardingModal,
+	FormModal,
 	SearchableMultiSelect,
 	TagsInput,
 } from "../../src/admin-ui/components/shared/modal/index.js";
@@ -16,9 +16,9 @@ const defaults = {
 };
 test("ordinary forms retain Submit, Cancel, Close, and no navigation", () => {
 	const markup = renderToStaticMarkup(
-		<OnboardingModal {...defaults}>
+		<FormModal {...defaults}>
 			<input aria-label="title" />
-		</OnboardingModal>,
+		</FormModal>,
 	);
 	expect(markup).toContain('role="dialog"');
 	expect(markup).toContain('aria-label="Close"');
@@ -34,9 +34,9 @@ test("unchanged submission is opt-in and still respects other submission locks",
 		{ hasUnsavedChanges: true },
 	]) {
 		const markup = renderToStaticMarkup(
-			<OnboardingModal {...defaults} {...props}>
+			<FormModal {...defaults} {...props}>
 				<input aria-label="title" />
-			</OnboardingModal>,
+			</FormModal>,
 		);
 		const submit = markup.match(/<button\b[^>]*type="submit"[^>]*>/)?.[0];
 		expect(submit).toBeDefined();
@@ -48,7 +48,7 @@ test("unchanged submission is opt-in and still respects other submission locks",
 });
 test("header content and guarded optional actions render inside the dialog", () => {
 	const markup = renderToStaticMarkup(
-		<OnboardingModal
+		<FormModal
 			{...defaults}
 			headerContent={<span>29 remaining</span>}
 			secondaryAction={{
@@ -63,7 +63,7 @@ test("header content and guarded optional actions render inside the dialog", () 
 			}}
 		>
 			<input aria-label="title" />
-		</OnboardingModal>,
+		</FormModal>,
 	);
 	expect(markup).toContain("29 remaining");
 	expect(markup).toContain(

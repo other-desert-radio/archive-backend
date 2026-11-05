@@ -11,10 +11,7 @@ import {
 	authRequest,
 	loadSession,
 } from "../../../loaders/auth.js";
-import {
-	LabeledFormControl,
-	OnboardingModal,
-} from "../../shared/modal/index.js";
+import { FormModal, LabeledFormControl } from "../../shared/modal/index.js";
 import styles from "./account-access.module.css";
 
 export const PasswordFields = ({
@@ -79,7 +76,7 @@ export const ChangePasswordModal = ({ onClose }: { onClose: () => void }) => {
 	const [password, setPassword] = useState("");
 	const [confirm, setConfirm] = useState("");
 	return (
-		<OnboardingModal
+		<FormModal
 			isOpen
 			title="Change password"
 			cancelLabel="Cancel"
@@ -107,7 +104,7 @@ export const ChangePasswordModal = ({ onClose }: { onClose: () => void }) => {
 				onPassword={setPassword}
 				onConfirm={setConfirm}
 			/>
-		</OnboardingModal>
+		</FormModal>
 	);
 };
 

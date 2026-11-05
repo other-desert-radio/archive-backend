@@ -8,9 +8,9 @@ import {
 } from "../../../../loaders/uploaded-show.js";
 import sourceStyles from "../../../mixcloud/onboarding-modal/mixcloud-source-data/mixcloud-source-data.module.css";
 import {
+	FormModal,
 	LabeledFormControl,
 	MessageModal,
-	OnboardingModal,
 	SearchableMultiSelect,
 	TagsInput,
 	useTagOptions,
@@ -130,7 +130,7 @@ const ReviewForm = ({
 		});
 	};
 	return (
-		<OnboardingModal
+		<FormModal
 			isOpen
 			title="Review Show"
 			onClose={onClose}
@@ -258,6 +258,6 @@ const ReviewForm = ({
 				Closing leaves this show unsaved in the archive. You can resume from
 				Pending uploads on the Shows page.
 			</p>
-		</OnboardingModal>
+		</FormModal>
 	);
 };

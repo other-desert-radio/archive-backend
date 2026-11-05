@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+	FormModal,
+	ImageCropModal,
 	LabeledFormControl,
-	OnboardingModal,
 	SearchableMultiSelect,
 	TagsInput,
 	type TagsInputValue,
@@ -10,6 +11,11 @@ import {
 import "../../src/admin-ui/styles.css";
 
 const Fixture = () => {
+	const [crop, setCrop] = useState(false);
+	const [file] = useState(
+		() => new File([new Uint8Array()], "fixture.png", { type: "image/png" }),
+	);
+	const [mounted, setMounted] = useState(true);
 	const [open, setOpen] = useState(false);
 	const [item, setItem] = useState(1);
 	const [title, setTitle] = useState("");
@@ -50,54 +56,70 @@ const Fixture = () => {
 			<button type="button" onClick={() => release?.()}>
 				Release save
 			</button>
-			<OnboardingModal
-				isOpen={open}
-				title={`Import fixture ${item}`}
-				onClose={() => setOpen(false)}
-				hasUnsavedChanges={
-					title !== "" ||
-					tags.draft !== "" ||
-					tags.tags.length > 0 ||
-					djs.length > 0
-				}
-				headerContent={<span>29 remaining</span>}
-				secondaryAction={{ label: "Skip", onClick: advance }}
-				navigationAction={{ label: "Next Show", onClick: advance }}
-				onSubmitted={advance}
-				submitLabel="Save"
-				cancelLabel="Cancel"
-				onSubmit={async () => {
-					setSubmissions((current) => current + 1);
-					if (hold)
-						await new Promise<void>((resolve) => setRelease(() => resolve));
-					if (fail) throw new Error("Fixture save failed");
-				}}
-			>
-				<LabeledFormControl
-					id="fixture-title"
-					name="title"
-					label="title"
-					value={title}
-					onChange={setTitle}
+			<button type="button" onClick={() => setMounted(false)}>
+				Unmount dialogs
+			</button>
+			{mounted && (
+				<FormModal
+					isOpen={open}
+					isCovered={crop}
+					title={`Import fixture ${item}`}
+					onClose={() => setOpen(false)}
+					hasUnsavedChanges={
+						title !== "" ||
+						tags.draft !== "" ||
+						tags.tags.length > 0 ||
+						djs.length > 0
+					}
+					headerContent={<span>29 remaining</span>}
+					secondaryAction={{ label: "Skip", onClick: advance }}
+					navigationAction={{ label: "Next Show", onClick: advance }}
+					onSubmitted={advance}
+					submitLabel="Save"
+					cancelLabel="Cancel"
+					onSubmit={async () => {
+						setSubmissions((current) => current + 1);
+						if (hold)
+							await new Promise<void>((resolve) => setRelease(() => resolve));
+						if (fail) throw new Error("Fixture save failed");
+					}}
+				>
+					<LabeledFormControl
+						id="fixture-title"
+						name="title"
+						label="title"
+						value={title}
+						onChange={setTitle}
+					/>
+					<SearchableMultiSelect
+						key={`djs-${item}`}
+						id="fixture-djs"
+						label="DJs"
+						options={[{ id: 1, label: "Known DJ", searchText: "Known DJ" }]}
+						selectedIds={djs}
+						onChange={setDJs}
+						helper="Unmatched DJs: Unrecognized source name"
+					/>
+					<TagsInput
+						key={`tags-${item}`}
+						id="fixture-tags"
+						value={tags}
+						onChange={setTags}
+						options={[{ id: 1, title: "Ambient", color: "#cccccc" }]}
+						helper={`Unresolved keys: /genres/${"long-source-key-".repeat(8)}/`}
+					/>
+					<button type="button" onClick={() => setCrop(true)}>
+						Crop fixture
+					</button>
+				</FormModal>
+			)}
+			{mounted && crop && (
+				<ImageCropModal
+					file={file}
+					onCancel={() => setCrop(false)}
+					onConfirm={() => setCrop(false)}
 				/>
-				<SearchableMultiSelect
-					key={`djs-${item}`}
-					id="fixture-djs"
-					label="DJs"
-					options={[{ id: 1, label: "Known DJ", searchText: "Known DJ" }]}
-					selectedIds={djs}
-					onChange={setDJs}
-					helper="Unmatched DJs: Unrecognized source name"
-				/>
-				<TagsInput
-					key={`tags-${item}`}
-					id="fixture-tags"
-					value={tags}
-					onChange={setTags}
-					options={[{ id: 1, title: "Ambient", color: "#cccccc" }]}
-					helper={`Unresolved keys: /genres/${"long-source-key-".repeat(8)}/`}
-				/>
-			</OnboardingModal>
+			)}
 		</>
 	);
 };

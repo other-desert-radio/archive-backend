@@ -8,7 +8,8 @@ import {
 } from "react";
 import { useDialogFocus } from "../dialog-focus/index.js";
 import { MessageModal } from "../message-modal/index.js";
-import styles from "./onboarding-modal.module.css";
+import { useModalScrollLock } from "../scroll-lock/index.js";
+import styles from "./form-modal.module.css";
 
 type ModalAction = {
 	label: string;
@@ -25,7 +26,7 @@ const renderHeaderContent = (
 	return renderer(state);
 };
 
-type OnboardingModalProps = {
+type FormModalProps = {
 	isOpen: boolean;
 	/** Keep the panel bounds stable as multi-value fields wrap. */
 	fillAvailableHeight?: boolean;
@@ -50,8 +51,8 @@ type OnboardingModalProps = {
 	isSubmitDisabled?: boolean;
 	children: ReactNode;
 };
-/** Provides the common accessible shell and submission lifecycle for onboarding forms. */
-export const OnboardingModal = ({
+/** Provides the common accessible shell and submission lifecycle for forms. */
+export const FormModal = ({
 	isOpen,
 	fillAvailableHeight = false,
 	isCovered = false,
@@ -73,7 +74,8 @@ export const OnboardingModal = ({
 	onSubmitted,
 	isSubmitDisabled = false,
 	children,
-}: OnboardingModalProps) => {
+}: FormModalProps) => {
+	useModalScrollLock(isOpen);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const [isConfirming, setIsConfirming] = useState(false);
 	const dismissalOpenerRef = useRef<HTMLElement | undefined>(undefined);
@@ -177,14 +179,14 @@ export const OnboardingModal = ({
 					role="dialog"
 					aria-modal="true"
 					aria-hidden={isCovered || isConfirming || undefined}
-					aria-labelledby="onboarding-modal-title"
+					aria-labelledby="form-modal-title"
 					inert={isCovered || isConfirming || undefined}
 				>
 					<div
 						className={`${styles.panel} ${fillAvailableHeight ? styles.stableHeight : ""}`}
 					>
 						<div className={styles.header}>
-							<h2 id="onboarding-modal-title">
+							<h2 id="form-modal-title">
 								{title}
 								{titleSuffix}
 							</h2>

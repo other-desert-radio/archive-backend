@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { type AccountUser, authRequest } from "../../../loaders/auth.js";
 import { PasswordFields } from "../../auth/index.js";
-import {
-	LabeledFormControl,
-	OnboardingModal,
-} from "../../shared/modal/index.js";
+import { FormModal, LabeledFormControl } from "../../shared/modal/index.js";
 import styles from "./user-form.module.css";
 export type UserFormMode = "create" | "role" | "reset";
 export const UserForm = ({
@@ -24,7 +21,7 @@ export const UserForm = ({
 	const [role, setRole] = useState<AccountUser["role"]>(user?.role ?? "editor");
 	const needsPassword = mode !== "role";
 	return (
-		<OnboardingModal
+		<FormModal
 			isOpen
 			title={
 				mode === "create"
@@ -102,6 +99,6 @@ export const UserForm = ({
 					</p>
 				</>
 			)}
-		</OnboardingModal>
+		</FormModal>
 	);
 };

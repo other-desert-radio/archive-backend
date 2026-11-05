@@ -17,6 +17,7 @@
 	cursor: default;
 }
 .panel {
+	overscroll-behavior: contain;
 	margin: 0;
 	border: 0;
 	color: inherit;

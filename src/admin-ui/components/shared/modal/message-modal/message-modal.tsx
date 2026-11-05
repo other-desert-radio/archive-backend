@@ -1,5 +1,6 @@
 import { type ReactNode, useId, useRef } from "react";
 import { useDialogFocus } from "../dialog-focus/index.js";
+import { useModalScrollLock } from "../scroll-lock/index.js";
 import styles from "./message-modal.module.css";
 
 export type MessageModalAction = {
@@ -42,6 +43,7 @@ export const MessageModal = ({
 	actionLayout = "row",
 	showCloseButton = false,
 }: MessageModalProps) => {
+	useModalScrollLock(true);
 	const panelRef = useRef<HTMLDialogElement>(null);
 	const titleId = useId();
 	const descriptionId = useId();

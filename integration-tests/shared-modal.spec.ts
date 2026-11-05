@@ -1,6 +1,5 @@
 import { rm } from "node:fs/promises";
-import { expect } from "@playwright/test";
-import { test } from "./auth-fixtures.js";
+import { expect, test } from "@playwright/test";
 import { buildSharedModalFixture } from "./fixtures/build-shared-modal.js";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://api:3000";
@@ -158,3 +157,98 @@ for (const width of [1280, 390, 320])
 		await page.getByRole("button", { name: "Close", exact: true }).click();
 		await expect(page.getByRole("dialog")).toBeHidden();
 	});
+
+for (const width of [1280, 390, 320])
+	test(`background scroll stays locked through nested dialogs at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 600 });
+		await page.evaluate(() => {
+			document.body.style.minHeight = "3000px";
+			document.documentElement.style.overflow = "auto";
+			document.body.style.overflow = "visible";
+			document.documentElement.style.scrollbarGutter = "auto";
+		});
+		const opener = page.getByRole("button", { name: "Open fixture" });
+		for (let attempt = 0; attempt < 2; attempt += 1) {
+			await opener.click();
+			const dialog = page.getByRole("dialog", { name: "Import fixture 1" });
+			await expect(dialog).toBeVisible();
+			const position = await page.evaluate(() => window.scrollY);
+			await page.mouse.move(2, 500);
+			await page.mouse.wheel(0, 500);
+			await page.waitForTimeout(150);
+			expect(await page.evaluate(() => window.scrollY)).toBe(position);
+			await page.getByLabel("title", { exact: true }).fill("Draft");
+			await page.getByRole("button", { name: "Close", exact: true }).click();
+			await expect(page.getByRole("alertdialog")).toBeVisible();
+			await page.getByRole("button", { name: "Keep editing" }).click();
+			expect(
+				await page.evaluate(() => document.documentElement.style.overflow),
+			).toBe("hidden");
+			await page.getByLabel("title", { exact: true }).fill("");
+			await expect(
+				page.getByRole("button", { name: "Save", exact: true }),
+			).toBeDisabled();
+			await page.evaluate(() => {
+				const panel = document.querySelector('[role="dialog"] > div');
+				if (panel instanceof HTMLElement) {
+					panel.style.paddingBottom = "1200px";
+				}
+			});
+			await dialog.locator(":scope > div").hover();
+			await page.mouse.wheel(0, 300);
+			await expect
+				.poll(() =>
+					dialog.locator(":scope > div").evaluate((panel) => panel.scrollTop),
+				)
+				.toBeGreaterThan(0);
+			await page.keyboard.press("Escape");
+			await expect(dialog).toBeHidden();
+			expect(
+				await page.evaluate(() => ({
+					root: document.documentElement.style.overflow,
+					body: document.body.style.overflow,
+					gutter: document.documentElement.style.scrollbarGutter,
+				})),
+			).toEqual({ root: "auto", body: "visible", gutter: "auto" });
+		}
+		await page.mouse.move(2, 500);
+		await page.mouse.wheel(0, 500);
+		await expect
+			.poll(() => page.evaluate(() => window.scrollY))
+			.toBeGreaterThan(0);
+	});
+
+test("crop closure and unmount retain or release the shared lock", async ({
+	page,
+}) => {
+	await page.getByRole("button", { name: "Open fixture" }).click();
+	await page.getByRole("button", { name: "Crop fixture" }).click();
+	await expect(page.getByRole("dialog", { name: "Crop image" })).toBeVisible();
+	await page.getByRole("button", { name: "Cancel", exact: true }).click();
+	expect(
+		await page.evaluate(() => document.documentElement.style.overflow),
+	).toBe("hidden");
+	await page.getByRole("button", { name: "Crop fixture" }).click();
+	await page.evaluate(() => {
+		const button = Array.from(document.querySelectorAll("button")).find(
+			(element) => element.textContent === "Unmount dialogs",
+		);
+		button?.click();
+	});
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	expect(
+		await page.evaluate(() => document.documentElement.style.overflow),
+	).toBe("");
+});
+
+test("opening on a short page does not introduce a scrollbar gutter", async ({
+	page,
+}) => {
+	const width = await page.evaluate(() => document.documentElement.clientWidth);
+	await page.getByRole("button", { name: "Open fixture" }).click();
+	expect(await page.evaluate(() => document.documentElement.clientWidth)).toBe(
+		width,
+	);
+});

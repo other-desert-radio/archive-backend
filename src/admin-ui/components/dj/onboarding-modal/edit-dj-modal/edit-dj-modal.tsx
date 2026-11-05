@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
+	FormModal,
 	hasFormChanges,
 	ImageCropModal,
-	OnboardingModal,
 	TagsInput,
 	type TagsInputOption,
 	type TagsInputValue,
@@ -126,7 +126,7 @@ export const EditDJModal = ({
 
 	return (
 		<>
-			<OnboardingModal
+			<FormModal
 				isOpen={isOpen && dj !== undefined}
 				hasUnsavedChanges={hasFormChanges(
 					{
@@ -197,7 +197,7 @@ export const EditDJModal = ({
 						</div>
 					)}
 				</DJMetadataFields>
-			</OnboardingModal>
+			</FormModal>
 			{imageCandidate !== undefined && (
 				<ImageCropModal
 					file={imageCandidate}
