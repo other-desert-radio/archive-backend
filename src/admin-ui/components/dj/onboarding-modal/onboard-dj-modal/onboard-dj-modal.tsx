@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
+	FormModal,
 	hasFormChanges,
 	ImageCropModal,
 	ImageDropzone,
-	OnboardingModal,
 	TagsInput,
 	type TagsInputValue,
 	useImageSelection,
@@ -94,7 +94,7 @@ export const OnboardDJModal = ({
 
 	return (
 		<>
-			<OnboardingModal
+			<FormModal
 				isOpen={isOpen}
 				hasUnsavedChanges={hasFormChanges(
 					{
@@ -136,7 +136,7 @@ export const OnboardDJModal = ({
 					/>
 					{imageError !== undefined && (
 						<p
-							className="onboarding-modal-helper onboarding-modal-field-error"
+							className="form-modal-helper form-modal-field-error"
 							role="alert"
 						>
 							{imageError}
@@ -152,7 +152,7 @@ export const OnboardDJModal = ({
 						onRetry={loadTagOptions}
 					/>
 				</DJMetadataFields>
-			</OnboardingModal>
+			</FormModal>
 			{imageCandidate !== undefined && (
 				<ImageCropModal
 					file={imageCandidate}

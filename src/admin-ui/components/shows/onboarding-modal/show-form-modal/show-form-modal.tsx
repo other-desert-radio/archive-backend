@@ -6,10 +6,10 @@ import sourceStyles from "../../../mixcloud/onboarding-modal/mixcloud-source-dat
 import {
 	commitTagDraft,
 	FileDropzone,
+	FormModal,
 	ImageCropModal,
 	ImageDropzone,
 	LabeledFormControl,
-	OnboardingModal,
 	SearchableMultiSelect,
 	TagsInput,
 	useImageSelection,
@@ -351,7 +351,7 @@ export const ShowFormModal = ({
 							/>
 							{imageError !== undefined && (
 								<p
-									className="onboarding-modal-helper onboarding-modal-field-error"
+									className="form-modal-helper form-modal-field-error"
 									role="alert"
 								>
 									{imageError}
@@ -409,7 +409,7 @@ export const ShowFormModal = ({
 	}
 	return (
 		<>
-			<OnboardingModal
+			<FormModal
 				isOpen
 				hasUnsavedChanges={
 					hasUnsavedChanges ||
@@ -477,7 +477,7 @@ export const ShowFormModal = ({
 					</p>
 				)}
 				{elements}
-			</OnboardingModal>
+			</FormModal>
 			{imageCandidate !== undefined && (
 				<ImageCropModal
 					file={imageCandidate}

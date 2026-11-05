@@ -1,10 +1,7 @@
 import { useRef, useState } from "react";
 import type { ModifyTagRequest } from "../../../../../admin/routes/tags/index.js";
 import type { TagsAdminRow } from "../../../../loaders/tags.js";
-import {
-	hasFormChanges,
-	OnboardingModal,
-} from "../../../shared/modal/index.js";
+import { FormModal, hasFormChanges } from "../../../shared/modal/index.js";
 import { TagMetadataFields } from "../tag-metadata-fields/index.js";
 import { buildModifyTagRequest, type TagFormValues } from "./edit-tag-utils.js";
 
@@ -22,7 +19,7 @@ export const EditTagModal = ({ tag, onClose, onSubmit }: Props) => {
 	});
 	const [fields, setFields] = useState(baseline.current);
 	return (
-		<OnboardingModal
+		<FormModal
 			isOpen
 			title="Edit Tag"
 			onClose={onClose}
@@ -38,6 +35,6 @@ export const EditTagModal = ({ tag, onClose, onSubmit }: Props) => {
 				fields={fields}
 				setFields={setFields}
 			/>
-		</OnboardingModal>
+		</FormModal>
 	);
 };

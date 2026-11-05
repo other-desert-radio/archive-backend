@@ -5,7 +5,7 @@ import { loadDJs } from "../../../../loaders/djs.js";
 import type { MixcloudImportAdminRow } from "../../../../loaders/mixcloud-imports.js";
 import type { ShowsAdminRow } from "../../../../loaders/shows.js";
 import { resolveMixcloudTags } from "../../../../loaders/validate-tags.js";
-import { OnboardingModal, useTagOptions } from "../../../shared/modal/index.js";
+import { FormModal, useTagOptions } from "../../../shared/modal/index.js";
 import {
 	buildShowFormRequest,
 	ShowDurationField,
@@ -144,7 +144,7 @@ export const ImportShowForm = ({
 		tagsError === undefined &&
 		resolutionError === undefined;
 	return (
-		<OnboardingModal
+		<FormModal
 			isOpen
 			title="Import Show"
 			titleSuffix={
@@ -243,6 +243,6 @@ export const ImportShowForm = ({
 				setFields={setFields}
 				idPrefix="import-show"
 			/>
-		</OnboardingModal>
+		</FormModal>
 	);
 };

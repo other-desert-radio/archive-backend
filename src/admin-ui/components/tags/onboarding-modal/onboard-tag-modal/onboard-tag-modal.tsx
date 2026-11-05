@@ -1,9 +1,6 @@
 import { useState } from "react";
 import type { CreateTagRequest } from "../../../../../admin/routes/tags/index.js";
-import {
-	hasFormChanges,
-	OnboardingModal,
-} from "../../../shared/modal/index.js";
+import { FormModal, hasFormChanges } from "../../../shared/modal/index.js";
 import { TagMetadataFields } from "../tag-metadata-fields/index.js";
 import { buildCreateTagRequest } from "./onboard-tag-utils.js";
 
@@ -20,7 +17,7 @@ type Props = {
 export const OnboardTagModal = ({ onClose, onSubmit }: Props) => {
 	const [fields, setFields] = useState(initialValues);
 	return (
-		<OnboardingModal
+		<FormModal
 			isOpen
 			title="Onboard Tag"
 			onClose={onClose}
@@ -30,6 +27,6 @@ export const OnboardTagModal = ({ onClose, onSubmit }: Props) => {
 			actionHelper="New tags are marked reviewed; existing titles reuse their current tag"
 		>
 			<TagMetadataFields idPrefix="tag" fields={fields} setFields={setFields} />
-		</OnboardingModal>
+		</FormModal>
 	);
 };

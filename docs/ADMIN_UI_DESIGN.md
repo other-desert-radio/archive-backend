@@ -110,8 +110,8 @@ Keep resource orchestration separate from shared presentation and lifecycle
 logic. Extract repeated responsibilities into focused components or hooks; avoid
 a generic form framework or components with many unrelated mode flags.
 
-- **`OnboardingModal`:** Shared create/edit form shell, submit lifecycle,
-  errors, dismissal, and discard confirmation
+- **`FormModal`:** Shared create/edit form shell, submit lifecycle, errors,
+  dismissal, and discard confirmation
 - **`MessageModal`:** Caller-supplied title/message and primary, optional
   secondary, and additional actions
 - **`LabeledFormControl`:** Label, input/textarea, required and numeric
@@ -152,8 +152,8 @@ group barrel; internal private imports may use a nearer barrel to avoid cycles.
 Resource wrappers own field values, opening-value baselines, validation, and
 typed request construction. Shared shells should not know resource payloads.
 Keep request builders in private resource utilities and leave wire contracts in
-the existing loaders/shared API types. The public `OnboardingModal` name remains
-in use even for editing.
+the existing loaders/shared API types. The shared `FormModal` shell supports
+create, edit, import, and account forms.
 
 ### Show create/edit reuse
 
@@ -218,7 +218,7 @@ remain stable, while edit controls use the `edit-show` prefix.
 
 ### Optional form navigation and helpers
 
-`OnboardingModal` accepts optional `headerContent`, `secondaryAction`,
+`FormModal` accepts optional `headerContent`, `secondaryAction`,
 `navigationAction`, `previousNavigationAction`, and `onSubmitted`. Header
 content sits beside Close and wraps on narrow screens. A secondary action
 replaces Cancel using its borderless style and a 42px minimum target. Navigation
@@ -297,7 +297,7 @@ default to `dialog`.
 
 The caller owns whether the message is mounted, the effect of each action, and
 restoring focus after dismissal. It must make the underlying form inert when
-layering a message above it. `OnboardingModal` already does this for discard
+layering a message above it. `FormModal` already does this for discard
 confirmation. Do not add static-container click handlers with accessibility lint
 suppressions: the current backdrops use native buttons outside the panels,
 excluded from Tab order, alongside Escape handling.
@@ -394,6 +394,10 @@ mark metadata saves reviewed.
 Shows tables include a sortable, searchable description column after title;
 missing descriptions display None. Show cards display nonempty descriptions as
 plain text with preserved line breaks and omit missing descriptions.
+
+Blocking form, message, and image crop dialogs lock document scrolling until the
+last open dialog closes. Modal content remains scrollable; nested dialogs retain
+the lock. Success toasts remain non-blocking.
 
 ## Verification and delivery
 

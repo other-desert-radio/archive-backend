@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
+import { useModalScrollLock } from "../../scroll-lock/index.js";
 import { validateImageFile } from "../utils/index.js";
 import styles from "./image-crop-modal.module.css";
 import {
@@ -27,6 +28,7 @@ export const ImageCropModal = ({
 	onCancel,
 	onConfirm,
 }: ImageCropModalProps) => {
+	useModalScrollLock(true);
 	const id = useId();
 	const panelRef = useRef<HTMLDivElement>(null);
 	const openerRef = useRef<HTMLElement | undefined>(undefined);

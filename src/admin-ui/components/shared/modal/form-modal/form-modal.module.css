@@ -17,6 +17,7 @@
 	cursor: default;
 }
 .panel {
+	overscroll-behavior: contain;
 	position: relative;
 	width: min(864px, calc(100vw - 32px));
 	max-height: calc(100vh - 5rem);
