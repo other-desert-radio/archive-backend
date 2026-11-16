@@ -20,6 +20,7 @@ export const listShowsHandler =
 						"createdAt",
 						"title",
 						"description",
+						"tracklist",
 						"date",
 						"duration",
 						"mixcloud_image_small",
@@ -54,6 +55,7 @@ export const listShowsHandler =
 				return {
 					...show,
 					createdAt: row.createdAt,
+					tracklist: row.tracklist,
 					...(row.description == null
 						? {}
 						: { description: sanitizeArchiveHtml(row.description) }),

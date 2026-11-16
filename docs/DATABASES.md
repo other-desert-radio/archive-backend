@@ -361,6 +361,7 @@ title       text not null
 date        timestamptz
 duration    integer       -- seconds
 description text          -- nullable sanitized HTML
+tracklist   jsonb not null -- ordered array, default []
 mixcloud_image_large text not null -- Mixcloud image URL
 mixcloud_image_small text not null -- Mixcloud image URL
 image_small bytea         -- nullable stored WebP
@@ -373,6 +374,21 @@ format. Migration `0038` adds the column; `0041` converts existing plain text
 while preserving NULL and empty strings. Rollback of `0041` restores readable
 text, with normalized whitespace. Apply migrations before deploying the matching
 application.
+
+Migration `0044_add_show_tracklist` adds `tracklist`, backfilling existing Shows
+with `[]`. Each entry is either `{artist, song, start_time}` or
+`{chapter, start_time}`. Array order is the display order. `start_time` is a
+nonnegative whole number of seconds into the recording, or JSON `null` when
+unknown; the key is required. Artist/song/chapter values must be nonblank
+strings, and track and chapter fields cannot coexist in an entry. Extra keys are
+permitted. The `shows_tracklist_shape` CHECK uses the immutable
+`shows_tracklist_valid(jsonb)` function to validate every entry. It does not
+validate timestamp ordering or compare offsets with Show duration.
+
+Admin list and save responses include the stored tracklist. Ordinary Show edits
+preserve it. Tracklist editing, Mixcloud synchronization, and public JSON export
+are not implemented yet. Apply the migration before deploying this application;
+rollback drops the column and validator, losing stored tracklists.
 
 `duration` is measured in whole seconds. `date` represents a broadcast calendar
 day and is stored explicitly at midnight UTC, so its timestamp remains

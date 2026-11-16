@@ -58,13 +58,13 @@ export const saveShowInTransaction = async (
 			? await transaction
 					.insertInto("shows")
 					.values(values)
-					.returning(["id", "createdAt", "description"])
+					.returning(["id", "createdAt", "description", "tracklist"])
 					.executeTakeFirstOrThrow()
 			: await transaction
 					.updateTable("shows")
 					.set(values)
 					.where("id", "=", id)
-					.returning(["id", "createdAt", "description"])
+					.returning(["id", "createdAt", "description", "tracklist"])
 					.executeTakeFirst();
 	if (show === undefined) return undefined;
 
@@ -105,6 +105,7 @@ export const saveShowInTransaction = async (
 	return {
 		id: show.id,
 		createdAt: show.createdAt,
+		tracklist: show.tracklist,
 		...(show.description == null
 			? {}
 			: { description: sanitizeArchiveHtml(show.description) }),
@@ -132,6 +133,7 @@ export const loadSavedShow = async (
 			"createdAt",
 			"title",
 			"description",
+			"tracklist",
 			"date",
 			"duration",
 			"url",

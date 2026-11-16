@@ -75,6 +75,7 @@ const mixcloud = {
 	audio_length: 120,
 };
 const show = {
+	tracklist: [],
 	id: 42,
 	createdAt: "2026-10-26T12:00:00Z",
 	date: "2026-10-26T00:00:00Z",
@@ -186,4 +187,28 @@ test("rejects incomplete saved Show data and accepts an omitted description", as
 			Response.json({ show: withoutDescription }),
 		),
 	).toEqual(withoutDescription);
+});
+
+test("saved Show responses retain timed tracks, untimed tracks, and chapters", async () => {
+	const tracklist = [
+		{ chapter: "Introduction", start_time: 0 },
+		{ artist: "Artist", song: "Song", start_time: 20 },
+		{ artist: "Artist", song: "Other", start_time: null },
+	];
+	expect(
+		await saveUploadedShow(5, reviewed, async () =>
+			Response.json({ show: { ...show, tracklist } }),
+		),
+	).toEqual({ ...show, tracklist });
+	for (const invalid of [
+		[{ artist: "Artist", start_time: 0 }],
+		[{ chapter: "Intro", start_time: -1 }],
+		{},
+	]) {
+		await expect(
+			saveUploadedShow(5, reviewed, async () =>
+				Response.json({ show: { ...show, tracklist: invalid } }),
+			),
+		).rejects.toThrow("unreadable");
+	}
 });

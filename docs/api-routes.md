@@ -355,6 +355,12 @@ format, alongside its identity, metadata, and relationship IDs. Its admin-only
 `directTags` array distinguishes directly assigned DJ tags from the combined
 `tags` array, which also includes tags inherited through linked shows.
 
+Show list and save responses include `tracklist`: an ordered array of track
+(`artist`, `song`) or chapter (`chapter`) objects, each with `start_time`
+(nonnegative whole seconds or JSON `null`). New Shows default to `[]`.
+Create/edit requests do not accept tracklists yet; ordinary edits preserve the
+stored list. Public archive export is unchanged.
+
 `GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
 ISO JSON date format, plus required `mixcloud_image_small` and
 `mixcloud_image_large` URLs. When both stored image variants exist, the list

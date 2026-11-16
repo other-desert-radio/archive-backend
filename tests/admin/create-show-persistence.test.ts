@@ -108,6 +108,7 @@ const buildDatabase = (failOn?: string) => {
 										return tag;
 									}
 									const show = {
+										tracklist: [],
 										id: nextShowId++,
 										createdAt: new Date("2026-01-01T00:00:00.000Z"),
 										...(values as Record<string, unknown>),
@@ -168,6 +169,7 @@ describe("Show creation persistence", () => {
 		expect(response.json()).toEqual({
 			id: 1,
 			createdAt: "2026-01-01T00:00:00.000Z",
+			tracklist: [],
 			title: "Night",
 			date: "2024-02-29T00:00:00.000Z",
 			duration: 3661,
@@ -241,6 +243,7 @@ const editPayload = {
 const editingDatabase = (failOn?: string) => {
 	const fixture = buildDatabase(failOn);
 	fixture.state.shows.push({
+		tracklist: [{ artist: "Artist", song: "Song", start_time: null }],
 		id: 1,
 		createdAt: new Date("2026-01-01T00:00:00Z"),
 		title: "Original",
@@ -298,6 +301,7 @@ describe("Show editing persistence", () => {
 		expect(response.json()).toEqual({
 			id: 1,
 			createdAt: "2026-01-01T00:00:00.000Z",
+			tracklist: [{ artist: "Artist", song: "Song", start_time: null }],
 			title: "Changed",
 			date: "2024-02-29T00:00:00.000Z",
 			duration: 3661,
@@ -309,6 +313,7 @@ describe("Show editing persistence", () => {
 			tags: [1, 20],
 		});
 		expect(state.shows[0]).toMatchObject({
+			tracklist: response.json().tracklist,
 			mixcloud_image_small: response.json().mixcloud_image_small,
 			mixcloud_image_large: response.json().mixcloud_image_large,
 		});

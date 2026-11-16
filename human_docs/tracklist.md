@@ -1,6 +1,6 @@
 Two way to import a track list:
 
-1. just a wall of text, do whatever you want
+1. ~~just a wall of text, do whatever you want~~ just artist name and song name
 2. artist name, song name, time
 
 ```
@@ -55,3 +55,9 @@ leading seperator: " " middle seperator: " - "
 maybe a new modal -- pasting in the top, editing in the bottom
 
 how do we store this in a database?
+
+json_b:
+
+[ { "artist": "OKI feat UMEKO ANDO", "song": "Cup Kamuy Ho", "start_time": 0 },
+{ "artist": "PAAVOHARJU", "song": "Kevätrumpu", "start_time": 245 }, { "artist":
+"HEATHER TROST", "song": "La Selva Subterranea", "start_time": null } ]

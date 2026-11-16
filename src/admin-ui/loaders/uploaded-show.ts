@@ -142,6 +142,19 @@ export const saveUploadedShow = async (
 					url: P.string,
 					djs: P.array(P.number),
 					tags: P.array(P.number),
+					tracklist: P.array(
+						P.union(
+							{
+								artist: P.string,
+								song: P.string,
+								start_time: P.union(P.number.int().gte(0), null),
+							},
+							{
+								chapter: P.string,
+								start_time: P.union(P.number.int().gte(0), null),
+							},
+						),
+					),
 				},
 			},
 			result,

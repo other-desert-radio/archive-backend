@@ -21,6 +21,9 @@ type ShowsTableProps = {
 	onDelete?: (show: ShowsAdminRow) => void;
 };
 
+const trackCount = (show: ShowsAdminRow) =>
+	show.tracklist.filter((entry) => entry.artist !== undefined).length;
+
 const compareText = (left: string | undefined, right: string | undefined) =>
 	(left ?? "").localeCompare(right ?? "", undefined, { sensitivity: "base" });
 const formatURL = (url: string) =>
@@ -126,6 +129,12 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			label: "tags",
 			render: (show) => formatRelationshipIDs(show.tags),
 			compare: (a, b) => (a.tags[0] ?? -1) - (b.tags[0] ?? -1),
+		},
+		{
+			key: "tracklist",
+			label: "tracklist",
+			render: (show) => (show.tracklist.length === 0 ? "—" : trackCount(show)),
+			compare: (a, b) => trackCount(a) - trackCount(b),
 		},
 		{
 			key: "url",
