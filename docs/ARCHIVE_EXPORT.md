@@ -73,6 +73,11 @@ Show records in `shows.json` and nested DJ detail records include optional
 `description` containing sanitized HTML, using the same allowed formatting as DJ
 bios. NULL descriptions are omitted; empty descriptions remain empty strings.
 
+Show records in `shows.json` include an ordered `tracklist` when nonempty.
+Entries retain track (`artist`, `song`) or `chapter` fields. Unknown
+`start_time` values are omitted; known offsets remain integer seconds, including
+zero. Shows embedded in DJ detail documents do not include tracklists.
+
 The exporter owns the entire `public/resources/djs/` and `public/assets/djs/`
 directories and replaces their contents on each export, including stale files.
 Keep manually maintained assets outside those directories. It also owns the four

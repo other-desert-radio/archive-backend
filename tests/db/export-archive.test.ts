@@ -382,6 +382,11 @@ describe("archive export documents", () => {
 				{
 					id: 10,
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					tracklist: [
+						{ artist: "Artist", song: "Song", start_time: null },
+						{ chapter: "Intro", start_time: 0 },
+						{ artist: "Next", song: "Track", start_time: 120 },
+					],
 					title: "Newer Show",
 					description: "<p>Our show</p><script>bad()</script>",
 					date: new Date("2026-02-01T00:00:00.000Z"),
@@ -464,6 +469,11 @@ describe("archive export documents", () => {
 				duration: 3600,
 				image_small: "https://example.com/show-small.jpg",
 				image_large: "https://example.com/show.jpg",
+				tracklist: [
+					{ artist: "Artist", song: "Song" },
+					{ chapter: "Intro", start_time: 0 },
+					{ artist: "Next", song: "Track", start_time: 120 },
+				],
 				djs: [
 					{
 						id: 1,
@@ -490,6 +500,18 @@ describe("archive export documents", () => {
 			{ id: 1, bytes: Buffer.from("portrait-small"), variant: "small" },
 			{ id: 1, bytes: Buffer.from("portrait-large"), variant: "large" },
 		]);
+	});
+
+	test("omits empty tracklists from the show index", () => {
+		const documents = buildArchiveDocuments({
+			djs: [],
+			shows: [{ id: 1, tracklist: [] }] as never,
+			tags: [],
+			showDJs: [],
+			djTags: [],
+			showTags: [],
+		});
+		expect(documents.shows[0]).not.toHaveProperty("tracklist");
 	});
 
 	test("rejects incomplete WebP image pairs", () => {

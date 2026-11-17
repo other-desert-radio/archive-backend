@@ -66,6 +66,11 @@ type ArchiveShowDJ = {
 
 export type ArchiveShowIndex = ArchiveShow & {
 	djs: ArchiveShowDJ[];
+	tracklist?: Array<
+		({ artist: string; song: string } | { chapter: string }) & {
+			start_time?: number;
+		}
+	>;
 };
 
 export type ArchiveDJBrief = {
@@ -245,6 +250,14 @@ export const buildArchiveDocuments = ({
 		duration: show.duration,
 		image_small: show.mixcloud_image_small,
 		image_large: show.mixcloud_image_large,
+		...(show.tracklist?.length
+			? {
+					tracklist: show.tracklist.map(({ start_time, ...entry }) => ({
+						...entry,
+						...(start_time === null ? {} : { start_time }),
+					})),
+				}
+			: {}),
 		djs: (djIdsByShow.get(show.id) ?? []).flatMap((djId) => {
 			const dj = djsById.get(djId);
 			if (dj === undefined) {

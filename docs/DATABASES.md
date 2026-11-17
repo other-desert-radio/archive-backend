@@ -386,9 +386,10 @@ permitted. The `shows_tracklist_shape` CHECK uses the immutable
 validate timestamp ordering or compare offsets with Show duration.
 
 Admin list and save responses include the stored tracklist. Ordinary Show edits
-preserve it. Tracklist editing, Mixcloud synchronization, and public JSON export
-are not implemented yet. Apply the migration before deploying this application;
-rollback drops the column and validator, losing stored tracklists.
+preserve it. Public `shows.json` exports omit unknown timestamps; see
+[the export contract](ARCHIVE_EXPORT.md#export-rules). Apply the migration
+before deploying this application; rollback drops the column and validator,
+losing stored tracklists.
 
 `duration` is measured in whole seconds. `date` represents a broadcast calendar
 day and is stored explicitly at midnight UTC, so its timestamp remains
