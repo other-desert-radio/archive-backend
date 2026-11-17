@@ -15,6 +15,7 @@ import {
 import type { Database } from "../../src/db/types.js";
 
 const documents = (): ArchiveDocuments => ({
+	showDetails: [],
 	shows: [],
 	djs: [],
 	djsBrief: [],

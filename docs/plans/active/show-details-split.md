@@ -20,9 +20,11 @@
       consumers.
 - [x] Present overall plan; user selected chunked work.
 - [x] Chunk 1 structure proposal prepared.
-- [ ] User review of chunk 1 structure.
-- [ ] Chunk 1 scaffolding and review: necessary document contracts only.
-- [ ] Chunk 1 implementation and review: pure document split and focused tests.
+- [x] User review of chunk 1 structure.
+- [x] Chunk 1 scaffolding: necessary document contracts only.
+- [x] User review of chunk 1 scaffolding.
+- [x] Chunk 1 implementation: pure document split and focused tests.
+- [ ] User review of chunk 1 implementation.
 - [ ] Chunk 2: version constraint migration, hashing/allocation, and file
       output.
 - [ ] Chunk 3: publication staging, previews, recovery, legacy baselines.
@@ -48,5 +50,8 @@ preview changes.
 
 ## Next action
 
-Await structure review, then add the minimum document contracts for chunk 1. No
-frontend changes or publication are authorized by this implementation plan.
+Await implementation review, then present chunk 2 structure. Chunk 1 checks:
+typecheck and 16 focused tests passed; nine opt-in database tests skipped. The
+required showDetails member also updates two typed test fixtures. File writing,
+hashing, and preview integration remain pending. No frontend changes or
+publication are authorized by this implementation plan.

@@ -7,6 +7,7 @@ import {
 } from "../../src/publication/preview-diff.js";
 
 const documents = (): ArchiveDocuments => ({
+	showDetails: [],
 	djsBrief: [],
 	djs: [],
 	shows: [],

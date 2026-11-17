@@ -38,6 +38,7 @@ const emptyDocuments = () => ({
 	djsBrief: [],
 	djs: [],
 	shows: [],
+	showDetails: [],
 	tags: [],
 	images: [],
 });
@@ -447,7 +448,6 @@ describe("archive export documents", () => {
 				{
 					id: 10,
 					title: "Newer Show",
-					description: "<p>Our show</p>",
 					date: new Date("2026-02-01T00:00:00.000Z"),
 					duration: 3600,
 					image_small: "https://example.com/show-small.jpg",
@@ -464,16 +464,10 @@ describe("archive export documents", () => {
 			{
 				id: 10,
 				title: "Newer Show",
-				description: "<p>Our show</p>",
 				date: new Date("2026-02-01T00:00:00.000Z"),
 				duration: 3600,
 				image_small: "https://example.com/show-small.jpg",
 				image_large: "https://example.com/show.jpg",
-				tracklist: [
-					{ artist: "Artist", song: "Song" },
-					{ chapter: "Intro", start_time: 0 },
-					{ artist: "Next", song: "Track", start_time: 120 },
-				],
 				djs: [
 					{
 						id: 1,
@@ -484,6 +478,17 @@ describe("archive export documents", () => {
 				],
 				tagIds: [2, 4],
 				url: "https://example.com/audio",
+			},
+		]);
+		expect(documents.showDetails).toEqual([
+			{
+				id: 10,
+				description: "<p>Our show</p>",
+				tracklist: [
+					{ artist: "Artist", song: "Song" },
+					{ chapter: "Intro", start_time: 0 },
+					{ artist: "Next", song: "Track", start_time: 120 },
+				],
 			},
 		]);
 		expect(documents.tags).toEqual([
@@ -502,16 +507,28 @@ describe("archive export documents", () => {
 		]);
 	});
 
-	test("omits empty tracklists from the show index", () => {
+	test("keeps empty detail records and preserves show order", () => {
 		const documents = buildArchiveDocuments({
 			djs: [],
-			shows: [{ id: 1, tracklist: [] }] as never,
+			shows: [
+				{ id: 2, description: null, tracklist: [] },
+				{
+					id: 1,
+					description: "",
+					tracklist: [{ chapter: "Outro", start_time: null }],
+				},
+			] as never,
 			tags: [],
 			showDJs: [],
 			djTags: [],
 			showTags: [],
 		});
-		expect(documents.shows[0]).not.toHaveProperty("tracklist");
+		expect(documents.showDetails).toEqual([
+			{ id: 2 },
+			{ id: 1, description: "", tracklist: [{ chapter: "Outro" }] },
+		]);
+		expect(documents.shows[1]).not.toHaveProperty("description");
+		expect(documents.shows[1]).not.toHaveProperty("tracklist");
 	});
 
 	test("rejects incomplete WebP image pairs", () => {
