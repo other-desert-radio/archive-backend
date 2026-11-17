@@ -28,8 +28,10 @@
 - [x] Chunk 2 structure and scaffolding approved.
 - [x] Chunk 2 implementation: version migration, hashing/allocation, and file
       output.
-- [ ] User review of chunk 2 implementation.
-- [ ] Chunk 3: publication staging, previews, recovery, legacy baselines.
+- [x] User review of chunk 2 implementation.
+- [x] Chunk 3 structure proposal prepared.
+- [ ] User review of chunk 3 structure.
+- [ ] Chunk 3 implementation and review.
 - [ ] Chunk 4: authoritative docs, frontend handoff, and size measurements.
 
 ## Chunk 1 structure
@@ -61,6 +63,25 @@ No new service, compression code, or production database migration execution.
 Scaffolding adds only the new migration file with a responsibility comment;
 version contracts and dependent behavior change together during implementation.
 
+## Chunk 3 structure
+
+No new files or public contracts; no separate scaffolding is needed.
+
+- Existing publication/git/commits.ts, checkout.ts, local-preview.ts, and
+  preview.ts: include details in staging, commit verification, destination
+  validation, fingerprints, and commit reads.
+- Existing publication/preview-diff.ts: join details to shows by ID for preview
+  signatures and retain tracklist order. Accept legacy embedded details when the
+  separate file is absent. Validate duplicate and orphan detail IDs.
+- Existing publication/store.ts: require the fourth dataset and compare the
+  versioned details file when deciding whether local output needs publication.
+- Existing publication tests: cover detail-only changes, reordered tracks,
+  legacy baselines, unsafe destinations, local fingerprints, staging, and
+  recovery.
+
+Keep the UI's existing added/changed/removed show groups; no UI layout changes.
+Legacy job snapshots may omit the details version and must remain recoverable.
+
 ## Verification
 
 Focused export/version/publication tests, typecheck, lint, docs checks, and
@@ -71,10 +92,11 @@ preview changes.
 
 ## Next action
 
-Await chunk 2 implementation review, then present chunk 3 structure. Chunk 2
-checks: 20 tests passed with no skips against disposable PostgreSQL, including
-rollback/reapply, independent detail revisions, unchanged retries, manifest
-consistency, and export locking. Typecheck, lint, and docs checks passed. The
-test container is stopped; the regular archive database was not migrated.
-Publication staging, preview, and recovery integration remain pending, so this
-intermediate state must not be published. No frontend changes are included.
+Await chunk 3 structure approval, then implement within the existing files.
+Chunk 2 checks: 20 tests passed with no skips against disposable PostgreSQL,
+including rollback/reapply, independent detail revisions, unchanged retries,
+manifest consistency, and export locking. Typecheck, lint, and docs checks
+passed. The test container is stopped; the regular archive database was not
+migrated. Publication staging, preview, and recovery integration remain pending,
+so this intermediate state must not be published. No frontend changes are
+included.
