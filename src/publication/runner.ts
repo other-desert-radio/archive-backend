@@ -134,7 +134,7 @@ const generatePublicationAssets = async (
 		execution.job.id,
 	);
 	await execution.log(
-		`Captured archive revision ${snapshot.revision}; dataset versions: shows ${snapshot.versions.shows.id}, DJs ${snapshot.versions.djs.id}, tags ${snapshot.versions.tags.id}`,
+		`Captured archive revision ${snapshot.revision}; dataset versions: shows ${snapshot.versions.shows.id}, DJs ${snapshot.versions.djs.id}, tags ${snapshot.versions.tags.id}, show details ${snapshot.versions.show_details.id}`,
 	);
 	return snapshot;
 };
@@ -198,7 +198,7 @@ const captureRecoveredRevision = async (
 	await execution.log(`Recovering archive revision ${previousJob.revision}`);
 	await execution.log(
 		versions
-			? `Recovered dataset versions: shows ${versions.shows.id}, DJs ${versions.djs.id}, tags ${versions.tags.id}; newer archive edits remain pending`
+			? `Recovered dataset versions: shows ${versions.shows.id}, DJs ${versions.djs.id}, tags ${versions.tags.id}${versions.show_details ? `, show details ${versions.show_details.id}` : ""}; newer archive edits remain pending`
 			: "Dataset versions unavailable for legacy publication; newer archive edits remain pending",
 	);
 	return previousJob.revision;

@@ -209,8 +209,13 @@ export const readPublicationStatus = async (
 					};
 					pending =
 						!files.has("public/resources/shows.json") ||
+						!isDeepStrictEqual(json("show_details"), {
+							version: versions.show_details?.id,
+							updatedAt: versions.show_details?.updatedAt,
+							data: documents.showDetails,
+						}) ||
 						!files.has("public/resources/tags.json") ||
-						rows.length !== 3 ||
+						rows.length !== 4 ||
 						!isDeepStrictEqual(json("data_versions"), versions) ||
 						!isDeepStrictEqual(json("djs_brief"), {
 							version: versions.djs?.id,

@@ -61,6 +61,7 @@ export const validatePublicationDestination = async ({
 	for (const file of [
 		"public/resources/djs_brief.json",
 		"public/resources/shows.json",
+		"public/resources/show_details.json",
 		"public/resources/tags.json",
 		"public/resources/data_versions.json",
 	]) {

@@ -137,6 +137,7 @@ for (const directory of [
 for (const file of [
 	"djs_brief.json",
 	"shows.json",
+	"show_details.json",
 	"tags.json",
 	"data_versions.json",
 ]) {

@@ -1,7 +1,9 @@
 # Static Archive Export
 
 Read this when changing exported JSON, image assets, or frontend data contracts.
-For schema invariants, see [DATABASES.md](DATABASES.md).
+For schema invariants, see [DATABASES.md](DATABASES.md). For the asynchronous
+frontend consumer and coordinated rollout, see the
+[show details handoff](SHOW_DETAILS_FRONTEND_HANDOFF.md).
 
 ## Output layout
 
@@ -227,3 +229,16 @@ remain outside the generated-file commit. Durable jobs allow explicit recovery
 after restart or a lost response from the Git remote. See
 [publication operations](DEVELOPMENT.md#publication-operation-and-recovery) for
 setup, branch selection, and retry procedures.
+
+## HTTP compression
+
+GitHub Pages negotiates gzip for JSON resources and serves uncompressed JSON
+when requested with `Accept-Encoding: identity`. Both variants use the same
+`.json` URL; browsers decompress encoded responses before JSON parsing. No gzip
+sidecars or application decompression code are generated. Verify both negotiated
+responses after deployment; local servers may serve only uncompressed JSON.
+
+Publication previews merge show details by show ID and report detail edits under
+the existing changed-show list. Tracklist ordering contributes to that
+comparison. Legacy baselines without a details file retain their embedded show
+details.

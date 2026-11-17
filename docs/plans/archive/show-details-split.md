@@ -30,9 +30,10 @@
       output.
 - [x] User review of chunk 2 implementation.
 - [x] Chunk 3 structure proposal prepared.
-- [ ] User review of chunk 3 structure.
-- [ ] Chunk 3 implementation and review.
-- [ ] Chunk 4: authoritative docs, frontend handoff, and size measurements.
+- [x] User authorized completion of chunks 3 and 4 ("do them").
+- [x] Chunk 3 implementation and verification.
+- [x] Chunk 4: authoritative docs, frontend handoff, and size measurements.
+- [ ] User review of the final implementation.
 
 ## Chunk 1 structure
 
@@ -90,13 +91,23 @@ zero offsets, chapters, sanitization, ordering, empty details, independent
 versions, retry consistency, deletions, legacy baseline reads, and detail-only
 preview changes.
 
-## Next action
+## Completion and rollout
 
-Await chunk 3 structure approval, then implement within the existing files.
-Chunk 2 checks: 20 tests passed with no skips against disposable PostgreSQL,
-including rollback/reapply, independent detail revisions, unchanged retries,
-manifest consistency, and export locking. Typecheck, lint, and docs checks
-passed. The test container is stopped; the regular archive database was not
-migrated. Publication staging, preview, and recovery integration remain pending,
-so this intermediate state must not be published. No frontend changes are
-included.
+Backend implementation and frontend handoff are complete. User review remains
+pending. Frontend code, regular-database migration, and live publication were
+not performed. Follow
+[the frontend handoff](../../SHOW_DETAILS_FRONTEND_HANDOFF.md) for coordinated
+deployment before publishing the split.
+
+Verification: typecheck, lint, docs checks, and full suite passed (788 passed,
+75 opt-in skips). The full suite required execution outside the sandbox for
+local HTTP listeners. Separate disposable-database publication/export/version
+checks passed (145 passed, five unrelated notification/store skips), including
+real Git staging/recovery, legacy snapshots, migration rollback/reapply,
+detail-only updates, and stale/missing file repair. A final focused run after
+narrowing merged detail fields passed all 30 tests. The test container is
+stopped.
+
+Measured local snapshot: 310 shows, 3,216 track entries. The show index is
+227,981 raw / 26,195 gzip bytes; details are 380,787 raw / 87,895 gzip bytes.
+Device timing and frontend acceptance remain for the separate consumer task.

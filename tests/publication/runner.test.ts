@@ -114,7 +114,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 	if (!newBranch) await git("push", "origin", "publish-dev");
 	await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(database);
 	await sql`CREATE TABLE djs (id integer, title text, bio text, image_small bytea, image_large bytea, socials text, "showTitle" text, "showDescription" text);
-	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea, description text);
+	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea, description text, tracklist jsonb NOT NULL DEFAULT '[]');
 	CREATE TABLE tags (id integer, title text, color text, mixcloud_key text, mixcloud_url text);
 	CREATE TABLE show_djs (dj_id integer, show_id integer);
 	CREATE TABLE dj_tags (dj_id integer, tag_id integer);
@@ -323,7 +323,13 @@ process.exit(result.status ?? 1);
 	20000,
 );
 
-for (const file of ["djs_brief", "data_versions", "shows", "tags"] as const) {
+for (const file of [
+	"djs_brief",
+	"data_versions",
+	"shows",
+	"tags",
+	"show_details",
+] as const) {
 	const damageCases =
 		file === "shows" || file === "tags"
 			? (["missing"] as const)
@@ -362,10 +368,12 @@ for (const file of ["djs_brief", "data_versions", "shows", "tags"] as const) {
 					else {
 						const value = JSON.parse(original);
 						if (damage === "stale timestamp") {
-							if (file === "djs_brief")
+							if (file === "djs_brief" || file === "show_details")
 								value.updatedAt = "2000-01-01T00:00:00.000Z";
 							else value.djs.updatedAt = "2000-01-01T00:00:00.000Z";
-						} else if (file === "djs_brief") value.data = [];
+						} else if (file === "show_details")
+							value.data[0].description = "Stale";
+						else if (file === "djs_brief") value.data = [];
 						else value.djs.id += 1;
 						await writeFile(destination, JSON.stringify(value));
 					}
@@ -374,8 +382,17 @@ for (const file of ["djs_brief", "data_versions", "shows", "tags"] as const) {
 					);
 					const runner = await f.create(f.database, local);
 					const preview = await readyPreview(runner);
-					for (const resource of Object.values(preview.changes))
-						expect(resource).toEqual({ added: [], changed: [], removed: [] });
+					for (const [name, resource] of Object.entries(preview.changes))
+						expect(resource).toEqual({
+							added: [],
+							changed:
+								file === "show_details" &&
+								damage === "stale" &&
+								name === "shows"
+									? ["Runner Show"]
+									: [],
+							removed: [],
+						});
 					const job = await runner.start({
 						requestedBy: "admin",
 						previewId: preview.id,
@@ -481,9 +498,14 @@ test.skipIf(!databaseUrl)(
 				done.logs.some(
 					(line) =>
 						line.message ===
-						"Captured archive revision 1; dataset versions: shows 1, DJs 1, tags 1",
+						"Captured archive revision 1; dataset versions: shows 1, DJs 1, tags 1, show details 1",
 				),
 			).toBe(true);
+			expect(
+				JSON.parse(
+					await f.git("show", "HEAD:public/resources/show_details.json"),
+				).data,
+			).toEqual([{ id: 1 }]);
 			expect(done.job.commitId).toBeDefined();
 			const versions = await jobVersions(f.database, first.id);
 			expect(versions).not.toBeNull();
@@ -640,7 +662,7 @@ test.skipIf(!databaseUrl)(
 				recovered.logs.some(
 					(line) =>
 						line.message ===
-						"Recovered dataset versions: shows 1, DJs 1, tags 1; newer archive edits remain pending",
+						"Recovered dataset versions: shows 1, DJs 1, tags 1, show details 1; newer archive edits remain pending",
 				),
 			).toBe(true);
 			expect(await jobVersions(f.database, retry.id)).toEqual(failedVersions);
@@ -1361,6 +1383,69 @@ test.skipIf(!databaseUrl)(
 			expect(
 				(await readPublicationStatus(f.database, f.config)).latestJob,
 			).toBeUndefined();
+		} finally {
+			await f.close();
+		}
+	},
+	20000,
+);
+
+test.skipIf(!databaseUrl)(
+	"detail-only edits preview and publish without changing index versions",
+	async () => {
+		const f = await fixture();
+		try {
+			const local: PublicationConfig = {
+				mode: "local",
+				checkoutPath: f.checkout,
+			};
+			const runner = await f.create(f.database, local);
+			const first = await publishReviewed(runner);
+			expect((await settled(f.database, first.id)).job.outcome).toBe(
+				"succeeded",
+			);
+			const before = await jobVersions(f.database, first.id);
+			await f.database
+				.updateTable("shows")
+				.set({
+					description: "<p>Changed</p>",
+					tracklist: JSON.stringify([{ chapter: "Intro", start_time: 0 }]),
+				})
+				.execute();
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				true,
+			);
+			const preview = await readyPreview(runner);
+			expect(preview.changes.shows.changed).toEqual(["Runner Show"]);
+			expect(preview.changes.djs.changed).toEqual([]);
+			const second = await runner.start({
+				requestedBy: "admin",
+				previewId: preview.id,
+			});
+			expect((await settled(f.database, second.id)).job.outcome).toBe(
+				"succeeded",
+			);
+			const after = await jobVersions(f.database, second.id);
+			expect(after?.shows).toEqual(before?.shows);
+			expect(after?.djs).toEqual(before?.djs);
+			expect(after?.show_details.id).toBe((before?.show_details.id ?? 0) + 1);
+			expect(
+				JSON.parse(
+					await readFile(
+						path.join(f.checkout, "public/resources/show_details.json"),
+						"utf8",
+					),
+				).data,
+			).toEqual([
+				{
+					id: 1,
+					description: "<p>Changed</p>",
+					tracklist: [{ chapter: "Intro", start_time: 0 }],
+				},
+			]);
+			expect((await readPublicationStatus(f.database, local)).pending).toBe(
+				false,
+			);
 		} finally {
 			await f.close();
 		}
