@@ -1,6 +1,7 @@
 import { P } from "ts-pattern";
 import type { ShowTracklistEntry } from "../../../db/types.js";
 import type { ShowsJSON } from "../../../json-transformers/index.js";
+import { isShowTracklistEntry } from "../../../utils/show-tracklist.js";
 import type { AdminApiReply } from "../types.js";
 
 /** Admin list responses retain the creation timestamp selected from the database. */
@@ -35,6 +36,7 @@ export type CreateShowRequest = P.infer<typeof CreateShowRequestPattern>;
 
 /** Editing replaces the same fields as creation, retaining identity and createdAt. */
 export const ModifyShowRequestPattern = {
+	tracklist: P.optional(P.array(P.when(isShowTracklistEntry))),
 	...ShowFieldsPattern,
 	id: P.number.int().between(1, Number.MAX_SAFE_INTEGER),
 } as const;

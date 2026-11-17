@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import type { ShowTracklistEntry } from "../../../../../db/types.js";
 import {
 	hasFormChanges,
 	type SelectedTag,
@@ -8,6 +9,7 @@ import { buildCreateShowRequest } from "../onboard-show-modal/onboard-show-utils
 
 /** Editable Show values shared by creation, editing, and Mixcloud import forms. */
 export type ShowFormValues = {
+	tracklist?: ShowTracklistEntry[];
 	title: string;
 	description?: string;
 	/** UTC calendar date in YYYY-MM-DD input format, or empty before selection. */
@@ -23,6 +25,16 @@ export type ShowFormValues = {
 	/** Selected archive DJ IDs in selection order. */
 	selected: number[];
 };
+
+// JSONB object key order does not affect equality; entry order does.
+const tracklistSnapshot = (entries: ShowTracklistEntry[] | undefined) =>
+	JSON.stringify(
+		entries?.map((entry) =>
+			entry.chapter !== undefined
+				? [entry.chapter, entry.start_time]
+				: [entry.artist, entry.song, entry.start_time],
+		),
+	);
 
 /**
  * Keeps editable values and the opening baseline together for every Show form.
@@ -59,9 +71,14 @@ export const useShowFormState = (initialValues: ShowFormValues) => {
 		setFields,
 		// Compare tag titles: source metadata is retained for import, not dirty state.
 		hasUnsavedChanges: hasFormChanges(
-			{ ...fields, tags: fields.tags.map(({ title }) => title) },
+			{
+				...fields,
+				tracklist: tracklistSnapshot(fields.tracklist),
+				tags: fields.tags.map(({ title }) => title),
+			},
 			{
 				...baseline.current,
+				tracklist: tracklistSnapshot(baseline.current.tracklist),
 				tags: baseline.current.tags.map(({ title }) => title),
 			},
 		),
@@ -78,9 +95,14 @@ export const useShowFormState = (initialValues: ShowFormValues) => {
 export const buildShowFormRequest = (fields: ShowFormValues) => {
 	if (fields.selected.length === 0) throw new Error("Select at least one DJ.");
 	if (fields.title.trim() === "") throw new Error("Title is required.");
-	return buildCreateShowRequest({
-		...fields,
-		tags: [...fields.tags.map(({ title }) => title), fields.tagDraft].join(","),
-		djs: fields.selected,
-	});
+	return {
+		...(fields.tracklist === undefined ? {} : { tracklist: fields.tracklist }),
+		...buildCreateShowRequest({
+			...fields,
+			tags: [...fields.tags.map(({ title }) => title), fields.tagDraft].join(
+				",",
+			),
+			djs: fields.selected,
+		}),
+	};
 };

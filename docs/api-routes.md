@@ -358,8 +358,13 @@ format, alongside its identity, metadata, and relationship IDs. Its admin-only
 Show list and save responses include `tracklist`: an ordered array of track
 (`artist`, `song`) or chapter (`chapter`) objects, each with `start_time`
 (nonnegative whole seconds or JSON `null`). New Shows default to `[]`.
-Create/edit requests do not accept tracklists yet; ordinary edits preserve the
-stored list. Public archive export is unchanged.
+`POST /api/admin/modify-show` accepts optional `tracklist` in this same shape.
+Supplied entries require nonblank artist/song or chapter text, exclusively, and
+`start_time` must be null or a nonnegative safe integer. Text is trimmed; order
+is preserved without chronology or duration constraints. Omission preserves the
+stored list; `[]` clears it. Tracklist and other Show changes save in the same
+transaction. Create requests do not accept tracklists; new Shows start with an
+empty list. The public Show transformer and archive export remain unchanged.
 
 `GET /api/admin/shows` includes the admin-only `createdAt` timestamp in the same
 ISO JSON date format, plus required `mixcloud_image_small` and

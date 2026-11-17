@@ -23,6 +23,7 @@ export const EditShowModal = ({ show, tags, onSubmit, ...props }: Props) => {
 			submitLabel="Save"
 			submittingLabel="Saving…"
 			initialValues={{
+				tracklist: show.tracklist,
 				title: show.title,
 				...(show.description === undefined
 					? {}

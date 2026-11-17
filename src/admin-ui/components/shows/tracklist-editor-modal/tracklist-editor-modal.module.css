@@ -1,0 +1,131 @@
+.tracks {
+	max-height: max(100px, calc(100dvh - 420px));
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
+}
+.optional {
+	color: #555;
+}
+.editor {
+	grid-column: 1 / -1;
+	border: 2px dashed #000;
+	padding: 16px;
+	min-width: 0;
+}
+.row {
+	padding: 0;
+	border: 0;
+	min-width: 0;
+	margin: 0;
+	display: grid;
+	grid-template-columns: 1.5rem minmax(0, 1fr) minmax(0, 0.65fr) 9rem 2.625rem;
+	gap: 12px;
+	align-items: start;
+	margin-bottom: 20px;
+}
+.row:last-of-type {
+	margin-bottom: 0;
+}
+.text {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+	gap: 12px;
+	min-width: 0;
+}
+.chapter {
+	grid-template-columns: minmax(0, 1fr);
+}
+.text > div,
+.timestamp > div {
+	display: block;
+}
+.text label,
+.timestamp label {
+	display: block;
+	margin-bottom: 4px;
+}
+.type {
+	display: grid;
+	gap: 4px;
+}
+.type select {
+	width: 100%;
+	min-width: 0;
+	min-height: var(--modal-control-height);
+	padding: 10px 8px;
+	border: 1px solid #000;
+	border-radius: 0;
+	font: inherit;
+	color: inherit;
+	background: #fff;
+}
+.number,
+.remove {
+	margin-top: 28px;
+}
+.remove {
+	display: grid;
+	place-items: center;
+	border-radius: 0;
+	padding: 0;
+	min-height: 42px;
+	border: 0;
+	background: transparent;
+	font: inherit;
+}
+.remove svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.5;
+}
+.remove:enabled:focus-visible,
+.remove:enabled:hover {
+	background: #efefef;
+}
+.remove:enabled:focus-visible svg,
+.remove:enabled:hover svg {
+	stroke-width: 2.5;
+}
+.add {
+	border-radius: 0;
+	display: block;
+	margin: 8px 0 0;
+	padding: 10px 28px;
+	min-height: 42px;
+	font: inherit;
+	border: 0;
+}
+@media (max-width: 700px) {
+	.row {
+		grid-template-columns: 1.5rem minmax(0, 1fr) 2.625rem;
+	}
+	.text {
+		grid-column: 2;
+	}
+	.timestamp {
+		grid-column: 2;
+	}
+	.type {
+		grid-column: 2;
+	}
+	.remove {
+		grid-column: 3;
+		grid-row: 1;
+	}
+	.number {
+		grid-column: 1;
+		grid-row: 1;
+	}
+}
+@media (max-width: 450px) {
+	.editor {
+		padding: 12px;
+	}
+	.row {
+		gap: 8px;
+	}
+	.text {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

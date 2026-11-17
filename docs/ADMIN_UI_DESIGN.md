@@ -216,6 +216,32 @@ resetting metadata edits or drafts. Failed saves retain values; successful saves
 close directly and refresh Shows, DJs, and tags. Existing Show creation IDs
 remain stable, while edit controls use the `edit-show` prefix.
 
+### Tracklist editing
+
+Edit Show displays a plain-text tracklist below description in the control
+column, with the `tracklist` label on the left. Each line contains
+`number | song, artist, time` or `number | chapter, time`; unknown times and
+their preceding commas are omitted. Empty lists show gray None, and previews
+scroll after approximately five lines. Edit Tracklist opens the reusable
+`TracklistEditorModal` exported from `shows`. Its caller supplies entries,
+`onSave`, and `onClose`; it performs no API request.
+
+The editor is up to 1080px wide, constrained by the viewport. Its track rows
+scroll inside the dashed container, keeping Add, Save, and Cancel outside the
+scrolling list. It uses numbered song/chapter rows, removal, and left-aligned,
+borderless + Add track (appending a song). Row removal uses the shared Close
+visual treatment: a square gray hover background and a thicker cross. Type
+changes clear text while preserving time. Song artist/title and chapter title
+must be nonblank. Timestamps accept m:ss or h:mm:ss, with gray “(optional)” text
+and small gray `m:ss or h:mm:ss` guidance beneath each input. Blank means
+unknown; 0:00 is the start. Known times need not increase or fit within Show
+duration. Rows retain their order; no reordering controls are provided. All rows
+may be removed. Save trims text and returns the draft to Edit Show; only the
+parent Save persists it. Both dialogs use the existing dirty-discard behavior,
+with the parent inert while covered and focus restored to Edit Tracklist on
+return. Rows stack on phones, and the preview and modal remain scrollable by
+keyboard.
+
 ### Optional form navigation and helpers
 
 `FormModal` accepts optional `headerContent`, `secondaryAction`,
@@ -569,7 +595,8 @@ above.
 
 The Shows table includes a sortable tracklist column showing the number of track
 entries, excluding chapters. An empty list displays `—`; a list containing only
-chapters displays `0`. Tracklist editing and Mixcloud synchronization are
+chapters displays `0`. Tracklists can be edited through Edit Show as described
+in [Tracklist editing](#tracklist-editing). Mixcloud synchronization remains
 deferred.
 
 ### Show image URL variants

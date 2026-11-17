@@ -4,7 +4,7 @@ import styles from "./labeled-form-control.module.css";
 type LabeledFormControlProps = {
 	id: string;
 	name: string;
-	label: string;
+	label: ReactNode;
 	value: string;
 	onChange: (value: string) => void;
 	onBlur?: () => void;

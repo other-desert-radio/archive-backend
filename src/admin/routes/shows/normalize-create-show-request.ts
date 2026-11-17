@@ -1,8 +1,10 @@
 import { isMatching, P } from "ts-pattern";
+import type { ShowTracklistEntry } from "../../../db/types.js";
 import { isHttpUrl } from "../../../utils/index.js";
 import type { CreateShowRequest } from "./types.js";
 
 export type NormalizedCreateShowRequest = {
+	tracklist?: ShowTracklistEntry[];
 	title: string;
 	description?: string;
 	date: Date;

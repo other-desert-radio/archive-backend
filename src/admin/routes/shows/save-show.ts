@@ -38,6 +38,9 @@ export const saveShowInTransaction = async (
 		throw new Error("One or more selected DJs do not exist");
 
 	const values = {
+		...(normalized.tracklist === undefined
+			? {}
+			: { tracklist: JSON.stringify(normalized.tracklist) }),
 		title: normalized.title,
 		...(normalized.description === undefined
 			? {}
