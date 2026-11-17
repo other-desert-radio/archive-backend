@@ -11,6 +11,7 @@ the following assets to the configured Astro frontend directories:
 - `public/resources/djs_brief.json`, the compact DJ index;
 - `public/resources/djs/{id}.json`, one detail document per DJ;
 - `public/resources/shows.json`, the top-level show index;
+- `public/resources/show_details.json`, descriptions and tracklists by show ID;
 - `public/resources/tags.json`, the shared tag dictionary;
 - `public/resources/data_versions.json`, the dataset version manifest; and
 - `public/assets/djs/{id}_small.webp` and `{id}_large.webp`, copied DJ image
@@ -35,6 +36,7 @@ the existing payload. Archive JSON lives in `public/resources/`, including
 ```json
 {
   "shows": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
+  "show_details": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
   "djs": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
   "tags": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" }
 }
@@ -69,13 +71,18 @@ Subsequent unchanged exports retain that version.
 
 ## Export rules
 
-Show records in `shows.json` and nested DJ detail records include optional
-`description` containing sanitized HTML, using the same allowed formatting as DJ
-bios. NULL descriptions are omitted; empty descriptions remain empty strings.
+`show_details.json` contains one record per show in the same order as the show
+index, with `id` identifying the show. Optional `description` contains sanitized
+HTML using the same allowed formatting as DJ bios; NULL descriptions are omitted
+and empty strings are preserved. Optional nonempty `tracklist` arrays retain
+track (`artist`, `song`) or `chapter` fields in their stored order. Unknown
+`start_time` values are omitted; known offsets remain integer seconds, including
+zero. Show indexes and shows embedded in DJ documents omit both detail fields.
+The `show_details` version changes independently when detail content changes.
 
 The exporter owns the entire `public/resources/djs/` and `public/assets/djs/`
 directories and replaces their contents on each export, including stale files.
-Keep manually maintained assets outside those directories. It also owns the four
+Keep manually maintained assets outside those directories. It also owns the five
 top-level generated JSON files; other files such as
 `public/resources/notes.json` and `public/assets/logo.svg` remain untouched and
 outside publication commits.
@@ -220,3 +227,16 @@ remain outside the generated-file commit. Durable jobs allow explicit recovery
 after restart or a lost response from the Git remote. See
 [publication operations](DEVELOPMENT.md#publication-operation-and-recovery) for
 setup, branch selection, and retry procedures.
+
+## HTTP compression
+
+GitHub Pages negotiates gzip for JSON resources and serves uncompressed JSON
+when requested with `Accept-Encoding: identity`. Both variants use the same
+`.json` URL; browsers decompress encoded responses before JSON parsing. No gzip
+sidecars or application decompression code are generated. Verify both negotiated
+responses after deployment; local servers may serve only uncompressed JSON.
+
+Publication previews merge show details by show ID and report detail edits under
+the existing changed-show list. Tracklist ordering contributes to that
+comparison. Legacy baselines without a details file retain their embedded show
+details.

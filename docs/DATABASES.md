@@ -51,11 +51,25 @@ trigger to retain source rows and clear their import timestamps; see the
 ## Archive dataset versions
 
 Migration `0040_add_archive_dataset_versions` adds `archive_dataset_versions`,
-keyed by dataset (`shows`, `djs`, or `tags`). Each row stores an integer
-`version`, `updated_at timestamptz`, and a SHA-256 `content_hash`. Rows are
-created on first allocation at version 1. Changed exported content advances only
-that dataset; unchanged content preserves its version and timestamp. DJ content
+keyed by dataset (`shows`, `djs`, `tags`, or `show_details`, added by migration
+`0045_add_show_details_dataset`). Each row stores an integer `version`,
+`updated_at timestamptz`, and a SHA-256 `content_hash`. Rows are created on
+first allocation at version 1. Changed exported content advances only that
+dataset; unchanged content preserves its version and timestamp. DJ content
 includes briefs, details, and image bytes. Shows include their embedded DJ data.
+
+| Column         | Type              | Description                               |
+| -------------- | ----------------- | ----------------------------------------- |
+| `dataset`      | text, primary key | `shows`, `djs`, `tags`, or `show_details` |
+| `version`      | integer           | Positive content revision                 |
+| `updated_at`   | timestamptz       | Last content change                       |
+| `content_hash` | text              | SHA-256 of exported content               |
+
+The `show_details` dataset versions descriptions and tracklists independently.
+Detail edits do not advance show or DJ versions. Migration `0045` changes only
+this dataset constraint; it adds no source table. Its rollback removes the
+`show_details` version row and restores the original allowed dataset names,
+preserving other versions and all source show data.
 
 A shared session advisory lock serializes exports. Both entry points hold it
 before version allocation and through all filesystem writes; publication also
@@ -386,9 +400,10 @@ permitted. The `shows_tracklist_shape` CHECK uses the immutable
 validate timestamp ordering or compare offsets with Show duration.
 
 Admin list and save responses include the stored tracklist. Ordinary Show edits
-preserve it. Tracklist editing, Mixcloud synchronization, and public JSON export
-are not implemented yet. Apply the migration before deploying this application;
-rollback drops the column and validator, losing stored tracklists.
+preserve it. Public `shows.json` exports omit unknown timestamps; see
+[the export contract](ARCHIVE_EXPORT.md#export-rules). Apply the migration
+before deploying this application; rollback drops the column and validator,
+losing stored tracklists.
 
 `duration` is measured in whole seconds. `date` represents a broadcast calendar
 day and is stored explicitly at midnight UTC, so its timestamp remains

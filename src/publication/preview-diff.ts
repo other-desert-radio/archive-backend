@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { isMatching, P } from "ts-pattern";
 import type { ArchiveDocuments } from "../db/export-archive.js";
+import { isShowTracklistEntry } from "../utils/show-tracklist.js";
 import type { PublicationChanges } from "./types.js";
 
 type ArchiveRecord = { id: number; title: string; signature: string };
@@ -18,17 +19,21 @@ const emptyArchive = (): PublicationArchive => ({
 const digest = (value: Buffer | string) =>
 	createHash("sha256").update(value).digest("hex");
 
-function normalize(value: unknown): unknown {
+function normalize(value: unknown, field?: string): unknown {
 	if (value instanceof Date) return value.toJSON();
-	if (Array.isArray(value))
-		return value
-			.map(normalize)
-			.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+	if (Array.isArray(value)) {
+		const normalized = value.map((entry) => normalize(entry));
+		return field === "tracklist"
+			? normalized
+			: normalized.sort((a, b) =>
+					JSON.stringify(a).localeCompare(JSON.stringify(b)),
+				);
+	}
 	if (isMatching(P.record(P.string, P.unknown), value))
 		return Object.fromEntries(
 			Object.keys(value)
 				.sort()
-				.map((key) => [key, normalize(value[key])]),
+				.map((key) => [key, normalize(value[key], key)]),
 		);
 	return value;
 }
@@ -80,6 +85,47 @@ function records(value: unknown): DataRecord[] {
 	return value;
 }
 
+function showsWithDetails(shows: DataRecord[], value: unknown): DataRecord[] {
+	if (value === undefined) return shows;
+	const entry = P.when(
+		(value: unknown) =>
+			isMatching(P.record(P.string, P.unknown), value) &&
+			isMatching({ start_time: P.optional(P.number.int().gte(0)) }, value) &&
+			isShowTracklistEntry({ ...value, start_time: value.start_time ?? null }),
+	);
+	if (
+		!isMatching(
+			P.array({
+				id: P.number.int().positive(),
+				description: P.optional(P.string),
+				tracklist: P.optional(P.array(entry)),
+			}),
+			value,
+		)
+	)
+		throw new Error("Invalid archive show details");
+	const details = new Map(
+		value.map(({ id, description, tracklist }) => [
+			id,
+			{
+				...(description === undefined ? {} : { description }),
+				...(tracklist === undefined ? {} : { tracklist }),
+			},
+		]),
+	);
+	if (details.size !== value.length)
+		throw new Error("Duplicate archive show detail ID");
+	const ids = new Set(shows.map((show) => show.id));
+	if (value.some((detail) => !ids.has(detail.id)))
+		throw new Error("Orphan archive show detail ID");
+	return shows.map(
+		({ description: _description, tracklist: _tracklist, ...show }) => ({
+			...show,
+			...details.get(show.id),
+		}),
+	);
+}
+
 /** Read only the existing generated records and referenced DJ image bytes. */
 export async function readPublicationArchive(
 	read: (file: string) => Promise<Buffer | undefined>,
@@ -93,7 +139,12 @@ export async function readPublicationArchive(
 	for (const resource of ["shows", "tags"] as const) {
 		const value = await json(`public/resources/${resource}.json`);
 		if (value !== undefined)
-			for (const record of records(payload(value)))
+			for (const record of resource === "shows"
+				? showsWithDetails(
+						records(payload(value)),
+						payload(await json("public/resources/show_details.json")),
+					)
+				: records(payload(value)))
 				add(archive, resource, record);
 	}
 	const brief = await json("public/resources/djs_brief.json");
@@ -132,7 +183,9 @@ export function documentsPublicationArchive(
 		images.set(image.id, variants);
 	}
 	for (const resource of ["shows", "tags", "djs"] as const)
-		for (const record of documents[resource])
+		for (const record of resource === "shows"
+			? showsWithDetails(documents.shows, documents.showDetails)
+			: documents[resource])
 			add(
 				archive,
 				resource,

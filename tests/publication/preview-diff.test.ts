@@ -7,6 +7,7 @@ import {
 } from "../../src/publication/preview-diff.js";
 
 const documents = (): ArchiveDocuments => ({
+	showDetails: [],
 	djsBrief: [],
 	djs: [],
 	shows: [],
@@ -231,4 +232,64 @@ test("existing Caroline in public resources is not reported as added", async () 
 	expect(
 		comparePublicationArchives(before, documentsPublicationArchive(data)).djs,
 	).toEqual({ added: [], changed: [], removed: [] });
+});
+
+test("split details match legacy embedded content and detail changes report show titles", async () => {
+	const data = documents();
+	data.shows = [{ ...show(1, "Show"), djs: [] }];
+	data.showDetails = [
+		{
+			id: 1,
+			description: "Description",
+			tracklist: [
+				{ artist: "Artist", song: "Song" },
+				{ chapter: "Outro", start_time: 60 },
+			],
+		},
+	];
+	const legacy = await read({
+		"public/resources/shows.json": [
+			{ ...data.shows[0], ...data.showDetails[0] },
+		],
+	});
+	const split = await read({
+		"public/resources/shows.json": data.shows,
+		"public/resources/show_details.json": {
+			version: 1,
+			updatedAt: "2026-11-16T00:00:00.000Z",
+			data: data.showDetails,
+		},
+	});
+	expect(comparePublicationArchives(legacy, split).shows.changed).toEqual([]);
+	expect(
+		comparePublicationArchives(split, documentsPublicationArchive(data)).shows
+			.changed,
+	).toEqual([]);
+	data.showDetails[0]?.tracklist?.reverse();
+	expect(
+		comparePublicationArchives(split, documentsPublicationArchive(data)).shows
+			.changed,
+	).toEqual(["Show"]);
+	data.showDetails = [{ id: 1 }];
+	expect(
+		comparePublicationArchives(split, documentsPublicationArchive(data)).shows
+			.changed,
+	).toEqual(["Show"]);
+});
+
+test("invalid details, duplicate IDs and orphan IDs reject the baseline", async () => {
+	for (const details of [
+		[{ id: 1 }, { id: 1 }],
+		[{ id: 2 }],
+		[{ id: 1, description: 3 }],
+		[{ id: 1, tracklist: [{ chapter: "Intro", start_time: -1 }] }],
+		[{ id: 1, tracklist: [{ chapter: "Intro", start_time: null }] }],
+	]) {
+		await expect(
+			read({
+				"public/resources/shows.json": [{ ...show(1, "Show"), djs: [] }],
+				"public/resources/show_details.json": details,
+			}),
+		).rejects.toThrow();
+	}
 });

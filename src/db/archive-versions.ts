@@ -5,7 +5,10 @@ import type { Database } from "./types.js";
 
 /** Manifest id matches the payload version; updatedAt is a UTC ISO timestamp. */
 export type DatasetVersion = { id: number; updatedAt: string };
-export type DatasetVersions = Record<"shows" | "djs" | "tags", DatasetVersion>;
+export type DatasetVersions = Record<
+	"shows" | "djs" | "tags" | "show_details",
+	DatasetVersion
+>;
 
 /** Hash the public content, including image bytes that JSON only references. */
 export function archiveContentHashes(documents: ArchiveDocuments) {
@@ -22,6 +25,7 @@ export function archiveContentHashes(documents: ArchiveDocuments) {
 	}
 	return {
 		shows: hash(documents.shows),
+		show_details: hash(documents.showDetails),
 		djs: djs.digest("hex"),
 		tags: hash(documents.tags),
 	};
@@ -66,7 +70,12 @@ export async function allocateArchiveVersions<
 				const versions = {} as DatasetVersions;
 				// All datasets changed by this allocation share one timestamp.
 				const now = new Date().toISOString();
-				for (const dataset of ["shows", "djs", "tags"] as const) {
+				for (const dataset of [
+					"shows",
+					"djs",
+					"tags",
+					"show_details",
+				] as const) {
 					const previous = await transaction
 						.selectFrom("archive_dataset_versions")
 						.selectAll()

@@ -1,3 +1,34 @@
+## Update 1 - Show split
+
+shows.json is 255KB, adding tracklists will bring that to 600KB
+
+so now, we're introducing a new independently versioned show_details.json for
+asynchronously loaded descriptions and tracklists:
+
+```json
+{
+  "version": 1,
+  "updatedAt": "2026-11-16T00:00:00.000Z",
+  "data": [
+    {
+      "id": 1,
+      "description": "...",
+      "tracklist": [
+        {
+          "artist": "Artist",
+          "song": "Song",
+          "start_time": 0
+        }
+      ]
+    }
+  ]
+}
+```
+
+`id` is the show ID. `start_time` is seconds; omit it when unknown, preserve
+zero. Chapters use `{ "chapter": "Intro", "start_time": 0 }`. Omit absent
+descriptions and empty tracklists. Add `show_details` to `data_versions.json`.
+
 # Database Notes
 
 Historical product/design input. Examples and proposed behavior may be obsolete.

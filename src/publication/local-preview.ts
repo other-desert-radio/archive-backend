@@ -12,6 +12,7 @@ const managedPaths = [
 	"public/resources/djs",
 	"public/resources/djs_brief.json",
 	"public/resources/shows.json",
+	"public/resources/show_details.json",
 	"public/resources/tags.json",
 	"public/resources/data_versions.json",
 	"public/assets/djs",

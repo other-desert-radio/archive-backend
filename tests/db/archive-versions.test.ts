@@ -12,9 +12,14 @@ import {
 	down,
 	up,
 } from "../../src/db/migrations/0040_add_archive_dataset_versions.js";
+import {
+	down as removeShowDetailsDataset,
+	up as showDetailsDataset,
+} from "../../src/db/migrations/0045_add_show_details_dataset.js";
 import type { Database } from "../../src/db/types.js";
 
 const documents = (): ArchiveDocuments => ({
+	showDetails: [],
 	shows: [],
 	djs: [],
 	djsBrief: [],
@@ -40,6 +45,7 @@ async function withDatabase(
 		await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(database);
 		await database.transaction().execute(createJobs);
 		await database.transaction().execute(up);
+		await database.transaction().execute(showDetailsDataset);
 		await run(database);
 	} finally {
 		await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(
@@ -92,6 +98,83 @@ test("hashes public content independently, including DJ image bytes and embedded
 	}));
 	expect(archiveContentHashes(data).shows).not.toBe(firstShow);
 });
+
+test("detail changes hash independently and preserve track order", () => {
+	const data = documents();
+	const before = archiveContentHashes(data);
+	data.showDetails = [
+		{
+			id: 1,
+			description: "Details",
+			tracklist: [
+				{ artist: "First", song: "Song" },
+				{ chapter: "Outro", start_time: 60 },
+			],
+		},
+	];
+	const after = archiveContentHashes(data);
+	expect(after).toEqual({ ...before, show_details: expect.any(String) });
+	expect(after.show_details).not.toBe(before.show_details);
+	data.showDetails[0]?.tracklist?.reverse();
+	expect(archiveContentHashes(data).show_details).not.toBe(after.show_details);
+});
+
+test.skipIf(!databaseUrl)(
+	"details migration rolls back and reapplies without changing other versions",
+	async () => {
+		await withDatabase(async (database) => {
+			const data = documents();
+			const first = await allocateArchiveVersions(database, async () => ({
+				documents: data,
+			}));
+			data.showDetails = [{ id: 1, description: "Details" }];
+			const changed = await allocateArchiveVersions(database, async () => ({
+				documents: data,
+			}));
+			expect(changed.versions).toEqual({
+				...first.versions,
+				show_details: { id: 2, updatedAt: expect.any(String) },
+			});
+			const retry = await allocateArchiveVersions(database, async () => ({
+				documents: data,
+			}));
+			expect(retry.versions).toEqual(changed.versions);
+			const otherVersions = await database
+				.selectFrom("archive_dataset_versions")
+				.selectAll()
+				.where("dataset", "!=", "show_details")
+				.orderBy("dataset")
+				.execute();
+			await database.transaction().execute(removeShowDetailsDataset);
+			expect(
+				await database
+					.selectFrom("archive_dataset_versions")
+					.selectAll()
+					.orderBy("dataset")
+					.execute(),
+			).toEqual(otherVersions);
+			await expect(
+				database
+					.insertInto("archive_dataset_versions")
+					.values({
+						dataset: "show_details",
+						version: 1,
+						updated_at: new Date(),
+						content_hash: "a".repeat(64),
+					})
+					.execute(),
+			).rejects.toThrow();
+			await database.transaction().execute(showDetailsDataset);
+			const reapplied = await allocateArchiveVersions(database, async () => ({
+				documents: data,
+			}));
+			expect(reapplied.versions.show_details.id).toBe(1);
+			expect(reapplied.versions.shows).toEqual(first.versions.shows);
+			expect(reapplied.versions.djs).toEqual(first.versions.djs);
+			expect(reapplied.versions.tags).toEqual(first.versions.tags);
+		});
+	},
+);
 
 test.skipIf(!databaseUrl)(
 	"allocates durable versions, preserves no-op timestamps, and snapshots jobs",
@@ -212,6 +295,7 @@ test.skipIf(!databaseUrl)(
 				.execute();
 			await database.transaction().execute(down);
 			await database.transaction().execute(up);
+			await database.transaction().execute(showDetailsDataset);
 			expect(
 				(
 					await database

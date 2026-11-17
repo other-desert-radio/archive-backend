@@ -46,7 +46,6 @@ type ArchiveDJImage = {
 };
 
 type ArchiveShow = {
-	description?: string;
 	id: number;
 	title: string;
 	date: Date;
@@ -66,6 +65,16 @@ type ArchiveShowDJ = {
 
 export type ArchiveShowIndex = ArchiveShow & {
 	djs: ArchiveShowDJ[];
+};
+
+export type ArchiveShowDetail = {
+	id: number;
+	description?: string;
+	tracklist?: Array<
+		({ artist: string; song: string } | { chapter: string }) & {
+			start_time?: number;
+		}
+	>;
 };
 
 export type ArchiveDJBrief = {
@@ -96,6 +105,7 @@ export type ArchiveDocuments = {
 	djsBrief: ArchiveDJBrief[];
 	djs: ArchiveDJDetail[];
 	shows: ArchiveShowIndex[];
+	showDetails: ArchiveShowDetail[];
 	tags: ArchiveTag[];
 	images: ArchiveDJImage[];
 };
@@ -195,9 +205,6 @@ export const buildArchiveDocuments = ({
 				(show): ArchiveShow => ({
 					id: show.id,
 					title: show.title,
-					...(show.description == null
-						? {}
-						: { description: sanitizeArchiveHtml(show.description) }),
 					date: show.date,
 					duration: show.duration,
 					image_small: show.mixcloud_image_small,
@@ -238,9 +245,6 @@ export const buildArchiveDocuments = ({
 	const archiveShows = shows.map((show) => ({
 		id: show.id,
 		title: show.title,
-		...(show.description == null
-			? {}
-			: { description: sanitizeArchiveHtml(show.description) }),
 		date: show.date,
 		duration: show.duration,
 		image_small: show.mixcloud_image_small,
@@ -262,10 +266,28 @@ export const buildArchiveDocuments = ({
 		url: show.url,
 	}));
 
+	const showDetails = shows.map(
+		(show): ArchiveShowDetail => ({
+			id: show.id,
+			...(show.description == null
+				? {}
+				: { description: sanitizeArchiveHtml(show.description) }),
+			...(show.tracklist?.length
+				? {
+						tracklist: show.tracklist.map(({ start_time, ...entry }) => ({
+							...entry,
+							...(start_time === null ? {} : { start_time }),
+						})),
+					}
+				: {}),
+		}),
+	);
+
 	return {
 		djsBrief,
 		djs: archiveDJs,
 		shows: archiveShows,
+		showDetails,
 		tags: tags.map((tag) => ({
 			id: tag.id,
 			title: tag.title,
@@ -305,6 +327,7 @@ export const writeArchiveDocuments = async (
 		"djs",
 		"djs_brief.json",
 		"shows.json",
+		"show_details.json",
 		"tags.json",
 	]) {
 		await fs.rm(path.join(resourceDirectory, relativePath), {
@@ -342,6 +365,13 @@ export const writeArchiveDocuments = async (
 		envelope("shows", documents.shows),
 	);
 	reporter.log(`│  ├─ shows.json: ${documents.shows.length} shows`);
+	await writeJSON(
+		path.join(resourceDirectory, "show_details.json"),
+		envelope("show_details", documents.showDetails),
+	);
+	reporter.log(
+		`│  ├─ show_details.json: ${documents.showDetails.length} show details`,
+	);
 	await writeJSON(
 		path.join(resourceDirectory, "tags.json"),
 		envelope("tags", documents.tags),

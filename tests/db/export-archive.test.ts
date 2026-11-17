@@ -24,12 +24,14 @@ import {
 import { up as createPublicationState } from "../../src/db/migrations/0029_add_archive_publication_state.js";
 import { up as createJobs } from "../../src/db/migrations/0030_add_archive_publication_jobs.js";
 import { up as createVersions } from "../../src/db/migrations/0040_add_archive_dataset_versions.js";
+import { up as showDetailsDataset } from "../../src/db/migrations/0045_add_show_details_dataset.js";
 import type { Database } from "../../src/db/types.js";
 import { readPublicationSnapshot } from "../../src/publication/index.js";
 
 const temporaryDirectories: string[] = [];
 
 const versions: DatasetVersions = {
+	show_details: { id: 2, updatedAt: "2026-01-01T00:00:00.000Z" },
 	shows: { id: 3, updatedAt: "2026-01-01T00:00:00.000Z" },
 	djs: { id: 5, updatedAt: "2026-01-02T00:00:00.000Z" },
 	tags: { id: 8, updatedAt: "2026-01-03T00:00:00.000Z" },
@@ -38,6 +40,7 @@ const emptyDocuments = () => ({
 	djsBrief: [],
 	djs: [],
 	shows: [],
+	showDetails: [],
 	tags: [],
 	images: [],
 });
@@ -48,7 +51,7 @@ const createArchiveFixture = async (pool: Pool): Promise<void> => {
 	// Minimal current archive schema: fixtures exercise export reads, not historical schema migrations.
 	await pool.query(`
 	CREATE TABLE djs (id integer, title text, bio text, image_small bytea, image_large bytea, socials text, "showTitle" text, "showDescription" text);
-	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea, description text);
+	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea, description text, tracklist jsonb NOT NULL DEFAULT '[]');
 	CREATE TABLE tags (id integer, title text, color text, mixcloud_key text, mixcloud_url text);
 	CREATE TABLE show_djs (dj_id integer, show_id integer);
 	CREATE TABLE dj_tags (dj_id integer, tag_id integer);
@@ -66,6 +69,7 @@ const createArchiveFixture = async (pool: Pool): Promise<void> => {
 	});
 	await database.transaction().execute(createJobs);
 	await database.transaction().execute(createVersions);
+	await database.transaction().execute(showDetailsDataset);
 };
 
 test.skipIf(!exportDatabaseUrl)(
@@ -382,6 +386,11 @@ describe("archive export documents", () => {
 				{
 					id: 10,
 					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					tracklist: [
+						{ artist: "Artist", song: "Song", start_time: null },
+						{ chapter: "Intro", start_time: 0 },
+						{ artist: "Next", song: "Track", start_time: 120 },
+					],
 					title: "Newer Show",
 					description: "<p>Our show</p><script>bad()</script>",
 					date: new Date("2026-02-01T00:00:00.000Z"),
@@ -442,7 +451,6 @@ describe("archive export documents", () => {
 				{
 					id: 10,
 					title: "Newer Show",
-					description: "<p>Our show</p>",
 					date: new Date("2026-02-01T00:00:00.000Z"),
 					duration: 3600,
 					image_small: "https://example.com/show-small.jpg",
@@ -459,7 +467,6 @@ describe("archive export documents", () => {
 			{
 				id: 10,
 				title: "Newer Show",
-				description: "<p>Our show</p>",
 				date: new Date("2026-02-01T00:00:00.000Z"),
 				duration: 3600,
 				image_small: "https://example.com/show-small.jpg",
@@ -476,6 +483,17 @@ describe("archive export documents", () => {
 				url: "https://example.com/audio",
 			},
 		]);
+		expect(documents.showDetails).toEqual([
+			{
+				id: 10,
+				description: "<p>Our show</p>",
+				tracklist: [
+					{ artist: "Artist", song: "Song" },
+					{ chapter: "Intro", start_time: 0 },
+					{ artist: "Next", song: "Track", start_time: 120 },
+				],
+			},
+		]);
 		expect(documents.tags).toEqual([
 			{
 				id: 2,
@@ -490,6 +508,30 @@ describe("archive export documents", () => {
 			{ id: 1, bytes: Buffer.from("portrait-small"), variant: "small" },
 			{ id: 1, bytes: Buffer.from("portrait-large"), variant: "large" },
 		]);
+	});
+
+	test("keeps empty detail records and preserves show order", () => {
+		const documents = buildArchiveDocuments({
+			djs: [],
+			shows: [
+				{ id: 2, description: null, tracklist: [] },
+				{
+					id: 1,
+					description: "",
+					tracklist: [{ chapter: "Outro", start_time: null }],
+				},
+			] as never,
+			tags: [],
+			showDJs: [],
+			djTags: [],
+			showTags: [],
+		});
+		expect(documents.showDetails).toEqual([
+			{ id: 2 },
+			{ id: 1, description: "", tracklist: [{ chapter: "Outro" }] },
+		]);
+		expect(documents.shows[1]).not.toHaveProperty("description");
+		expect(documents.shows[1]).not.toHaveProperty("tracklist");
 	});
 
 	test("rejects incomplete WebP image pairs", () => {
@@ -557,6 +599,7 @@ describe("archive export writer", () => {
 						url: "https://example.com/audio",
 					},
 				],
+				showDetails: [{ id: 10, description: "Details" }],
 				tags: [{ id: 2, title: "House", color: "#ff1100" }],
 				images: [
 					{ id: 1, bytes: Buffer.from("small"), variant: "small" },
@@ -603,6 +646,14 @@ describe("archive export writer", () => {
 		expect(
 			await readFile(path.join(resourceDirectory, "shows", "10.json"), "utf8"),
 		).toBe("future show");
+		expect(
+			JSON.parse(
+				await readFile(
+					path.join(resourceDirectory, "show_details.json"),
+					"utf8",
+				),
+			).data,
+		).toEqual([{ id: 10, description: "Details" }]);
 		const manifest = JSON.parse(
 			await readFile(
 				path.join(resourceDirectory, "data_versions.json"),
@@ -612,6 +663,7 @@ describe("archive export writer", () => {
 		expect(manifest).toEqual(versions);
 		for (const [file, dataset] of [
 			["shows.json", "shows"],
+			["show_details.json", "show_details"],
 			["tags.json", "tags"],
 			["djs_brief.json", "djs"],
 			["djs/1.json", "djs"],
@@ -645,6 +697,7 @@ test("writes empty versioned datasets and preserves the previous manifest on wri
 	);
 	for (const [file, dataset] of [
 		["shows.json", "shows"],
+		["show_details.json", "show_details"],
 		["tags.json", "tags"],
 		["djs_brief.json", "djs"],
 	] as const) {
@@ -722,11 +775,33 @@ test.skipIf(!exportDatabaseUrl)(
 			expect(await readFile(path.join(resources, "shows.json"), "utf8")).toBe(
 				firstShows,
 			);
+			await pool.query(
+				'UPDATE shows SET description = \'<p>Details</p>\', tracklist = \'[{"artist":"Artist","song":"Song","start_time":null}]\'::jsonb',
+			);
+			await publish();
+			const detailsChange = await manifest();
+			expect(detailsChange).toEqual({
+				...first,
+				show_details: { id: 2, updatedAt: expect.any(String) },
+			});
+			expect(
+				JSON.parse(
+					await readFile(path.join(resources, "show_details.json"), "utf8"),
+				).data,
+			).toEqual([
+				{
+					id: 1,
+					description: "<p>Details</p>",
+					tracklist: [{ artist: "Artist", song: "Song" }],
+				},
+			]);
+			await publish();
+			expect(await manifest()).toEqual(detailsChange);
 			await pool.query("UPDATE tags SET title = 'Renamed tag'");
 			await publish();
 			const tagChange = await manifest();
 			expect(tagChange).toEqual({
-				...first,
+				...detailsChange,
 				tags: { id: 2, updatedAt: expect.any(String) },
 			});
 			await pool.query("UPDATE djs SET image_small = decode('6e6577', 'hex')");
@@ -871,6 +946,7 @@ test.skipIf(!exportDatabaseUrl)(
 			expect(manifest.djs.id).toBe(2);
 			for (const [file, dataset] of [
 				["shows.json", "shows"],
+				["show_details.json", "show_details"],
 				["djs_brief.json", "djs"],
 				["djs/1.json", "djs"],
 				["tags.json", "tags"],

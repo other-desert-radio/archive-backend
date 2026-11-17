@@ -137,3 +137,22 @@ test("local baseline rejects oversized individual files and cumulative bytes", a
 	);
 	await expect(readLocalPublicationFiles(checkout)).rejects.toThrow("32 MiB");
 });
+
+test("detail bytes affect fingerprints and detail symlinks are rejected", async () => {
+	const empty = await snapshotLocalPublicationFiles(checkout);
+	await put("public/resources/show_details.json", "[]");
+	const first = await snapshotLocalPublicationFiles(checkout);
+	expect(first).not.toBe(empty);
+	await put("public/resources/show_details.json", '[{"id":1}]');
+	expect(await snapshotLocalPublicationFiles(checkout)).not.toBe(first);
+	await rm(path.join(checkout, "public/resources/show_details.json"));
+	const outside = path.join(directory, "details.json");
+	await writeFile(outside, "[]");
+	await symlink(
+		outside,
+		path.join(checkout, "public/resources/show_details.json"),
+	);
+	await expect(snapshotLocalPublicationFiles(checkout)).rejects.toThrow(
+		"symlinks",
+	);
+});
