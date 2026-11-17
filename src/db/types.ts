@@ -74,7 +74,7 @@ export type ArchivePublicationStateTable = {
 };
 
 export type ArchiveDatasetVersionsTable = {
-	dataset: "shows" | "djs" | "tags";
+	dataset: "shows" | "djs" | "tags" | "show_details";
 	version: number;
 	updated_at: Date;
 	content_hash: string;

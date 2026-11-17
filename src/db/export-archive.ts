@@ -327,6 +327,7 @@ export const writeArchiveDocuments = async (
 		"djs",
 		"djs_brief.json",
 		"shows.json",
+		"show_details.json",
 		"tags.json",
 	]) {
 		await fs.rm(path.join(resourceDirectory, relativePath), {
@@ -364,6 +365,13 @@ export const writeArchiveDocuments = async (
 		envelope("shows", documents.shows),
 	);
 	reporter.log(`│  ├─ shows.json: ${documents.shows.length} shows`);
+	await writeJSON(
+		path.join(resourceDirectory, "show_details.json"),
+		envelope("show_details", documents.showDetails),
+	);
+	reporter.log(
+		`│  ├─ show_details.json: ${documents.showDetails.length} show details`,
+	);
 	await writeJSON(
 		path.join(resourceDirectory, "tags.json"),
 		envelope("tags", documents.tags),

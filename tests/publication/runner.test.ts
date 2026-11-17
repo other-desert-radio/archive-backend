@@ -21,6 +21,7 @@ import { up as logs } from "../../src/db/migrations/0031_add_archive_publication
 import { up as notifications } from "../../src/db/migrations/0032_notify_publication_jobs.js";
 import { up as publicationModes } from "../../src/db/migrations/0033_add_publication_modes.js";
 import { up as datasetVersions } from "../../src/db/migrations/0040_add_archive_dataset_versions.js";
+import { up as showDetailsDataset } from "../../src/db/migrations/0045_add_show_details_dataset.js";
 import type { Database } from "../../src/db/types.js";
 import {
 	acquirePublicationLease,
@@ -130,6 +131,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 		notifications,
 		publicationModes,
 		datasetVersions,
+		showDetailsDataset,
 	])
 		await database.transaction().execute(migration);
 	const config: PublicationConfig = {
