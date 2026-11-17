@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { APIRequestContext, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
+import type { ShowTracklistEntry } from "../src/db/types.js";
 import { test as djTest } from "./dj-fixtures.js";
 
 export type Show = {
+	tracklist: ShowTracklistEntry[];
 	id: number;
 	createdAt: string;
 	title: string;

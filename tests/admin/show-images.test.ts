@@ -18,6 +18,10 @@ for (const hasImages of [false, true]) {
 			mixcloud_image_small: "small-url",
 			mixcloud_image_large: "large-url",
 			has_images: hasImages,
+			tracklist: [
+				{ artist: "Artist", song: "Song", start_time: null },
+				{ chapter: "Intro", start_time: 0 },
+			],
 		};
 		const db = new Kysely<Database>({
 			dialect: new PostgresDialect({
@@ -41,6 +45,7 @@ for (const hasImages of [false, true]) {
 			expect(response.json()).toEqual([
 				{
 					id: 42,
+					tracklist: row.tracklist,
 					createdAt: row.createdAt.toISOString(),
 					title: "Show",
 					date: row.date.toISOString(),

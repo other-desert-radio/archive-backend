@@ -565,6 +565,13 @@ pending/failure and retry behavior, post-commit reload failure, overlapping
 reloads, and phone action reachability. Visual acceptance follows the checks
 above.
 
+### Show tracklist count
+
+The Shows table includes a sortable tracklist column showing the number of track
+entries, excluding chapters. An empty list displays `—`; a list containing only
+chapters displays `0`. Tracklist editing and Mixcloud synchronization are
+deferred.
+
 ### Show image URL variants
 
 Show create/edit modals require separate “small image URL” and “large image URL”

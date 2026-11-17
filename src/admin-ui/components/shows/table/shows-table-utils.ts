@@ -22,6 +22,7 @@ export type ShowSortColumn =
 	| "mixcloud_image_large"
 	| "djs"
 	| "tags"
+	| "tracklist"
 	| "url";
 export type { SortDirection } from "../../shared/resource-views/index.js";
 

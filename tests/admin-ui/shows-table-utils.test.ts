@@ -9,6 +9,7 @@ import {
 
 const shows = [
 	{
+		tracklist: [],
 		id: 2,
 		createdAt: "2026-01-02T12:34:56.000Z",
 		title: "Zulu Broadcast",
@@ -22,6 +23,7 @@ const shows = [
 		url: "https://example.com/zulu",
 	},
 	{
+		tracklist: [],
 		id: 1,
 		createdAt: "2026-01-01T01:02:03.000Z",
 		title: "Alpha Broadcast",
@@ -50,6 +52,7 @@ describe("Show table helpers", () => {
 			"mixcloud_image_large",
 			"DJs",
 			"tags",
+			"tracklist",
 			"URL",
 		]);
 		expect(showColumns[1].render(shows[0])).toBe("2026-01-02 12:34:56 UTC");
@@ -157,4 +160,28 @@ test("description search and sorting use visible text rather than HTML markup", 
 		),
 	).toEqual([2]);
 	expect(filterShows(rows, "strong", new Map(), new Map())).toEqual([]);
+});
+
+test("tracklist counts tracks, excludes chapters, sorts, and marks empty lists", () => {
+	const column = showColumns.find((column) => column.key === "tracklist");
+	if (!column) throw new Error("Missing tracklist column");
+	const populated = {
+		...shows[0],
+		tracklist: [
+			{ chapter: "Intro", start_time: 0 },
+			{ artist: "Artist", song: "Song", start_time: null },
+			{ artist: "Artist", song: "Other", start_time: 245 },
+		],
+	};
+	expect(column.render(populated)).toBe(2);
+	expect(column.render(shows[1])).toBe("—");
+	expect(
+		column.render({
+			...populated,
+			tracklist: [{ chapter: "Intro", start_time: 0 }],
+		}),
+	).toBe(0);
+	expect(
+		sortShows([populated, shows[1]], "tracklist", "asc").map((show) => show.id),
+	).toEqual([1, 2]);
 });

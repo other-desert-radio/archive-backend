@@ -70,6 +70,7 @@ test.skipIf(!databaseUrl)(
 				"0036_rename_show_mixcloud_images",
 				"0037_add_show_webp_images",
 				"0038_add_show_description",
+				"0044_add_show_tracklist",
 			]) {
 				const migration = await import(`../../src/db/migrations/${name}.js`);
 				await db.transaction().execute(migration.up);

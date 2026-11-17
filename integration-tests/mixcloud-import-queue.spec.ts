@@ -114,6 +114,7 @@ test.beforeEach(async ({ page }) => {
 		if (state.failSave)
 			return route.fulfill({ status: 500, json: { error: "Failure" } });
 		const show = {
+			tracklist: [],
 			id: 100 + payload.mixcloud_import_id,
 			createdAt: "2026-10-01T00:00:00Z",
 			...payload,

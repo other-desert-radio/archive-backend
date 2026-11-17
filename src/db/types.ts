@@ -154,11 +154,18 @@ export type DJsTable = {
 	showDescription: string | null;
 };
 
+/** Ordered Mixcloud-compatible tracks and chapters; null means an unknown offset. */
+export type ShowTracklistEntry = (
+	| { artist: string; song: string; chapter?: never }
+	| { chapter: string; artist?: never; song?: never }
+) & { start_time: number | null };
+
 export type ShowsTable = {
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	title: string;
 	description: string | null;
+	tracklist: ColumnType<ShowTracklistEntry[], string | undefined, string>;
 	date: Date;
 	duration: number;
 	mixcloud_image_small: string;
