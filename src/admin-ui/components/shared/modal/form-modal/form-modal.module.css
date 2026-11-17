@@ -261,3 +261,9 @@
 .headerAction {
 	margin: 0;
 }
+
+.subtitle {
+	margin: 8px 0 0;
+	color: #555;
+	font-size: var(--modal-helper-size);
+}

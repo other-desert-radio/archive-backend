@@ -38,11 +38,21 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 	};
 	const values = (draft: DraftRow[]) =>
 		draft.map(({ id: _id, ...value }) => value);
+	const timeErrors = rows.map((row) => {
+		try {
+			parseTrackTime(row.time);
+			return undefined;
+		} catch (error) {
+			return error instanceof Error ? error.message : "Invalid timestamp.";
+		}
+	});
 	return (
 		<FormModal
 			isOpen
 			panelWidth={1080}
 			title="Edit Tracklist"
+			subtitle="Enter timestamp as m:ss or h:mm:ss"
+			isSubmitDisabled={timeErrors.some((error) => error !== undefined)}
 			onClose={onClose}
 			submitLabel="Save"
 			cancelLabel="Cancel"
@@ -113,7 +123,9 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 									}
 									value={row.time}
 									onChange={(time) => update(row.id, { time })}
-									helper="m:ss or h:mm:ss"
+									{...(timeErrors[index] === undefined
+										? {}
+										: { error: timeErrors[index] })}
 								/>
 							</div>
 							<div className={styles.type}>

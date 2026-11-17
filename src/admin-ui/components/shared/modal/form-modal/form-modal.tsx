@@ -37,6 +37,7 @@ type FormModalProps = {
 	hasUnsavedChanges?: boolean;
 	allowUnchangedSubmit?: boolean;
 	title: string;
+	subtitle?: string;
 	titleSuffix?: ReactNode;
 	headerAction?: ModalAction | undefined;
 	onClose: () => void;
@@ -63,6 +64,7 @@ export const FormModal = ({
 	hasUnsavedChanges = false,
 	allowUnchangedSubmit = false,
 	title,
+	subtitle,
 	titleSuffix,
 	headerAction,
 	onClose,
@@ -235,6 +237,9 @@ export const FormModal = ({
 								</button>
 							</div>
 						</div>
+						{subtitle !== undefined && (
+							<p className={styles.subtitle}>{subtitle}</p>
+						)}
 						<form onSubmit={submit}>
 							<fieldset
 								disabled={isSubmitting || isCovered}

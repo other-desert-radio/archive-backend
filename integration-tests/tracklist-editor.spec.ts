@@ -53,9 +53,15 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	await first.getByLabel("artist", { exact: true }).fill(" Artist ");
 	await first.getByLabel("song", { exact: true }).fill(" Song ");
 	await first.getByLabel("timestamp (optional)").fill("3:70");
-	await editor.getByRole("button", { name: "Save", exact: true }).click();
-	await expect(editor.getByRole("alert")).toContainText(
-		"Row 1: Timestamp must use",
+	await expect(
+		editor.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
+	await expect(
+		first.getByText("Timestamp must use", { exact: false }),
+	).toBeVisible();
+	await expect(first.getByLabel("timestamp (optional)")).toHaveCSS(
+		"border-top-color",
+		"rgb(255, 44, 44)",
 	);
 	await first.getByLabel("timestamp (optional)").fill("3:07");
 	await editor
@@ -73,7 +79,7 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	await expect(second.getByLabel("timestamp (optional)")).toHaveValue("0:00");
 	await second.getByLabel("chapter", { exact: true }).fill("Intro");
 	await expect(
-		second.getByText("m:ss or h:mm:ss", { exact: true }),
+		editor.getByText("Enter timestamp as m:ss or h:mm:ss", { exact: true }),
 	).toBeVisible();
 	await editor.getByRole("button", { name: "Save", exact: true }).click();
 	await expect(editor).toBeHidden();
@@ -234,6 +240,24 @@ for (const width of [1280, 390, 320]) {
 				(element) => element.scrollWidth <= element.clientWidth,
 			),
 		).toBe(true);
+		const tracks = editor
+			.getByRole("group", { name: "Tracklist row 1", exact: true })
+			.locator("..");
+		expect(
+			await tracks.evaluate(
+				(element) => element.scrollHeight > element.clientHeight,
+			),
+		).toBe(true);
+		await expect(
+			editor.getByRole("button", { name: "+ Add track", exact: true }),
+		).toBeInViewport();
+		await expect(
+			editor.getByRole("button", { name: "Save", exact: true }),
+		).toBeInViewport();
+		await expect(
+			editor.getByRole("button", { name: "Cancel", exact: true }),
+		).toBeInViewport();
+		if (width === 1280) expect((await editor.boundingBox())?.width).toBe(1080);
 		await page.screenshot({ path: `/tmp/tracklist-editor-${width}.png` });
 		await editor
 			.getByRole("button", { name: "+ Add track", exact: true })
