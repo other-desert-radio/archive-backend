@@ -29,8 +29,6 @@ asynchronously loaded descriptions and tracklists:
 zero. Chapters use `{ "chapter": "Intro", "start_time": 0 }`. Omit absent
 descriptions and empty tracklists. Add `show_details` to `data_versions.json`.
 
-and we're compressing with negotiated gzip, with an uncompressed fallback
-
 # Database Notes
 
 Historical product/design input. Examples and proposed behavior may be obsolete.
