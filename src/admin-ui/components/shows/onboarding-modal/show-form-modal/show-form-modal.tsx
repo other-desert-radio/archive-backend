@@ -215,15 +215,14 @@ export const ShowFormModal = ({
 				<div className={styles.tracklistField}>
 					<span id={`${idPrefix}-tracklist-label`}>tracklist</span>
 					<div>
-						<section
+						<textarea
 							className={styles.tracklistPreview}
 							data-empty={fields.tracklist.length === 0}
-							// biome-ignore lint/a11y/noNoninteractiveTabindex: scrollable preview needs keyboard access
-							tabIndex={0}
+							readOnly
+							rows={Math.min(5, Math.max(1, fields.tracklist.length))}
 							aria-labelledby={`${idPrefix}-tracklist-label`}
-						>
-							{formatTracklist(fields.tracklist) || "None"}
-						</section>
+							value={formatTracklist(fields.tracklist) || "None"}
+						/>
 						<button
 							type="button"
 							ref={tracklistOpener}

@@ -85,8 +85,8 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	await expect(editor).toBeHidden();
 	await expect(opener).toBeFocused();
 	await expect(
-		parent.getByRole("region", { name: "tracklist", exact: true }),
-	).toHaveText("1 | Song, Artist, 3:07\n2 | Intro, 0:00");
+		parent.getByRole("textbox", { name: "tracklist", exact: true }),
+	).toHaveValue("1 | Song, Artist, 3:07\n2 | Intro, 0:00");
 	expect((await loadShow(request, show.id)).tracklist).toEqual([]);
 	await page.route(
 		"**/api/admin/modify-show",
@@ -103,8 +103,8 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 		"Tracklist save failed",
 	);
 	await expect(
-		parent.getByRole("region", { name: "tracklist", exact: true }),
-	).toContainText("1 | Song, Artist");
+		parent.getByRole("textbox", { name: "tracklist", exact: true }),
+	).toHaveValue("1 | Song, Artist, 3:07\n2 | Intro, 0:00");
 	await saveShow(page);
 	expect((await loadShow(request, show.id)).tracklist).toEqual([
 		{ artist: "Artist", song: "Song", start_time: 187 },
@@ -172,8 +172,8 @@ test("editor and parent discard are independent; deleting all entries clears the
 	await editor.getByRole("button", { name: "Cancel", exact: true }).click();
 	await discard.getByRole("button", { name: "Discard changes" }).click();
 	await expect(
-		parent.getByRole("region", { name: "tracklist", exact: true }),
-	).toHaveText("1 | Opening");
+		parent.getByRole("textbox", { name: "tracklist", exact: true }),
+	).toHaveValue("1 | Opening");
 	await open();
 	await editor.getByRole("button", { name: "Remove row 1" }).click();
 	await editor.getByRole("button", { name: "Save", exact: true }).click();
@@ -213,7 +213,7 @@ for (const width of [1280, 390, 320]) {
 		});
 		await page.reload();
 		const parent = await openShowEditor(page, show.id);
-		const preview = parent.getByRole("region", {
+		const preview = parent.getByRole("textbox", {
 			name: "tracklist",
 			exact: true,
 		});

@@ -595,7 +595,8 @@ above.
 
 The Shows table includes a sortable tracklist column showing the number of track
 entries, excluding chapters. An empty list displays `—`; a list containing only
-chapters displays `0`. Tracklist editing and Mixcloud synchronization are
+chapters displays `0`. Tracklists can be edited through Edit Show as described
+in [Tracklist editing](#tracklist-editing). Mixcloud synchronization remains
 deferred.
 
 ### Show image URL variants
