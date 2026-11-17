@@ -1,9 +1,7 @@
 # Static Archive Export
 
 Read this when changing exported JSON, image assets, or frontend data contracts.
-For schema invariants, see [DATABASES.md](DATABASES.md). For the asynchronous
-frontend consumer and coordinated rollout, see the
-[show details handoff](SHOW_DETAILS_FRONTEND_HANDOFF.md).
+For schema invariants, see [DATABASES.md](DATABASES.md).
 
 ## Output layout
 

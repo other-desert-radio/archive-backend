@@ -93,11 +93,11 @@ preview changes.
 
 ## Completion and rollout
 
-Backend implementation and frontend handoff are complete. User review remains
-pending. Frontend code, regular-database migration, and live publication were
-not performed. Follow
-[the frontend handoff](../../SHOW_DETAILS_FRONTEND_HANDOFF.md) for coordinated
-deployment before publishing the split.
+Backend implementation is complete and this plan is archived. The separate
+frontend handoff document was subsequently removed. The current export contract
+is [Static Archive Export](../../ARCHIVE_EXPORT.md). Frontend code,
+regular-database migration, and live publication were not performed. Coordinate
+frontend compatibility before publishing the split.
 
 Verification: typecheck, lint, docs checks, and full suite passed (788 passed,
 75 opt-in skips). The full suite required execution outside the sandbox for
