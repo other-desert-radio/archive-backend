@@ -38,3 +38,33 @@
 .mixcloudTitle[data-generated="true"] input {
 	border-color: #999;
 }
+
+.tracklistField {
+	display: grid;
+	grid-template-columns: subgrid;
+	grid-column: 1 / -1;
+	align-items: start;
+}
+.tracklistField > div {
+	min-width: 0;
+}
+.tracklistPreview {
+	margin: 0 0 12px;
+	max-height: 7.5em;
+	overflow-y: auto;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font: inherit;
+	line-height: 1.5;
+}
+.editTracklist {
+	border-radius: 0;
+	min-height: 42px;
+	padding: 10px 12px;
+	border: 1px solid #000;
+	font: inherit;
+}
+
+.tracklistPreview[data-empty="true"] {
+	color: #555;
+}

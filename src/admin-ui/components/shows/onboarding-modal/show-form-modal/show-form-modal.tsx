@@ -16,6 +16,8 @@ import {
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { SegmentedPicker } from "../../../shared/resource-views/index.js";
+import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
+import { formatTracklist } from "../../tracklist-editor-modal/tracklist-utils.js";
 import type { CreateShowForm } from "../onboard-show-modal/onboard-show-utils.js";
 import { ShowDurationField } from "../show-duration-field/index.js";
 import {
@@ -84,6 +86,8 @@ export const ShowFormModal = ({
 }: Props) => {
 	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
 		useShowFormState(initialValues);
+	const [isTracklistOpen, setTracklistOpen] = useState(false);
+	const tracklistOpener = useRef<HTMLButtonElement>(null);
 	const uploaded = useRef<UploadedShowConfirmation | undefined>(undefined);
 	const [mixcloudConnected, setMixcloudConnected] = useState(false);
 	const {
@@ -207,6 +211,30 @@ export const ShowFormModal = ({
 				maxLength={1000}
 				helper="Up to 1000 characters."
 			/>
+			{fields.tracklist !== undefined && (
+				<div className={styles.tracklistField}>
+					<span id={`${idPrefix}-tracklist-label`}>tracklist</span>
+					<div>
+						<section
+							className={styles.tracklistPreview}
+							data-empty={fields.tracklist.length === 0}
+							// biome-ignore lint/a11y/noNoninteractiveTabindex: scrollable preview needs keyboard access
+							tabIndex={0}
+							aria-labelledby={`${idPrefix}-tracklist-label`}
+						>
+							{formatTracklist(fields.tracklist) || "None"}
+						</section>
+						<button
+							type="button"
+							ref={tracklistOpener}
+							className={styles.editTracklist}
+							onClick={() => setTracklistOpen(true)}
+						>
+							Edit Tracklist
+						</button>
+					</div>
+				</div>
+			)}
 			<ShowDurationField
 				fields={fields}
 				setFields={setFields}
@@ -417,7 +445,7 @@ export const ShowFormModal = ({
 					image !== undefined ||
 					mixcloudTitleOverride !== undefined
 				}
-				isCovered={imageCandidate !== undefined}
+				isCovered={imageCandidate !== undefined || isTracklistOpen}
 				title={modalTitle}
 				headerContent={
 					onboardingMode === undefined
@@ -478,6 +506,19 @@ export const ShowFormModal = ({
 				)}
 				{elements}
 			</FormModal>
+			{isTracklistOpen && fields.tracklist !== undefined && (
+				<TracklistEditorModal
+					entries={fields.tracklist}
+					onSave={(tracklist) =>
+						setFields((current) => ({ ...current, tracklist }))
+					}
+					onClose={() => {
+						setTracklistOpen(false);
+						// Restore after the parent has stopped being inert.
+						window.setTimeout(() => tracklistOpener.current?.focus());
+					}}
+				/>
+			)}
 			{imageCandidate !== undefined && (
 				<ImageCropModal
 					file={imageCandidate}

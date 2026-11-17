@@ -49,7 +49,10 @@ const buildDatabase = (failOn?: string) => {
 							let values: Record<string, unknown>;
 							const query = {
 								set: (input: Record<string, unknown>) => {
-									values = input;
+									values =
+										typeof input.tracklist === "string"
+											? { ...input, tracklist: JSON.parse(input.tracklist) }
+											: input;
 									return query;
 								},
 								where: (_column: string, _operator: string, value: number) => {
@@ -336,6 +339,51 @@ describe("Show editing persistence", () => {
 		expect(state.tags[1]?.reviewed).toBe(false);
 		expect(state.djs).toEqual([{ id: 1 }, { id: 2 }]);
 	});
+	test("replaces and clears ordered tracklists, trimming text and preserving unknown offsets", async () => {
+		const { database, state } = editingDatabase();
+		const tracklist = [
+			{ chapter: " Intro ", start_time: 4000 },
+			{ artist: " Artist ", song: " Song ", start_time: null },
+			{ chapter: " End ", start_time: 0 },
+		];
+		const response = await modifyShow(database, { ...editPayload, tracklist });
+		expect(response.statusCode, response.body).toBe(200);
+		expect(response.json().tracklist).toEqual([
+			{ chapter: "Intro", start_time: 4000 },
+			{ artist: "Artist", song: "Song", start_time: null },
+			{ chapter: "End", start_time: 0 },
+		]);
+		expect(state.shows[0]?.tracklist).toEqual(response.json().tracklist);
+		const cleared = await modifyShow(database, {
+			...editPayload,
+			tracklist: [],
+		});
+		expect(cleared.statusCode).toBe(200);
+		expect(cleared.json().tracklist).toEqual([]);
+		expect(state.shows[0]?.tracklist).toEqual([]);
+	});
+
+	test.each(
+		[
+			null,
+			{},
+			[{ artist: "A", song: "S" }],
+			[{ artist: " ", song: "S", start_time: null }],
+			[{ artist: "A", song: " ", start_time: null }],
+			[{ chapter: " ", start_time: null }],
+			[{ chapter: "C", artist: "A", song: "S", start_time: 0 }],
+			...[-1, 0.5, "0", Number.MAX_SAFE_INTEGER + 1].map((start_time) => [
+				{ chapter: "C", start_time },
+			]),
+		].map((tracklist) => [tracklist]),
+	)("rejects invalid tracklist %j without writes", async (tracklist) => {
+		const { database, state } = editingDatabase();
+		const before = structuredClone(state);
+		const response = await modifyShow(database, { ...editPayload, tracklist });
+		expect(response.statusCode, response.body).toBe(400);
+		expect(state).toEqual(before);
+	});
+
 	test("clears omitted or empty tags while preserving required images", async () => {
 		for (const optional of [{}, { tags: [] }]) {
 			const { database, state } = editingDatabase();
@@ -418,6 +466,7 @@ describe("Show editing persistence", () => {
 			const before = structuredClone(state);
 			const response = await modifyShow(database, {
 				...editPayload,
+				tracklist: [{ chapter: "Changed", start_time: 0 }],
 				tags: ["New"],
 			});
 			expect(response.statusCode, response.body).toBe(500);

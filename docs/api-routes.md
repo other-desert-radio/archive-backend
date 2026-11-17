@@ -358,6 +358,12 @@ format, alongside its identity, metadata, and relationship IDs. Its admin-only
 Show list and save responses include `tracklist`: an ordered array of track
 (`artist`, `song`) or chapter (`chapter`) objects, each with `start_time`
 (nonnegative whole seconds or JSON `null`). New Shows default to `[]`.
+`POST /api/admin/modify-show` accepts optional `tracklist` in this same shape.
+Supplied entries require nonblank artist/song or chapter text, exclusively, and
+`start_time` must be null or a nonnegative safe integer. Text is trimmed; order
+is preserved without chronology or duration constraints. Omission preserves the
+stored list; `[]` clears it. Tracklist and other Show changes save in the same
+transaction. Creation inputs and the public transformer remain unchanged.
 Create/edit requests do not accept tracklists yet; ordinary edits preserve the
 stored list. Public archive export is unchanged.
 

@@ -1,8 +1,10 @@
 import {
+	type CSSProperties,
 	type FormEvent,
 	type ReactNode,
 	useCallback,
 	useEffect,
+	useId,
 	useRef,
 	useState,
 } from "react";
@@ -28,6 +30,7 @@ const renderHeaderContent = (
 
 type FormModalProps = {
 	isOpen: boolean;
+	panelWidth?: number;
 	/** Keep the panel bounds stable as multi-value fields wrap. */
 	fillAvailableHeight?: boolean;
 	isCovered?: boolean;
@@ -54,6 +57,7 @@ type FormModalProps = {
 /** Provides the common accessible shell and submission lifecycle for forms. */
 export const FormModal = ({
 	isOpen,
+	panelWidth,
 	fillAvailableHeight = false,
 	isCovered = false,
 	hasUnsavedChanges = false,
@@ -75,6 +79,7 @@ export const FormModal = ({
 	isSubmitDisabled = false,
 	children,
 }: FormModalProps) => {
+	const titleId = useId();
 	useModalScrollLock(isOpen);
 	const panelRef = useRef<HTMLDivElement>(null);
 	const [isConfirming, setIsConfirming] = useState(false);
@@ -175,18 +180,23 @@ export const FormModal = ({
 				<div
 					ref={panelRef}
 					tabIndex={-1}
+					style={
+						panelWidth === undefined
+							? undefined
+							: ({ "--form-modal-width": `${panelWidth}px` } as CSSProperties)
+					}
 					className={`${styles.frame} ${navigationAction === undefined ? "" : styles.withNavigation}`}
 					role="dialog"
 					aria-modal="true"
 					aria-hidden={isCovered || isConfirming || undefined}
-					aria-labelledby="form-modal-title"
+					aria-labelledby={titleId}
 					inert={isCovered || isConfirming || undefined}
 				>
 					<div
 						className={`${styles.panel} ${fillAvailableHeight ? styles.stableHeight : ""}`}
 					>
 						<div className={styles.header}>
-							<h2 id="form-modal-title">
+							<h2 id={titleId}>
 								{title}
 								{titleSuffix}
 							</h2>

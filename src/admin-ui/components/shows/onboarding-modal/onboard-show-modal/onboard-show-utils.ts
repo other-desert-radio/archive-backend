@@ -1,8 +1,11 @@
 import { isMatching, P } from "ts-pattern";
 import type { CreateShowRequest } from "../../../../../admin/routes/shows/index.js";
+import type { ShowTracklistEntry } from "../../../../../db/types.js";
 import { isHttpUrl, splitCommaSeparated } from "../../../../../utils/index.js";
 
-export type CreateShowForm = CreateShowRequest;
+export type CreateShowForm = CreateShowRequest & {
+	tracklist?: ShowTracklistEntry[];
+};
 
 export const buildCreateShowRequest = (fields: {
 	title: string;

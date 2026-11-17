@@ -152,7 +152,7 @@
 
 .frame {
 	position: relative;
-	width: min(864px, calc(100vw - 32px));
+	width: min(var(--form-modal-width, 864px), calc(100vw - 32px));
 	min-width: 0;
 }
 .frame:focus {

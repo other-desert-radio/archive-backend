@@ -24,6 +24,17 @@ export const modifyShowHandler =
 		const id = request.body.id;
 		try {
 			const normalized = normalizeCreateShowRequest(request.body);
+			if (request.body.tracklist !== undefined) {
+				normalized.tracklist = request.body.tracklist.map((entry) =>
+					entry.chapter !== undefined
+						? { chapter: entry.chapter.trim(), start_time: entry.start_time }
+						: {
+								artist: entry.artist.trim(),
+								song: entry.song.trim(),
+								start_time: entry.start_time,
+							},
+				);
+			}
 			const modified = await saveShow(database, normalized, id);
 			if (modified === undefined) {
 				request.log.warn(
