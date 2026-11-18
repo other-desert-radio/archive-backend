@@ -109,6 +109,13 @@ for (const [role, expected] of [
 			),
 		);
 		try {
+			const rename = await app.inject({
+				method: "POST",
+				url: "/api/admin/modify-special",
+				headers: { origin: authOrigin },
+				payload: {},
+			});
+			expect(rename.statusCode).toBe(expected);
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/admin/remove-special",
@@ -270,6 +277,61 @@ for (const scenario of [
 				]);
 			if (scenario === "blank" || scenario === "shape")
 				expect(values).toBeUndefined();
+		} finally {
+			await app.close();
+		}
+	});
+}
+
+for (const scenario of [
+	"success",
+	"blank",
+	"invalid",
+	"missing",
+	"failure",
+] as const) {
+	test(`Special rename: ${scenario}`, async () => {
+		let changed: unknown;
+		const row = { id: 5, title: "Renamed", createdAt: new Date("2026-01-01Z") };
+		const builder = {
+			set: (value: unknown) => {
+				changed = value;
+				return builder;
+			},
+			where: () => builder,
+			returningAll: () => builder,
+			executeTakeFirst: async () => {
+				if (scenario === "failure") throw new Error("offline");
+				return scenario === "missing" ? undefined : row;
+			},
+		};
+		const app = Fastify();
+		try {
+			await app.register(
+				specialRoutes({ updateTable: () => builder } as never),
+			);
+			const response = await app.inject({
+				method: "POST",
+				url: "/modify-special",
+				payload: {
+					id: scenario === "invalid" ? "5" : 5,
+					title: scenario === "blank" ? "   " : "  Renamed  ",
+				},
+			});
+			expect(response.statusCode).toBe(
+				{ success: 200, blank: 400, invalid: 400, missing: 404, failure: 500 }[
+					scenario
+				],
+			);
+			if (scenario === "success") {
+				expect(changed).toEqual({ title: "Renamed" });
+				expect(response.json()).toEqual({
+					...row,
+					createdAt: row.createdAt.toISOString(),
+				});
+			}
+			if (scenario === "blank" || scenario === "invalid")
+				expect(changed).toBeUndefined();
 		} finally {
 			await app.close();
 		}

@@ -40,6 +40,11 @@ test.beforeEach(async ({ page }) => {
 			body: body ?? "",
 		});
 	});
+	await page.route("**/api/admin/specials", (route) =>
+		route.fulfill({
+			json: [{ id: 7, title: "Festival", createdAt: "2026-01-01Z" }],
+		}),
+	);
 	await page.route("**/api/admin/djs", (route) =>
 		route.fulfill({ json: fixtureDJs }),
 	);
@@ -132,7 +137,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		page.getByText("Unmatched DJs: Missing DJ, Ambiguous DJ"),
 	).toHaveCSS("font-weight", "700");
 	await expect(
-		page.getByText("you'll need to onboard this DJ separately first"),
+		page.getByText("Choose archive DJs or a special to save this show."),
 	).toBeVisible();
 	await expect(
 		page.getByText(
@@ -605,7 +610,7 @@ for (const width of [1280, 390])
 		});
 		const bounds = await panel.boundingBox();
 		expect(bounds).not.toBeNull();
-		expect(bounds?.height).toBeLessThan(1600);
+		expect(bounds?.height).toBeLessThan(1900);
 		await expect(
 			page.getByRole("button", { name: "Cancel", exact: true }),
 		).toBeVisible();
@@ -642,3 +647,38 @@ test("empty DJ warning is limited to import and clears after selection", async (
 		"rgb(17, 17, 17)",
 	);
 });
+
+for (const width of [1280, 390, 320]) {
+	test(`special-only import uses the grouped relationships at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		let payload: unknown;
+		await page.route("**/api/admin/create-show", (route) => {
+			payload = route.request().postDataJSON();
+			return route.fulfill({
+				status: 201,
+				json: { id: 99, title: "Festival show" },
+			});
+		});
+		await page
+			.getByRole("button", { name: "Open import", exact: true })
+			.click();
+		await page
+			.getByRole("button", { name: "Remove Known DJ", exact: true })
+			.click();
+		const special = page.getByRole("combobox", {
+			name: "Search Special",
+			exact: true,
+		});
+		await special.fill("Fest");
+		await special.press("Tab");
+		await expect(
+			page.getByRole("button", { name: "Remove Festival", exact: true }),
+		).toBeVisible();
+		await page.screenshot({ path: `/tmp/import-special-${width}.png` });
+		await page.getByRole("button", { name: "Import", exact: true }).click();
+		await expect(page.getByLabel("Imported Show")).toHaveText("Festival show");
+		expect(payload).toMatchObject({ special_id: 7, djs: [] });
+	});
+}

@@ -3,6 +3,10 @@ import { Kysely, PostgresDialect, sql } from "kysely";
 import { Pool } from "pg";
 import { recordUploadedShow } from "../../src/admin/routes/mixcloud/routes/upload/upload-store.js";
 import { down, up } from "../../src/db/migrations/0039_add_mixcloud_uploads.js";
+import {
+	up as addUploadSpecial,
+	down as removeUploadSpecial,
+} from "../../src/db/migrations/0047_add_upload_special.js";
 import type { Database } from "../../src/db/types.js";
 
 const databaseUrl = process.env.MIXCLOUD_UPLOADS_TEST_DATABASE_URL;
@@ -21,10 +25,12 @@ test.skipIf(!databaseUrl)(
 		try {
 			await sql`CREATE SCHEMA ${sql.id(schema)}`.execute(db);
 			await sql`CREATE TABLE "user" (id text PRIMARY KEY)`.execute(db);
+			await sql`CREATE TABLE specials (id integer PRIMARY KEY)`.execute(db);
 			await sql`CREATE TABLE shows (id integer PRIMARY KEY)`.execute(db);
 			await sql`INSERT INTO "user" (id) VALUES ('uploader')`.execute(db);
 			await sql`INSERT INTO shows (id) VALUES (10)`.execute(db);
 			await db.transaction().execute(up);
+			await db.transaction().execute(addUploadSpecial);
 			const draft = {
 				title: "Our show",
 				description: "Our description\nSecond paragraph",
@@ -80,8 +86,29 @@ test.skipIf(!databaseUrl)(
 					.where("id", "=", saved.id)
 					.executeTakeFirstOrThrow(),
 			).toEqual({ created_by: null, show_id: null });
+			await sql`INSERT INTO "user" (id) VALUES ('uploader')`.execute(db);
+			await sql`INSERT INTO specials (id) VALUES (7)`.execute(db);
+			const specialOnly = await recordUploadedShow(
+				db,
+				"uploader",
+				{ ...draft, djs: [], special_id: 7 },
+				"/odr/special/",
+			);
+			expect(specialOnly.special_id).toBe(7);
+			await sql`DELETE FROM specials WHERE id = 7`.execute(db);
+			expect(
+				(
+					await db
+						.selectFrom("mixcloud_uploads")
+						.select("special_id")
+						.where("id", "=", specialOnly.id)
+						.executeTakeFirstOrThrow()
+				).special_id,
+			).toBeNull();
+			await db.transaction().execute(removeUploadSpecial);
 			await db.transaction().execute(down);
 			await db.transaction().execute(up);
+			await db.transaction().execute(addUploadSpecial);
 			expect(
 				await db.selectFrom("mixcloud_uploads").selectAll().execute(),
 			).toEqual([]);

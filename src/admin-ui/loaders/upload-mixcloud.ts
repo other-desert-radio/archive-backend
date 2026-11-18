@@ -8,6 +8,7 @@ export const uploadMixcloud = async (fields: {
 	mixcloud_title: string;
 	date: string;
 	djs: number[];
+	special_id?: number;
 	tags: string[];
 	mp3: File;
 	image?: File;
@@ -20,6 +21,8 @@ export const uploadMixcloud = async (fields: {
 		body.set("description", fields.description);
 	body.set("date", fields.date);
 	body.set("djs", JSON.stringify(fields.djs));
+	if (fields.special_id !== undefined)
+		body.set("special_id", String(fields.special_id));
 	body.set("tags", JSON.stringify(fields.tags));
 	body.set("mp3", fields.mp3);
 	if (fields.image !== undefined) body.set("image", fields.image);

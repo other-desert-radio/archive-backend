@@ -13,6 +13,7 @@ import {
 	writeArchiveDocuments,
 } from "../../src/db/export-archive.js";
 import { down, up } from "../../src/db/migrations/0046_add_specials.js";
+import { down as removeUploadSpecial } from "../../src/db/migrations/0047_add_upload_special.js";
 import type { Database } from "../../src/db/types.js";
 
 const databaseUrl = process.env.SPECIALS_TEST_DATABASE_URL;
@@ -210,6 +211,7 @@ test.skipIf(!databaseUrl)(
 			const reassigned = await allocate();
 			expect(reassigned.versions.specials.id).toBe(3);
 			expect(reassigned.versions.shows).toEqual(first.versions.shows);
+			await database.transaction().execute(removeUploadSpecial);
 			await database.transaction().execute(down);
 			expect(
 				(await sql`SELECT * FROM shows`.execute(database)).rows,

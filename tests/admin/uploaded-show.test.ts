@@ -203,11 +203,17 @@ test.skipIf(!databaseUrl)(
 				"0024_drop_show_image",
 				"0025_add_mixcloud_source_tags",
 				"0029_add_archive_publication_state",
+				"0030_add_archive_publication_jobs",
 				"0035_unique_tag_titles",
 				"0036_rename_show_mixcloud_images",
 				"0037_add_show_webp_images",
 				"0038_add_show_description",
 				"0039_add_mixcloud_uploads",
+				"0040_add_archive_dataset_versions",
+				"0044_add_show_tracklist",
+				"0045_add_show_details_dataset",
+				"0046_add_specials",
+				"0047_add_upload_special",
 			]) {
 				const migration = await import(`../../src/db/migrations/${name}.js`);
 				await db.transaction().execute(migration.up);
@@ -575,6 +581,57 @@ test.skipIf(!databaseUrl)(
 			).toEqual([200, 201]);
 			expect(uploadResponse.json().show.id).toBe(importResponse.json().id);
 			expect(await counts()).toEqual(["2", "2", "2", "2", "2"]);
+			const special = await db
+				.insertInto("specials")
+				.values({ title: "Festival" })
+				.returning("id")
+				.executeTakeFirstOrThrow();
+			const specialUpload = await recordUploadedShow(
+				db,
+				"actor",
+				{
+					title: "Special show",
+					date: "2026-10-26",
+					djs: [],
+					special_id: special.id,
+					mixcloud_title: "Special show",
+					tags: [],
+				},
+				"/odr/special/",
+			);
+			const preparedSpecial = await post(specialUpload.id, "prepare");
+			expect(preparedSpecial.statusCode).toBe(200);
+			expect(preparedSpecial.json().editorial).toMatchObject({
+				djs: [],
+				special_id: special.id,
+			});
+			for (const special_id of [null, 99999]) {
+				const rejected = await post(specialUpload.id, "save", {
+					...reviewed,
+					djs: [],
+					special_id,
+				});
+				expect(rejected.statusCode).toBe(400);
+			}
+			const specialSaved = await post(specialUpload.id, "save", {
+				...reviewed,
+				djs: [],
+				special_id: special.id,
+			});
+			expect(specialSaved.statusCode).toBe(201);
+			expect(specialSaved.json().show).toMatchObject({
+				djs: [],
+				special: { id: special.id, title: "Festival" },
+			});
+			expect(
+				(
+					await post(specialUpload.id, "save", {
+						...reviewed,
+						djs: [],
+						special_id: special.id,
+					})
+				).statusCode,
+			).toBe(200);
 		} finally {
 			await app.close();
 			await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(db);

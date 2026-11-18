@@ -116,6 +116,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 					"tags",
 					"description",
 					"djs",
+					"special_id",
 				].includes(part.fieldname) ||
 				part.valueTruncated
 			) {
@@ -142,6 +143,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 				date: P.string,
 				tags: P.string,
 				djs: P.string,
+				special_id: P.optional(P.string),
 				description: P.optional(P.string.maxLength(1000)),
 			},
 			fields,
@@ -161,6 +163,14 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 		date.toISOString().slice(0, 10) !== fields.date
 	)
 		return reject("invalid_calendar_date");
+	const special_id =
+		fields.special_id === undefined ? undefined : Number(fields.special_id);
+	if (
+		fields.special_id !== undefined &&
+		(!/^[1-9]\d*$/.test(fields.special_id) ||
+			!isMatching(P.number.int().between(1, 2_147_483_647), special_id))
+	)
+		return reject("invalid_special");
 	let djs: unknown;
 	try {
 		djs = JSON.parse(fields.djs);
@@ -172,7 +182,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 			P.array(P.number.int().between(1, Number.MAX_SAFE_INTEGER)),
 			djs,
 		) ||
-		djs.length === 0
+		(djs.length === 0 && special_id === undefined)
 	)
 		return reject("invalid_djs");
 	let tags: unknown;
@@ -241,6 +251,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 			mixcloud_title: fields.mixcloud_title.trim(),
 			date: fields.date,
 			djs: [...new Set(djs)],
+			...(special_id === undefined ? {} : { special_id }),
 			tags: tags.map((tag) => tag.trim()),
 			...(fields.description === undefined
 				? {}

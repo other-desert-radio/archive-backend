@@ -140,6 +140,10 @@ export const saveUploadedShow = async (
 					mixcloud_image_small: P.string,
 					mixcloud_image_large: P.string,
 					url: P.string,
+					special: P.optional({
+						id: P.number.int().positive(),
+						title: P.string,
+					}),
 					djs: P.array(P.number),
 					tags: P.array(P.number),
 					tracklist: P.array(
@@ -163,6 +167,10 @@ export const saveUploadedShow = async (
 		throw new Error(
 			"The archive save response was unreadable. Retry Save; this will not upload to Mixcloud again.",
 		);
-	const { description, ...show } = result.show;
-	return { ...show, ...(description === undefined ? {} : { description }) };
+	const { description, special, ...show } = result.show;
+	return {
+		...show,
+		...(special === undefined ? {} : { special }),
+		...(description === undefined ? {} : { description }),
+	};
 };

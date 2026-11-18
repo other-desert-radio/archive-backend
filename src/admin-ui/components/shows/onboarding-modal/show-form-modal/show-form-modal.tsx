@@ -26,6 +26,10 @@ import {
 	useShowFormState,
 } from "../show-form-state/index.js";
 import { ShowRelationshipFields } from "../show-relationship-fields/index.js";
+import {
+	ShowSpecialField,
+	useSpecialOptions,
+} from "../show-special-field/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 import { generatedMixcloudTitle } from "./generated-mixcloud-title.js";
 import styles from "./show-form-modal.module.css";
@@ -86,6 +90,7 @@ export const ShowFormModal = ({
 }: Props) => {
 	const { addOpeningRelationships, fields, setFields, hasUnsavedChanges } =
 		useShowFormState(initialValues);
+	const specialOptions = useSpecialOptions();
 	const [isTracklistOpen, setTracklistOpen] = useState(false);
 	const tracklistOpener = useRef<HTMLButtonElement>(null);
 	const uploaded = useRef<UploadedShowConfirmation | undefined>(undefined);
@@ -154,16 +159,17 @@ export const ShowFormModal = ({
 	const { mixcloud_image_small, mixcloud_image_large, url } = fields;
 	const isNewShow = onboardingMode?.value === "new_show";
 	const submit = async () => {
+		specialOptions.validate(fields.special_id);
 		if (isNewShow) {
 			if (!mixcloudConnected)
 				throw new Error("Sign in to Mixcloud before uploading.");
 			if (isDJsLoading || djsError !== undefined)
 				throw new Error("DJs must finish loading before submitting.");
 			if (
-				fields.selected.length === 0 ||
+				(fields.selected.length === 0 && fields.special_id == null) ||
 				fields.selected.some((id) => !djs.some((dj) => dj.id === id))
 			)
-				throw new Error("Select at least one DJ.");
+				throw new Error("Select existing DJs or a special.");
 			if (!fields.title.trim() || !mixcloudTitle.trim())
 				throw new Error("Show title and Mixcloud title are required.");
 			if (description.length > 1000)
@@ -181,6 +187,7 @@ export const ShowFormModal = ({
 				mixcloud_title: mixcloudTitle.trim(),
 				date: fields.date,
 				djs: fields.selected,
+				...(fields.special_id == null ? {} : { special_id: fields.special_id }),
 				tags,
 				mp3,
 				description,
@@ -262,6 +269,7 @@ export const ShowFormModal = ({
 				required
 			/>
 			<ShowRelationshipFields
+				specialOptions={specialOptions}
 				fields={fields}
 				setFields={setFields}
 				idPrefix={idPrefix}
@@ -345,6 +353,12 @@ export const ShowFormModal = ({
 									isLoading={isDJsLoading}
 									{...(djsError === undefined ? {} : { error: djsError })}
 									onRetry={onRetryDJs}
+								/>
+								<ShowSpecialField
+									fields={fields}
+									setFields={setFields}
+									idPrefix={idPrefix}
+									options={specialOptions}
 								/>
 							</ShowTitleDateFields>
 							<LabeledFormControl
@@ -488,7 +502,7 @@ export const ShowFormModal = ({
 							!fields.date ||
 							isDJsLoading ||
 							djsError !== undefined ||
-							fields.selected.length === 0)) ||
+							(fields.selected.length === 0 && fields.special_id == null))) ||
 					pendingTagIds.length > 0
 				}
 				submitLabel={

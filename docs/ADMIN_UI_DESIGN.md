@@ -192,13 +192,14 @@ generated using the existing format. Click to edit”. Generated titles have a
 gray underline; manual edits use the standard black underline and persist until
 reset. Titles update as source fields are typed, using whichever fields are
 available and omitting missing parts. Submission requires a connected Mixcloud
-account, nonblank show and Mixcloud titles, at least one DJ, a show date, an
-image, and selected audio. Description and tags are optional. Submission uploads
-publicly to Mixcloud; confirmed success closes the modal, while errors retain
-the draft. Existing show retains all archive fields and archive-save behavior.
-The new-show date represents the show date, not a scheduled Mixcloud publication
-time. Closing and reopening resets the mode. Editing has no mode picker. Header
-content may be static or a renderer receiving isSubmitting.
+account, nonblank show and Mixcloud titles, at least one DJ or a Special, a show
+date, an image, and selected audio. Description and tags are optional.
+Submission uploads publicly to Mixcloud; confirmed success closes the modal,
+while errors retain the draft. Existing show retains all archive fields and
+archive-save behavior. The new-show date represents the show date, not a
+scheduled Mixcloud publication time. Closing and reopening resets the mode.
+Editing has no mode picker. Header content may be static or a renderer receiving
+isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
 values, validation, tag loading, DJ selection, and unsaved-change comparison.
@@ -604,9 +605,9 @@ deferred.
 The Shows table displays a sortable Special column beside DJs, using the Special
 title or the shared missing-value treatment. Search includes both Special title
 and ID. A Show can have DJs, a Special, or both; multiple DJs remain supported.
-Special-only rows display an empty DJ relationship. Special assignment controls
-and management UI remain deferred, so existing modals still require DJs. Edits
-that omit `special_id` preserve stored assignments.
+Special-only rows display an empty DJ relationship. The shared show forms allow
+selecting one Special or clearing the assignment. Edits that omit `special_id`
+preserve stored assignments.
 
 ### Show image URL variants
 
@@ -892,8 +893,17 @@ Specials appears after Tags in navigation for admins and editors. The table
 shows ID, name, and all associated Show titles alphabetically, or None. Search
 matches Special names and Show titles. Table/grid selection persists
 independently; the default is table. Grid cards show only the name and actions,
-without tag colors or Show metadata. Both views expose disabled Edit and working
-Delete controls; editing is deferred.
+without tag colors or Show metadata. Both views expose Edit and Delete controls.
+Edit opens the shared form shell with the current name; blank names are
+rejected, failed saves retain the draft, and successful saves preserve search
+and sort. Membership is edited through Shows.
+
+Show create/edit, upload, uploaded-show review, and Mixcloud import offer a
+single searchable Special selection with chip removal. Shows require at least
+one DJ or a Special; both are allowed. Import groups DJs and Special inside a
+gray border, without a divider; Tags stays outside. Unmatched source DJ names do
+not prevent saving with a Special. Clearing an assignment sends an explicit
+null. Selected relationships must exist; failed Special loads offer Retry.
 
 Create special uses the shared form shell with one required name field.
 Whitespace-only names cannot be submitted. Creation assigns no Shows. Delete

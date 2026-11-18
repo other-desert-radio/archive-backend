@@ -18,11 +18,13 @@ import {
 	specialColumns,
 } from "../components/specials/index.js";
 import { createSpecial } from "../loaders/create-special.js";
+import { modifySpecial } from "../loaders/modify-special.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
 import { loadSpecials, type SpecialsAdminRow } from "../loaders/specials.js";
 import { userPreferences } from "../user-preferences.js";
 
 export const SpecialsPage = () => {
+	const [editingSpecial, setEditingSpecial] = useState<SpecialsAdminRow>();
 	const [deletingSpecial, setDeletingSpecial] = useState<SpecialsAdminRow>();
 	const viewRef = useRef<HTMLDivElement>(null);
 	const [isOnboarding, setIsOnboarding] = useState(false);
@@ -89,7 +91,14 @@ export const SpecialsPage = () => {
 
 	return (
 		<>
-			<div ref={viewRef} inert={deletingSpecial !== undefined}>
+			<div
+				ref={viewRef}
+				inert={
+					deletingSpecial !== undefined ||
+					editingSpecial !== undefined ||
+					isOnboarding
+				}
+			>
 				<ResourceView
 					title="SPECIALS"
 					isLoading={isLoading}
@@ -118,6 +127,7 @@ export const SpecialsPage = () => {
 								<SpecialCard
 									key={key}
 									special={special}
+									onEdit={setEditingSpecial}
 									onDelete={setDeletingSpecial}
 								/>
 							)}
@@ -128,6 +138,7 @@ export const SpecialsPage = () => {
 							sortColumn={sortColumn}
 							sortDirection={sortDirection}
 							onSort={handleSort}
+							onEdit={setEditingSpecial}
 							onDelete={setDeletingSpecial}
 						/>
 					)}
@@ -150,6 +161,23 @@ export const SpecialsPage = () => {
 									'input[aria-label="Search Specials"], button',
 								)
 								?.focus(),
+						);
+					}}
+				/>
+			)}
+			{editingSpecial && (
+				<OnboardSpecialModal
+					special={editingSpecial}
+					onClose={() => setEditingSpecial(undefined)}
+					onSubmit={async (request) => {
+						const saved = await modifySpecial({
+							...request,
+							id: editingSpecial.id,
+						});
+						setSpecials((current) =>
+							current.map((special) =>
+								special.id === saved.id ? saved : special,
+							),
 						);
 					}}
 				/>

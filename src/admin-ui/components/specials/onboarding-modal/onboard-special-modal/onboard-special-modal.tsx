@@ -3,24 +3,25 @@ import type { CreateSpecialRequest } from "../../../../../admin/routes/specials/
 import { FormModal, LabeledFormControl } from "../../../shared/modal/index.js";
 
 type Props = {
+	special?: { id: number; title: string };
 	onClose: () => void;
 	onSubmit: (request: CreateSpecialRequest) => Promise<void>;
 };
-export const OnboardSpecialModal = ({ onClose, onSubmit }: Props) => {
-	const [title, setTitle] = useState("");
+export const OnboardSpecialModal = ({ special, onClose, onSubmit }: Props) => {
+	const [title, setTitle] = useState(special?.title ?? "");
 	return (
 		<FormModal
 			isOpen
-			title="Create special"
+			title={special ? "Edit special" : "Create special"}
 			onClose={onClose}
 			onSubmit={async () => {
 				if (!title.trim()) throw new Error("Name is required");
 				await onSubmit({ title: title.trim() });
 			}}
-			hasUnsavedChanges={title !== ""}
+			hasUnsavedChanges={title !== (special?.title ?? "")}
 			isSubmitDisabled={!title.trim()}
-			submitLabel="Create"
-			submittingLabel="Creating…"
+			submitLabel={special ? "Save" : "Create"}
+			submittingLabel={special ? "Saving…" : "Creating…"}
 			cancelLabel="Cancel"
 		>
 			<LabeledFormControl

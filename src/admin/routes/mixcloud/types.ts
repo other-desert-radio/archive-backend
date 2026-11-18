@@ -81,6 +81,9 @@ export type UploadMixcloudRoute = {
 
 /** Only editorial fields may be supplied when saving an uploaded show. */
 export const ReviewedUploadFieldsPattern = {
+	special_id: P.optional(
+		P.union(P.number.int().between(1, 2_147_483_647), null),
+	),
 	title: P.string,
 	description: P.string.maxLength(1000),
 	date: P.string,

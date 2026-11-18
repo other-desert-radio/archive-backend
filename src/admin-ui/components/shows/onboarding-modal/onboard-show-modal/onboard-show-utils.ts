@@ -17,6 +17,7 @@ export const buildCreateShowRequest = (fields: {
 	tags: string;
 	url: string;
 	djs: number[];
+	special_id?: number | null;
 }): CreateShowForm => {
 	if ((fields.description?.length ?? 0) > 1000)
 		throw new Error("Description must be at most 1000 characters.");
@@ -42,6 +43,9 @@ export const buildCreateShowRequest = (fields: {
 		duration,
 		url: fields.url.trim(),
 		djs: fields.djs,
+		...(fields.special_id === undefined
+			? {}
+			: { special_id: fields.special_id }),
 		mixcloud_image_small,
 		mixcloud_image_large,
 		...(tags.length === 0 ? {} : { tags }),

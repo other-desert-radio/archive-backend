@@ -5,8 +5,15 @@ import {
 	type TagsInputOption,
 } from "../../../shared/modal/index.js";
 import type { ShowFormValues } from "../show-form-state/index.js";
+import {
+	ShowSpecialField,
+	type useSpecialOptions,
+} from "../show-special-field/index.js";
+import styles from "./show-relationship-fields.module.css";
 
 type Props = {
+	specialOptions: ReturnType<typeof useSpecialOptions>;
+	groupRelationships?: boolean;
 	fields: ShowFormValues;
 	setFields: Dispatch<SetStateAction<ShowFormValues>>;
 	idPrefix: string;
@@ -24,6 +31,8 @@ type Props = {
 	tagHelper?: ReactNode;
 };
 export const ShowRelationshipFields = ({
+	specialOptions,
+	groupRelationships = false,
 	fields,
 	setFields,
 	idPrefix,
@@ -48,19 +57,29 @@ export const ShowRelationshipFields = ({
 	}));
 	return (
 		<>
-			<SearchableMultiSelect
-				id={`${idPrefix}-djs`}
-				label="DJs"
-				helper={djHelper}
-				hideSearchHelp={hideDJSearchHelp}
-				highlightEmptySelection={highlightEmptyDJs}
-				options={djOptions}
-				selectedIds={selected}
-				onChange={(selected) => setFields({ ...fields, selected })}
-				isLoading={isDJsLoading}
-				{...(djsError === undefined ? {} : { error: djsError })}
-				onRetry={onRetryDJs}
-			/>
+			<div className={groupRelationships ? styles.group : styles.relationships}>
+				<SearchableMultiSelect
+					id={`${idPrefix}-djs`}
+					label="DJs"
+					helper={djHelper}
+					hideSearchHelp={hideDJSearchHelp}
+					highlightEmptySelection={
+						highlightEmptyDJs && fields.special_id == null
+					}
+					options={djOptions}
+					selectedIds={selected}
+					onChange={(selected) => setFields({ ...fields, selected })}
+					isLoading={isDJsLoading}
+					{...(djsError === undefined ? {} : { error: djsError })}
+					onRetry={onRetryDJs}
+				/>
+				<ShowSpecialField
+					fields={fields}
+					setFields={setFields}
+					idPrefix={idPrefix}
+					options={specialOptions}
+				/>
+			</div>
 			<TagsInput
 				id={`${idPrefix}-tags`}
 				helper={tagHelper}
