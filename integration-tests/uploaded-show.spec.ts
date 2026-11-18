@@ -270,6 +270,20 @@ async function upload(page: Page, specialOnly = false) {
 			.getByRole("combobox", { name: "Search Special", exact: true })
 			.fill("Festival");
 		await form.getByRole("option", { name: "Festival", exact: true }).click();
+		await expect(
+			form.getByRole("textbox", { name: "Mixcloud title", exact: true }),
+		).toHaveValue("Festival - Our show, October 26, 2026");
+		const group = form
+			.getByText("Choose archive DJs or a special to save this show.", {
+				exact: true,
+			})
+			.locator("..");
+		await expect(
+			group.getByRole("combobox", { name: "Search DJs", exact: true }),
+		).toBeVisible();
+		await expect(
+			group.getByRole("combobox", { name: "Search Special", exact: true }),
+		).toBeVisible();
 	} else {
 		await form.getByRole("combobox", { name: "Search DJs" }).fill("Original");
 		await form
@@ -770,6 +784,12 @@ for (const width of [1280, 390, 320]) {
 		await expect(
 			form.getByRole("button", { name: "Save Show", exact: true }),
 		).toBeEnabled();
+		const group = form
+			.getByText("Choose archive DJs or a special to save this show.", {
+				exact: true,
+			})
+			.locator("..");
+		await expect(group).toHaveCSS("border-top-color", "rgb(187, 187, 187)");
 		await page.screenshot({ path: `/tmp/upload-special-${width}.png` });
 		await form.getByRole("button", { name: "Save Show", exact: true }).click();
 		await expect(form).toBeHidden();
@@ -826,4 +846,40 @@ test("resumed upload with a deleted special requires a replacement relationship"
 	await expect(form).toBeHidden();
 	expect(calls.saves[0]).toMatchObject({ djs: [1], special_id: null });
 	expect(calls.uploads).toBe(0);
+});
+
+test("generated upload titles put Special before DJs and preserve manual edits", async ({
+	page,
+}) => {
+	await setup(page);
+	await page.getByRole("button", { name: "+ show", exact: true }).click();
+	const form = page.getByRole("dialog", { name: "Upload Show", exact: true });
+	await form
+		.getByRole("textbox", { name: "title", exact: true })
+		.fill("Show Title");
+	await form.getByLabel("date", { exact: true }).fill("2026-10-26");
+	await form
+		.getByRole("combobox", { name: "Search Special", exact: true })
+		.fill("Festival");
+	await form.getByRole("option", { name: "Festival", exact: true }).click();
+	await form
+		.getByRole("combobox", { name: "Search DJs", exact: true })
+		.fill("Original");
+	await form.getByRole("option", { name: "Original DJ", exact: true }).click();
+	const title = form.getByRole("textbox", {
+		name: "Mixcloud title",
+		exact: true,
+	});
+	await expect(title).toHaveValue(
+		"Festival - Original DJ - Show Title, October 26, 2026",
+	);
+	await title.fill("Custom provider title");
+	await form
+		.getByRole("button", { name: "Remove Festival", exact: true })
+		.click();
+	await expect(title).toHaveValue("Custom provider title");
+	await form
+		.getByRole("button", { name: "Reset to generated title", exact: true })
+		.click();
+	await expect(title).toHaveValue("Original DJ - Show Title, October 26, 2026");
 });

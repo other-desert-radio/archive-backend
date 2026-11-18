@@ -30,7 +30,12 @@ type Props = {
 	hideDJSearchHelp?: boolean;
 	tagHelper?: ReactNode;
 };
-export const ShowRelationshipFields = ({
+type AssignmentProps = Omit<
+	Props,
+	"tagOptions" | "isTagsLoading" | "tagError" | "loadTagOptions" | "tagHelper"
+>;
+
+export const ShowAssignmentFields = ({
 	specialOptions,
 	groupRelationships = false,
 	fields,
@@ -40,63 +45,66 @@ export const ShowRelationshipFields = ({
 	isDJsLoading,
 	djsError,
 	onRetryDJs,
-	tagOptions,
-	isTagsLoading,
-	tagError,
-	loadTagOptions,
 	djHelper,
 	highlightEmptyDJs = false,
 	hideDJSearchHelp = false,
-	tagHelper,
-}: Props) => {
-	const { tags, tagDraft, selected } = fields;
+}: AssignmentProps) => {
 	const djOptions = djs.map((dj) => ({
 		id: dj.id,
 		label: dj.title,
 		searchText: `${dj.title} ${dj.id}`,
 	}));
 	return (
-		<>
-			<div className={groupRelationships ? styles.group : styles.relationships}>
-				{groupRelationships && (
-					<p className={styles.guidance}>
-						Choose archive DJs or a special to save this show.
-					</p>
-				)}
-				<SearchableMultiSelect
-					id={`${idPrefix}-djs`}
-					label="DJs"
-					helper={djHelper}
-					hideSearchHelp={hideDJSearchHelp}
-					highlightEmptySelection={
-						highlightEmptyDJs && fields.special_id == null
-					}
-					options={djOptions}
-					selectedIds={selected}
-					onChange={(selected) => setFields({ ...fields, selected })}
-					isLoading={isDJsLoading}
-					{...(djsError === undefined ? {} : { error: djsError })}
-					onRetry={onRetryDJs}
-				/>
-				<ShowSpecialField
-					fields={fields}
-					setFields={setFields}
-					idPrefix={idPrefix}
-					options={specialOptions}
-				/>
-			</div>
-			<TagsInput
-				id={`${idPrefix}-tags`}
-				helper={tagHelper}
-				value={{ tags, draft: tagDraft }}
-				onChange={(value) =>
-					setFields({ ...fields, tags: value.tags, tagDraft: value.draft })
-				}
-				options={tagOptions}
-				isLoading={isTagsLoading}
-				{...(tagError === undefined ? {} : { error: tagError })}
-				onRetry={loadTagOptions}
+		<div className={groupRelationships ? styles.group : styles.relationships}>
+			{groupRelationships && (
+				<p className={styles.guidance}>
+					Choose archive DJs or a special to save this show.
+				</p>
+			)}
+			<SearchableMultiSelect
+				id={`${idPrefix}-djs`}
+				label="DJs"
+				helper={djHelper}
+				hideSearchHelp={hideDJSearchHelp}
+				highlightEmptySelection={highlightEmptyDJs && fields.special_id == null}
+				options={djOptions}
+				selectedIds={fields.selected}
+				onChange={(selected) => setFields({ ...fields, selected })}
+				isLoading={isDJsLoading}
+				{...(djsError === undefined ? {} : { error: djsError })}
+				onRetry={onRetryDJs}
 			/>
-		</>
+			<ShowSpecialField
+				fields={fields}
+				setFields={setFields}
+				idPrefix={idPrefix}
+				options={specialOptions}
+			/>
+		</div>
 	);
 };
+
+export const ShowRelationshipFields = ({
+	tagOptions,
+	isTagsLoading,
+	tagError,
+	loadTagOptions,
+	tagHelper,
+	...props
+}: Props) => (
+	<>
+		<ShowAssignmentFields {...props} />
+		<TagsInput
+			id={`${props.idPrefix}-tags`}
+			helper={tagHelper}
+			value={{ tags: props.fields.tags, draft: props.fields.tagDraft }}
+			onChange={({ tags, draft }) =>
+				props.setFields((current) => ({ ...current, tags, tagDraft: draft }))
+			}
+			options={tagOptions}
+			isLoading={isTagsLoading}
+			{...(tagError === undefined ? {} : { error: tagError })}
+			onRetry={loadTagOptions}
+		/>
+	</>
+);

@@ -109,16 +109,17 @@ accepts a user or session ID from the browser. Responses use
   `{success:false}`. Uploads have a 30-minute provider timeout and are never
   automatically retried. Check Mixcloud before retrying an uncertain result.
   Both titles must be nonblank. The new-show modal generates the editable
-  provider title from selected DJ names joined with `+`, show title, and show
-  date (for example, `DJ - Show, October 19, 2026`). Manual edits persist until
-  reset; the server validates and forwards the provider title without
-  regenerating it. Upload confirmation creates a pending upload, not a Show. The
-  UI announces provider success, prepares the fetched metadata, then opens
-  Review Show. Explicit Save uses the endpoints below, and Show saved displays
-  the returned persisted record. A failed resource-list reload retains that
-  success and offers Reload lists separately. Confirmed pending uploads can be
-  resumed from the Shows toolbar after closing or reloading. Uncertain attempts
-  without a recorded confirmation remain deferred to the
+  provider title from the selected Special name first, selected DJ names joined
+  with `+` next, then show title and date (for example,
+  `DJ - Show, October 19, 2026`). Manual edits persist until reset; the server
+  validates and forwards the provider title without regenerating it. Upload
+  confirmation creates a pending upload, not a Show. The UI announces provider
+  success, prepares the fetched metadata, then opens Review Show. Explicit Save
+  uses the endpoints below, and Show saved displays the returned persisted
+  record. A failed resource-list reload retains that success and offers Reload
+  lists separately. Confirmed pending uploads can be resumed from the Shows
+  toolbar after closing or reloading. Uncertain attempts without a recorded
+  confirmation remain deferred to the
   [future recovery plan](plans/future/mixcloud-upload-recovery.md).
 
   Diagnostic logs include the full provider response body and HTTP status, with

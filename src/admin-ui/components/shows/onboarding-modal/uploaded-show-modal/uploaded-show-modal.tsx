@@ -11,7 +11,6 @@ import {
 	FormModal,
 	LabeledFormControl,
 	MessageModal,
-	SearchableMultiSelect,
 	TagsInput,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
@@ -21,10 +20,8 @@ import {
 	buildShowFormRequest,
 	useShowFormState,
 } from "../show-form-state/index.js";
-import {
-	ShowSpecialField,
-	useSpecialOptions,
-} from "../show-special-field/index.js";
+import { ShowAssignmentFields } from "../show-relationship-fields/index.js";
+import { useSpecialOptions } from "../show-special-field/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 import styles from "./uploaded-show-modal.module.css";
 
@@ -168,25 +165,16 @@ const ReviewForm = ({
 				setFields={setFields}
 				idPrefix="uploaded-show"
 			>
-				<SearchableMultiSelect
-					id="uploaded-show-djs"
-					label="DJs"
-					options={djs.map((dj) => ({
-						id: dj.id,
-						label: dj.title,
-						searchText: `${dj.title} ${dj.id}`,
-					}))}
-					selectedIds={fields.selected}
-					onChange={(selected) => setFields({ ...fields, selected })}
-					isLoading={isDJsLoading}
-					{...(djsError === undefined ? {} : { error: djsError })}
-					onRetry={onRetryDJs}
-				/>
-				<ShowSpecialField
+				<ShowAssignmentFields
+					groupRelationships
 					fields={fields}
 					setFields={setFields}
 					idPrefix="uploaded-show"
-					options={specialOptions}
+					djs={djs}
+					isDJsLoading={isDJsLoading}
+					{...(djsError === undefined ? {} : { djsError })}
+					onRetryDJs={onRetryDJs}
+					specialOptions={specialOptions}
 				/>
 			</ShowTitleDateFields>
 			<LabeledFormControl

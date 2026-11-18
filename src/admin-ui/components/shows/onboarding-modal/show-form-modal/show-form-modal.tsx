@@ -10,7 +10,6 @@ import {
 	ImageCropModal,
 	ImageDropzone,
 	LabeledFormControl,
-	SearchableMultiSelect,
 	TagsInput,
 	useImageSelection,
 	useTagOptions,
@@ -25,11 +24,11 @@ import {
 	type ShowFormValues,
 	useShowFormState,
 } from "../show-form-state/index.js";
-import { ShowRelationshipFields } from "../show-relationship-fields/index.js";
 import {
-	ShowSpecialField,
-	useSpecialOptions,
-} from "../show-special-field/index.js";
+	ShowAssignmentFields,
+	ShowRelationshipFields,
+} from "../show-relationship-fields/index.js";
+import { useSpecialOptions } from "../show-special-field/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 import { generatedMixcloudTitle } from "./generated-mixcloud-title.js";
 import styles from "./show-form-modal.module.css";
@@ -114,6 +113,8 @@ export const ShowFormModal = ({
 		}),
 		fields.title,
 		fields.date,
+		specialOptions.specials.find((special) => special.id === fields.special_id)
+			?.title,
 	);
 	const mixcloudTitle = mixcloudTitleOverride ?? generatedTitle;
 	const description = fields.description ?? "";
@@ -341,25 +342,16 @@ export const ShowFormModal = ({
 								setFields={setFields}
 								idPrefix={idPrefix}
 							>
-								<SearchableMultiSelect
-									id={`${idPrefix}-djs`}
-									label="DJs"
-									options={djs.map((dj) => ({
-										id: dj.id,
-										label: dj.title,
-										searchText: `${dj.title} ${dj.id}`,
-									}))}
-									selectedIds={fields.selected}
-									onChange={(selected) => setFields({ ...fields, selected })}
-									isLoading={isDJsLoading}
-									{...(djsError === undefined ? {} : { error: djsError })}
-									onRetry={onRetryDJs}
-								/>
-								<ShowSpecialField
+								<ShowAssignmentFields
+									groupRelationships
 									fields={fields}
 									setFields={setFields}
 									idPrefix={idPrefix}
-									options={specialOptions}
+									djs={djs}
+									isDJsLoading={isDJsLoading}
+									{...(djsError === undefined ? {} : { djsError })}
+									onRetryDJs={onRetryDJs}
+									specialOptions={specialOptions}
 								/>
 							</ShowTitleDateFields>
 							<LabeledFormControl
