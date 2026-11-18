@@ -70,6 +70,8 @@ export const SavedShowModal = ({
 					<dd>{formatDuration(show.duration)}</dd>
 				</div>
 				<div>
+					<dt>Special</dt>
+					<dd>{show.special?.title ?? "None"}</dd>
 					<dt>DJs</dt>
 					<dd>{labels(show.djs, djs)}</dd>
 				</div>

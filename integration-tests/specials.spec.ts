@@ -8,7 +8,7 @@ for (const width of [1280, 390, 320]) {
 		request,
 		show,
 	}) => {
-		const title = `Special ${randomUUID()}`;
+		let title = `Special ${randomUUID()}`;
 		await page.setViewportSize({ width, height: 900 });
 		await page.goto("/admin/#specials");
 		await expect(
@@ -46,7 +46,39 @@ for (const width of [1280, 390, 320]) {
 			await expect(row).toContainText(show.title);
 			await expect(
 				row.getByRole("button", { name: "Edit", exact: true }),
+			).toBeEnabled();
+			await row.getByRole("button", { name: "Edit", exact: true }).click();
+			const edit = page.getByRole("dialog", {
+				name: "Edit special",
+				exact: true,
+			});
+			await edit
+				.getByRole("textbox", { name: "name", exact: true })
+				.fill("   ");
+			await expect(
+				edit.getByRole("button", { name: "Save", exact: true }),
 			).toBeDisabled();
+			title += " renamed";
+			await edit
+				.getByRole("textbox", { name: "name", exact: true })
+				.fill(title);
+			await page.screenshot({ path: `/tmp/specials-edit-${width}.png` });
+			if (width === 1280) {
+				await page.route(
+					"**/api/admin/modify-special",
+					(route) =>
+						route.fulfill({ status: 500, json: { error: "Unavailable" } }),
+					{ times: 1 },
+				);
+				await edit.getByRole("button", { name: "Save", exact: true }).click();
+				await expect(edit.getByRole("alert")).toBeVisible();
+				await expect(
+					edit.getByRole("textbox", { name: "name", exact: true }),
+				).toHaveValue(title);
+			}
+			await edit.getByRole("button", { name: "Save", exact: true }).click();
+			await expect(edit).toBeHidden();
+			await expect(row).toContainText(show.title);
 			await page.screenshot({ path: `/tmp/specials-table-${width}.png` });
 			await row.getByRole("button", { name: "Delete", exact: true }).click();
 			const dialog = page.getByRole("alertdialog", {
@@ -87,7 +119,7 @@ for (const width of [1280, 390, 320]) {
 			await expect(card).not.toContainText(show.title);
 			await expect(
 				card.getByRole("button", { name: `Edit ${title}`, exact: true }),
-			).toBeDisabled();
+			).toBeEnabled();
 			await page.screenshot({ path: `/tmp/specials-grid-${width}.png` });
 			await card
 				.getByRole("button", { name: `Delete ${title}`, exact: true })
@@ -188,3 +220,90 @@ test("special forms retain failed drafts and deletion reloads after a concurrent
 		});
 	}
 });
+
+for (const width of [1280, 390, 320]) {
+	test(`show special assignment, replacement and clearing at ${width}px`, async ({
+		page,
+		request,
+		show,
+		dj,
+	}) => {
+		const created = await request.post("/api/admin/create-special", {
+			data: { title: `Assignment ${randomUUID()}` },
+		});
+		const special = await created.json();
+		const second = await (
+			await request.post("/api/admin/create-special", {
+				data: { title: `Replacement ${randomUUID()}` },
+			})
+		).json();
+		try {
+			await page.setViewportSize({ width, height: 900 });
+			await page.goto("/admin/#shows");
+			await page
+				.getByRole("textbox", { name: "Search Shows" })
+				.fill(show.title);
+			const row = page.getByRole("row").filter({ hasText: show.title });
+			const open = async () => {
+				await row.getByRole("button", { name: "Edit", exact: true }).click();
+				return page.getByRole("dialog", { name: "Edit Show", exact: true });
+			};
+			const form = await open();
+			await form
+				.getByRole("combobox", { name: "Search Special", exact: true })
+				.fill(special.title);
+			await form
+				.getByRole("option", { name: special.title, exact: true })
+				.click();
+			await form
+				.getByRole("button", { name: `Remove ${dj.title}`, exact: true })
+				.click();
+			await page.screenshot({ path: `/tmp/show-special-${width}.png` });
+			await form.getByRole("button", { name: "Save", exact: true }).click();
+			await expect(form).toBeHidden();
+			await open();
+			await expect(
+				form.getByRole("button", {
+					name: `Remove ${special.title}`,
+					exact: true,
+				}),
+			).toBeVisible();
+			await form
+				.getByRole("combobox", { name: "Search Special", exact: true })
+				.fill(second.title);
+			await form
+				.getByRole("option", { name: second.title, exact: true })
+				.click();
+			await expect(
+				form.getByRole("button", {
+					name: `Remove ${special.title}`,
+					exact: true,
+				}),
+			).toHaveCount(0);
+			await form
+				.getByRole("button", { name: `Remove ${second.title}`, exact: true })
+				.click();
+			await form.getByRole("button", { name: "Save", exact: true }).click();
+			await expect(form.getByRole("alert")).toContainText(
+				"Select at least one DJ or a special",
+			);
+			await form
+				.getByRole("combobox", { name: "Search DJs", exact: true })
+				.fill(dj.title);
+			await form.getByRole("option", { name: dj.title, exact: true }).click();
+			await form.getByRole("button", { name: "Save", exact: true }).click();
+			await expect(form).toBeHidden();
+			const updated = (
+				await (await request.get("/api/admin/shows")).json()
+			).find((item: { id: number }) => item.id === show.id);
+			expect(updated.special).toBeUndefined();
+			expect(updated.djs).toEqual([dj.id]);
+		} finally {
+			await request.post("/api/admin/modify-show", {
+				data: { ...showRequest(show), special_id: null },
+			});
+			for (const id of [special.id, second.id])
+				await request.post("/api/admin/remove-special", { data: { id } });
+		}
+	});
+}

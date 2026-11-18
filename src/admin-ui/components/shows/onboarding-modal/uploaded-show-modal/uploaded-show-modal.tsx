@@ -11,7 +11,6 @@ import {
 	FormModal,
 	LabeledFormControl,
 	MessageModal,
-	SearchableMultiSelect,
 	TagsInput,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
@@ -21,6 +20,8 @@ import {
 	buildShowFormRequest,
 	useShowFormState,
 } from "../show-form-state/index.js";
+import { ShowAssignmentFields } from "../show-relationship-fields/index.js";
+import { useSpecialOptions } from "../show-special-field/index.js";
 import { ShowTitleDateFields } from "../show-title-date-fields/index.js";
 import styles from "./uploaded-show-modal.module.css";
 
@@ -92,10 +93,12 @@ const ReviewForm = ({
 	onSaved,
 }: UploadedShowModalProps & { review: UploadedShowReview }) => {
 	const { editorial, mixcloud } = review;
+	const specialOptions = useSpecialOptions();
 	const { fields, setFields } = useShowFormState({
 		title: editorial.title,
 		date: editorial.date,
 		selected: editorial.djs,
+		special_id: editorial.special_id ?? null,
 		duration: String(mixcloud.audio_length),
 		mixcloud_image_small: mixcloud.pictures.large,
 		mixcloud_image_large: mixcloud.pictures["1024wx1024h"],
@@ -111,21 +114,23 @@ const ReviewForm = ({
 		onRetryDJs();
 	}, [onRetryDJs]);
 	const submit = async () => {
+		specialOptions.validate(fields.special_id);
 		if (isDJsLoading || djsError)
 			throw new Error("DJs must finish loading before saving.");
 		if (isTagsLoading || tagsError)
 			throw new Error("Tags must finish loading before saving.");
 		if (!fields.title.trim()) throw new Error("Title is required.");
 		if (
-			fields.selected.length === 0 ||
+			(fields.selected.length === 0 && fields.special_id == null) ||
 			fields.selected.some((id) => !djs.some((dj) => dj.id === id))
 		)
-			throw new Error("Select at least one existing DJ.");
+			throw new Error("Select existing DJs or a special.");
 		saved.current = await saveUploadedShow(review.uploadId, {
 			title: fields.title.trim(),
 			description,
 			date: fields.date,
 			djs: fields.selected,
+			special_id: fields.special_id ?? null,
 			tags: buildShowFormRequest(fields).tags ?? [],
 		});
 	};
@@ -148,7 +153,7 @@ const ReviewForm = ({
 				djsError !== undefined ||
 				isTagsLoading ||
 				tagsError !== undefined ||
-				fields.selected.length === 0
+				(fields.selected.length === 0 && fields.special_id == null)
 			}
 		>
 			<p role="status" className={styles.notice}>
@@ -160,19 +165,16 @@ const ReviewForm = ({
 				setFields={setFields}
 				idPrefix="uploaded-show"
 			>
-				<SearchableMultiSelect
-					id="uploaded-show-djs"
-					label="DJs"
-					options={djs.map((dj) => ({
-						id: dj.id,
-						label: dj.title,
-						searchText: `${dj.title} ${dj.id}`,
-					}))}
-					selectedIds={fields.selected}
-					onChange={(selected) => setFields({ ...fields, selected })}
-					isLoading={isDJsLoading}
-					{...(djsError === undefined ? {} : { error: djsError })}
-					onRetry={onRetryDJs}
+				<ShowAssignmentFields
+					groupRelationships
+					fields={fields}
+					setFields={setFields}
+					idPrefix="uploaded-show"
+					djs={djs}
+					isDJsLoading={isDJsLoading}
+					{...(djsError === undefined ? {} : { djsError })}
+					onRetryDJs={onRetryDJs}
+					specialOptions={specialOptions}
 				/>
 			</ShowTitleDateFields>
 			<LabeledFormControl

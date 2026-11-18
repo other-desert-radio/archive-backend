@@ -28,25 +28,26 @@ test("special search matches names and spelled-out shows", () => {
 		sortResourceRows(rows, specialColumns, "title", "asc").map((row) => row.id),
 	).toEqual([2, 1]);
 });
-test("special table spells out shows and both views disable Edit", () => {
+test("special table spells out shows and both views enable Edit", () => {
 	const table = renderToStaticMarkup(
 		<SpecialsTable
 			specials={rows}
 			sortColumn="id"
 			sortDirection="desc"
 			onSort={() => {}}
+			onEdit={() => {}}
 			onDelete={() => {}}
 		/>,
 	);
 	expect(table).toContain("Zebra, Alpha");
 	expect(table).toContain("None");
-	expect(table).toMatch(/disabled=""[^>]*>Edit/);
+	expect(table).not.toMatch(/disabled=""[^>]*>Edit/);
 	const card = renderToStaticMarkup(
-		<SpecialCard special={rows[0]} onDelete={() => {}} />,
+		<SpecialCard special={rows[0]} onEdit={() => {}} onDelete={() => {}} />,
 	);
 	expect(card).toContain("Night");
 	expect(card).not.toContain("Zebra");
-	expect(card).toContain('disabled=""');
+	expect(card).not.toContain('disabled=""');
 });
 test("special listing loader returns rows and rejects failures", async () => {
 	expect(

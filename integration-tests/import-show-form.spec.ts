@@ -40,6 +40,11 @@ test.beforeEach(async ({ page }) => {
 			body: body ?? "",
 		});
 	});
+	await page.route("**/api/admin/specials", (route) =>
+		route.fulfill({
+			json: [{ id: 7, title: "Festival", createdAt: "2026-01-01Z" }],
+		}),
+	);
 	await page.route("**/api/admin/djs", (route) =>
 		route.fulfill({ json: fixtureDJs }),
 	);
@@ -132,7 +137,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		page.getByText("Unmatched DJs: Missing DJ, Ambiguous DJ"),
 	).toHaveCSS("font-weight", "700");
 	await expect(
-		page.getByText("you'll need to onboard this DJ separately first"),
+		page.getByText("Choose archive DJs or a special to save this show."),
 	).toBeVisible();
 	await expect(
 		page.getByText(
@@ -605,7 +610,7 @@ for (const width of [1280, 390])
 		});
 		const bounds = await panel.boundingBox();
 		expect(bounds).not.toBeNull();
-		expect(bounds?.height).toBeLessThan(1600);
+		expect(bounds?.height).toBeLessThan(1900);
 		await expect(
 			page.getByRole("button", { name: "Cancel", exact: true }),
 		).toBeVisible();
@@ -642,3 +647,78 @@ test("empty DJ warning is limited to import and clears after selection", async (
 		"rgb(17, 17, 17)",
 	);
 });
+
+for (const width of [1280, 390, 320]) {
+	test(`special-only import uses the grouped relationships at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		let payload: unknown;
+		await page.route("**/api/admin/create-show", (route) => {
+			payload = route.request().postDataJSON();
+			return route.fulfill({
+				status: 201,
+				json: { id: 99, title: "Festival show" },
+			});
+		});
+		await page
+			.getByRole("button", { name: "Open import", exact: true })
+			.click();
+		await page
+			.getByRole("button", { name: "Remove Known DJ", exact: true })
+			.click();
+		const special = page.getByRole("combobox", {
+			name: "Search Special",
+			exact: true,
+		});
+		const unmatched = page.getByText("Unmatched DJs: Missing DJ, Ambiguous DJ");
+		await expect(unmatched).toHaveCSS("color", "rgb(255, 44, 44)");
+		const group = special.locator(
+			"xpath=ancestor::div[./p[contains(., 'Choose archive DJs')]]",
+		);
+		await expect(group.locator(":scope > p").first()).toHaveText(
+			"Choose archive DJs or a special to save this show.",
+		);
+		await special.fill("Fest");
+		await special.press("Tab");
+		await expect(
+			page.getByRole("button", { name: "Remove Festival", exact: true }),
+		).toBeVisible();
+		await expect(unmatched).toHaveCSS("color", "rgb(85, 85, 85)");
+		await special.blur();
+		await page.screenshot({ path: `/tmp/import-special-${width}.png` });
+		await page.getByRole("button", { name: "Import", exact: true }).click();
+		await expect(page.getByLabel("Imported Show")).toHaveText("Festival show");
+		expect(payload).toMatchObject({ special_id: 7, djs: [] });
+	});
+}
+
+for (const width of [1280, 390, 320]) {
+	test(`edit show groups DJs and Special without duplicate guidance at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		await page.getByRole("button", { name: "Open edit", exact: true }).click();
+		const form = page.getByRole("dialog", { name: "Edit Show", exact: true });
+		const guidance = form.getByText(
+			"Choose archive DJs or a special to save this show.",
+			{ exact: true },
+		);
+		await expect(guidance).toBeVisible();
+		const group = guidance.locator("..");
+		await expect(group).toHaveCSS("border-top-color", "rgb(187, 187, 187)");
+		await expect(
+			group.getByRole("combobox", { name: "Search DJs", exact: true }),
+		).toBeVisible();
+		await expect(
+			group.getByRole("combobox", { name: "Search Special", exact: true }),
+		).toBeVisible();
+		await expect(
+			form.getByText("Select at least one DJ or a special. Both are allowed.", {
+				exact: true,
+			}),
+		).toHaveCount(0);
+		await guidance.scrollIntoViewIfNeeded();
+		await page.screenshot({ path: `/tmp/edit-show-group-${width}.png` });
+	});
+}

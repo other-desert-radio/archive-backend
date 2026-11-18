@@ -20,6 +20,7 @@ export type UploadedShowDraft = {
 	description?: string;
 	date: string;
 	djs: number[];
+	special_id?: number;
 	mixcloud_title: string;
 	tags: string[];
 };
@@ -31,19 +32,32 @@ export const recordUploadedShow = async (
 	draft: UploadedShowDraft,
 	mixcloudKey: string,
 ): Promise<UploadedShow> => {
-	return database
-		.insertInto("mixcloud_uploads")
-		.values({
-			...draft,
-			date: new Date(`${draft.date}T00:00:00.000Z`),
-			description: draft.description ?? null,
-			created_by: userId,
-			mixcloud_key: mixcloudKey,
-			mixcloud_data: null,
-			show_id: null,
-		})
-		.returningAll()
-		.executeTakeFirstOrThrow();
+	return database.transaction().execute(async (transaction) => {
+		// Keep an existing Special from disappearing between resolution and insertion.
+		const special =
+			draft.special_id === undefined
+				? undefined
+				: await transaction
+						.selectFrom("specials")
+						.select("id")
+						.where("id", "=", draft.special_id)
+						.forKeyShare()
+						.executeTakeFirst();
+		return transaction
+			.insertInto("mixcloud_uploads")
+			.values({
+				...draft,
+				date: new Date(`${draft.date}T00:00:00.000Z`),
+				description: draft.description ?? null,
+				special_id: special?.id ?? null,
+				created_by: userId,
+				mixcloud_key: mixcloudKey,
+				mixcloud_data: null,
+				show_id: null,
+			})
+			.returningAll()
+			.executeTakeFirstOrThrow();
+	});
 };
 
 /** Read a pending or completed upload for preparation and replay. */
@@ -109,6 +123,9 @@ export const saveReviewedUpload = async (
 			description: reviewed.description,
 			date: reviewed.date,
 			djs: reviewed.djs,
+			...(reviewed.special_id === undefined
+				? {}
+				: { special_id: reviewed.special_id }),
 			url: cloudcast.url,
 			duration: cloudcast.audio_length,
 			mixcloud_image_small: cloudcast.pictures.large,

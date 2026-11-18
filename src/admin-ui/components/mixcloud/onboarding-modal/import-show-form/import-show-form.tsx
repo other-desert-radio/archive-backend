@@ -13,6 +13,7 @@ import {
 	ShowTitleDateFields,
 	useShowFormState,
 } from "../../../shows/index.js";
+import { useSpecialOptions } from "../../../shows/onboarding-modal/show-special-field/index.js";
 import { MixcloudSourceData } from "../mixcloud-source-data/index.js";
 import styles from "./import-show-form.module.css";
 import {
@@ -53,6 +54,7 @@ export const ImportShowForm = ({
 }: ImportShowFormProps) => {
 	const { fields, setFields, hasUnsavedChanges, addOpeningRelationships } =
 		useShowFormState(initialImportValues(row));
+	const specialOptions = useSpecialOptions();
 	const { tagOptions, isTagsLoading, tagsError, loadTagOptions } =
 		useTagOptions(true);
 	const [djs, setDJs] = useState<{ id: number; title: string }[]>([]);
@@ -178,6 +180,7 @@ export const ImportShowForm = ({
 					throw new Error(
 						"Source suggestions must finish loading before saving.",
 					);
+				specialOptions.validate(fields.special_id);
 				const request = buildShowFormRequest(fields);
 				const tagRequests = buildImportTagRequests(fields.tags, tagOptions);
 				// These tag writes precede Show creation and can persist if a later write fails.
@@ -216,6 +219,8 @@ export const ImportShowForm = ({
 				}
 			/>
 			<ShowRelationshipFields
+				groupRelationships
+				specialOptions={specialOptions}
 				hideDJSearchHelp={unmatchedDJs.length > 0}
 				highlightEmptyDJs
 				fields={fields}
@@ -230,10 +235,11 @@ export const ImportShowForm = ({
 				loadTagOptions={loadTagOptions}
 				djHelper={
 					unmatchedDJs.length > 0 ? (
-						<span className={styles.unmatchedDJs}>
+						<span
+							className={styles.unmatchedDJs}
+							data-special-selected={fields.special_id != null}
+						>
 							<strong>Unmatched DJs: {unmatchedDJs.join(", ")}</strong>
-							<br />
-							you'll need to onboard this DJ separately first
 						</span>
 					) : undefined
 				}

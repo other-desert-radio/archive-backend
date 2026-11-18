@@ -11,13 +11,23 @@ import type { TypedDatabase } from "../../src/admin/routes/types.js";
 import { auth } from "../../src/auth/auth.js";
 
 const selectDJs = mock(async () => [{ id: 1 }]);
+const selectSpecial = mock(async () => ({ id: 7 }));
 const insertPending = mock(async () => ({ id: 42 }));
 const values = mock((_input: unknown) => ({
 	returningAll: () => ({ executeTakeFirstOrThrow: insertPending }),
 }));
 const database = {
+	transaction: () => ({
+		execute: (run: (transaction: unknown) => unknown) => run(database),
+	}),
 	selectFrom: () => ({
-		select: () => ({ where: () => ({ execute: selectDJs }) }),
+		select: () => ({
+			where: () => ({
+				execute: selectDJs,
+				executeTakeFirst: selectSpecial,
+				forKeyShare: () => ({ executeTakeFirst: selectSpecial }),
+			}),
+		}),
 	}),
 	insertInto: () => ({ values }),
 } as unknown as TypedDatabase;
@@ -368,6 +378,7 @@ test("retains editorial fields and selected DJs in the pending record", async ()
 		mixcloud_key: "/odr/show/",
 		mixcloud_data: null,
 		show_id: null,
+		special_id: null,
 	});
 });
 test("rejects invalid or missing DJs without uploading", async () => {
@@ -403,5 +414,60 @@ test("does not write pending records when the provider rejects the upload", asyn
 		expect(values).not.toHaveBeenCalled();
 	} finally {
 		provider.mockRestore();
+	}
+});
+
+test("uploads with a special alone or with DJs retain it in pending storage", async () => {
+	for (const djs of ["[]", "[1]"]) {
+		expect(await send({ djs, special_id: "7" })).toBe(200);
+		expect(values.mock.calls.at(-1)?.[0]).toMatchObject({
+			special_id: 7,
+			djs: JSON.parse(djs),
+		});
+	}
+});
+test("invalid or missing specials reject before calling the provider", async () => {
+	for (const special_id of ["0", "-1", "1.5", "abc", "", "2147483648", "1e0"])
+		expect(await send({ special_id })).toBe(400);
+	selectSpecial.mockResolvedValueOnce(undefined as never);
+	const upload = spyOn(integration.client, "upload");
+	try {
+		expect(await send({ djs: "[]", special_id: "7" })).toBe(400);
+		expect(upload).not.toHaveBeenCalled();
+	} finally {
+		upload.mockRestore();
+	}
+});
+
+test("retains the pending draft when its Special is deleted during provider upload", async () => {
+	const upload = spyOn(integration.client, "upload").mockImplementationOnce(
+		async () => {
+			selectSpecial.mockResolvedValueOnce(undefined as never);
+			return { success: true, statusCode: 200, key: "/odr/show/" };
+		},
+	);
+	try {
+		expect(
+			await send({
+				djs: "[]",
+				special_id: "7",
+				title: "Special show",
+				description: "Retained draft",
+			}),
+		).toBe(200);
+		expect(values.mock.calls.at(-1)?.[0]).toMatchObject({
+			special_id: null,
+			djs: [],
+			title: "Special show",
+			description: "Retained draft",
+			date: new Date("2024-02-29T00:00:00.000Z"),
+			mixcloud_title: "DJ - Show",
+			tags: ["House"],
+			mixcloud_key: "/odr/show/",
+			show_id: null,
+		});
+		expect(upload).toHaveBeenCalledTimes(1);
+	} finally {
+		upload.mockRestore();
 	}
 });

@@ -71,8 +71,9 @@ accepts a user or session ID from the browser. Responses use
 
 - `POST /api/admin/mixcloud/upload` accepts multipart `title` (original show
   title), `mixcloud_title` (editable provider title), `date` (valid calendar
-  show date, not publication scheduling), `djs` (nonempty JSON array of positive
-  safe integer DJ IDs), `tags` (JSON array of up to five nonblank names),
+  show date, not publication scheduling), `djs` (JSON array of positive safe
+  integer DJ IDs), optional `special_id` (a positive PostgreSQL integer ID
+  encoded as decimal text), `tags` (JSON array of up to five nonblank names),
   optional `description` (up to 1000 characters, with multipart CRLF line
   endings normalized to LF), and exactly one nonempty `.mp3` file, up to 4
   billion bytes. An optional `image` file must be a single-frame, decodable 1200
@@ -90,29 +91,35 @@ accepts a user or session ID from the browser. Responses use
   Mixcloud as `mp3`, `mixcloud_title` as `name`, description as `description`
   when supplied, and tags as `tags-X-tag`, using the separate provider function
   in `src/mixcloud/upload.ts`. Date is omitted; publication uses Mixcloud's
-  public default. Selected DJs are deduplicated and checked against the database
-  before uploading. Confirmed provider success requires a cloudcast key of the
-  form `/account/slug/`. The route stores that key with the original title,
-  description, date, DJ IDs, requested tags, provider title, and acting user in
-  `mixcloud_uploads`, then returns 200 with `{success:true,uploadId,key,url}`.
-  The browser loader returns this confirmation for the later review flow. If
-  recording the pending upload fails after provider success, return 500 with
+  public default. Selected DJs are deduplicated; DJs and the selected Special
+  are checked against the database before uploading. At least one DJ or a
+  Special is required; both are allowed. The Special is archive metadata and is
+  not sent to Mixcloud. Confirmed provider success requires a cloudcast key of
+  the form `/account/slug/`. The route stores that key with the original title,
+  description, date, DJ IDs, optional Special ID, requested tags, provider
+  title, and acting user in `mixcloud_uploads`, then returns 200 with
+  `{success:true,uploadId,key,url}`. The browser loader returns this
+  confirmation for the later review flow. Recording resolves the Special again
+  in the insertion transaction; if it disappeared during upload, the draft is
+  retained without a Special assignment. If recording the pending upload fails
+  after provider success, return 500 with
   `{success:false,uploaded:true,key,url}`; the UI explicitly reports that
   Mixcloud succeeded and says not to reupload. Provider rate limits return 429,
   unconfirmed/rejected uploads return 502, and timeouts return 504, all with
   `{success:false}`. Uploads have a 30-minute provider timeout and are never
   automatically retried. Check Mixcloud before retrying an uncertain result.
   Both titles must be nonblank. The new-show modal generates the editable
-  provider title from selected DJ names joined with `+`, show title, and show
-  date (for example, `DJ - Show, October 19, 2026`). Manual edits persist until
-  reset; the server validates and forwards the provider title without
-  regenerating it. Upload confirmation creates a pending upload, not a Show. The
-  UI announces provider success, prepares the fetched metadata, then opens
-  Review Show. Explicit Save uses the endpoints below, and Show saved displays
-  the returned persisted record. A failed resource-list reload retains that
-  success and offers Reload lists separately. Confirmed pending uploads can be
-  resumed from the Shows toolbar after closing or reloading. Uncertain attempts
-  without a recorded confirmation remain deferred to the
+  provider title from the selected Special name first, selected DJ names joined
+  with `+` next, then show title and date (for example,
+  `DJ - Show, October 19, 2026`). Manual edits persist until reset; the server
+  validates and forwards the provider title without regenerating it. Upload
+  confirmation creates a pending upload, not a Show. The UI announces provider
+  success, prepares the fetched metadata, then opens Review Show. Explicit Save
+  uses the endpoints below, and Show saved displays the returned persisted
+  record. A failed resource-list reload retains that success and offers Reload
+  lists separately. Confirmed pending uploads can be resumed from the Shows
+  toolbar after closing or reloading. Uncertain attempts without a recorded
+  confirmation remain deferred to the
   [future recovery plan](plans/future/mixcloud-upload-recovery.md).
 
   Diagnostic logs include the full provider response body and HTTP status, with
@@ -139,38 +146,40 @@ accepts a user or session ID from the browser. Responses use
   fetches its single cloudcast from the fixed Mixcloud API origin, validates the
   matching key, HTTP(S) URLs, positive integer duration, and source tags, and
   stores the fetched JSON snapshot. It returns `200` with
-  `{uploadId,editorial:{title,description,date,djs},mixcloud}`. No Show or
-  publication revision changes during preparation. Invalid IDs return `400`,
-  missing uploads `404`, already saved/concurrently changed uploads `409`,
-  disabled integrations `503`, provider failures `502`, and provider timeouts
-  `504`. Database failures return `500`. The provider read has a ten-second
-  default timeout, rejects redirects, needs no OAuth token, and never retries.
-  Warning logs include upload ID, request correlation ID, elapsed milliseconds,
-  endpoint status, and a plain-language cause. A local `503` records
-  `integration_not_configured`. Provider failures distinguish HTTP rejection
-  (including the provider's HTTP status), timeout, network failure, unreadable
-  JSON, invalid metadata, mismatched keys, and error-bearing payloads. For
-  example, a provider `404` logs “Mixcloud API returned HTTP 404” while the
-  endpoint responds `502`. Successful fetches log the requested provider title,
-  original archive title, and validated metadata fields (including the fetched
-  name, tags, duration, dates, show URL, and image URLs). Unexpected response
-  fields, credentials, and raw transport errors are excluded.
+  `{uploadId,editorial:{title,description,date,djs,special_id?},mixcloud}`. No
+  Show or publication revision changes during preparation. Invalid IDs return
+  `400`, missing uploads `404`, already saved/concurrently changed uploads
+  `409`, disabled integrations `503`, provider failures `502`, and provider
+  timeouts `504`. Database failures return `500`. The provider read has a
+  ten-second default timeout, rejects redirects, needs no OAuth token, and never
+  retries. Warning logs include upload ID, request correlation ID, elapsed
+  milliseconds, endpoint status, and a plain-language cause. A local `503`
+  records `integration_not_configured`. Provider failures distinguish HTTP
+  rejection (including the provider's HTTP status), timeout, network failure,
+  unreadable JSON, invalid metadata, mismatched keys, and error-bearing
+  payloads. For example, a provider `404` logs “Mixcloud API returned HTTP 404”
+  while the endpoint responds `502`. Successful fetches log the requested
+  provider title, original archive title, and validated metadata fields
+  (including the fetched name, tags, duration, dates, show URL, and image URLs).
+  Unexpected response fields, credentials, and raw transport errors are
+  excluded.
 - `POST /api/admin/mixcloud/uploads/:id/save` accepts reviewed
-  `{title,description,date,djs,tags?}`. Optional tags are an array of names;
-  supplied tags replace the archive selection, including an empty array. Omitted
-  tags preserve the fetched provider tags for existing clients. Description is
-  required and may be empty, up to 1000 characters. Title/date/DJs use the
-  shared Show validation; DJ existence is checked in the saving transaction.
-  Duration, image URLs, show URL come exclusively from the stored validated
-  snapshot; extra browser fields cannot override them. One transaction locks the
-  upload, persists and locks its source tracking row, reuses the existing import
-  transaction, and links the upload to the saved Show. Creation returns
-  `201 {show}`; replay or an already imported source returns `200 {show}`
-  without overwriting the Show. Invalid input returns `400`, unknown uploads
-  `404`, missing/invalid prepared snapshots `409`, and transaction failures
-  `500`. Save performs no provider request. All Show, relationship,
-  source-marker, and upload-link writes roll back together on failure. Both
-  routes inherit editor/admin and origin guards.
+  `{title,description,date,djs,special_id?,tags?}`. Optional tags are an array
+  of names; supplied tags replace the archive selection, including an empty
+  array. Omitted tags preserve the fetched provider tags for existing clients.
+  Description is required and may be empty, up to 1000 characters.
+  Title/date/DJs use the shared Show validation; DJ and Special existence and
+  the requirement for DJs or a Special are checked in the saving transaction.
+  `special_id:null` clears the reviewed selection. Duration, image URLs, show
+  URL come exclusively from the stored validated snapshot; extra browser fields
+  cannot override them. One transaction locks the upload, persists and locks its
+  source tracking row, reuses the existing import transaction, and links the
+  upload to the saved Show. Creation returns `201 {show}`; replay or an already
+  imported source returns `200 {show}` without overwriting the Show. Invalid
+  input returns `400`, unknown uploads `404`, missing/invalid prepared snapshots
+  `409`, and transaction failures `500`. Save performs no provider request. All
+  Show, relationship, source-marker, and upload-link writes roll back together
+  on failure. Both routes inherit editor/admin and origin guards.
 
 Mixcloud responses also use `Referrer-Policy: no-referrer`. Application, admin,
 and origin-rejection request logs record paths without query strings to exclude
@@ -399,7 +408,8 @@ valid when the effective Special assignment exists. Validation uses the saved
 assignment within the transaction, so invalid saves roll back metadata and
 relationship changes. Admin list/save responses include optional
 `special: {id, title}`, omitted when unassigned, including idempotent import
-responses. Special management endpoints and modal controls are deferred.
+responses. Admin forms expose one Special selection alongside DJs; the Specials
+management view supports creating, renaming, and deleting Specials.
 
 Creation also accepts optional positive safe-integer `mixcloud_import_id`. After
 validating submitted metadata, an import locks that tracking row with
@@ -831,3 +841,10 @@ linked Shows return 409. The existing foreign key prevents concurrent
 associations from bypassing this restriction. Deletion never unlinks Shows.
 These routes inherit the archive session and same-origin mutation protections.
 Migration `0046_add_specials` must already be applied.
+
+`POST /api/admin/modify-special` accepts `{id,title}` and returns
+`{id,title,createdAt}`. Admins and editors can rename Specials under the shared
+session and trusted-origin boundary. IDs must be positive PostgreSQL integers;
+names are trimmed and must be nonblank. Duplicate names remain allowed. Invalid
+input returns 400, missing Specials 404, and unexpected failures 500. Renaming
+preserves membership and uses the existing publication revision trigger.

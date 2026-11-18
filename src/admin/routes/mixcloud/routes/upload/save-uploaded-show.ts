@@ -49,11 +49,13 @@ export const saveUploadedShowHandler =
 			}
 			if (
 				message === "Validation error" ||
-				message === "One or more selected DJs do not exist"
+				message === "One or more selected DJs do not exist" ||
+				message === "Selected Special does not exist" ||
+				message === "A Show requires DJs or a Special"
 			) {
 				request.log.warn(
 					{ uploadId },
-					"[Uploaded Show Save] rejected -- invalid fields or DJs",
+					"[Uploaded Show Save] rejected -- invalid fields or relationships",
 				);
 				return reply.code(400).send({ error: message });
 			}

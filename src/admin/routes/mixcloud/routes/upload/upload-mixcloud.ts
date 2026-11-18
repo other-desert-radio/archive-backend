@@ -40,11 +40,14 @@ export const uploadMixcloudHandler =
 			const upload = await receiveUpload(request, join(directory, "audio.mp3"));
 			if (!upload) status = 400;
 			else {
-				const djs = await database
-					.selectFrom("djs")
-					.select("id")
-					.where("id", "in", upload.draft.djs)
-					.execute();
+				const djs =
+					upload.draft.djs.length === 0
+						? []
+						: await database
+								.selectFrom("djs")
+								.select("id")
+								.where("id", "in", upload.draft.djs)
+								.execute();
 				if (djs.length !== upload.draft.djs.length) {
 					request.log.warn(
 						"[Mixcloud Upload] rejected -- selected DJs do not exist",
@@ -52,6 +55,21 @@ export const uploadMixcloudHandler =
 					throw Object.assign(new Error("Invalid selected DJs"), {
 						statusCode: 400,
 					});
+				}
+				if (upload.draft.special_id !== undefined) {
+					const special = await database
+						.selectFrom("specials")
+						.select("id")
+						.where("id", "=", upload.draft.special_id)
+						.executeTakeFirst();
+					if (!special) {
+						request.log.warn(
+							"[Mixcloud Upload] rejected -- selected special does not exist",
+						);
+						throw Object.assign(new Error("Invalid selected special"), {
+							statusCode: 400,
+						});
+					}
 				}
 				request.log.info("[Mixcloud Upload] uploading to provider");
 				const result = await integration.client.upload(token, upload);

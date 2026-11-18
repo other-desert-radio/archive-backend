@@ -178,26 +178,28 @@ box appears in the modal body until connected; upload fields and the mode
 description are hidden. A small paragraph above all fields repeats the selected
 mode's native tooltip description. Mode changes preserve form values and do not
 make the form dirty. The picker sits beside the title through the existing
-headerContent slot and disables during submission. New show displays title, DJs,
-date, an optional description (up to 1000 characters), tags, required square
-image selection, and MP3 selection. Description is sent to Mixcloud, preserves
-paragraph breaks, survives mode switches, and counts as an unsaved change. The
-image picker reuses the shared artist crop flow, including rotation, zoom, 1200
-× 1200 WebP output, replacement, removal, and discard protection. A MIXCLOUD
-panel above the fields centers the connection status and shows the editable
-Mixcloud title after a form edit. The input fills the panel width, has an
-accessible label without a visible label, and uses only a bottom border. Gray
-helper text underneath reads “Title to be sent to Mixcloud. This is auto
-generated using the existing format. Click to edit”. Generated titles have a
-gray underline; manual edits use the standard black underline and persist until
-reset. Titles update as source fields are typed, using whichever fields are
-available and omitting missing parts. Submission requires a connected Mixcloud
-account, nonblank show and Mixcloud titles, at least one DJ, a show date, an
-image, and selected audio. Description and tags are optional. Submission uploads
-publicly to Mixcloud; confirmed success closes the modal, while errors retain
-the draft. Existing show retains all archive fields and archive-save behavior.
-The new-show date represents the show date, not a scheduled Mixcloud publication
-time. Closing and reopening resets the mode. Editing has no mode picker. Header
+headerContent slot and disables during submission. New show displays title,
+grouped DJs and Special, date, an optional description (up to 1000 characters),
+tags, required square image selection, and MP3 selection. Description is sent to
+Mixcloud, preserves paragraph breaks, survives mode switches, and counts as an
+unsaved change. The image picker reuses the shared artist crop flow, including
+rotation, zoom, 1200 × 1200 WebP output, replacement, removal, and discard
+protection. A MIXCLOUD panel above the fields centers the connection status and
+shows the editable Mixcloud title after a form edit. The input fills the panel
+width, has an accessible label without a visible label, and uses only a bottom
+border. Gray helper text underneath reads “Title to be sent to Mixcloud. This is
+auto generated using the existing format. Click to edit”. Generated titles have
+a gray underline; manual edits use the standard black underline and persist
+until reset. Titles update as source fields are typed, using whichever fields
+are available and omitting missing parts. A selected Special appears first,
+followed by DJ names joined with `+`, show title, and date; heading parts use
+`-`. Submission requires a connected Mixcloud account, nonblank show and
+Mixcloud titles, at least one DJ or a Special, a show date, an image, and
+selected audio. Description and tags are optional. Submission uploads publicly
+to Mixcloud; confirmed success closes the modal, while errors retain the draft.
+Existing show retains all archive fields and archive-save behavior. The new-show
+date represents the show date, not a scheduled Mixcloud publication time.
+Closing and reopening resets the mode. Editing has no mode picker. Header
 content may be static or a renderer receiving isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
@@ -288,19 +290,19 @@ longest field name; phone labels stack and long URLs wrap.
 
 Initial resolution selects unique exact DJ names ignoring case and surrounding
 whitespace, and canonical tag titles from source keys. Unmatched DJ names appear
-in red in the selector helper, together with the onboarding guidance. Hide the
-“Type to search. Press Tab to accept the gray completion.” instructions while
-unmatched source DJs are present. Matched Mixcloud keys use the database tag
-title exactly and its colored chip. Unresolved keys use their original
-`mixcloud_tags` source names without lowercasing or slug conversion; existing
-title matches reuse the canonical name and color. Remaining new names use the
-existing red unknown-tag chips and creation caption, and Save creates them
-through ordinary Show creation. Missing source names block Save with refresh
-guidance rather than creating tags from keys. Opening selections update the
-baseline without resetting typed metadata or tag drafts. Save waits for both
-resolution and tag options; Retry preserves edits. Source changes remount the
-keyed form, resetting selectors, errors, helpers, and baseline while ignoring
-stale requests.
+in red in the selector helper, turning gray when a Special is selected. Guidance
+sits at the top of the grouped DJs/Special box. Hide the “Type to search. Press
+Tab to accept the gray completion.” instructions while unmatched source DJs are
+present. Matched Mixcloud keys use the database tag title exactly and its
+colored chip. Unresolved keys use their original `mixcloud_tags` source names
+without lowercasing or slug conversion; existing title matches reuse the
+canonical name and color. Remaining new names use the existing red unknown-tag
+chips and creation caption, and Save creates them through ordinary Show
+creation. Missing source names block Save with refresh guidance rather than
+creating tags from keys. Opening selections update the baseline without
+resetting typed metadata or tag drafts. Save waits for both resolution and tag
+options; Retry preserves edits. Source changes remount the keyed form, resetting
+selectors, errors, helpers, and baseline while ignoring stale requests.
 
 The submit button reads “Import”, changing to “Importing…” while submitting. A
 ready source can be imported without editing its opening values. Import opts
@@ -604,9 +606,10 @@ deferred.
 The Shows table displays a sortable Special column beside DJs, using the Special
 title or the shared missing-value treatment. Search includes both Special title
 and ID. A Show can have DJs, a Special, or both; multiple DJs remain supported.
-Special-only rows display an empty DJ relationship. Special assignment controls
-and management UI remain deferred, so existing modals still require DJs. Edits
-that omit `special_id` preserve stored assignments.
+Special-only table rows display an empty DJ relationship. Grid cards show
+`Special: {name}` instead of `No DJs` when assigned to a Special. The shared
+show forms allow selecting one Special or clearing the assignment. Edits that
+omit `special_id` preserve stored assignments.
 
 ### Show image URL variants
 
@@ -892,8 +895,19 @@ Specials appears after Tags in navigation for admins and editors. The table
 shows ID, name, and all associated Show titles alphabetically, or None. Search
 matches Special names and Show titles. Table/grid selection persists
 independently; the default is table. Grid cards show only the name and actions,
-without tag colors or Show metadata. Both views expose disabled Edit and working
-Delete controls; editing is deferred.
+without tag colors or Show metadata. Both views expose Edit and Delete controls.
+Edit opens the shared form shell with the current name; blank names are
+rejected, failed saves retain the draft, and successful saves preserve search
+and sort. Membership is edited through Shows.
+
+Show create/edit, upload, uploaded-show review, and Mixcloud import offer a
+single searchable Special selection with chip removal. Shows require at least
+one DJ or a Special; both are allowed. Edit Show, upload, uploaded-show review,
+and import group DJs and Special inside a gray border, without a divider; Tags
+stays outside. Guidance appears at the top of the group. Unmatched DJ names turn
+gray when a Special is selected. Unmatched source DJ names do not prevent saving
+with a Special. Clearing an assignment sends an explicit null. Selected
+relationships must exist; failed Special loads offer Retry.
 
 Create special uses the shared form shell with one required name field.
 Whitespace-only names cannot be submitted. Creation assigns no Shows. Delete

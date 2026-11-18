@@ -37,9 +37,10 @@ type Props = {
 	sortColumn: SpecialSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: SpecialSortColumn) => void;
+	onEdit: (special: SpecialsAdminRow) => void;
 	onDelete: (row: SpecialsAdminRow) => void;
 };
-export const SpecialsTable = ({ specials, ...props }: Props) => (
+export const SpecialsTable = ({ specials, onEdit, ...props }: Props) => (
 	<ResourceTable
 		rows={specials}
 		rowKey={(row) => row.id}
@@ -48,10 +49,8 @@ export const SpecialsTable = ({ specials, ...props }: Props) => (
 		{...props}
 		rowAction={{
 			label: "Edit",
-			title: "Editing specials is not available yet",
-			onClick: () => {},
+			onClick: onEdit,
 			isVisible: () => true,
-			disabled: true,
 		}}
 	/>
 );

@@ -34,6 +34,7 @@ export const EditShowModal = ({ show, tags, onSubmit, ...props }: Props) => {
 				mixcloud_image_large: show.mixcloud_image_large,
 				url: show.url,
 				selected: show.djs,
+				special_id: show.special?.id ?? null,
 				tagDraft: "",
 				tags: show.tags.flatMap((id) => {
 					const title = tagsById.get(id);

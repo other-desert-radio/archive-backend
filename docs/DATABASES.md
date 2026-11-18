@@ -447,15 +447,16 @@ Migration `0046_add_specials` adds named groups with `id serial PRIMARY KEY`,
 while Shows refer to it. Existing Shows receive no assignment, and existing DJ
 links are preserved. A Show can have DJs, a Special, or both. Show save APIs
 reject neither; direct SQL and existing unassigned rows are not subject to this
-cross-table rule. Modals still require DJs until their follow-up change.
+cross-table rule. Show forms use the same rule.
 
-Special records are currently managed directly in PostgreSQL. Writes advance the
-publication revision through the existing statement trigger. The migration also
-permits the `specials` dataset version. Exported content includes ID, title,
-creation timestamp, and sorted Show IDs; membership and metadata changes advance
-only that dataset when other public content is unchanged. Apply the migration
-before deploying the matching application. Rollback removes Specials,
-assignments, and their dataset version history, preserving Shows and DJ links.
+Special names are managed through the authenticated admin create/edit routes.
+Writes advance the publication revision through the existing statement trigger.
+The migration also permits the `specials` dataset version. Exported content
+includes ID, title, creation timestamp, and sorted Show IDs; membership and
+metadata changes advance only that dataset when other public content is
+unchanged. Apply the migration before deploying the matching application.
+Rollback removes Specials, assignments, and their dataset version history,
+preserving Shows and DJ links.
 
 ### `tags`
 
@@ -593,9 +594,17 @@ precomputed results use the shared parser themselves.
 Migration `0039_add_mixcloud_uploads` stores successful provider uploads before
 archive review. Each row has a unique cloudcast `mixcloud_key`, original title,
 nullable description, selected UTC date and DJ ID array, provider title,
-requested tag names, nullable JSONB `mixcloud_data` for fetched metadata, and
-nullable `show_id` for the eventual archive save. Media bytes are not stored. DJ
-IDs are validated before uploading and must be revalidated when saving.
+requested tag names, nullable `special_id`, nullable JSONB `mixcloud_data` for
+fetched metadata, and nullable `show_id` for the eventual archive save. Media
+bytes are not stored. DJ IDs and the optional Special are validated before
+uploading and revalidated when saving. Migration `0047_add_upload_special` adds
+the nullable Special foreign key with `ON DELETE SET NULL`; existing uploads
+remain unassigned. Deleting a Special preserves pending uploads. After provider
+success, recording resolves the Special again under a key-share lock in the
+insertion transaction. A Special deleted during upload leaves the pending record
+unassigned while retaining the editorial draft. A resumed draft with neither DJs
+nor a Special requires a new selection. Rollback loses pending Special
+selections; apply this migration before deploying the updated upload flow.
 
 `createdAt` defaults to the insertion time. `created_by` references the archive
 user; deleting that user preserves the draft and sets its creator to null.
@@ -608,11 +617,11 @@ Preparation stores validated provider metadata in `mixcloud_data` without
 creating a Show. Reviewed Save locks the upload and source tracking row and
 atomically saves the Show, relationships, import markers, and upload link.
 Provider fields come from that snapshot; our reviewed fields supply title,
-description, date, DJs, and optionally tag names. Supplied reviewed tags replace
-the archive selection; omitted tags retain the snapshot names. Replays return
-the existing Show. The same source row lock serializes this workflow with
-ordinary Mixcloud imports. Omitted descriptions in existing edit callers
-preserve stored text.
+description, date, DJs, an optional Special, and optionally tag names. Supplied
+reviewed tags replace the archive selection; omitted tags retain the snapshot
+names. Replays return the existing Show. The same source row lock serializes
+this workflow with ordinary Mixcloud imports. Omitted descriptions in existing
+edit callers preserve stored text.
 
 Confirmed uploads with `show_id IS NULL` appear in the shared Shows pending
 queue, including records whose metadata preparation failed. Listing and resuming

@@ -9,6 +9,7 @@ import { buildCreateShowRequest } from "../onboard-show-modal/onboard-show-utils
 
 /** Editable Show values shared by creation, editing, and Mixcloud import forms. */
 export type ShowFormValues = {
+	special_id?: number | null;
 	tracklist?: ShowTracklistEntry[];
 	title: string;
 	description?: string;
@@ -73,11 +74,13 @@ export const useShowFormState = (initialValues: ShowFormValues) => {
 		hasUnsavedChanges: hasFormChanges(
 			{
 				...fields,
+				special_id: String(fields.special_id ?? ""),
 				tracklist: tracklistSnapshot(fields.tracklist),
 				tags: fields.tags.map(({ title }) => title),
 			},
 			{
 				...baseline.current,
+				special_id: String(baseline.current.special_id ?? ""),
 				tracklist: tracklistSnapshot(baseline.current.tracklist),
 				tags: baseline.current.tags.map(({ title }) => title),
 			},
@@ -87,13 +90,14 @@ export const useShowFormState = (initialValues: ShowFormValues) => {
 
 /**
  * Builds the ordinary Show payload, including an uncommitted tag draft.
- * Requires a DJ and nonblank title, then delegates remaining normalization and
+ * Requires DJs or a special and a nonblank title, then delegates remaining normalization and
  * validation to the creation request builder. Tag metadata stays out of this
  * payload; Mixcloud import handles source-tag onboarding separately.
  * @throws When required fields or the delegated payload validation fail.
  */
 export const buildShowFormRequest = (fields: ShowFormValues) => {
-	if (fields.selected.length === 0) throw new Error("Select at least one DJ.");
+	if (fields.selected.length === 0 && fields.special_id == null)
+		throw new Error("Select at least one DJ or a special.");
 	if (fields.title.trim() === "") throw new Error("Title is required.");
 	return {
 		...(fields.tracklist === undefined ? {} : { tracklist: fields.tracklist }),

@@ -42,11 +42,13 @@ const showTags = (
 	);
 
 const showDJs = (
-	show: Pick<ShowsAdminRow, "djs" | "title">,
+	show: Pick<ShowsAdminRow, "djs" | "title" | "special">,
 	djsById: ReadonlyMap<number, ShowCardDJ>,
 ) =>
 	show.djs.length === 0 ? (
-		<p className={styles.noDJs}>No DJs</p>
+		<p className={show.special ? styles.djs : styles.noDJs}>
+			{show.special ? `Special: ${show.special.title}` : "No DJs"}
+		</p>
 	) : (
 		<p className={styles.djs}>
 			{show.djs

@@ -206,3 +206,20 @@ test("resolved new source tags retain metadata while archive matches use canonic
 		{ title: "Existing" },
 	]);
 });
+
+test("shared show requests accept a special alone, both, and explicit removal with DJs", () => {
+	const fields = initialImportValues(row);
+	expect(buildShowFormRequest({ ...fields, special_id: 7 })).toMatchObject({
+		djs: [],
+		special_id: 7,
+	});
+	expect(
+		buildShowFormRequest({ ...fields, selected: [1], special_id: 7 }),
+	).toMatchObject({ djs: [1], special_id: 7 });
+	expect(
+		buildShowFormRequest({ ...fields, selected: [1], special_id: null }),
+	).toMatchObject({ djs: [1], special_id: null });
+	expect(() => buildShowFormRequest({ ...fields, special_id: null })).toThrow(
+		"Select at least one DJ or a special",
+	);
+});

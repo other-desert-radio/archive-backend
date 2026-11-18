@@ -2,6 +2,10 @@
 	color: #ff2c2c;
 }
 
+.unmatchedDJs[data-special-selected="true"] {
+	color: #555;
+}
+
 .status {
 	grid-column: 1 / -1;
 	font-size: var(--modal-helper-size);

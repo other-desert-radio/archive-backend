@@ -13,6 +13,7 @@ export type SearchableMultiSelectOption = {
 	searchText: string;
 };
 type SearchableMultiSelectProps = {
+	singleSelection?: boolean;
 	id: string;
 	label: string;
 	options: SearchableMultiSelectOption[];
@@ -27,6 +28,7 @@ type SearchableMultiSelectProps = {
 };
 /** A searchable relationship combobox with removable chips and inline completion. */
 export const SearchableMultiSelect = ({
+	singleSelection = false,
 	id,
 	label,
 	options,
@@ -73,7 +75,7 @@ export const SearchableMultiSelect = ({
 		if ((activeIndex ?? 0) >= visibleOptions.length) setActiveIndex(undefined);
 	}, [activeIndex, visibleOptions.length]);
 	const select = (option: SearchableMultiSelectOption) => {
-		onChange([...selectedIds, option.id]);
+		onChange(singleSelection ? [option.id] : [...selectedIds, option.id]);
 		resetBackspace();
 		setQuery("");
 		setActiveIndex(undefined);
@@ -103,9 +105,7 @@ export const SearchableMultiSelect = ({
 						)}
 					</p>
 				) : options.length === 0 ? (
-					<p className={styles.message}>
-						Create a DJ first before onboarding a Show.
-					</p>
+					<p className={styles.message}>No {label.toLowerCase()} available.</p>
 				) : (
 					<fieldset
 						className={styles.inputGroup}
@@ -149,7 +149,7 @@ export const SearchableMultiSelect = ({
 									ref={inputRef}
 									id={id}
 									className={styles.input}
-									placeholder="Search DJs"
+									placeholder={`Search ${label}`}
 									value={query}
 									role="combobox"
 									aria-autocomplete="both"
@@ -227,7 +227,7 @@ export const SearchableMultiSelect = ({
 								id={`${id}-options`}
 								className={styles.options}
 								role="listbox"
-								aria-label="Matching DJs"
+								aria-label={`Matching ${label}`}
 							>
 								{visibleOptions.length === 0 ? (
 									<p className={styles.message}>

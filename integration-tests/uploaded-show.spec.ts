@@ -61,11 +61,15 @@ async function setup(
 		holdUpload?: boolean;
 		uploadFails?: boolean;
 		missingTags?: boolean;
+		specialOnly?: boolean;
 		pending?: boolean;
 		pendingFailures?: number;
 		removeFailures?: number;
 	} = {},
 ) {
+	const savedResponse = options.specialOnly
+		? { ...saved, djs: [], special: { id: 7, title: "Festival" } }
+		: saved;
 	const calls = {
 		uploads: 0,
 		prepares: 0,
@@ -143,13 +147,17 @@ async function setup(
 		if (path === "/api/admin/shows")
 			return committed && options.reloadFails
 				? route.fulfill({ status: 500, json: { error: "Unavailable" } })
-				: route.fulfill({ json: committed ? [saved] : [] });
+				: route.fulfill({ json: committed ? [savedResponse] : [] });
 		if (path === "/api/admin/djs")
 			return route.fulfill({
 				json: [
 					{ id: 1, title: "Original DJ", tags: [], shows: [] },
 					{ id: 2, title: "Guest DJ", tags: [], shows: [] },
 				],
+			});
+		if (path === "/api/admin/specials")
+			return route.fulfill({
+				json: [{ id: 7, title: "Festival", createdAt: "2026-01-01Z" }],
 			});
 		if (path === "/api/admin/tags")
 			return route.fulfill({
@@ -202,7 +210,15 @@ async function setup(
 								"Uploaded to Mixcloud, but we were unable to fetch the show.",
 						},
 					})
-				: route.fulfill({ json: { uploadId: 5, editorial, mixcloud } });
+				: route.fulfill({
+						json: {
+							uploadId: 5,
+							editorial: options.specialOnly
+								? { ...editorial, djs: [], special_id: 7 }
+								: editorial,
+							mixcloud,
+						},
+					});
 		}
 		if (path === "/api/admin/mixcloud/uploads/5/save") {
 			calls.saves.push(route.request().postDataJSON());
@@ -213,7 +229,7 @@ async function setup(
 					json: { error: "Database unavailable" },
 				});
 			committed = true;
-			return route.fulfill({ status: 201, json: { show: saved } });
+			return route.fulfill({ status: 201, json: { show: savedResponse } });
 		}
 		if (path === "/api/admin/create-show") {
 			calls.manual++;
@@ -239,7 +255,7 @@ async function setup(
 	};
 }
 
-async function upload(page: Page) {
+async function upload(page: Page, specialOnly = false) {
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
 	const form = page.getByRole("dialog", { name: "Upload Show", exact: true });
 	await form
@@ -249,8 +265,31 @@ async function upload(page: Page) {
 	await form
 		.getByLabel("description", { exact: true })
 		.fill(editorial.description);
-	await form.getByRole("combobox", { name: "Search DJs" }).fill("Original");
-	await form.getByRole("option", { name: "Original DJ", exact: true }).click();
+	if (specialOnly) {
+		await form
+			.getByRole("combobox", { name: "Search Special", exact: true })
+			.fill("Festival");
+		await form.getByRole("option", { name: "Festival", exact: true }).click();
+		await expect(
+			form.getByRole("textbox", { name: "Mixcloud title", exact: true }),
+		).toHaveValue("Festival - Our show, October 26, 2026");
+		const group = form
+			.getByText("Choose archive DJs or a special to save this show.", {
+				exact: true,
+			})
+			.locator("..");
+		await expect(
+			group.getByRole("combobox", { name: "Search DJs", exact: true }),
+		).toBeVisible();
+		await expect(
+			group.getByRole("combobox", { name: "Search Special", exact: true }),
+		).toBeVisible();
+	} else {
+		await form.getByRole("combobox", { name: "Search DJs" }).fill("Original");
+		await form
+			.getByRole("option", { name: "Original DJ", exact: true })
+			.click();
+	}
 	await form.locator("#show-mp3").setInputFiles({
 		name: "show.mp3",
 		mimeType: "audio/mpeg",
@@ -347,6 +386,7 @@ for (const width of [1280, 390, 320])
 				description: "Reviewed description",
 				date: "2026-10-25",
 				djs: [2],
+				special_id: null,
 				tags: ["House", "New review tag"],
 			},
 		]);
@@ -415,7 +455,7 @@ test("success survives list reload failure with persisted IDs and retry feedback
 	await success.getByRole("button", { name: "Close", exact: true }).click();
 	await expect(
 		page.getByText(
-			"Show saved, but the latest resource lists could not be loaded.",
+			"Show changes saved, but the latest resource lists could not be loaded.",
 		),
 	).toBeVisible();
 	await expect(
@@ -726,4 +766,120 @@ test("removing a pending upload retries failures and deletes only its pending re
 	expect(calls.uploads).toBe(0);
 	expect(calls.prepares).toBe(0);
 	expect(calls.saves).toHaveLength(0);
+});
+
+for (const width of [1280, 390, 320]) {
+	test(`special-only upload and review at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 900 });
+		const { calls } = await setup(page, { specialOnly: true });
+		const uploadRequest = page.waitForRequest("**/api/admin/mixcloud/upload");
+		await upload(page, true);
+		expect((await uploadRequest).postDataBuffer()?.toString()).toContain(
+			'name="special_id"',
+		);
+		const form = page.getByRole("dialog", { name: "Review Show", exact: true });
+		await expect(
+			form.getByRole("button", { name: "Remove Festival", exact: true }),
+		).toBeVisible();
+		await expect(
+			form.getByRole("button", { name: "Save Show", exact: true }),
+		).toBeEnabled();
+		const group = form
+			.getByText("Choose archive DJs or a special to save this show.", {
+				exact: true,
+			})
+			.locator("..");
+		await expect(group).toHaveCSS("border-top-color", "rgb(187, 187, 187)");
+		await page.screenshot({ path: `/tmp/upload-special-${width}.png` });
+		await form.getByRole("button", { name: "Save Show", exact: true }).click();
+		await expect(form).toBeHidden();
+		expect(calls.saves[0]).toMatchObject({ djs: [], special_id: 7 });
+		await page
+			.getByRole("dialog", { name: "Show saved", exact: true })
+			.getByRole("button", { name: "Close", exact: true })
+			.click();
+		await page.getByRole("button", { name: "grid", exact: true }).click();
+		const card = page.getByRole("article").filter({ hasText: saved.title });
+		await expect(card).toContainText("Special: Festival");
+		await expect(card).not.toContainText("No DJs");
+		await page.screenshot({ path: `/tmp/special-card-${width}.png` });
+
+		expect(calls.uploads).toBe(1);
+	});
+}
+
+test("resumed upload with a deleted special requires a replacement relationship", async ({
+	page,
+}) => {
+	const { calls } = await setup(page, { pending: true, specialOnly: true });
+	await page.route("**/api/admin/specials", (route) =>
+		route.fulfill({ json: [] }),
+	);
+	await page
+		.getByRole("button", { name: "pending uploads 1", exact: true })
+		.click();
+	await page
+		.getByRole("button", { name: `Resume ${editorial.title}`, exact: true })
+		.click();
+	const form = page.getByRole("dialog", { name: "Review Show", exact: true });
+	await expect(
+		form.getByRole("button", {
+			name: "Remove Missing special #7",
+			exact: true,
+		}),
+	).toBeVisible();
+	await form.getByRole("button", { name: "Save Show", exact: true }).click();
+	await expect(form.getByRole("alert")).toContainText(
+		"Selected special no longer exists",
+	);
+	await form
+		.getByRole("button", { name: "Remove Missing special #7", exact: true })
+		.click();
+	await expect(
+		form.getByRole("button", { name: "Save Show", exact: true }),
+	).toBeDisabled();
+	await form
+		.getByRole("combobox", { name: "Search DJs", exact: true })
+		.fill("Original");
+	await form.getByRole("option", { name: "Original DJ", exact: true }).click();
+	await form.getByRole("button", { name: "Save Show", exact: true }).click();
+	await expect(form).toBeHidden();
+	expect(calls.saves[0]).toMatchObject({ djs: [1], special_id: null });
+	expect(calls.uploads).toBe(0);
+});
+
+test("generated upload titles put Special before DJs and preserve manual edits", async ({
+	page,
+}) => {
+	await setup(page);
+	await page.getByRole("button", { name: "+ show", exact: true }).click();
+	const form = page.getByRole("dialog", { name: "Upload Show", exact: true });
+	await form
+		.getByRole("textbox", { name: "title", exact: true })
+		.fill("Show Title");
+	await form.getByLabel("date", { exact: true }).fill("2026-10-26");
+	await form
+		.getByRole("combobox", { name: "Search Special", exact: true })
+		.fill("Festival");
+	await form.getByRole("option", { name: "Festival", exact: true }).click();
+	await form
+		.getByRole("combobox", { name: "Search DJs", exact: true })
+		.fill("Original");
+	await form.getByRole("option", { name: "Original DJ", exact: true }).click();
+	const title = form.getByRole("textbox", {
+		name: "Mixcloud title",
+		exact: true,
+	});
+	await expect(title).toHaveValue(
+		"Festival - Original DJ - Show Title, October 26, 2026",
+	);
+	await title.fill("Custom provider title");
+	await form
+		.getByRole("button", { name: "Remove Festival", exact: true })
+		.click();
+	await expect(title).toHaveValue("Custom provider title");
+	await form
+		.getByRole("button", { name: "Reset to generated title", exact: true })
+		.click();
+	await expect(title).toHaveValue("Original DJ - Show Title, October 26, 2026");
 });

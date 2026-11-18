@@ -32,3 +32,18 @@ test("preserves lowercase DJ names and the supplied show title", () => {
 		generatedMixcloudTitle(["garrepi"], "Wall Drug South Dakota", "2026-06-08"),
 	).toBe("garrepi - Wall Drug South Dakota, June 8, 2026");
 });
+
+test("places the Special before DJs and the show title", () => {
+	expect(generatedMixcloudTitle([], "Show", "2026-10-19", " Festival ")).toBe(
+		"Festival - Show, October 19, 2026",
+	);
+	expect(
+		generatedMixcloudTitle(
+			["DJ One", "DJ Two"],
+			"Show",
+			"2026-10-19",
+			"Festival",
+		),
+	).toBe("Festival - DJ One + DJ Two - Show, October 19, 2026");
+	expect(generatedMixcloudTitle(["DJ"], "Show", "", " ")).toBe("DJ - Show");
+});

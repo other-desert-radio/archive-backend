@@ -3,8 +3,10 @@ export const generatedMixcloudTitle = (
 	names: string[],
 	title: string,
 	date: string,
+	special?: string,
 ): string => {
 	const heading = [
+		special?.trim(),
 		names
 			.map((name) => name.trim())
 			.filter(Boolean)

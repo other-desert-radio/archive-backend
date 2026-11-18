@@ -48,6 +48,7 @@ export type MixcloudUploadsTable = {
 	description: string | null;
 	date: Date;
 	djs: number[];
+	special_id: number | null;
 	mixcloud_title: string;
 	tags: string[];
 	mixcloud_data: ColumnType<

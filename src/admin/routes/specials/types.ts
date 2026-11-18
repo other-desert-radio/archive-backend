@@ -2,6 +2,8 @@ import { P } from "ts-pattern";
 import type { AdminApiReply, ErrorResponse } from "../types.js";
 export type Special = { id: number; title: string; createdAt: string };
 export type CreateSpecialRequest = { title: string };
+export type ModifySpecialRequest = { id: number; title: string };
+export type ModifySpecialRoute = { Reply: AdminApiReply<Special> };
 export type ListSpecialsRoute = { Reply: AdminApiReply<Special[]> };
 export type CreateSpecialRoute = { Reply: AdminApiReply<Special> };
 export const RemoveSpecialRequestPattern = {

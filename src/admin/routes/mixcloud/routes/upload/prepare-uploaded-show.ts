@@ -95,6 +95,9 @@ export const prepareUploadedShowHandler =
 					description: prepared.description ?? "",
 					date: prepared.date.toISOString().slice(0, 10),
 					djs: prepared.djs,
+					...(prepared.special_id == null
+						? {}
+						: { special_id: prepared.special_id }),
 				},
 				mixcloud: cloudcast,
 			});
