@@ -20,15 +20,13 @@ for (const width of [1280, 390, 320]) {
 			exact: true,
 		});
 		await expect(
-			form.getByRole("button", { name: "Create special", exact: true }),
+			form.getByRole("button", { name: "Create", exact: true }),
 		).toBeDisabled();
 		await form
 			.getByRole("textbox", { name: "name", exact: true })
 			.fill(`  ${title}  `);
 		await page.screenshot({ path: `/tmp/specials-create-${width}.png` });
-		await form
-			.getByRole("button", { name: "Create special", exact: true })
-			.click();
+		await form.getByRole("button", { name: "Create", exact: true }).click();
 		await expect(form).toBeHidden();
 		const list = await request.get("/api/admin/specials");
 		const special = (await list.json()).find(
@@ -135,16 +133,12 @@ test("special forms retain failed drafts and deletion reloads after a concurrent
 			route.fulfill({ status: 500, json: { error: "Please retry creation." } }),
 		{ times: 1 },
 	);
-	await form
-		.getByRole("button", { name: "Create special", exact: true })
-		.click();
+	await form.getByRole("button", { name: "Create", exact: true }).click();
 	await expect(form.getByRole("alert")).toContainText("Please retry creation.");
 	await expect(
 		form.getByRole("textbox", { name: "name", exact: true }),
 	).toHaveValue(title);
-	await form
-		.getByRole("button", { name: "Create special", exact: true })
-		.click();
+	await form.getByRole("button", { name: "Create", exact: true }).click();
 	await expect(form).toBeHidden();
 	const special = (
 		await (await request.get("/api/admin/specials")).json()

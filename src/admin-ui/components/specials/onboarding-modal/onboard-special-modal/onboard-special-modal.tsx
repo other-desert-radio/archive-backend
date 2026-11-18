@@ -19,7 +19,7 @@ export const OnboardSpecialModal = ({ onClose, onSubmit }: Props) => {
 			}}
 			hasUnsavedChanges={title !== ""}
 			isSubmitDisabled={!title.trim()}
-			submitLabel="Create special"
+			submitLabel="Create"
 			submittingLabel="Creating…"
 			cancelLabel="Cancel"
 		>
