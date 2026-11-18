@@ -885,3 +885,21 @@ separately, then close and reopen the confirmation. A concurrent link conflict
 refreshes the blocking list. Cancel receives focus, pending deletion locks
 dismissal, and errors allow retry. Success removes the DJ locally and announces
 their name; list refresh failures remain separate from deletion.
+
+### Specials management
+
+Specials appears after Tags in navigation for admins and editors. The table
+shows ID, name, and all associated Show titles alphabetically, or None. Search
+matches Special names and Show titles. Table/grid selection persists
+independently; the default is table. Grid cards show only the name and actions,
+without tag colors or Show metadata. Both views expose disabled Edit and working
+Delete controls; editing is deferred.
+
+Create special uses the shared form shell with one required name field.
+Whitespace-only names cannot be submitted. Creation assigns no Shows. Delete
+follows the DJ confirmation pattern: load current associated Shows, disable
+deletion until none remain, retain retryable errors, and reload the blocking
+list after an association conflict. Shows must be unlinked separately; the modal
+never changes associations. Successful deletion removes the row and announces
+the name. Browser coverage lives in `integration-tests/specials.spec.ts` at
+desktop, 390px, and 320px.

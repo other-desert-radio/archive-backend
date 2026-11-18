@@ -19,6 +19,7 @@ describe("admin user preferences", () => {
 		expect(preferences.getResourceViewMode("djs")).toBe("table");
 		expect(preferences.getResourceViewMode("shows")).toBe("table");
 		expect(preferences.getResourceViewMode("tags")).toBe("table");
+		expect(preferences.getResourceViewMode("specials")).toBe("table");
 	});
 
 	test("persists DJ, Shows, and Tags view modes independently", () => {
@@ -28,11 +29,13 @@ describe("admin user preferences", () => {
 		preferences.setResourceViewMode("djs", "grid");
 		preferences.setResourceViewMode("shows", "table");
 		preferences.setResourceViewMode("tags", "grid");
+		preferences.setResourceViewMode("specials", "grid");
 
 		expect(JSON.parse(storage.getValue() ?? "{}")).toEqual({
 			djsViewMode: "grid",
 			showsViewMode: "table",
 			tagsViewMode: "grid",
+			specialsViewMode: "grid",
 		});
 		expect(new UserPreferences(() => storage).getResourceViewMode("djs")).toBe(
 			"grid",

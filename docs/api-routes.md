@@ -814,3 +814,20 @@ stored DJ images and direct tag links, preserving tag records. Mixcloud name
 matching continues to apply its usual import review rules. Apply migration
 `0043_restrict_dj_deletion` before deploying this route; startup never applies
 migrations automatically.
+
+### Specials management
+
+Admins and editors can list Specials with `GET /api/admin/specials`, returning
+`{id,title,createdAt}[]` in ascending ID order with ISO timestamps.
+`POST /api/admin/create-special` accepts `{title}`, trims the name, rejects
+blank names with 400, and returns the created record with 201. Duplicate names
+are allowed.
+
+`GET /api/admin/specials/:id/delete-impact` returns
+`{special:{id,title},shows:{id,title}[]}`, sorting associated Shows by title
+then ID. `POST /api/admin/remove-special` accepts `{id}` and returns `{id}`.
+Invalid IDs return 400, missing or out-of-range database IDs return 404, and
+linked Shows return 409. The existing foreign key prevents concurrent
+associations from bypassing this restriction. Deletion never unlinks Shows.
+These routes inherit the archive session and same-origin mutation protections.
+Migration `0046_add_specials` must already be applied.

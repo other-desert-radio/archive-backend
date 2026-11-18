@@ -10,7 +10,7 @@ import { MessageModal } from "../shared/modal/index.js";
 import styles from "./management-shell.module.css";
 
 type ManagementShellProps = {
-	activeResource: "shows" | "djs" | "tags" | "mixcloud" | "users";
+	activeResource: "shows" | "djs" | "tags" | "specials" | "mixcloud" | "users";
 	children: ReactNode;
 	user?: AccountUser;
 	onLogout?: () => Promise<void>;
@@ -151,6 +151,18 @@ export const ManagementShell = ({
 								⤷ tags
 							</a>
 						</li>
+						<li>
+							<a
+								className={styleWhenActive(activeResource, "specials")}
+								href="#specials"
+								aria-current={
+									activeResource === "specials" ? "page" : undefined
+								}
+							>
+								⤷ specials
+							</a>
+						</li>
+
 						<li>
 							<a
 								className={styleWhenActive(activeResource, "mixcloud")}
