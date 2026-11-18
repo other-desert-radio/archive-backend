@@ -105,6 +105,22 @@ test.skipIf(!databaseUrl)(
 						.executeTakeFirstOrThrow()
 				).special_id,
 			).toBeNull();
+			const deletedSpecialDraft = { ...draft, djs: [], special_id: 7 };
+			const withoutSpecial = await recordUploadedShow(
+				db,
+				"uploader",
+				deletedSpecialDraft,
+				"/odr/deleted-special/",
+			);
+			expect(withoutSpecial).toMatchObject({
+				...draft,
+				djs: [],
+				special_id: null,
+				date: new Date(`${draft.date}T00:00:00.000Z`),
+				mixcloud_key: "/odr/deleted-special/",
+				show_id: null,
+			});
+			expect(deletedSpecialDraft.special_id).toBe(7);
 			await db.transaction().execute(removeUploadSpecial);
 			await db.transaction().execute(down);
 			await db.transaction().execute(up);

@@ -32,20 +32,32 @@ export const recordUploadedShow = async (
 	draft: UploadedShowDraft,
 	mixcloudKey: string,
 ): Promise<UploadedShow> => {
-	return database
-		.insertInto("mixcloud_uploads")
-		.values({
-			...draft,
-			date: new Date(`${draft.date}T00:00:00.000Z`),
-			description: draft.description ?? null,
-			special_id: draft.special_id ?? null,
-			created_by: userId,
-			mixcloud_key: mixcloudKey,
-			mixcloud_data: null,
-			show_id: null,
-		})
-		.returningAll()
-		.executeTakeFirstOrThrow();
+	return database.transaction().execute(async (transaction) => {
+		// Keep an existing Special from disappearing between resolution and insertion.
+		const special =
+			draft.special_id === undefined
+				? undefined
+				: await transaction
+						.selectFrom("specials")
+						.select("id")
+						.where("id", "=", draft.special_id)
+						.forKeyShare()
+						.executeTakeFirst();
+		return transaction
+			.insertInto("mixcloud_uploads")
+			.values({
+				...draft,
+				date: new Date(`${draft.date}T00:00:00.000Z`),
+				description: draft.description ?? null,
+				special_id: special?.id ?? null,
+				created_by: userId,
+				mixcloud_key: mixcloudKey,
+				mixcloud_data: null,
+				show_id: null,
+			})
+			.returningAll()
+			.executeTakeFirstOrThrow();
+	});
 };
 
 /** Read a pending or completed upload for preparation and replay. */

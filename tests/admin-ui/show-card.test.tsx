@@ -68,3 +68,27 @@ describe("Show card", () => {
 		expect(tags.props.children[0].props.children).toBe("Tag #4");
 	});
 });
+
+test("special-only cards name the Special, while cards with DJs retain their names", () => {
+	const show = {
+		id: 1,
+		createdAt: "2026-09-29Z",
+		title: "Special show",
+		date: "2026-09-29Z",
+		duration: 60,
+		djs: [],
+		tags: [],
+		url: "https://example.test/show",
+		special: { id: 7, title: "Festival" },
+	};
+	const card = renderShowCard(show, new Map(), new Map(), 1, () => {});
+	expect(card.props.children[2].props.children).toBe("Special: Festival");
+	const withDJ = renderShowCard(
+		{ ...show, djs: [3] },
+		new Map(),
+		new Map([[3, { title: "Guest DJ" }]]),
+		1,
+		() => {},
+	);
+	expect(withDJ.props.children[2].props.children).toBe("Guest DJ");
+});

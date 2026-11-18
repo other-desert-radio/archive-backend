@@ -67,6 +67,9 @@ async function setup(
 		removeFailures?: number;
 	} = {},
 ) {
+	const savedResponse = options.specialOnly
+		? { ...saved, djs: [], special: { id: 7, title: "Festival" } }
+		: saved;
 	const calls = {
 		uploads: 0,
 		prepares: 0,
@@ -144,7 +147,7 @@ async function setup(
 		if (path === "/api/admin/shows")
 			return committed && options.reloadFails
 				? route.fulfill({ status: 500, json: { error: "Unavailable" } })
-				: route.fulfill({ json: committed ? [saved] : [] });
+				: route.fulfill({ json: committed ? [savedResponse] : [] });
 		if (path === "/api/admin/djs")
 			return route.fulfill({
 				json: [
@@ -226,7 +229,7 @@ async function setup(
 					json: { error: "Database unavailable" },
 				});
 			committed = true;
-			return route.fulfill({ status: 201, json: { show: saved } });
+			return route.fulfill({ status: 201, json: { show: savedResponse } });
 		}
 		if (path === "/api/admin/create-show") {
 			calls.manual++;
@@ -771,6 +774,16 @@ for (const width of [1280, 390, 320]) {
 		await form.getByRole("button", { name: "Save Show", exact: true }).click();
 		await expect(form).toBeHidden();
 		expect(calls.saves[0]).toMatchObject({ djs: [], special_id: 7 });
+		await page
+			.getByRole("dialog", { name: "Show saved", exact: true })
+			.getByRole("button", { name: "Close", exact: true })
+			.click();
+		await page.getByRole("button", { name: "grid", exact: true }).click();
+		const card = page.getByRole("article").filter({ hasText: saved.title });
+		await expect(card).toContainText("Special: Festival");
+		await expect(card).not.toContainText("No DJs");
+		await page.screenshot({ path: `/tmp/special-card-${width}.png` });
+
 		expect(calls.uploads).toBe(1);
 	});
 }

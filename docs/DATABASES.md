@@ -599,10 +599,12 @@ fetched metadata, and nullable `show_id` for the eventual archive save. Media
 bytes are not stored. DJ IDs and the optional Special are validated before
 uploading and revalidated when saving. Migration `0047_add_upload_special` adds
 the nullable Special foreign key with `ON DELETE SET NULL`; existing uploads
-remain unassigned. Deleting a Special preserves pending uploads. A resumed draft
-with neither DJs nor a Special requires a new selection. Rollback loses pending
-Special selections; apply this migration before deploying the updated upload
-flow.
+remain unassigned. Deleting a Special preserves pending uploads. After provider
+success, recording resolves the Special again under a key-share lock in the
+insertion transaction. A Special deleted during upload leaves the pending record
+unassigned while retaining the editorial draft. A resumed draft with neither DJs
+nor a Special requires a new selection. Rollback loses pending Special
+selections; apply this migration before deploying the updated upload flow.
 
 `createdAt` defaults to the insertion time. `created_by` references the archive
 user; deleting that user preserves the draft and sets its creator to null.

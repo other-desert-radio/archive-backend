@@ -99,7 +99,9 @@ accepts a user or session ID from the browser. Responses use
   description, date, DJ IDs, optional Special ID, requested tags, provider
   title, and acting user in `mixcloud_uploads`, then returns 200 with
   `{success:true,uploadId,key,url}`. The browser loader returns this
-  confirmation for the later review flow. If recording the pending upload fails
+  confirmation for the later review flow. Recording resolves the Special again
+  in the insertion transaction; if it disappeared during upload, the draft is
+  retained without a Special assignment. If recording the pending upload fails
   after provider success, return 500 with
   `{success:false,uploaded:true,key,url}`; the UI explicitly reports that
   Mixcloud succeeded and says not to reupload. Provider rate limits return 429,

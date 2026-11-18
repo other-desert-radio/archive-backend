@@ -605,9 +605,10 @@ deferred.
 The Shows table displays a sortable Special column beside DJs, using the Special
 title or the shared missing-value treatment. Search includes both Special title
 and ID. A Show can have DJs, a Special, or both; multiple DJs remain supported.
-Special-only rows display an empty DJ relationship. The shared show forms allow
-selecting one Special or clearing the assignment. Edits that omit `special_id`
-preserve stored assignments.
+Special-only table rows display an empty DJ relationship. Grid cards show
+`Special: {name}` instead of `No DJs` when assigned to a Special. The shared
+show forms allow selecting one Special or clearing the assignment. Edits that
+omit `special_id` preserve stored assignments.
 
 ### Show image URL variants
 
