@@ -1,14 +1,26 @@
 /*
- * specials (new table), shows (added relationship), dataset versions
+ * specials (new table)
  * ┌───────────────────┬─────────────┬──────────────────────────────────────────┐
  * │ Column / change   │ Type        │ Constraints / purpose                    │
  * ├───────────────────┼─────────────┼──────────────────────────────────────────┤
- * │ specials.id       │ serial      │ PRIMARY KEY                              │
- * │ specials.createdAt│ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP      │
- * │ specials.title    │ text        │ NOT NULL; nonblank                       │
- * │ shows.special_id  │ integer     │ NULL; FK specials(id), DELETE RESTRICT   │
+ * │ id                │ serial      │ PRIMARY KEY                              │
+ * │ createdAt         │ timestamptz │ NOT NULL; DEFAULT CURRENT_TIMESTAMP      │
+ * │ title             │ text        │ NOT NULL; nonblank                       │
+ * │ writes            │ trigger     │ Advance archive publication revision     │
+ * └───────────────────┴─────────────┴──────────────────────────────────────────┘
+ *
+ * shows (added relationship)
+ * ┌───────────────────┬─────────────┬──────────────────────────────────────────┐
+ * │ Column / change   │ Type        │ Constraints / purpose                    │
+ * ├───────────────────┼─────────────┼──────────────────────────────────────────┤
+ * │ special_id        │ integer     │ NULL; FK specials(id), DELETE RESTRICT   │
+ * └───────────────────┴─────────────┴──────────────────────────────────────────┘
+ *
+ * archive_dataset_versions (expanded dataset constraint)
+ * ┌───────────────────┬─────────────┬──────────────────────────────────────────┐
+ * │ Column / change   │ Type        │ Constraints / purpose                    │
+ * ├───────────────────┼─────────────┼──────────────────────────────────────────┤
  * │ dataset           │ text        │ Also permits specials                    │
- * │ specials writes   │ trigger     │ Advance archive publication revision     │
  * └───────────────────┴─────────────┴──────────────────────────────────────────┘
  * Existing Shows and DJ links are preserved with no Special assignment.
  * Rollback loses Specials, assignments, and Specials dataset version history.
