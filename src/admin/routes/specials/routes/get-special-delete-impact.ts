@@ -21,6 +21,7 @@ export const getSpecialDeleteImpactHandler =
 		const rawId = request.params.id;
 		const id = Number(rawId);
 		if (
+			// Number() also accepts forms such as "1e2" and "0x10"; IDs must contain only decimal digits.
 			!/^[0-9]+$/.test(rawId) ||
 			!isMatching(RemoveSpecialRequestPattern, { id })
 		) {
