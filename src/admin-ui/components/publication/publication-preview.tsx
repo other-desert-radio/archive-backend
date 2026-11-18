@@ -6,6 +6,7 @@ const resources = [
 	{ key: "tags", label: "Tags" },
 	{ key: "shows", label: "Shows" },
 	{ key: "djs", label: "DJs" },
+	{ key: "specials", label: "Specials" },
 ] as const;
 
 type PreviewProps = {

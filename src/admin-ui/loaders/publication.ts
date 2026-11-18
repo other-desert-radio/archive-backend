@@ -227,6 +227,7 @@ export const preparePublicationPreview = async (
 				revision: P.string.regex(/^\d+$/),
 				changes: {
 					tags: summaryPattern,
+					specials: summaryPattern,
 					shows: summaryPattern,
 					djs: summaryPattern,
 				},

@@ -20,6 +20,7 @@ export type ShowSortColumn =
 	| "image_large"
 	| "mixcloud_image_small"
 	| "mixcloud_image_large"
+	| "special"
 	| "djs"
 	| "tags"
 	| "tracklist"
@@ -43,6 +44,8 @@ export const getShowSearchValue = (
 		show.mixcloud_image_small,
 		show.mixcloud_image_large,
 		show.url,
+		show.special?.id,
+		show.special?.title,
 		...show.djs,
 		...show.djs.map((id) => djTitlesById.get(id)),
 		...show.tags,

@@ -6,7 +6,7 @@ import type { Database } from "./types.js";
 /** Manifest id matches the payload version; updatedAt is a UTC ISO timestamp. */
 export type DatasetVersion = { id: number; updatedAt: string };
 export type DatasetVersions = Record<
-	"shows" | "djs" | "tags" | "show_details",
+	"shows" | "djs" | "tags" | "show_details" | "specials",
 	DatasetVersion
 >;
 
@@ -24,6 +24,7 @@ export function archiveContentHashes(documents: ArchiveDocuments) {
 		djs.update(image.bytes);
 	}
 	return {
+		specials: hash(documents.specials),
 		shows: hash(documents.shows),
 		show_details: hash(documents.showDetails),
 		djs: djs.digest("hex"),
@@ -75,6 +76,7 @@ export async function allocateArchiveVersions<
 					"djs",
 					"tags",
 					"show_details",
+					"specials",
 				] as const) {
 					const previous = await transaction
 						.selectFrom("archive_dataset_versions")

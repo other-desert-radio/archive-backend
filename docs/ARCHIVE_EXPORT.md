@@ -12,6 +12,7 @@ the following assets to the configured Astro frontend directories:
 - `public/resources/djs/{id}.json`, one detail document per DJ;
 - `public/resources/shows.json`, the top-level show index;
 - `public/resources/show_details.json`, descriptions and tracklists by show ID;
+- `public/resources/specials.json`, named Specials and their Show IDs;
 - `public/resources/tags.json`, the shared tag dictionary;
 - `public/resources/data_versions.json`, the dataset version manifest; and
 - `public/assets/djs/{id}_small.webp` and `{id}_large.webp`, copied DJ image
@@ -38,7 +39,8 @@ the existing payload. Archive JSON lives in `public/resources/`, including
   "shows": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
   "show_details": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
   "djs": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
-  "tags": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" }
+  "tags": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" },
+  "specials": { "id": 1, "updatedAt": "2026-10-29T12:00:00.000Z" }
 }
 ```
 
@@ -71,6 +73,33 @@ Subsequent unchanged exports retain that version.
 
 ## Export rules
 
+`specials.json` uses the standard version envelope. Its `data` array includes
+all Specials, including empty groups, ordered by ascending ID:
+
+```json
+{
+  "version": 1,
+  "updatedAt": "2026-11-16T00:00:00.000Z",
+  "data": [
+    {
+      "id": 1,
+      "title": "Winter Sessions",
+      "createdAt": "2026-11-16T00:00:00.000Z",
+      "showIds": []
+    }
+  ]
+}
+```
+
+`createdAt` is the stored creation timestamp serialized as UTC ISO 8601;
+`showIds` contains ascending Show IDs. A Show can belong to a Special and have
+DJs, or belong to a Special with an empty DJ array. Existing Show index and DJ
+detail shapes remain unchanged. Resolve Special membership through `showIds`.
+The independent `specials` version advances for changed metadata or membership;
+unchanged exports preserve both version and `updatedAt`. It is included in the
+manifest and publication previews/commits. Older baselines without the file are
+read as having no Specials; the next export creates it even when empty.
+
 `show_details.json` contains one record per show in the same order as the show
 index, with `id` identifying the show. Optional `description` contains sanitized
 HTML using the same allowed formatting as DJ bios; NULL descriptions are omitted
@@ -82,7 +111,7 @@ The `show_details` version changes independently when detail content changes.
 
 The exporter owns the entire `public/resources/djs/` and `public/assets/djs/`
 directories and replaces their contents on each export, including stale files.
-Keep manually maintained assets outside those directories. It also owns the five
+Keep manually maintained assets outside those directories. It also owns the six
 top-level generated JSON files; other files such as
 `public/resources/notes.json` and `public/assets/logo.svg` remain untouched and
 outside publication commits.

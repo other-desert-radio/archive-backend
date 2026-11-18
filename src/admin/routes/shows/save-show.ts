@@ -20,7 +20,7 @@ export const saveShow = async (
 		);
 
 /**
- * Creates or replaces a Show, validates its DJs, and saves its tag/DJ links
+ * Creates or replaces a Show, validates its DJs/Special, and saves its tag/DJ links
  * within the supplied transaction. The caller owns commit and rollback, so an
  * import can save the Show and its tracking markers as one atomic operation.
  */
@@ -29,15 +29,31 @@ export const saveShowInTransaction = async (
 	normalized: NormalizedCreateShowRequest,
 	id?: number,
 ): Promise<AdminShowsJSON | undefined> => {
-	const existingDJs = await transaction
-		.selectFrom("djs")
-		.select("id")
-		.where("id", "in", normalized.djs)
-		.execute();
+	const existingDJs =
+		normalized.djs.length === 0
+			? []
+			: await transaction
+					.selectFrom("djs")
+					.select("id")
+					.where("id", "in", normalized.djs)
+					.execute();
 	if (existingDJs.length !== normalized.djs.length)
 		throw new Error("One or more selected DJs do not exist");
 
+	if (normalized.special_id != null) {
+		const special = await transaction
+			.selectFrom("specials")
+			.select("id")
+			.where("id", "=", normalized.special_id)
+			.executeTakeFirst();
+		if (special === undefined)
+			throw new Error("Selected Special does not exist");
+	}
+
 	const values = {
+		...(normalized.special_id === undefined
+			? {}
+			: { special_id: normalized.special_id }),
 		...(normalized.tracklist === undefined
 			? {}
 			: { tracklist: JSON.stringify(normalized.tracklist) }),
@@ -61,15 +77,37 @@ export const saveShowInTransaction = async (
 			? await transaction
 					.insertInto("shows")
 					.values(values)
-					.returning(["id", "createdAt", "description", "tracklist"])
+					.returning([
+						"id",
+						"createdAt",
+						"description",
+						"tracklist",
+						"special_id",
+					])
 					.executeTakeFirstOrThrow()
 			: await transaction
 					.updateTable("shows")
 					.set(values)
 					.where("id", "=", id)
-					.returning(["id", "createdAt", "description", "tracklist"])
+					.returning([
+						"id",
+						"createdAt",
+						"description",
+						"tracklist",
+						"special_id",
+					])
 					.executeTakeFirst();
 	if (show === undefined) return undefined;
+	if (normalized.djs.length === 0 && show.special_id == null)
+		throw new Error("A Show requires DJs or a Special");
+	const special =
+		show.special_id == null
+			? undefined
+			: await transaction
+					.selectFrom("specials")
+					.select(["id", "title"])
+					.where("id", "=", show.special_id)
+					.executeTakeFirstOrThrow();
 
 	const tags = await createTags(
 		transaction,
@@ -85,15 +123,16 @@ export const saveShowInTransaction = async (
 			.where("show_id", "=", id)
 			.execute();
 	}
-	await transaction
-		.insertInto("show_djs")
-		.values(
-			normalized.djs.map((djId) => ({
-				show_id: show.id,
-				dj_id: djId,
-			})),
-		)
-		.execute();
+	if (normalized.djs.length > 0)
+		await transaction
+			.insertInto("show_djs")
+			.values(
+				normalized.djs.map((djId) => ({
+					show_id: show.id,
+					dj_id: djId,
+				})),
+			)
+			.execute();
 	if (tags.length > 0) {
 		await transaction
 			.insertInto("show_tags")
@@ -107,6 +146,7 @@ export const saveShowInTransaction = async (
 	}
 	return {
 		id: show.id,
+		...(special === undefined ? {} : { special }),
 		createdAt: show.createdAt,
 		tracklist: show.tracklist,
 		...(show.description == null
@@ -137,6 +177,7 @@ export const loadSavedShow = async (
 			"title",
 			"description",
 			"tracklist",
+			"special_id",
 			"date",
 			"duration",
 			"url",
@@ -157,9 +198,18 @@ export const loadSavedShow = async (
 		.where("show_id", "=", show.id)
 		.orderBy("tag_id")
 		.execute();
-	const { description, ...fields } = show;
+	const { description, special_id, ...fields } = show;
+	const special =
+		special_id == null
+			? undefined
+			: await transaction
+					.selectFrom("specials")
+					.select(["id", "title"])
+					.where("id", "=", special_id)
+					.executeTakeFirstOrThrow();
 	return {
 		...fields,
+		...(special === undefined ? {} : { special }),
 		...(description == null
 			? {}
 			: { description: sanitizeArchiveHtml(description) }),

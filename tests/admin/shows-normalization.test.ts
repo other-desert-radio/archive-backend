@@ -44,8 +44,9 @@ describe("normalizeCreateShowRequest", () => {
 			{ ...validRequest, mixcloud_image_large: "ftp://example.test/image" },
 			{ ...validRequest, duration: 0 },
 			{ ...validRequest, duration: 2_147_483_648 },
-			{ ...validRequest, djs: [] },
 			{ ...validRequest, djs: [0] },
+			{ ...validRequest, special_id: 0 },
+			{ ...validRequest, special_id: 1.5 },
 		]) {
 			expect(() => normalizeCreateShowRequest(request)).toThrow(
 				"Validation error",

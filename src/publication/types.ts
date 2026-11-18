@@ -89,7 +89,7 @@ export type PublicationStart = {
 };
 
 export type PublicationChanges = Record<
-	"tags" | "shows" | "djs",
+	"tags" | "shows" | "djs" | "specials",
 	{ added: string[]; changed: string[]; removed: string[] }
 >;
 export type PublicationPreview = {

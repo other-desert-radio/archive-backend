@@ -15,6 +15,7 @@ export type Database = {
 	archive_publication_logs: ArchivePublicationLogsTable;
 	djs: DJsTable;
 	shows: ShowsTable;
+	specials: SpecialsTable;
 	tags: TagsTable;
 	show_djs: ShowDJsTable;
 	show_tags: ShowTagsTable;
@@ -74,7 +75,7 @@ export type ArchivePublicationStateTable = {
 };
 
 export type ArchiveDatasetVersionsTable = {
-	dataset: "shows" | "djs" | "tags" | "show_details";
+	dataset: "shows" | "djs" | "tags" | "show_details" | "specials";
 	version: number;
 	updated_at: Date;
 	content_hash: string;
@@ -160,7 +161,14 @@ export type ShowTracklistEntry = (
 	| { chapter: string; artist?: never; song?: never }
 ) & { start_time: number | null };
 
+export type SpecialsTable = {
+	id: Generated<number>;
+	createdAt: Generated<Date>;
+	title: string;
+};
+
 export type ShowsTable = {
+	special_id: number | null;
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	title: string;

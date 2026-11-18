@@ -53,7 +53,9 @@ export const modifyShowHandler =
 				error instanceof Error ? error.message : "Internal Server Error";
 			if (
 				message === "Validation error" ||
-				message === "One or more selected DJs do not exist"
+				message === "One or more selected DJs do not exist" ||
+				message === "Selected Special does not exist" ||
+				message === "A Show requires DJs or a Special"
 			) {
 				request.log.warn(
 					{ showId: id, reason: message },

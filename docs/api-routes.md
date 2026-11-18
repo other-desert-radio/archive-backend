@@ -380,7 +380,7 @@ compatibility.
 
 `POST /api/admin/create-show` accepts JSON with required `title`, strict
 `YYYY-MM-DD` `date`, positive whole-second `duration`, absolute HTTP(S) `url`,
-one or more existing DJ IDs in `djs`, and required absolute HTTP(S)
+an array of existing DJ IDs in `djs`, and required absolute HTTP(S)
 `mixcloud_image_small` and `mixcloud_image_large` URLs. Optional `tags` are
 titles. Optional `description` accepts up to 1000 characters and normalizes CRLF
 to LF. Like DJ bios, descriptions are edited as plain text and stored and
@@ -390,6 +390,16 @@ text, validates real calendar dates and URLs, deduplicates DJ IDs and tag
 titles, and stores the date at midnight UTC. It creates the Show, relationships,
 and any missing unreviewed tags in one transaction, returning `201` with the
 same admin Show shape as the list response.
+
+Creation and editing accept optional `special_id`, a positive PostgreSQL integer
+ID referencing an existing Special. `null` clears the assignment; omission means
+no Special for creation and preserves the stored assignment on editing. A Show
+requires at least one DJ or a Special, and can have both. Empty `djs` arrays are
+valid when the effective Special assignment exists. Validation uses the saved
+assignment within the transaction, so invalid saves roll back metadata and
+relationship changes. Admin list/save responses include optional
+`special: {id, title}`, omitted when unassigned, including idempotent import
+responses. Special management endpoints and modal controls are deferred.
 
 Creation also accepts optional positive safe-integer `mixcloud_import_id`. After
 validating submitted metadata, an import locks that tracking row with
@@ -409,11 +419,12 @@ Show tags while retaining `id` and `createdAt`. Both image URLs are required on
 every save; omitted, blank, relative, and non-HTTP(S) image URLs return `400`.
 Public JSON exposes both image URL fields; migration `0024` removes the legacy
 database column. Omitted or empty `tags` clears Show tag assignments. At least
-one existing DJ remains required. Unlinked DJs and tags are preserved; missing
-tag titles are created through the shared tag service. Success returns `200`
-with the admin Show shape, including both image URLs; an unknown Show returns
-`404 { "error": "Not Found" }`. Invalid fields or missing selected DJs return
-`400`, and unexpected failures roll back all writes and return `500`.
+one existing DJ or a Special remains required. Unlinked DJs and tags are
+preserved; missing tag titles are created through the shared tag service.
+Success returns `200` with the admin Show shape, including both image URLs; an
+unknown Show returns `404 { "error": "Not Found" }`. Invalid fields or missing
+selected DJs/Specials return `400`, and unexpected failures roll back all writes
+and return `500`.
 
 Tag creation accepts `{ title: string }`, optionally with `color`,
 `mixcloud_key`, and `mixcloud_url`, for `create-tag`, and an array of those

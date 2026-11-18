@@ -51,6 +51,7 @@ describe("Show table helpers", () => {
 			"mixcloud_image_small",
 			"mixcloud_image_large",
 			"DJs",
+			"Special",
 			"tags",
 			"tracklist",
 			"URL",
@@ -184,4 +185,14 @@ test("tracklist counts tracks, excludes chapters, sorts, and marks empty lists",
 	expect(
 		sortShows([populated, shows[1]], "tracklist", "asc").map((show) => show.id),
 	).toEqual([1, 2]);
+});
+
+test("Special titles and IDs are searchable and titles sortable", () => {
+	const rows = [
+		{ ...shows[0], special: { id: 80, title: "Winter Sessions" } },
+		{ ...shows[1], special: { id: 90, title: "Anniversary" } },
+	];
+	expect(filterShows(rows, "winter", new Map(), new Map())).toEqual([rows[0]]);
+	expect(filterShows(rows, "80", new Map(), new Map())).toEqual([rows[0]]);
+	expect(sortShows(rows, "special", "asc")).toEqual([rows[1], rows[0]]);
 });

@@ -40,30 +40,31 @@ Migration `0038_add_show_description` adds nullable `shows.description` text for
 Mixcloud descriptions. Existing rows start with `NULL`; rollback drops the
 column and any stored descriptions.
 
-Relationship foreign keys use `ON DELETE CASCADE`, except `show_djs.dj_id`,
-which uses `ON DELETE RESTRICT`. A DJ cannot be deleted while any Show refers to
-them; first remove those associations or delete the Shows separately. Deleting a
-Show or tag removes dependent association rows; deleting an eligible DJ removes
-their direct tag associations. Mixcloud tracking uses `ON DELETE SET NULL` and a
-trigger to retain source rows and clear their import timestamps; see the
+Relationship foreign keys use `ON DELETE CASCADE`, except `shows.special_id` and
+`show_djs.dj_id`, which uses `ON DELETE RESTRICT`. A DJ cannot be deleted while
+any Show refers to them; first remove those associations or delete the Shows
+separately. Deleting a Show or tag removes dependent association rows; deleting
+an eligible DJ removes their direct tag associations. Mixcloud tracking uses
+`ON DELETE SET NULL` and a trigger to retain source rows and clear their import
+timestamps; see the
 [tracking deletion contract](MIXCLOUD_IMPORT.md#consistency-and-deletion).
 
 ## Archive dataset versions
 
 Migration `0040_add_archive_dataset_versions` adds `archive_dataset_versions`,
-keyed by dataset (`shows`, `djs`, `tags`, or `show_details`, added by migration
-`0045_add_show_details_dataset`). Each row stores an integer `version`,
+keyed by dataset (`shows`, `djs`, `tags`, `show_details` from migration `0045`,
+and `specials` from migration `0046`). Each row stores an integer `version`,
 `updated_at timestamptz`, and a SHA-256 `content_hash`. Rows are created on
 first allocation at version 1. Changed exported content advances only that
 dataset; unchanged content preserves its version and timestamp. DJ content
 includes briefs, details, and image bytes. Shows include their embedded DJ data.
 
-| Column         | Type              | Description                               |
-| -------------- | ----------------- | ----------------------------------------- |
-| `dataset`      | text, primary key | `shows`, `djs`, `tags`, or `show_details` |
-| `version`      | integer           | Positive content revision                 |
-| `updated_at`   | timestamptz       | Last content change                       |
-| `content_hash` | text              | SHA-256 of exported content               |
+| Column         | Type              | Description                                           |
+| -------------- | ----------------- | ----------------------------------------------------- |
+| `dataset`      | text, primary key | `shows`, `djs`, `tags`, `show_details`, or `specials` |
+| `version`      | integer           | Positive content revision                             |
+| `updated_at`   | timestamptz       | Last content change                                   |
+| `content_hash` | text              | SHA-256 of exported content                           |
 
 The `show_details` dataset versions descriptions and tracklists independently.
 Detail edits do not advance show or DJ versions. Migration `0045` changes only
@@ -147,15 +148,16 @@ means the revision advanced or the current target differs from the acknowledged
 target; an unknown target remains pending. PostgreSQL bigint values remain
 decimal strings in application types and JSON to avoid numeric precision loss.
 
-Statement-level triggers on `djs`, `shows`, `tags`, `show_djs`, `show_tags`, and
-`dj_tags` increment the revision for each INSERT, UPDATE, DELETE, or TRUNCATE
-statement. After migration `0035`, the tag trigger runs before the statement to
-acquire the publication lock before tag uniqueness locks; the other five
-triggers run after their statements. Revision changes remain transactional in
-both cases. This conservatively includes no-op updates and statements affecting
-zero rows; revisions are change signals, not row counts or export diffs.
-Cascading relationship writes may advance it further. Authentication and
-Mixcloud tracking writes do not directly advance archive revisions.
+Statement-level triggers on `djs`, `shows`, `specials`, `tags`, `show_djs`,
+`show_tags`, and `dj_tags` increment the revision for each INSERT, UPDATE,
+DELETE, or TRUNCATE statement. After migration `0035`, the tag trigger runs
+before the statement to acquire the publication lock before tag uniqueness
+locks; the other six triggers run after their statements. Revision changes
+remain transactional in both cases. This conservatively includes no-op updates
+and statements affecting zero rows; revisions are change signals, not row counts
+or export diffs. Cascading relationship writes may advance it further.
+Authentication and Mixcloud tracking writes do not directly advance archive
+revisions.
 
 Each trigger emits `archive_publication_changed` with the decimal revision as
 its payload. The revision update and notification belong to the writing
@@ -374,6 +376,7 @@ createdAt   timestamptz not null
 title       text not null
 date        timestamptz
 duration    integer       -- seconds
+special_id  integer       -- nullable FK specials(id), ON DELETE RESTRICT
 description text          -- nullable sanitized HTML
 tracklist   jsonb not null -- ordered array, default []
 mixcloud_image_large text not null -- Mixcloud image URL
@@ -434,6 +437,25 @@ bytes untouched. The admin Shows table links to authenticated stored-image
 endpoints when both variants exist. Upload and binary-image export support are
 deferred. Rolling back `0037` drops the binary columns and any stored images
 while retaining the Mixcloud URLs.
+
+### `specials`
+
+Migration `0046_add_specials` adds named groups with `id serial PRIMARY KEY`,
+`createdAt timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP`, and nonblank
+`title text NOT NULL`. A Show can belong to one Special through nullable
+`shows.special_id`; a Special can contain many Shows. Deletion is restricted
+while Shows refer to it. Existing Shows receive no assignment, and existing DJ
+links are preserved. A Show can have DJs, a Special, or both. Show save APIs
+reject neither; direct SQL and existing unassigned rows are not subject to this
+cross-table rule. Modals still require DJs until their follow-up change.
+
+Special records are currently managed directly in PostgreSQL. Writes advance the
+publication revision through the existing statement trigger. The migration also
+permits the `specials` dataset version. Exported content includes ID, title,
+creation timestamp, and sorted Show IDs; membership and metadata changes advance
+only that dataset when other public content is unchanged. Apply the migration
+before deploying the matching application. Rollback removes Specials,
+assignments, and their dataset version history, preserving Shows and DJ links.
 
 ### `tags`
 

@@ -320,3 +320,11 @@ A real push to `publish-dev` is a separately reviewed acceptance step. A
 successful publisher job means GitHub accepted the push (or generated output was
 already current); deployment completion belongs to the separate archive-site
 Pages workflow, which deploys only `main`.
+
+## Specials verification
+
+Set `SPECIALS_TEST_DATABASE_URL` to a disposable PostgreSQL database and run
+`bun test tests/db/specials.test.ts`. The test migrates an isolated schema,
+checks API assignment rules and rollback, exports `specials.json`, verifies
+independent versions and revision tracking, then rolls back/reapplies the
+Specials migration. It removes its schema and temporary export files afterward.

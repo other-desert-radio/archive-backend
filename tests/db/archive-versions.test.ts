@@ -18,7 +18,22 @@ import {
 } from "../../src/db/migrations/0045_add_show_details_dataset.js";
 import type { Database } from "../../src/db/types.js";
 
+const allowSpecials = async (database: Kysely<Database>) => {
+	await database.schema
+		.alterTable("archive_dataset_versions")
+		.dropConstraint("archive_dataset_versions_dataset_check")
+		.execute();
+	await database.schema
+		.alterTable("archive_dataset_versions")
+		.addCheckConstraint(
+			"archive_dataset_versions_dataset_check",
+			sql`dataset IN ('shows', 'djs', 'tags', 'show_details', 'specials')`,
+		)
+		.execute();
+};
+
 const documents = (): ArchiveDocuments => ({
+	specials: [],
 	showDetails: [],
 	shows: [],
 	djs: [],
@@ -46,6 +61,7 @@ async function withDatabase(
 		await database.transaction().execute(createJobs);
 		await database.transaction().execute(up);
 		await database.transaction().execute(showDetailsDataset);
+		await allowSpecials(database);
 		await run(database);
 	} finally {
 		await sql`DROP SCHEMA IF EXISTS ${sql.id(schema)} CASCADE`.execute(
@@ -142,8 +158,12 @@ test.skipIf(!databaseUrl)(
 			const otherVersions = await database
 				.selectFrom("archive_dataset_versions")
 				.selectAll()
-				.where("dataset", "!=", "show_details")
+				.where("dataset", "not in", ["show_details", "specials"])
 				.orderBy("dataset")
+				.execute();
+			await database
+				.deleteFrom("archive_dataset_versions")
+				.where("dataset", "=", "specials")
 				.execute();
 			await database.transaction().execute(removeShowDetailsDataset);
 			expect(
@@ -165,6 +185,7 @@ test.skipIf(!databaseUrl)(
 					.execute(),
 			).rejects.toThrow();
 			await database.transaction().execute(showDetailsDataset);
+			await allowSpecials(database);
 			const reapplied = await allocateArchiveVersions(database, async () => ({
 				documents: data,
 			}));
@@ -296,6 +317,7 @@ test.skipIf(!databaseUrl)(
 			await database.transaction().execute(down);
 			await database.transaction().execute(up);
 			await database.transaction().execute(showDetailsDataset);
+			await allowSpecials(database);
 			expect(
 				(
 					await database

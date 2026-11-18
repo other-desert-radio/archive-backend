@@ -5,6 +5,7 @@ import type { CreateShowRequest } from "./types.js";
 
 export type NormalizedCreateShowRequest = {
 	tracklist?: ShowTracklistEntry[];
+	special_id?: number | null;
 	title: string;
 	description?: string;
 	date: Date;
@@ -48,7 +49,10 @@ export const normalizeCreateShowRequest = (
 		request.duration < 1 ||
 		request.duration > 2_147_483_647 ||
 		!isHttpUrl(url) ||
-		djs.length === 0 ||
+		(request.special_id != null &&
+			(!Number.isInteger(request.special_id) ||
+				request.special_id < 1 ||
+				request.special_id > 2_147_483_647)) ||
 		djs.some((id) => !Number.isSafeInteger(id) || id < 1) ||
 		!isHttpUrl(mixcloud_image_small) ||
 		!isHttpUrl(mixcloud_image_large)
@@ -56,6 +60,9 @@ export const normalizeCreateShowRequest = (
 		throw new Error("Validation error");
 	}
 	return {
+		...(request.special_id === undefined
+			? {}
+			: { special_id: request.special_id }),
 		title,
 		...(request.description === undefined
 			? {}
