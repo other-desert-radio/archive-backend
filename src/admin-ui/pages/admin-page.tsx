@@ -4,12 +4,20 @@ import type { AccountUser } from "../loaders/auth.js";
 import { DJsPage } from "./djs-page.js";
 import { MixcloudPage } from "./mixcloud-page.js";
 import { ShowsPage } from "./shows-page.js";
+import { SpecialsPage } from "./specials-page.js";
 import { TagsPage } from "./tags-page.js";
 import { UsersPage } from "./users-page.js";
 
-type AdminResource = "shows" | "djs" | "tags" | "mixcloud" | "users";
+type AdminResource =
+	| "shows"
+	| "djs"
+	| "tags"
+	| "specials"
+	| "mixcloud"
+	| "users";
 
 const getResourceFromHash = (): AdminResource => {
+	if (window.location.hash === "#specials") return "specials";
 	if (window.location.hash === "#users") return "users";
 	if (window.location.hash === "#djs") {
 		return "djs";
@@ -53,6 +61,8 @@ export const AdminPage = ({
 				<ShowsPage />
 			) : resource === "djs" ? (
 				<DJsPage />
+			) : resource === "specials" ? (
+				<SpecialsPage />
 			) : resource === "mixcloud" ? (
 				<MixcloudPage />
 			) : (

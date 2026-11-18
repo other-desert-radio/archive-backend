@@ -17,6 +17,7 @@ import {
 	publicationRoutes,
 } from "./routes/publication/index.js";
 import { showRoutes } from "./routes/shows/index.js";
+import { specialRoutes } from "./routes/specials/index.js";
 import { adminStatusRoutes } from "./routes/status/index.js";
 import { tagRoutes } from "./routes/tags/index.js";
 import type { TypedDatabase } from "./routes/types.js";
@@ -81,6 +82,7 @@ const adminApiRoutes = (
 		await app.register(djRoutes(database));
 		await app.register(showRoutes(database));
 		await app.register(tagRoutes(database));
+		await app.register(specialRoutes(database));
 		await app.register(mixcloudImportRoutes(database));
 		await app.register(
 			mixcloudRoutes({

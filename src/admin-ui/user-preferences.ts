@@ -2,7 +2,7 @@ import type { MixcloudImportCategory } from "../utils/mixcloud-import-status.js"
 import type { ResourceViewMode } from "./components/shared/resource-views/index.js";
 
 type BrowserStorage = Pick<Storage, "getItem" | "setItem">;
-export type ResourceViewPreference = "djs" | "shows" | "tags";
+export type ResourceViewPreference = "djs" | "shows" | "tags" | "specials";
 
 type StoredUserPreferences = Partial<{
 	mixcloud_auto_parsed: number;
@@ -10,6 +10,7 @@ type StoredUserPreferences = Partial<{
 	djsViewMode: ResourceViewMode;
 	showsViewMode: ResourceViewMode;
 	tagsViewMode: ResourceViewMode;
+	specialsViewMode: ResourceViewMode;
 }>;
 
 const storageKey = "odr-admin-user-preferences";

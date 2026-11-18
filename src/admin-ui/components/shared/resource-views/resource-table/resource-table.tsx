@@ -22,6 +22,7 @@ type ResourceTableProps<Row, ColumnKey extends string> = {
 		| undefined
 		| {
 				label: string;
+				title?: string;
 				onClick: (row: Row) => void;
 				isVisible: (row: Row) => boolean;
 				disabled?: boolean;
@@ -98,6 +99,7 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 										type="button"
 										className={styles.editButton}
 										disabled={rowAction.disabled}
+										title={rowAction.title}
 										onClick={() => rowAction.onClick(row)}
 									>
 										{rowAction.label}
