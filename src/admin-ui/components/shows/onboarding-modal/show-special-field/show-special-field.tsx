@@ -47,11 +47,12 @@ export const ShowSpecialField = ({
 			isLoading={options.isLoading}
 			{...(options.error === undefined ? {} : { error: options.error })}
 			onRetry={options.reload}
-			helper={
-				missing
-					? "Selected special no longer exists. Remove it or choose another."
-					: "Select at least one DJ or a special. Both are allowed."
-			}
+			{...(missing
+				? {
+						helper:
+							"Selected special no longer exists. Remove it or choose another.",
+					}
+				: {})}
 		/>
 	);
 };

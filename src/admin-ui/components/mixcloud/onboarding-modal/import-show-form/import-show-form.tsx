@@ -235,10 +235,11 @@ export const ImportShowForm = ({
 				loadTagOptions={loadTagOptions}
 				djHelper={
 					unmatchedDJs.length > 0 ? (
-						<span className={styles.unmatchedDJs}>
+						<span
+							className={styles.unmatchedDJs}
+							data-special-selected={fields.special_id != null}
+						>
 							<strong>Unmatched DJs: {unmatchedDJs.join(", ")}</strong>
-							<br />
-							Choose archive DJs or a special to save this show.
 						</span>
 					) : undefined
 				}

@@ -269,6 +269,7 @@ export const ShowFormModal = ({
 				required
 			/>
 			<ShowRelationshipFields
+				groupRelationships={onboardingMode === undefined}
 				specialOptions={specialOptions}
 				fields={fields}
 				setFields={setFields}

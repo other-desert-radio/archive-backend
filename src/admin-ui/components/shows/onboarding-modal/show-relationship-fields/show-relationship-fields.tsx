@@ -58,6 +58,11 @@ export const ShowRelationshipFields = ({
 	return (
 		<>
 			<div className={groupRelationships ? styles.group : styles.relationships}>
+				{groupRelationships && (
+					<p className={styles.guidance}>
+						Choose archive DJs or a special to save this show.
+					</p>
+				)}
 				<SearchableMultiSelect
 					id={`${idPrefix}-djs`}
 					label="DJs"

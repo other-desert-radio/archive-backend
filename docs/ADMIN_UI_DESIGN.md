@@ -900,10 +900,12 @@ and sort. Membership is edited through Shows.
 
 Show create/edit, upload, uploaded-show review, and Mixcloud import offer a
 single searchable Special selection with chip removal. Shows require at least
-one DJ or a Special; both are allowed. Import groups DJs and Special inside a
-gray border, without a divider; Tags stays outside. Unmatched source DJ names do
-not prevent saving with a Special. Clearing an assignment sends an explicit
-null. Selected relationships must exist; failed Special loads offer Retry.
+one DJ or a Special; both are allowed. Edit Show and import group DJs and
+Special inside a gray border, without a divider; Tags stays outside. Guidance
+appears at the top of the group. Unmatched DJ names turn gray when a Special is
+selected. Unmatched source DJ names do not prevent saving with a Special.
+Clearing an assignment sends an explicit null. Selected relationships must
+exist; failed Special loads offer Retry.
 
 Create special uses the shared form shell with one required name field.
 Whitespace-only names cannot be submitted. Creation assigns no Shows. Delete
