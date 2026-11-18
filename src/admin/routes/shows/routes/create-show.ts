@@ -56,7 +56,9 @@ export const createShowHandler =
 				error instanceof Error ? error.message : "Internal Server Error";
 			if (
 				message === "Validation error" ||
-				message === "One or more selected DJs do not exist"
+				message === "One or more selected DJs do not exist" ||
+				message === "Selected Special does not exist" ||
+				message === "A Show requires DJs or a Special"
 			) {
 				request.log.warn({ reason: message }, "[Show Creation] rejected");
 				return reply.code(400).send({ error: message });

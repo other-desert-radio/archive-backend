@@ -12,7 +12,7 @@ export const listShowsHandler =
 		reply: FastifyReply<ListShowsRoute>,
 	) => {
 		try {
-			const [shows, showDJs, showTags] = await Promise.all([
+			const [shows, showDJs, showTags, specials] = await Promise.all([
 				database
 					.selectFrom("shows")
 					.select([
@@ -21,6 +21,7 @@ export const listShowsHandler =
 						"title",
 						"description",
 						"tracklist",
+						"special_id",
 						"date",
 						"duration",
 						"mixcloud_image_small",
@@ -44,15 +45,22 @@ export const listShowsHandler =
 					.orderBy("show_id")
 					.orderBy("tag_id")
 					.execute(),
+				database.selectFrom("specials").select(["id", "title"]).execute(),
 			]);
 
+			const specialsById = new Map(
+				specials.map((special) => [special.id, special]),
+			);
 			const rowsByShowId = new Map(shows.map((show) => [show.id, show]));
 			return transformShows({ shows, showDJs, showTags }).map((show) => {
 				const row = rowsByShowId.get(show.id);
 				if (row === undefined) {
 					throw new Error(`Show ${show.id} is missing its creation timestamp`);
 				}
+				const special =
+					row.special_id == null ? undefined : specialsById.get(row.special_id);
 				return {
+					...(special === undefined ? {} : { special }),
 					...show,
 					createdAt: row.createdAt,
 					tracklist: row.tracklist,

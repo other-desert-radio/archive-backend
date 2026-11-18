@@ -125,6 +125,12 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			compare: (a, b) => (a.djs[0] ?? -1) - (b.djs[0] ?? -1),
 		},
 		{
+			key: "special",
+			label: "Special",
+			render: (show) => show.special?.title ?? formatMissing(undefined),
+			compare: (a, b) => compareText(a.special?.title, b.special?.title),
+		},
+		{
 			key: "tags",
 			label: "tags",
 			render: (show) => formatRelationshipIDs(show.tags),

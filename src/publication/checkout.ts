@@ -63,6 +63,7 @@ export const validatePublicationDestination = async ({
 		"public/resources/shows.json",
 		"public/resources/show_details.json",
 		"public/resources/tags.json",
+		"public/resources/specials.json",
 		"public/resources/data_versions.json",
 	]) {
 		const entry = await entryAt(path.join(checkout, file));

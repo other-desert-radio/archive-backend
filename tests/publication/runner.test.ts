@@ -22,6 +22,7 @@ import { up as notifications } from "../../src/db/migrations/0032_notify_publica
 import { up as publicationModes } from "../../src/db/migrations/0033_add_publication_modes.js";
 import { up as datasetVersions } from "../../src/db/migrations/0040_add_archive_dataset_versions.js";
 import { up as showDetailsDataset } from "../../src/db/migrations/0045_add_show_details_dataset.js";
+import { up as addSpecials } from "../../src/db/migrations/0046_add_specials.js";
 import type { Database } from "../../src/db/types.js";
 import {
 	acquirePublicationLease,
@@ -132,6 +133,7 @@ const fixture = async ({ newBranch = false }: { newBranch?: boolean } = {}) => {
 		publicationModes,
 		datasetVersions,
 		showDetailsDataset,
+		addSpecials,
 	])
 		await database.transaction().execute(migration);
 	const config: PublicationConfig = {
@@ -329,6 +331,7 @@ for (const file of [
 	"shows",
 	"tags",
 	"show_details",
+	"specials",
 ] as const) {
 	const damageCases =
 		file === "shows" || file === "tags"
@@ -368,10 +371,15 @@ for (const file of [
 					else {
 						const value = JSON.parse(original);
 						if (damage === "stale timestamp") {
-							if (file === "djs_brief" || file === "show_details")
+							if (
+								file === "djs_brief" ||
+								file === "show_details" ||
+								file === "specials"
+							)
 								value.updatedAt = "2000-01-01T00:00:00.000Z";
 							else value.djs.updatedAt = "2000-01-01T00:00:00.000Z";
-						} else if (file === "show_details")
+						} else if (file === "specials") value.version += 1;
+						else if (file === "show_details")
 							value.data[0].description = "Stale";
 						else if (file === "djs_brief") value.data = [];
 						else value.djs.id += 1;
@@ -498,7 +506,7 @@ test.skipIf(!databaseUrl)(
 				done.logs.some(
 					(line) =>
 						line.message ===
-						"Captured archive revision 1; dataset versions: shows 1, DJs 1, tags 1, show details 1",
+						"Captured archive revision 1; dataset versions: shows 1, DJs 1, tags 1, show details 1, Specials 1",
 				),
 			).toBe(true);
 			expect(
@@ -662,7 +670,7 @@ test.skipIf(!databaseUrl)(
 				recovered.logs.some(
 					(line) =>
 						line.message ===
-						"Recovered dataset versions: shows 1, DJs 1, tags 1, show details 1; newer archive edits remain pending",
+						"Recovered dataset versions: shows 1, DJs 1, tags 1, show details 1, Specials 1; newer archive edits remain pending",
 				),
 			).toBe(true);
 			expect(await jobVersions(f.database, retry.id)).toEqual(failedVersions);

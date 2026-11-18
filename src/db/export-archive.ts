@@ -18,6 +18,7 @@ import type {
 	ShowDJsTable,
 	ShowsTable,
 	ShowTagsTable,
+	SpecialsTable,
 	TagsTable,
 } from "./types.js";
 
@@ -101,7 +102,15 @@ export type ArchiveTag = {
 	mixcloud_url?: string;
 };
 
+export type ArchiveSpecial = {
+	id: number;
+	title: string;
+	createdAt: string;
+	showIds: number[];
+};
+
 export type ArchiveDocuments = {
+	specials: ArchiveSpecial[];
 	djsBrief: ArchiveDJBrief[];
 	djs: ArchiveDJDetail[];
 	shows: ArchiveShowIndex[];
@@ -115,6 +124,7 @@ export type ArchiveExportReporter = {
 };
 
 export type BuildArchiveDocumentsParams = {
+	specials: Array<Selectable<SpecialsTable>>;
 	djs: Array<Selectable<DJsTable>>;
 	shows: Array<Selectable<ShowsTable>>;
 	tags: Array<
@@ -158,6 +168,7 @@ const imagesForDJ = (dj: Selectable<DJsTable>): ArchiveDJImage[] => {
 
 /** Builds the public static-archive documents without writing to disk. */
 export const buildArchiveDocuments = ({
+	specials,
 	djs,
 	shows,
 	tags,
@@ -185,6 +196,15 @@ export const buildArchiveDocuments = ({
 	const djIdsByShow = groupIds(showDJs, "show_id", "dj_id");
 	const directTagIdsByDJ = groupIds(djTags, "dj_id", "tag_id");
 	const tagIdsByShow = groupIds(showTags, "show_id", "tag_id");
+	const showIdsBySpecial = groupIds(
+		shows.flatMap((show) =>
+			show.special_id == null
+				? []
+				: [{ special_id: show.special_id, show_id: show.id }],
+		),
+		"special_id",
+		"show_id",
+	);
 
 	const djsWithTags = djs.map((dj) => {
 		const showIds = showIdsByDJ.get(dj.id) ?? [];
@@ -284,6 +304,14 @@ export const buildArchiveDocuments = ({
 	);
 
 	return {
+		specials: [...specials]
+			.sort((a, b) => a.id - b.id)
+			.map((special) => ({
+				id: special.id,
+				title: special.title,
+				createdAt: special.createdAt.toISOString(),
+				showIds: (showIdsBySpecial.get(special.id) ?? []).sort((a, b) => a - b),
+			})),
 		djsBrief,
 		djs: archiveDJs,
 		shows: archiveShows,
@@ -329,6 +357,7 @@ export const writeArchiveDocuments = async (
 		"shows.json",
 		"show_details.json",
 		"tags.json",
+		"specials.json",
 	]) {
 		await fs.rm(path.join(resourceDirectory, relativePath), {
 			recursive: true,
@@ -376,6 +405,11 @@ export const writeArchiveDocuments = async (
 		path.join(resourceDirectory, "tags.json"),
 		envelope("tags", documents.tags),
 	);
+	await writeJSON(
+		path.join(resourceDirectory, "specials.json"),
+		envelope("specials", documents.specials),
+	);
+	reporter.log(`│  ├─ specials.json: ${documents.specials.length} Specials`);
 	reporter.log(`│  └─ tags.json: ${documents.tags.length} tags`);
 
 	reporter.log("├─ Writing image assets");
@@ -428,6 +462,11 @@ export const loadArchiveDocuments = async (
 		.orderBy("title")
 		.orderBy("id")
 		.execute();
+	const specials = await transaction
+		.selectFrom("specials")
+		.selectAll()
+		.orderBy("id")
+		.execute();
 	const shows = await transaction
 		.selectFrom("shows")
 		.selectAll()
@@ -464,6 +503,7 @@ export const loadArchiveDocuments = async (
 	reporter.log(`│  └─ Show tags: ${showTags.length}`);
 	reporter.log("├─ Building archive documents");
 	const documents = buildArchiveDocuments({
+		specials,
 		djs,
 		shows,
 		tags,

@@ -31,6 +31,7 @@ import { readPublicationSnapshot } from "../../src/publication/index.js";
 const temporaryDirectories: string[] = [];
 
 const versions: DatasetVersions = {
+	specials: { id: 1, updatedAt: "2026-01-01T00:00:00.000Z" },
 	show_details: { id: 2, updatedAt: "2026-01-01T00:00:00.000Z" },
 	shows: { id: 3, updatedAt: "2026-01-01T00:00:00.000Z" },
 	djs: { id: 5, updatedAt: "2026-01-02T00:00:00.000Z" },
@@ -40,6 +41,7 @@ const emptyDocuments = () => ({
 	djsBrief: [],
 	djs: [],
 	shows: [],
+	specials: [],
 	showDetails: [],
 	tags: [],
 	images: [],
@@ -51,7 +53,8 @@ const createArchiveFixture = async (pool: Pool): Promise<void> => {
 	// Minimal current archive schema: fixtures exercise export reads, not historical schema migrations.
 	await pool.query(`
 	CREATE TABLE djs (id integer, title text, bio text, image_small bytea, image_large bytea, socials text, "showTitle" text, "showDescription" text);
-	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea, description text, tracklist jsonb NOT NULL DEFAULT '[]');
+	CREATE TABLE specials (id serial primary key, title text not null, "createdAt" timestamptz not null default now());
+	CREATE TABLE shows (id integer, title text, date timestamptz, duration integer, mixcloud_image_small text, mixcloud_image_large text, url text, image_small bytea, image_large bytea, description text, tracklist jsonb NOT NULL DEFAULT '[]', special_id integer REFERENCES specials(id));
 	CREATE TABLE tags (id integer, title text, color text, mixcloud_key text, mixcloud_url text);
 	CREATE TABLE show_djs (dj_id integer, show_id integer);
 	CREATE TABLE dj_tags (dj_id integer, tag_id integer);
@@ -70,6 +73,17 @@ const createArchiveFixture = async (pool: Pool): Promise<void> => {
 	await database.transaction().execute(createJobs);
 	await database.transaction().execute(createVersions);
 	await database.transaction().execute(showDetailsDataset);
+	await database.schema
+		.alterTable("archive_dataset_versions")
+		.dropConstraint("archive_dataset_versions_dataset_check")
+		.execute();
+	await database.schema
+		.alterTable("archive_dataset_versions")
+		.addCheckConstraint(
+			"archive_dataset_versions_dataset_check",
+			sql`dataset IN ('shows', 'djs', 'tags', 'show_details', 'specials')`,
+		)
+		.execute();
 };
 
 test.skipIf(!exportDatabaseUrl)(
@@ -358,6 +372,7 @@ afterEach(async () => {
 describe("archive export documents", () => {
 	test("builds public DJ documents, derived tag IDs, and image assets", () => {
 		const documents = buildArchiveDocuments({
+			specials: [],
 			djs: [
 				{
 					id: 1,
@@ -512,6 +527,7 @@ describe("archive export documents", () => {
 
 	test("keeps empty detail records and preserves show order", () => {
 		const documents = buildArchiveDocuments({
+			specials: [],
 			djs: [],
 			shows: [
 				{ id: 2, description: null, tracklist: [] },
@@ -537,6 +553,7 @@ describe("archive export documents", () => {
 	test("rejects incomplete WebP image pairs", () => {
 		expect(() =>
 			buildArchiveDocuments({
+				specials: [],
 				djs: [
 					{
 						id: 1,
@@ -599,6 +616,7 @@ describe("archive export writer", () => {
 						url: "https://example.com/audio",
 					},
 				],
+				specials: [],
 				showDetails: [{ id: 10, description: "Details" }],
 				tags: [{ id: 2, title: "House", color: "#ff1100" }],
 				images: [
@@ -664,6 +682,7 @@ describe("archive export writer", () => {
 		for (const [file, dataset] of [
 			["shows.json", "shows"],
 			["show_details.json", "show_details"],
+			["specials.json", "specials"],
 			["tags.json", "tags"],
 			["djs_brief.json", "djs"],
 			["djs/1.json", "djs"],
@@ -698,6 +717,7 @@ test("writes empty versioned datasets and preserves the previous manifest on wri
 	for (const [file, dataset] of [
 		["shows.json", "shows"],
 		["show_details.json", "show_details"],
+		["specials.json", "specials"],
 		["tags.json", "tags"],
 		["djs_brief.json", "djs"],
 	] as const) {
@@ -947,6 +967,7 @@ test.skipIf(!exportDatabaseUrl)(
 			for (const [file, dataset] of [
 				["shows.json", "shows"],
 				["show_details.json", "show_details"],
+				["specials.json", "specials"],
 				["djs_brief.json", "djs"],
 				["djs/1.json", "djs"],
 				["tags.json", "tags"],
@@ -970,3 +991,42 @@ test.skipIf(!exportDatabaseUrl)(
 		}
 	},
 );
+
+test("Specials and membership IDs export in numeric order, including empty groups", () => {
+	const createdAt = new Date("2026-11-16T00:00:00.000Z");
+	const show = {
+		title: "Show",
+		date: createdAt,
+		duration: 60,
+		mixcloud_image_small: "small",
+		mixcloud_image_large: "large",
+		url: "audio",
+		description: null,
+		tracklist: [],
+	};
+	const documents = buildArchiveDocuments({
+		specials: [
+			{ id: 2, title: "Empty", createdAt },
+			{ id: 1, title: "Special", createdAt },
+		],
+		shows: [
+			{ ...show, id: 10, special_id: 1 },
+			{ ...show, id: 3, special_id: 1 },
+			{ ...show, id: 2, special_id: null },
+		],
+		djs: [],
+		tags: [],
+		showDJs: [],
+		djTags: [],
+		showTags: [],
+	});
+	expect(documents.specials).toEqual([
+		{
+			id: 1,
+			title: "Special",
+			createdAt: createdAt.toISOString(),
+			showIds: [3, 10],
+		},
+		{ id: 2, title: "Empty", createdAt: createdAt.toISOString(), showIds: [] },
+	]);
+});

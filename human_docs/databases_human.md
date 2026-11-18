@@ -29,6 +29,23 @@ asynchronously loaded descriptions and tracklists:
 zero. Chapters use `{ "chapter": "Intro", "start_time": 0 }`. Omit absent
 descriptions and empty tracklists. Add `show_details` to `data_versions.json`.
 
+## Update 2 - Specials
+
+```json
+{
+  "version": 1,
+  "updatedAt": "2026-11-16T00:00:00.000Z",
+  "data": [
+    {
+      "id": 1,
+      "title": "string",
+      "createdAt": "date",
+      "showIds": []
+    }
+  ]
+}
+```
+
 # Database Notes
 
 Historical product/design input. Examples and proposed behavior may be obsolete.

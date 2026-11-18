@@ -7,6 +7,7 @@ import type { AdminApiReply } from "../types.js";
 /** Admin list responses retain the creation timestamp selected from the database. */
 export type AdminShowsJSON = ShowsJSON & {
 	createdAt: Date;
+	special?: { id: number; title: string };
 	tracklist: ShowTracklistEntry[];
 	description?: string;
 	image_small?: string;
@@ -16,6 +17,9 @@ export type AdminShowsJSON = ShowsJSON & {
 };
 
 const ShowFieldsPattern = {
+	special_id: P.optional(
+		P.union(P.number.int().between(1, 2_147_483_647), P.nullish),
+	),
 	description: P.optional(P.string.maxLength(1000)),
 	title: P.string,
 	date: P.string,

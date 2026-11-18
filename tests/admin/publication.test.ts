@@ -75,6 +75,7 @@ const setup = async ({
 		id: "00000000-0000-0000-0000-000000000002",
 		revision: "1",
 		changes: {
+			specials: { added: [], changed: [], removed: [] },
 			tags: { added: [], changed: [], removed: [] },
 			shows: { added: [], changed: [], removed: [] },
 			djs: { added: [], changed: [], removed: [] },

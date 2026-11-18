@@ -6,7 +6,7 @@ import type { PublicationChanges } from "./types.js";
 
 type ArchiveRecord = { id: number; title: string; signature: string };
 export type PublicationArchive = Record<
-	"shows" | "djs" | "tags",
+	"shows" | "djs" | "tags" | "specials",
 	Map<number, ArchiveRecord>
 >;
 type DataRecord = { id: number; title: string; [key: string]: unknown };
@@ -15,6 +15,7 @@ const emptyArchive = (): PublicationArchive => ({
 	shows: new Map(),
 	djs: new Map(),
 	tags: new Map(),
+	specials: new Map(),
 });
 const digest = (value: Buffer | string) =>
 	createHash("sha256").update(value).digest("hex");
@@ -136,7 +137,7 @@ export async function readPublicationArchive(
 		const bytes = await read(file);
 		return bytes === undefined ? undefined : JSON.parse(bytes.toString("utf8"));
 	};
-	for (const resource of ["shows", "tags"] as const) {
+	for (const resource of ["shows", "tags", "specials"] as const) {
 		const value = await json(`public/resources/${resource}.json`);
 		if (value !== undefined)
 			for (const record of resource === "shows"
@@ -182,7 +183,7 @@ export function documentsPublicationArchive(
 		variants[image.variant] = digest(image.bytes);
 		images.set(image.id, variants);
 	}
-	for (const resource of ["shows", "tags", "djs"] as const)
+	for (const resource of ["shows", "tags", "djs", "specials"] as const)
 		for (const record of resource === "shows"
 			? showsWithDetails(documents.shows, documents.showDetails)
 			: documents[resource])
@@ -203,8 +204,9 @@ export function comparePublicationArchives(
 		shows: { added: [], changed: [], removed: [] },
 		djs: { added: [], changed: [], removed: [] },
 		tags: { added: [], changed: [], removed: [] },
+		specials: { added: [], changed: [], removed: [] },
 	};
-	for (const resource of ["shows", "djs", "tags"] as const) {
+	for (const resource of ["shows", "djs", "tags", "specials"] as const) {
 		for (const record of after[resource].values()) {
 			const old = before[resource].get(record.id);
 			if (!old) changes[resource].added.push(record.title);

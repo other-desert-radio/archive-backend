@@ -599,6 +599,15 @@ chapters displays `0`. Tracklists can be edited through Edit Show as described
 in [Tracklist editing](#tracklist-editing). Mixcloud synchronization remains
 deferred.
 
+### Show Specials
+
+The Shows table displays a sortable Special column beside DJs, using the Special
+title or the shared missing-value treatment. Search includes both Special title
+and ID. A Show can have DJs, a Special, or both; multiple DJs remain supported.
+Special-only rows display an empty DJ relationship. Special assignment controls
+and management UI remain deferred, so existing modals still require DJs. Edits
+that omit `special_id` preserve stored assignments.
+
 ### Show image URL variants
 
 Show create/edit modals require separate “small image URL” and “large image URL”
@@ -768,13 +777,13 @@ refreshing. Failures preserve feedback and require an explicit retry action. In
 both modes, opening the confirmation prepares a simple Pending changes summary
 before enabling Publish. Match the Mixcloud data box: a dashed border with a
 centered, regular-weight uppercase helper-size label set into its top edge. Use
-a two-column grid with Tags, Shows, and DJs in the leading column. The second
-column lists nonempty added, changed, and removed name lists, one per line. The
-action word is bold, followed by comma-separated names, for example “changed
-ambient, jazz”. Omit counts, plus signs, parentheses, and unchanged resource
-groups. Keep the two columns at phone widths and wrap long names within the
-second column. Show “No changes to publish.” when empty. Show loading while the
-summary request runs and a Refresh preview action on failure or stale
+a two-column grid with Tags, Shows, DJs, and Specials in the leading column. The
+second column lists nonempty added, changed, and removed name lists, one per
+line. The action word is bold, followed by comma-separated names, for example
+“changed ambient, jazz”. Omit counts, plus signs, parentheses, and unchanged
+resource groups. Keep the two columns at phone widths and wrap long names within
+the second column. Show “No changes to publish.” when empty. Show loading while
+the summary request runs and a Refresh preview action on failure or stale
 confirmation. Local mode compares current generated checkout files and writes
 the reviewed snapshot after confirmation.
 

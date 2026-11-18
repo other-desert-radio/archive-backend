@@ -7,6 +7,7 @@ import {
 } from "../../src/publication/preview-diff.js";
 
 const documents = (): ArchiveDocuments => ({
+	specials: [],
 	showDetails: [],
 	djsBrief: [],
 	djs: [],
@@ -59,6 +60,7 @@ test("compares additions changes removals by ID and returns sorted names", () =>
 			documentsPublicationArchive(after),
 		),
 	).toEqual({
+		specials: { added: [], changed: [], removed: [] },
 		shows: { added: [], changed: [], removed: [] },
 		djs: { added: [], changed: [], removed: [] },
 		tags: {
@@ -292,4 +294,37 @@ test("invalid details, duplicate IDs and orphan IDs reject the baseline", async 
 			}),
 		).rejects.toThrow();
 	}
+});
+
+test("Special membership changes compare independently and legacy missing Specials are empty", async () => {
+	const data = documents();
+	data.specials = [
+		{
+			id: 1,
+			title: "Special",
+			createdAt: "2026-01-01T00:00:00.000Z",
+			showIds: [2],
+		},
+	];
+	const before = documentsPublicationArchive(data);
+	const serialized = await read({
+		"public/resources/specials.json": {
+			version: 1,
+			updatedAt: "2026-01-01T00:00:00.000Z",
+			data: data.specials,
+		},
+	});
+	expect(comparePublicationArchives(before, serialized).specials).toEqual({
+		added: [],
+		changed: [],
+		removed: [],
+	});
+	data.specials[0].showIds = [3];
+	expect(
+		comparePublicationArchives(before, documentsPublicationArchive(data))
+			.specials.changed,
+	).toEqual(["Special"]);
+	expect(
+		comparePublicationArchives(await read({}), before).specials.added,
+	).toEqual(["Special"]);
 });

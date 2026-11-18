@@ -215,7 +215,12 @@ export const readPublicationStatus = async (
 							data: documents.showDetails,
 						}) ||
 						!files.has("public/resources/tags.json") ||
-						rows.length !== 4 ||
+						!isDeepStrictEqual(json("specials"), {
+							version: versions.specials?.id,
+							updatedAt: versions.specials?.updatedAt,
+							data: documents.specials,
+						}) ||
+						rows.length !== 5 ||
 						!isDeepStrictEqual(json("data_versions"), versions) ||
 						!isDeepStrictEqual(json("djs_brief"), {
 							version: versions.djs?.id,
