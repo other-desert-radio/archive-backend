@@ -39,8 +39,6 @@ export const findTagMatches = (
 	tags: TagsInputOption[],
 	selected: string[],
 ): TagsInputOption[] => {
-	const query = normalize(draft);
-	if (query === "") return [];
 	const selectedKeys = new Set(selected.map(normalize));
 	return findAutocompleteMatches(
 		draft,

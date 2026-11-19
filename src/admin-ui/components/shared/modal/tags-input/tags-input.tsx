@@ -31,6 +31,7 @@ type TagsInputProps = {
 	error?: string;
 	onRetry?: () => void;
 	helper?: ReactNode;
+	hideSearchHelp?: boolean;
 };
 
 /** A Figma-aligned tag combobox with colored chips and inline completion. */
@@ -43,6 +44,7 @@ export const TagsInput = ({
 	error,
 	onRetry,
 	helper,
+	hideSearchHelp = false,
 }: TagsInputProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [scrollLeft, setScrollLeft] = useState(0);
@@ -77,7 +79,12 @@ export const TagsInput = ({
 		(tag) => !selectedByTitle.has(tag.title.toLocaleLowerCase()),
 	);
 	const canIdentifyUnknownTags = !isLoading && error === undefined;
-	const isOpen = isFocused && value.draft.trim() !== "" && matches.length > 0;
+	const isOpen = isFocused && matches.length > 0;
+	const showHelp =
+		!hideSearchHelp ||
+		error !== undefined ||
+		isLoading ||
+		(canIdentifyUnknownTags && unknownTags.length > 0);
 	useEffect(() => {
 		if ((activeIndex ?? 0) >= matches.length) setActiveIndex(undefined);
 	}, [activeIndex, matches.length]);
@@ -86,6 +93,7 @@ export const TagsInput = ({
 		onChange({ tags, draft: "" });
 		setActiveIndex(undefined);
 		resetBackspace();
+		setIsFocused(false);
 	};
 	const select = (option: TagsInputOption) => {
 		onChange({
@@ -106,6 +114,7 @@ export const TagsInput = ({
 		setActiveIndex(undefined);
 		resetBackspace();
 		inputRef.current?.focus();
+		setIsFocused(false);
 	};
 	const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (isComposing) return;
@@ -113,12 +122,14 @@ export const TagsInput = ({
 		if (event.key === "ArrowDown" && matches.length > 0) {
 			event.preventDefault();
 			resetBackspace();
+			setIsFocused(true);
 			setActiveIndex((current) => ((current ?? -1) + 1) % matches.length);
 			return;
 		}
 		if (event.key === "ArrowUp" && matches.length > 0) {
 			event.preventDefault();
 			resetBackspace();
+			setIsFocused(true);
 			setActiveIndex(
 				(current) => ((current ?? 0) - 1 + matches.length) % matches.length,
 			);
@@ -219,6 +230,7 @@ export const TagsInput = ({
 								}
 								onChange={(event) => {
 									const nextDraft = event.target.value;
+									setIsFocused(!nextDraft.includes(","));
 									if (nextDraft.includes(","))
 										onChange({
 											tags: commitSelectedTagDraft(value.tags, nextDraft),
@@ -229,6 +241,7 @@ export const TagsInput = ({
 									resetBackspace();
 								}}
 								onFocus={() => setIsFocused(true)}
+								onClick={() => setIsFocused(true)}
 								onBlur={commitOnBlur}
 								onKeyDown={handleKeyDown}
 								onCompositionStart={() => setIsComposing(true)}
@@ -242,7 +255,11 @@ export const TagsInput = ({
 										? undefined
 										: `${listId}-${activeIndex}`
 								}
-								aria-describedby={`${id}-help${helper ? ` ${id}-extra-help` : ""}`}
+								aria-describedby={
+									[showHelp && `${id}-help`, helper && `${id}-extra-help`]
+										.filter(Boolean)
+										.join(" ") || undefined
+								}
 							/>
 						</div>
 					</div>
@@ -272,23 +289,25 @@ export const TagsInput = ({
 						</div>
 					)}
 				</div>
-				<p
-					id={`${id}-help`}
-					className={`${fieldStyles.helper} ${error === undefined ? "" : styles.error}`}
-				>
-					{error !== undefined
-						? `${error} You can still add tags manually.`
-						: isLoading
-							? "Loading existing tags…"
-							: canIdentifyUnknownTags && unknownTags.length > 0
-								? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag.title}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
-								: "Type to search. Press Tab to accept the gray completion."}
-					{error !== undefined && onRetry !== undefined && (
-						<button type="button" onClick={onRetry}>
-							Retry
-						</button>
-					)}
-				</p>
+				{showHelp && (
+					<p
+						id={`${id}-help`}
+						className={`${fieldStyles.helper} ${error === undefined ? "" : styles.error}`}
+					>
+						{error !== undefined
+							? `${error} You can still add tags manually.`
+							: isLoading
+								? "Loading existing tags…"
+								: canIdentifyUnknownTags && unknownTags.length > 0
+									? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag.title}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
+									: "Type to search. Press Tab to accept the gray completion."}
+						{error !== undefined && onRetry !== undefined && (
+							<button type="button" onClick={onRetry}>
+								Retry
+							</button>
+						)}
+					</p>
+				)}
 				{helper && (
 					<div id={`${id}-extra-help`} className={styles.extraHelper}>
 						{helper}

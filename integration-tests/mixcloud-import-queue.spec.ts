@@ -672,3 +672,43 @@ test("review date and unmatched DJ warnings share red styling at desktop and pho
 		).toBeVisible();
 	}
 });
+
+for (const width of [1280, 390, 320]) {
+	test(`back button expands left and stays clickable at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 800 });
+		await launch(page);
+		await page.getByRole("button", { name: "Next Show" }).click();
+		const back = page.getByRole("button", {
+			name: "Back to start",
+			exact: true,
+		});
+		await page.mouse.move(0, 0);
+		const resting = await back.boundingBox();
+		expect(resting?.width).toBe(42);
+		await expect(back).toHaveCSS("border-radius", "0px");
+		await expect(back).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
+		await expect(back.locator("[aria-hidden]")).toHaveCSS("font-size", "24px");
+		await back.hover();
+		await expect(back).toHaveCSS("border-top-color", "rgb(0, 0, 0)");
+		await expect(back.locator("[aria-hidden]")).toBeVisible();
+		const expanded = await back.boundingBox();
+		expect(expanded!.width).toBeGreaterThan(resting!.width);
+		expect(expanded!.x + expanded!.width).toBeCloseTo(
+			resting!.x + resting!.width,
+			0,
+		);
+		expect(expanded!.x).toBeGreaterThanOrEqual(0);
+		await page.screenshot({ path: `/tmp/back-import-${width}.png` });
+		await back.click({ position: { x: 8, y: 20 } });
+		await expect(sourceId(page)).toHaveText("Source 2");
+		await page.getByRole("button", { name: "Next Show" }).click();
+		await page.mouse.move(0, 0);
+		await page.keyboard.press("Tab");
+		await back.focus();
+		expect((await back.boundingBox())!.width).toBeGreaterThan(42);
+		await back.press("Enter");
+		await expect(sourceId(page)).toHaveText("Source 2");
+	});
+}

@@ -138,7 +138,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	).toHaveCSS("font-weight", "700");
 	await expect(
 		page.getByText("Choose archive DJs or a special to save this show."),
-	).toBeVisible();
+	).toHaveCount(0);
 	await expect(
 		page.getByText(
 			"The tag “New Genre” does not exist elsewhere. It will be created after submit.",
@@ -175,10 +175,11 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 		await expect(page.getByText(breakdown, { exact: true })).toBeVisible();
 	}
 	await page.getByLabel("duration (seconds)").fill("3661");
+	await page.getByRole("button", { name: "Mixcloud data details" }).click();
 	await expect(page.locator("dl dt")).toHaveText([
 		"name",
+		"created",
 		"url",
-		"created_time",
 		"duration",
 		"mixcloud_tag_json",
 	]);
@@ -500,7 +501,7 @@ test("DJ chips share a searchable dropdown field", async ({ page }) => {
 	await expect(
 		page.getByRole("button", { name: "Remove Second DJ", exact: true }),
 	).toHaveText("x");
-	await search.press("Escape");
+	await expect(search).toHaveAttribute("aria-expanded", "false");
 	await expect(page.getByRole("option")).toHaveCount(0);
 	await expect(page.getByRole("dialog")).toBeVisible();
 	await page
@@ -673,12 +674,9 @@ for (const width of [1280, 390, 320]) {
 		});
 		const unmatched = page.getByText("Unmatched DJs: Missing DJ, Ambiguous DJ");
 		await expect(unmatched).toHaveCSS("color", "rgb(255, 44, 44)");
-		const group = special.locator(
-			"xpath=ancestor::div[./p[contains(., 'Choose archive DJs')]]",
-		);
-		await expect(group.locator(":scope > p").first()).toHaveText(
-			"Choose archive DJs or a special to save this show.",
-		);
+		await expect(
+			page.getByText("Choose archive DJs or a special to save this show."),
+		).toHaveCount(0);
 		await special.fill("Fest");
 		await special.press("Tab");
 		await expect(
@@ -722,3 +720,118 @@ for (const width of [1280, 390, 320]) {
 		await page.screenshot({ path: `/tmp/edit-show-group-${width}.png` });
 	});
 }
+
+for (const width of [1280, 390, 320]) {
+	test(`compact source and corrected date at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 800 });
+		await page
+			.getByRole("button", { name: "Open import", exact: true })
+			.click();
+		const section = page.getByRole("region", { name: "MIXCLOUD DATA" });
+		const toggle = section.getByRole("button", {
+			name: "Mixcloud data details",
+		});
+		await expect(toggle).toHaveAttribute("aria-expanded", "false");
+		await expect(toggle.locator("img")).toHaveAttribute(
+			"src",
+			/triangle.*\.svg|data:image\/svg\+xml/,
+		);
+		await expect(toggle.locator("img")).toHaveCSS("width", "24px");
+		await toggle.hover();
+		await expect(toggle.getByText("More", { exact: true })).toBeVisible();
+		await page.mouse.move(0, 0);
+		await expect(section.locator("dt:visible")).toHaveText(["name", "created"]);
+		await expect(section.getByText("September 21, 2026 6:12 am")).toBeVisible();
+		await expect(
+			page.getByText(
+				"Type to search. Press Tab to accept the gray completion.",
+			),
+		).toHaveCount(0);
+		const date = page.getByLabel("date", { exact: true });
+		const warning = page.getByText("Unable to parse date automatically");
+		await expect(warning).toBeVisible();
+		await date.fill("2023-05-05");
+		await expect(warning).toHaveCount(0);
+		await expect(date).not.toHaveAttribute("aria-invalid", "true");
+		await date.fill("");
+		await expect(warning).toBeVisible();
+		await date.fill("2023-05-05");
+		await page.screenshot({ path: `/tmp/compact-import-${width}.png` });
+		await toggle.click();
+		await expect(section.getByRole("link")).toBeVisible();
+		await page.screenshot({ path: `/tmp/expanded-import-${width}.png` });
+		expect(
+			await section.evaluate((el) => el.scrollWidth <= el.clientWidth),
+		).toBe(true);
+	});
+}
+
+for (const mode of ["mouse", "Enter", "Tab"]) {
+	test(`pickers stay closed after ${mode} selection and reopen deliberately`, async ({
+		page,
+	}) => {
+		await page.getByRole("button", { name: "Open edit", exact: true }).click();
+		for (const [name, query, option] of [
+			["Search DJs", "Second", "Second DJ"],
+			["Search Special", "Fest", "Festival"],
+			["tags", "Amb", "Ambient"],
+		]) {
+			const input = page.getByRole("combobox", { name, exact: true });
+			await input.fill(query);
+			if (mode === "mouse")
+				await page.getByRole("option", { name: option, exact: true }).click();
+			else {
+				if (mode === "Enter") await input.press("ArrowDown");
+				await input.press(mode);
+			}
+			await expect(
+				page.getByRole("button", { name: `Remove ${option}`, exact: true }),
+			).toBeVisible();
+			await expect(input).toBeFocused();
+			await expect(input).toHaveAttribute("aria-expanded", "false");
+			await page.waitForTimeout(150);
+			await expect(input).toHaveAttribute("aria-expanded", "false");
+			await input.click();
+			// A single Special has no remaining matches; an open empty list still offers feedback.
+			if (name !== "tags")
+				await expect(input).toHaveAttribute("aria-expanded", "true");
+			await input.blur();
+			await page
+				.getByRole("button", { name: `Remove ${option}`, exact: true })
+				.click();
+			await input.fill(query);
+			await expect(input).toHaveAttribute("aria-expanded", "true");
+		}
+	});
+}
+
+test("DJ and Special fields mute their optional counterpart and stay editable", async ({
+	page,
+}) => {
+	await page.getByRole("button", { name: "Open import", exact: true }).click();
+	const dj = page.getByRole("combobox", { name: "Search DJs", exact: true });
+	const special = page.getByRole("combobox", {
+		name: "Search Special",
+		exact: true,
+	});
+	const djLabel = page.locator('label[for="import-show-djs"]');
+	const specialLabel = page.locator('label[for="import-show-special"]');
+	await expect(specialLabel).toHaveCSS("color", "rgb(153, 153, 153)");
+	await expect(special).toBeEnabled();
+	await special.fill("Fest");
+	await special.press("Tab");
+	await expect(djLabel).toHaveCSS("color", "rgb(153, 153, 153)");
+	await expect(dj).toBeEnabled();
+	await page
+		.getByRole("button", { name: "Remove Known DJ", exact: true })
+		.click();
+	await expect(specialLabel).not.toHaveCSS("color", "rgb(153, 153, 153)");
+	await expect(djLabel).toHaveCSS("color", "rgb(153, 153, 153)");
+	await dj.fill("Second");
+	await dj.press("Tab");
+	await expect(specialLabel).toHaveCSS("color", "rgb(153, 153, 153)");
+	await page
+		.getByRole("button", { name: "Remove Festival", exact: true })
+		.click();
+	await expect(djLabel).not.toHaveCSS("color", "rgb(153, 153, 153)");
+});

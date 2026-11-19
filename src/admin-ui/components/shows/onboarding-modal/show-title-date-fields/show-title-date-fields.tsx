@@ -7,6 +7,7 @@ type Props = {
 	setFields: Dispatch<SetStateAction<ShowFormValues>>;
 	idPrefix: string;
 	dateError?: string | undefined;
+	onDateChange?: (() => void) | undefined;
 	children?: ReactNode;
 };
 export const ShowTitleDateFields = ({
@@ -14,6 +15,7 @@ export const ShowTitleDateFields = ({
 	setFields,
 	idPrefix,
 	dateError,
+	onDateChange,
 	children,
 }: Props) => {
 	const { title, date } = fields;
@@ -35,7 +37,10 @@ export const ShowTitleDateFields = ({
 				type="date"
 				{...(dateError === undefined ? {} : { error: dateError })}
 				value={date}
-				onChange={(date) => setFields({ ...fields, date })}
+				onChange={(date) => {
+					setFields({ ...fields, date });
+					onDateChange?.();
+				}}
 				required
 			/>
 		</>

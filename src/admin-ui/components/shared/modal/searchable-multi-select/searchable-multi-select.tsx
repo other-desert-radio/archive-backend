@@ -25,6 +25,7 @@ type SearchableMultiSelectProps = {
 	helper?: ReactNode;
 	highlightEmptySelection?: boolean;
 	hideSearchHelp?: boolean;
+	muted?: boolean;
 };
 /** A searchable relationship combobox with removable chips and inline completion. */
 export const SearchableMultiSelect = ({
@@ -40,6 +41,7 @@ export const SearchableMultiSelect = ({
 	helper,
 	highlightEmptySelection = false,
 	hideSearchHelp = false,
+	muted = false,
 }: SearchableMultiSelectProps) => {
 	const isMissingSelection =
 		highlightEmptySelection && !isLoading && selectedIds.length === 0;
@@ -80,6 +82,7 @@ export const SearchableMultiSelect = ({
 		setQuery("");
 		setActiveIndex(undefined);
 		inputRef.current?.focus();
+		setIsOpen(false);
 	};
 	const toggle = (optionId: number) =>
 		onChange(
@@ -89,7 +92,7 @@ export const SearchableMultiSelect = ({
 		);
 	return (
 		<div
-			className={`${styles.field} ${isMissingSelection ? styles.missing : ""}`}
+			className={`${styles.field} ${isMissingSelection ? styles.missing : ""} ${muted ? styles.muted : ""}`}
 		>
 			<label htmlFor={id}>{label}</label>
 			<div className={`${styles.control} ${helper ? styles.withHelper : ""}`}>
@@ -174,6 +177,7 @@ export const SearchableMultiSelect = ({
 										setScrollLeft(event.currentTarget.scrollLeft)
 									}
 									onFocus={() => setIsOpen(true)}
+									onClick={() => setIsOpen(true)}
 									onBlur={() => setIsOpen(false)}
 									onChange={(event) => {
 										setQuery(event.target.value);

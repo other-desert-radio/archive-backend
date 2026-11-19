@@ -267,3 +267,38 @@
 	color: #555;
 	font-size: var(--modal-helper-size);
 }
+
+.headerAction.iconAction {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 42px;
+	height: 42px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 0;
+	background: #fff;
+	font-weight: 400;
+	flex-shrink: 0;
+}
+.iconAction .actionLabel {
+	display: none;
+}
+.headerAction.iconAction:is(:hover, :focus-visible):not(:disabled) {
+	width: calc(13ch + 56px);
+	padding: 0 12px;
+	margin-left: calc(42px - (15ch + 32px));
+	min-width: calc(13ch + 56px);
+	border-color: #000;
+	background: #eee;
+}
+.iconAction:is(:hover, :focus-visible):not(:disabled) .actionLabel {
+	display: inline;
+	white-space: nowrap;
+}
+
+.actionIcon {
+	font-size: 24px;
+	line-height: 1;
+}
