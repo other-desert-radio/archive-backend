@@ -686,7 +686,9 @@ for (const width of [1280, 390, 320]) {
 		});
 		await page.mouse.move(0, 0);
 		const resting = await back.boundingBox();
-		expect(resting?.width).toBe(42);
+		if (!resting) throw new Error("Back button missing");
+		expect(resting.width).toBe(42);
+		const restingIcon = await back.locator("[aria-hidden]").boundingBox();
 		await expect(back).toHaveCSS("border-radius", "0px");
 		await expect(back).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
 		await expect(back.locator("[aria-hidden]")).toHaveCSS("font-size", "24px");
@@ -694,12 +696,17 @@ for (const width of [1280, 390, 320]) {
 		await expect(back).toHaveCSS("border-top-color", "rgb(0, 0, 0)");
 		await expect(back.locator("[aria-hidden]")).toBeVisible();
 		const expanded = await back.boundingBox();
-		expect(expanded!.width).toBeGreaterThan(resting!.width);
-		expect(expanded!.x + expanded!.width).toBeCloseTo(
-			resting!.x + resting!.width,
+		if (!expanded) throw new Error("Expanded back button missing");
+		expect(expanded.width).toBeGreaterThan(resting.width);
+		await expect(back.locator("[aria-hidden]")).toHaveCSS("font-weight", "400");
+		const expandedIcon = await back.locator("[aria-hidden]").boundingBox();
+		expect(expandedIcon?.x).toBeCloseTo(restingIcon?.x ?? 0, 0);
+		expect(expandedIcon?.y).toBeCloseTo(restingIcon?.y ?? 0, 0);
+		expect(expanded.x + expanded.width).toBeCloseTo(
+			resting.x + resting.width,
 			0,
 		);
-		expect(expanded!.x).toBeGreaterThanOrEqual(0);
+		expect(expanded.x).toBeGreaterThanOrEqual(0);
 		await page.screenshot({ path: `/tmp/back-import-${width}.png` });
 		await back.click({ position: { x: 8, y: 20 } });
 		await expect(sourceId(page)).toHaveText("Source 2");
@@ -707,7 +714,7 @@ for (const width of [1280, 390, 320]) {
 		await page.mouse.move(0, 0);
 		await page.keyboard.press("Tab");
 		await back.focus();
-		expect((await back.boundingBox())!.width).toBeGreaterThan(42);
+		expect((await back.boundingBox())?.width).toBeGreaterThan(42);
 		await back.press("Enter");
 		await expect(sourceId(page)).toHaveText("Source 2");
 	});

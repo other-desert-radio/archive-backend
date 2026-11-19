@@ -271,11 +271,11 @@
 .headerAction.iconAction {
 	display: inline-flex;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-end;
 	gap: 8px;
 	width: 42px;
 	height: 42px;
-	padding: 0;
+	padding: 0 8px;
 	border: 1px solid transparent;
 	border-radius: 0;
 	background: #fff;
@@ -284,21 +284,27 @@
 }
 .iconAction .actionLabel {
 	display: none;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.actionIcon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 24px;
+	width: 24px;
+	height: 24px;
+	font:
+		400 24px / 1 Arial,
+		sans-serif;
 }
 .headerAction.iconAction:is(:hover, :focus-visible):not(:disabled) {
-	width: calc(13ch + 56px);
-	padding: 0 12px;
-	margin-left: calc(42px - (15ch + 32px));
-	min-width: calc(13ch + 56px);
+	width: calc(13ch + 50px);
+	margin-left: calc(42px - (13ch + 50px));
+	font-weight: 400;
 	border-color: #000;
 	background: #eee;
 }
 .iconAction:is(:hover, :focus-visible):not(:disabled) .actionLabel {
 	display: inline;
-	white-space: nowrap;
-}
-
-.actionIcon {
-	font-size: 24px;
-	line-height: 1;
 }
