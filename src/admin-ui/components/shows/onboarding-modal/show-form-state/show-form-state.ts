@@ -15,7 +15,7 @@ export type ShowFormValues = {
 	description?: string;
 	/** UTC calendar date in YYYY-MM-DD input format, or empty before selection. */
 	date: string;
-	/** Seconds kept as input text until request validation. */
+	/** Duration in m:ss or h:mm:ss input format until request validation. */
 	duration: string;
 	mixcloud_image_small: string;
 	mixcloud_image_large: string;

@@ -35,29 +35,26 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	await expect(editor).toBeVisible();
 	await expect(editor).toBeFocused();
 	await expect(
+		editor.getByRole("group", { name: "Tracklist row 1", exact: true }),
+	).toBeVisible();
+	await expect(
 		editor.getByRole("button", { name: "Save", exact: true }),
-	).toHaveCount(0);
+	).toBeVisible();
+	await expect(
+		editor.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
 	await expect(
 		editor.getByRole("button", { name: "Cancel", exact: true }),
-	).toHaveCount(0);
+	).toBeVisible();
 	await page.keyboard.press("Shift+Tab");
 	await expect(
-		editor.getByRole("button", { name: "+ Add track", exact: true }),
+		editor.getByRole("button", { name: "Cancel", exact: true }),
 	).toBeFocused();
 	await page.keyboard.press("Tab");
 	await expect(
 		editor.getByRole("button", { name: "Close", exact: true }),
 	).toBeFocused();
 	await expect(parent).toBeHidden();
-	await editor
-		.getByRole("button", { name: "+ Add track", exact: true })
-		.click();
-	await expect(
-		editor.getByRole("button", { name: "Save", exact: true }),
-	).toBeVisible();
-	await expect(
-		editor.getByRole("button", { name: "Cancel", exact: true }),
-	).toBeVisible();
 	const first = editor.getByRole("group", {
 		name: "Tracklist row 1",
 		exact: true,
@@ -308,3 +305,36 @@ for (const width of [1280, 390, 320]) {
 		await expect(parent).toBeVisible();
 	});
 }
+
+test("untouched initial tracklist row closes cleanly and reopening starts with one row", async ({
+	page,
+	show,
+}) => {
+	const parent = await openShowEditor(page, show.id);
+	const opener = parent.getByRole("button", {
+		name: "Add tracklist",
+		exact: true,
+	});
+	await opener.click();
+	const editor = page.getByRole("dialog", {
+		name: "Add tracklist",
+		exact: true,
+	});
+	await expect(
+		editor.getByRole("group", { name: /^Tracklist row / }),
+	).toHaveCount(1);
+	await editor.getByRole("button", { name: "Cancel", exact: true }).click();
+	await expect(page.getByRole("alertdialog")).toBeHidden();
+	await expect(
+		parent.getByRole("button", { name: "Save", exact: true }),
+	).toBeDisabled();
+	await opener.click();
+	await expect(
+		editor.getByRole("group", { name: /^Tracklist row / }),
+	).toHaveCount(1);
+	await editor
+		.getByRole("textbox", { name: "song", exact: true })
+		.fill("Draft");
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("alertdialog")).toBeVisible();
+});

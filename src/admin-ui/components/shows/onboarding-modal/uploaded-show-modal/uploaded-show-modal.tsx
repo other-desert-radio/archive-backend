@@ -15,7 +15,10 @@ import {
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { formatDuration } from "../../../shared/resource-views/index.js";
-import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
+import {
+	formatTrackTime,
+	TracklistEditorModal,
+} from "../../tracklist-editor-modal/index.js";
 import { TracklistPreview } from "../../tracklist-preview/index.js";
 import type { ShowFormOptions } from "../show-form-modal/index.js";
 import tracklistStyles from "../show-form-modal/show-form-modal.module.css";
@@ -105,7 +108,7 @@ const ReviewForm = ({
 		date: editorial.date,
 		selected: editorial.djs,
 		special_id: editorial.special_id ?? null,
-		duration: String(mixcloud.audio_length),
+		duration: formatTrackTime(mixcloud.audio_length),
 		mixcloud_image_small: mixcloud.pictures.large,
 		mixcloud_image_large: mixcloud.pictures["1024wx1024h"],
 		url: mixcloud.url,

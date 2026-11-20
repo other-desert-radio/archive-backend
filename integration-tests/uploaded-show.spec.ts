@@ -303,9 +303,6 @@ async function upload(page: Page, specialOnly = false) {
 		exact: true,
 	});
 	await editor
-		.getByRole("button", { name: "+ Add track", exact: true })
-		.click();
-	await editor
 		.getByRole("textbox", { name: "artist", exact: true })
 		.fill("Track artist");
 	await editor
