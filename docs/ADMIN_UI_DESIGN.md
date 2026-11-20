@@ -97,15 +97,17 @@ actions; the layout stacks at 42rem. Its background is 80% white, becoming solid
 white on hover. The upload modal uses it for Mixcloud sign-in guidance. Its
 square bordered sign-in button starts OAuth when configured. The modal loads
 connection status and shows “Signed into Mixcloud as X” with a trailing sign-out
-button. Both use the 12px helper font size; the row has no heading or dotted
-border. Loading or pending requests disable actions; unavailable configuration
-explains why sign-in is disabled. Failures offer reload/retry without hiding an
-existing connection. Callback outcome messages are informational; server status
-determines the connected identity. OAuth returns reopen the upload modal, which
-removes the outcome parameter after reading it. Switching accounts may also
-require signing out on Mixcloud itself. Archive logout preserves the connection;
-Mixcloud sign-out removes it. Browser coverage lives in
-`integration-tests/mixcloud-connection-ui.spec.ts` at desktop, 390px, and 320px.
+button without a border. Both use the 12px helper font size; the row uses the
+optional `FormModal` subheading slot, 8px below the modal header and has no
+heading or dotted border. Loading or pending requests disable actions;
+unavailable configuration explains why sign-in is disabled. Failures offer
+reload/retry without hiding an existing connection. Callback outcome messages
+are informational; server status determines the connected identity. OAuth
+returns reopen the upload modal, which removes the outcome parameter after
+reading it. Switching accounts may also require signing out on Mixcloud itself.
+Archive logout preserves the connection; Mixcloud sign-out removes it. Browser
+coverage lives in `integration-tests/mixcloud-connection-ui.spec.ts` at desktop,
+390px, and 320px.
 
 Keep resource orchestration separate from shared presentation and lifecycle
 logic. Extract repeated responsibilities into focused components or hooks; avoid

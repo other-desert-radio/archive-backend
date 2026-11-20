@@ -39,3 +39,7 @@
 	outline: 2px solid #000;
 	outline-offset: 3px;
 }
+
+.signIn[aria-label="sign out of mixcloud"] {
+	border: 0;
+}

@@ -296,13 +296,12 @@ export const ShowFormModal = ({
 	if (isNewShow) {
 		elements = (
 			<>
-				<div className={styles.mixcloudFields}>
-					<MixcloudConnectionBanner onConnected={setMixcloudConnected} />
-					{mixcloudConnected &&
-						(hasUnsavedChanges ||
-							mp3 !== undefined ||
-							image !== undefined ||
-							mixcloudTitleOverride !== undefined) && (
+				{mixcloudConnected &&
+					(hasUnsavedChanges ||
+						mp3 !== undefined ||
+						image !== undefined ||
+						mixcloudTitleOverride !== undefined) && (
+						<div className={styles.mixcloudFields}>
 							<div
 								className={styles.mixcloudTitle}
 								data-generated={mixcloudTitleOverride === undefined}
@@ -317,16 +316,16 @@ export const ShowFormModal = ({
 									required
 								/>
 							</div>
-						)}
-					{mixcloudConnected && mixcloudTitleOverride !== undefined && (
-						<button
-							type="button"
-							onClick={() => setMixcloudTitleOverride(undefined)}
-						>
-							Reset to generated title
-						</button>
+							{mixcloudTitleOverride !== undefined && (
+								<button
+									type="button"
+									onClick={() => setMixcloudTitleOverride(undefined)}
+								>
+									Reset to generated title
+								</button>
+							)}
+						</div>
 					)}
-				</div>
 				{mixcloudConnected && (
 					<>
 						<ShowTitleDateFields
@@ -443,6 +442,11 @@ export const ShowFormModal = ({
 				}
 				isCovered={imageCandidate !== undefined || isTracklistOpen}
 				title={modalTitle}
+				subheading={
+					isNewShow ? (
+						<MixcloudConnectionBanner onConnected={setMixcloudConnected} />
+					) : undefined
+				}
 				onClose={onClose}
 				onSubmit={submit}
 				onSubmitted={() => {

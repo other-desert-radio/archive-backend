@@ -111,6 +111,10 @@ for (const width of [1440, 390, 320]) {
 		const signOut = page.getByRole("button", { name: "sign out of mixcloud" });
 		await expect(signOut).toHaveCSS("font-size", "12px");
 		await expect(signOut).toHaveText("sign out");
+		await expect(signOut).toHaveCSS("border-width", "0px");
+		await expect(
+			page.getByRole("dialog").locator("fieldset").first(),
+		).toHaveCSS("margin-top", "8px");
 		expect(
 			await connection.evaluate((element) => {
 				let parent = element.parentElement;

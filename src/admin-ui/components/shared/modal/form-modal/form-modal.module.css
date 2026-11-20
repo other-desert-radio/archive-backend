@@ -316,3 +316,11 @@
 .headerAction:enabled:hover .actionIcon {
 	stroke-width: 2.5;
 }
+
+.subheading {
+	min-width: 0;
+	margin: 8px 0 0;
+	padding: 0;
+	border: 0;
+	font-size: var(--modal-helper-size);
+}
