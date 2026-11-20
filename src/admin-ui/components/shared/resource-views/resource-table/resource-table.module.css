@@ -44,6 +44,10 @@
 	background: transparent;
 	font: inherit;
 }
+.table thead {
+	position: relative;
+	z-index: 2;
+}
 .table thead tr {
 	background: #fff;
 }

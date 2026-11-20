@@ -371,7 +371,10 @@ DJ and Show tables/grids and Tags tables/grids scroll underneath. Its gray
 background and solid bottom border appear only when it sticks. The header height
 and sticky offset share a whole-pixel CSS variable to avoid a gap. Its stacking
 order keeps controls above scrolling content. Search can shrink to fit narrow
-screens.
+screens. All resource table headers stay below the toolbar during page
+scrolling, remain aligned during horizontal scrolling, and stop at the table
+bottom. The Actions column stays pinned above the other columns at the header
+intersection.
 
 Form dialogs sit above the management header and toolbar. Discard confirmations
 and image crop dialogs sit above the form so toolbar controls cannot intercept
