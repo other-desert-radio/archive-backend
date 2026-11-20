@@ -292,7 +292,7 @@ export const ShowFormModal = ({
 		elements = (
 			<>
 				{mixcloudConnected &&
-					(hasUnsavedChanges ||
+					(generatedTitle !== "" ||
 						mp3 !== undefined ||
 						image !== undefined ||
 						mixcloudTitleOverride !== undefined) && (
@@ -305,7 +305,7 @@ export const ShowFormModal = ({
 									id={`${idPrefix}-mixcloud-title`}
 									name="mixcloud_title"
 									label="Mixcloud title"
-									helper="Title to be sent to Mixcloud. This is auto generated using the existing format. Click to edit"
+									helper="This title will appear on mixcloud. click to edit"
 									value={mixcloudTitle}
 									onChange={setMixcloudTitleOverride}
 									required
@@ -328,40 +328,30 @@ export const ShowFormModal = ({
 							setFields={setFields}
 							idPrefix={idPrefix}
 						>
-							<ShowAssignmentFields
-								groupRelationships
-								fields={fields}
-								setFields={setFields}
-								idPrefix={idPrefix}
-								djs={djs}
-								isDJsLoading={isDJsLoading}
-								{...(djsError === undefined ? {} : { djsError })}
-								onRetryDJs={onRetryDJs}
-								specialOptions={specialOptions}
+							<LabeledFormControl
+								id={`${idPrefix}-description`}
+								name="description"
+								label="description"
+								value={description}
+								onChange={setDescription}
+								textarea
+								maxLength={1000}
+								helper="Up to 1000 characters."
 							/>
 						</ShowTitleDateFields>
-						<LabeledFormControl
-							id={`${idPrefix}-description`}
-							name="description"
-							label="description"
-							value={description}
-							onChange={setDescription}
-							textarea
-							maxLength={1000}
-							helper="Up to 1000 characters."
+						<ShowAssignmentFields
+							hideInstructions
+							groupRelationships
+							fields={fields}
+							setFields={setFields}
+							idPrefix={idPrefix}
+							djs={djs}
+							isDJsLoading={isDJsLoading}
+							{...(djsError === undefined ? {} : { djsError })}
+							onRetryDJs={onRetryDJs}
+							specialOptions={specialOptions}
 						/>
-						{tracklistField}
-						<TagsInput
-							id={`${idPrefix}-tags`}
-							value={{ tags: fields.tags, draft: fields.tagDraft }}
-							onChange={({ tags, draft }) =>
-								setFields({ ...fields, tags, tagDraft: draft })
-							}
-							options={tagOptions}
-							isLoading={isTagsLoading}
-							{...(tagError === undefined ? {} : { error: tagError })}
-							onRetry={loadTagOptions}
-						/>
+
 						<ImageDropzone
 							key={imageDropzoneKey}
 							id={`${idPrefix}-image`}
@@ -418,6 +408,18 @@ export const ShowFormModal = ({
 								</button>
 							</div>
 						)}
+						<TagsInput
+							id={`${idPrefix}-tags`}
+							value={{ tags: fields.tags, draft: fields.tagDraft }}
+							onChange={({ tags, draft }) =>
+								setFields({ ...fields, tags, tagDraft: draft })
+							}
+							options={tagOptions}
+							isLoading={isTagsLoading}
+							{...(tagError === undefined ? {} : { error: tagError })}
+							onRetry={loadTagOptions}
+						/>
+						{tracklistField}
 					</>
 				)}
 			</>

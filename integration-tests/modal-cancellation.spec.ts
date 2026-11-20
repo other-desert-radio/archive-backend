@@ -280,10 +280,10 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 		});
 		if (resource === "djs") await expect(form).toBeFocused();
 		await expect(
-			form
-				.getByText("Type to search. Press Tab to accept the gray completion.")
-				.first(),
-		).toBeVisible();
+			form.getByText(
+				"Type to search. Press Tab to accept the gray completion.",
+			),
+		).toHaveCount(0);
 		const input = form.getByRole("combobox", { name: "tags", exact: true });
 		await input.fill("Regression");
 		const alignment = await input.evaluate((element) => {

@@ -31,7 +31,6 @@ type TagsInputProps = {
 	error?: string;
 	onRetry?: () => void;
 	helper?: ReactNode;
-	hideSearchHelp?: boolean;
 };
 
 /** A Figma-aligned tag combobox with colored chips and inline completion. */
@@ -44,7 +43,6 @@ export const TagsInput = ({
 	error,
 	onRetry,
 	helper,
-	hideSearchHelp = false,
 }: TagsInputProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [scrollLeft, setScrollLeft] = useState(0);
@@ -81,7 +79,6 @@ export const TagsInput = ({
 	const canIdentifyUnknownTags = !isLoading && error === undefined;
 	const isOpen = isFocused && matches.length > 0;
 	const showHelp =
-		!hideSearchHelp ||
 		error !== undefined ||
 		isLoading ||
 		(canIdentifyUnknownTags && unknownTags.length > 0);
@@ -300,7 +297,7 @@ export const TagsInput = ({
 								? "Loading existing tags…"
 								: canIdentifyUnknownTags && unknownTags.length > 0
 									? `The tag${unknownTags.length === 1 ? "" : "s"} ${unknownTags.map((tag) => `“${tag.title}”`).join(", ")} ${unknownTags.length === 1 ? "does" : "do"} not exist elsewhere. ${unknownTags.length === 1 ? "It" : "They"} will be created after submit.`
-									: "Type to search. Press Tab to accept the gray completion."}
+									: undefined}
 						{error !== undefined && onRetry !== undefined && (
 							<button type="button" onClick={onRetry}>
 								Retry

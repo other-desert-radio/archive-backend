@@ -92,11 +92,11 @@ test("DJ and tag helpers describe their controls while preserving built-in tag g
 			/>
 		</>,
 	);
-	expect(markup).toContain('aria-describedby="djs-search-help djs-help"');
+	expect(markup).toContain('aria-describedby="djs-help"');
 	expect(markup).toContain('id="djs-help"');
-	expect(markup).toContain('aria-describedby="tags-help tags-extra-help"');
+	expect(markup).toContain('aria-describedby="tags-extra-help"');
 	expect(markup).toContain('id="tags-extra-help"');
-	expect(markup).toContain("Type to search.");
+	expect(markup).not.toContain("Type to search.");
 });
 
 test("Disconnected new shows hide upload fields and retain disabled submission", () => {

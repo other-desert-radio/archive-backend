@@ -231,7 +231,6 @@ export const ImportShowForm = ({
 				groupRelationships
 				hideInstructions
 				specialOptions={specialOptions}
-				hideDJSearchHelp={unmatchedDJs.length > 0}
 				highlightEmptyDJs
 				fields={fields}
 				setFields={setFields}

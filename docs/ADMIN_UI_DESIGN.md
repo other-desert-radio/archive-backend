@@ -184,17 +184,22 @@ disabled and gray. Only the connection row appears until connected; upload
 fields are hidden. Existing Mixcloud shows enter the archive through the
 Mixcloud import flow.
 
-Upload Show displays title, grouped DJs and Special, date, an optional
-description (up to 1000 characters), tags, required square image selection, and
-MP3 selection. Description is sent to Mixcloud, preserves paragraph breaks and
-counts as an unsaved change. The image picker reuses the shared artist crop
-flow, including rotation, zoom, 1200 × 1200 WebP output, replacement, removal,
-and discard protection. Below the connection row, the editable Mixcloud title
-appears after a form edit. The input fills the available width, has an
-accessible label without a visible label, and uses only a bottom border. Gray
-helper text underneath reads “Title to be sent to Mixcloud. This is auto
-generated using the existing format. Click to edit”. Generated titles have a
-gray underline; manual edits use the standard black underline and persist until
+Grouped DJs/Special controls align with the other form fields; their gray
+outline sits 8px outside the group without adding inset padding.
+
+Upload Show omits the grouped DJs/Special instruction. It displays title,
+optional description (up to 1000 characters), date, grouped DJs and Special,
+required square image selection, MP3 selection, tags, and tracklist, in that
+order. Description is sent to Mixcloud, preserves paragraph breaks and counts as
+an unsaved change. The image picker reuses the shared artist crop flow,
+including rotation, zoom, 1200 × 1200 WebP output, replacement, removal, and
+discard protection. Below the connection row, the editable Mixcloud title
+appears when title source fields contain content, a file is selected, or a
+manual title override exists. Description edits alone do not reveal it. The
+input fills the available width, has an accessible label without a visible
+label, and uses only a bottom border. Gray helper text underneath reads “This
+title will appear on mixcloud. click to edit”. Generated titles have a gray
+underline; manual edits use the standard black underline and persist until
 reset. Titles update as source fields are typed, using whichever fields are
 available and omitting missing parts. A selected Special appears first, followed
 by DJ names joined with `+`, show title, and date; heading parts use `-`.
@@ -275,8 +280,9 @@ callers still close automatically.
 
 `SearchableMultiSelect` and `TagsInput` accept optional `helper` content below
 the control, with 12px text, wrapping, and accessible descriptions. Additional
-tag guidance preserves the existing search/loading/unknown-tag helper. DJ search
-spacing stays unchanged when no optional helper is supplied.
+tag guidance preserves loading and unknown-tag feedback. Search/Tab instructions
+are omitted from all modal pickers. DJ search spacing stays unchanged when no
+optional helper is supplied.
 
 The test-only shared-modal fixture exercises these extensions before the import
 form is wired. It bundles the real components and is intercepted by Playwright;

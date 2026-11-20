@@ -3,8 +3,8 @@
 }
 .group {
 	grid-column: 1 / -1;
-	border: 1px solid #bbb;
-	padding: 1rem;
+	outline: 1px dotted #bbb;
+	outline-offset: 8px;
 	display: grid;
 	grid-template-columns: 7rem minmax(0, 1fr);
 	gap: var(--modal-field-gap) 16px;

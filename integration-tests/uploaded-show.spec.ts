@@ -281,10 +281,8 @@ async function upload(page: Page, specialOnly = false) {
 			form.getByRole("textbox", { name: "Mixcloud title", exact: true }),
 		).toHaveValue("Festival - Our show, October 26, 2026");
 		const group = form
-			.getByText("Choose archive DJs or a special to save this show.", {
-				exact: true,
-			})
-			.locator("..");
+			.getByRole("combobox", { name: "Search DJs", exact: true })
+			.locator("xpath=ancestor::div[contains(@class, 'group')][1]");
 		await expect(
 			group.getByRole("combobox", { name: "Search DJs", exact: true }),
 		).toBeVisible();
@@ -806,7 +804,7 @@ for (const width of [1280, 390, 320]) {
 				exact: true,
 			})
 			.locator("..");
-		await expect(group).toHaveCSS("border-top-color", "rgb(187, 187, 187)");
+		await expect(group).toHaveCSS("outline-color", "rgb(187, 187, 187)");
 		await page.screenshot({ path: `/tmp/upload-special-${width}.png` });
 		await form.getByRole("button", { name: "Save Show", exact: true }).click();
 		await expect(form).toBeHidden();
