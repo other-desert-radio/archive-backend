@@ -116,12 +116,8 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 								<LabeledFormControl
 									id={`${prefix}-${row.id}-time`}
 									name="timestamp"
-									label={
-										<>
-											timestamp{" "}
-											<span className={styles.optional}>(optional)</span>
-										</>
-									}
+									label="timestamp"
+									placeholder="optional"
 									value={row.time}
 									onChange={(time) => update(row.id, { time })}
 									{...(timeErrors[index] === undefined

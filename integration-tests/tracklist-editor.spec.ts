@@ -52,18 +52,18 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	});
 	await first.getByLabel("artist", { exact: true }).fill(" Artist ");
 	await first.getByLabel("song", { exact: true }).fill(" Song ");
-	await first.getByLabel("timestamp (optional)").fill("3:70");
+	await first.getByLabel("timestamp").fill("3:70");
 	await expect(
 		editor.getByRole("button", { name: "Save", exact: true }),
 	).toBeDisabled();
 	await expect(
 		first.getByText("Timestamp must use", { exact: false }),
 	).toBeVisible();
-	await expect(first.getByLabel("timestamp (optional)")).toHaveCSS(
+	await expect(first.getByLabel("timestamp")).toHaveCSS(
 		"border-top-color",
 		"rgb(255, 44, 44)",
 	);
-	await first.getByLabel("timestamp (optional)").fill("3:07");
+	await first.getByLabel("timestamp").fill("3:07");
 	await editor
 		.getByRole("button", { name: "+ Add track", exact: true })
 		.click();
@@ -73,10 +73,10 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	});
 	await second.getByLabel("artist", { exact: true }).fill("clear me");
 	await second.getByLabel("song", { exact: true }).fill("clear me");
-	await second.getByLabel("timestamp (optional)").fill("0:00");
+	await second.getByLabel("timestamp").fill("0:00");
 	await second.getByLabel("type", { exact: true }).selectOption("chapter");
 	await expect(second.getByLabel("chapter", { exact: true })).toHaveValue("");
-	await expect(second.getByLabel("timestamp (optional)")).toHaveValue("0:00");
+	await expect(second.getByLabel("timestamp")).toHaveValue("0:00");
 	await second.getByLabel("chapter", { exact: true }).fill("Intro");
 	await expect(
 		editor.getByText("Enter timestamp as m:ss or h:mm:ss", { exact: true }),

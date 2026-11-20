@@ -3,9 +3,6 @@
 	overflow-y: auto;
 	overscroll-behavior: contain;
 }
-.optional {
-	color: #555;
-}
 .editor {
 	grid-column: 1 / -1;
 	border: 2px dashed #000;
@@ -18,7 +15,7 @@
 	min-width: 0;
 	margin: 0;
 	display: grid;
-	grid-template-columns: 1.5rem minmax(0, 1fr) minmax(0, 0.65fr) 9rem 2.625rem;
+	grid-template-columns: 1.5rem minmax(0, 1fr) 8rem 7rem 2.625rem;
 	gap: 12px;
 	align-items: start;
 	margin-bottom: 20px;
