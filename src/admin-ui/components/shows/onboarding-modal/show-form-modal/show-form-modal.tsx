@@ -13,6 +13,7 @@ import {
 	useImageSelection,
 	useTagOptions,
 } from "../../../shared/modal/index.js";
+import actionStyles from "../../../shared/modal/text-action.module.css";
 import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
 import { TracklistPreview } from "../../tracklist-preview/index.js";
 import type { CreateShowForm } from "../onboard-show-modal/onboard-show-utils.js";
@@ -206,7 +207,7 @@ export const ShowFormModal = ({
 						<button
 							type="button"
 							ref={tracklistOpener}
-							className={`${styles.editTracklist} ${fields.tracklist.length === 0 ? styles.addTracklist : ""}`}
+							className={`${actionStyles.textAction} ${fields.tracklist.length === 0 ? styles.addTracklist : ""}`}
 							onClick={() => setTracklistOpen(true)}
 						>
 							{fields.tracklist.length === 0 ? "Add tracklist" : "edit"}
@@ -292,10 +293,7 @@ export const ShowFormModal = ({
 		elements = (
 			<>
 				{mixcloudConnected &&
-					(generatedTitle !== "" ||
-						mp3 !== undefined ||
-						image !== undefined ||
-						mixcloudTitleOverride !== undefined) && (
+					(generatedTitle !== "" || mixcloudTitleOverride !== undefined) && (
 						<div className={styles.mixcloudFields}>
 							<div
 								className={styles.mixcloudTitle}
@@ -369,9 +367,14 @@ export const ShowFormModal = ({
 							</p>
 						)}
 						{image !== undefined && (
-							<div className={styles.uploadMessage}>
-								<button type="button" onClick={removeImage}>
-									Remove image
+							<div className={`${styles.uploadMessage} ${styles.removeFile}`}>
+								<button
+									className={actionStyles.textAction}
+									aria-label="Remove image"
+									type="button"
+									onClick={removeImage}
+								>
+									Remove
 								</button>
 							</div>
 						)}
@@ -396,15 +399,17 @@ export const ShowFormModal = ({
 							</p>
 						)}
 						{mp3 !== undefined && (
-							<div className={styles.uploadMessage}>
+							<div className={`${styles.uploadMessage} ${styles.removeFile}`}>
 								<button
+									className={actionStyles.textAction}
+									aria-label="Remove MP3"
 									type="button"
 									onClick={() => {
 										setMP3(undefined);
 										setMP3Error(undefined);
 									}}
 								>
-									Remove MP3
+									Remove
 								</button>
 							</div>
 						)}

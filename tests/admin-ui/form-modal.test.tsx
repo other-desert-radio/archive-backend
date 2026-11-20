@@ -132,3 +132,14 @@ test("Disconnected new shows hide upload fields and retain disabled submission",
 	expect(markup).toContain('aria-label="Close"');
 	expect(markup).toContain(">Cancel</button>");
 });
+
+test("hidden form actions retain Close but omit Save and Cancel", () => {
+	const markup = renderToStaticMarkup(
+		<FormModal {...defaults} hideActions submitLabel="Save">
+			<input aria-label="title" />
+		</FormModal>,
+	);
+	expect(markup).toContain('aria-label="Close"');
+	expect(markup).not.toContain('type="submit"');
+	expect(markup).not.toContain(">Cancel</button>");
+});

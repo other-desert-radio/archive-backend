@@ -1,0 +1,13 @@
+.textAction {
+	border-radius: 0;
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	font: inherit;
+	font-weight: normal;
+}
+
+.textAction:enabled:hover {
+	font-weight: bold;
+}

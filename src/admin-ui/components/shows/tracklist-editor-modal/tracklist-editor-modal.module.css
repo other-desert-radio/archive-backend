@@ -4,9 +4,8 @@
 	overscroll-behavior: contain;
 }
 .editor {
+	--tracklist-column-gap: 4px;
 	grid-column: 1 / -1;
-	border: 2px dashed #000;
-	padding: 16px 4px 16px 16px;
 	min-width: 0;
 }
 .row {
@@ -16,7 +15,7 @@
 	margin: 0;
 	display: grid;
 	grid-template-columns: 1.5rem minmax(0, 1fr) 8rem 7rem 2.625rem;
-	gap: 12px 4px;
+	gap: 12px var(--tracklist-column-gap);
 	align-items: start;
 	margin-bottom: 20px;
 }
@@ -29,7 +28,7 @@
 .text {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-	gap: 12px;
+	gap: 12px var(--tracklist-column-gap);
 	min-width: 0;
 }
 .chapter {
@@ -43,6 +42,9 @@
 .timestamp label {
 	display: block;
 	margin-bottom: 4px;
+}
+.timestamp input::placeholder {
+	font-style: italic;
 }
 .type {
 	display: grid;
@@ -100,6 +102,9 @@
 	font: inherit;
 	border: 0;
 }
+.tracks:empty + .add {
+	margin-inline: auto;
+}
 @media (max-width: 700px) {
 	.row {
 		grid-template-columns: 1.5rem minmax(0, 1fr) 2.625rem;
@@ -123,11 +128,8 @@
 	}
 }
 @media (max-width: 450px) {
-	.editor {
-		padding: 12px 4px 12px 12px;
-	}
 	.row {
-		gap: 8px 4px;
+		gap: 8px var(--tracklist-column-gap);
 	}
 	.text {
 		grid-template-columns: minmax(0, 1fr);
