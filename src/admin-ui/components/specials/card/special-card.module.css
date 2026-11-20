@@ -17,21 +17,11 @@
 	gap: 8px;
 	flex-shrink: 0;
 }
-.actions button {
-	font: inherit;
-	background: #fff;
-	border: 1px solid #000;
-	padding: 8px;
-	min-height: 42px;
-	cursor: pointer;
+.edit {
+	composes: edit from "../../shared/resource-views/card-actions.module.css";
 }
-.actions button:hover:not(:disabled) {
-	background: #eee;
-}
-.actions button:disabled {
-	color: #888;
-	border-color: #888;
-	cursor: default;
+.delete {
+	composes: delete from "../../shared/resource-views/card-actions.module.css";
 }
 @media (max-width: 450px) {
 	.card {
