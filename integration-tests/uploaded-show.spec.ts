@@ -319,6 +319,9 @@ async function upload(page: Page, specialOnly = false) {
 		form.getByRole("button", { name: "edit tracklist", exact: true }),
 	).toBeFocused();
 
+	await expect(
+		form.getByRole("textbox", { name: "tracklist", exact: true }),
+	).toHaveValue("1 | Track song, Track artist, 0:30");
 	await form.locator("#show-mp3").setInputFiles({
 		name: "show.mp3",
 		mimeType: "audio/mpeg",
@@ -347,6 +350,9 @@ for (const width of [1280, 390, 320])
 			exact: true,
 		});
 		await expect(review).toBeVisible();
+		await expect(
+			review.getByRole("textbox", { name: "tracklist", exact: true }),
+		).toHaveValue("1 | Track song, Track artist, 0:30");
 		await expect(
 			review.getByRole("textbox", { name: "title", exact: true }),
 		).toHaveValue(editorial.title);

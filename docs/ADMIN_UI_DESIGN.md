@@ -231,10 +231,11 @@ remain stable, while edit controls use the `edit-show` prefix.
 
 Show upload, onboarding, edit, and uploaded-show review display the `tracklist`
 label beside one button: `add tracklist` for an empty list, or `edit tracklist`
-when entries exist. There is no inline preview or None placeholder. Both actions
-open the reusable `TracklistEditorModal` exported from `shows`. Its caller
-supplies entries, `onSave`, and `onClose`; it performs no API request. The
-editor title is `Add tracklist` when opened with zero entries and
+when entries exist. Nonempty lists show a read-only preview above the button,
+scrolling after five lines. Empty lists show no preview or None placeholder.
+Both actions open the reusable `TracklistEditorModal` exported from `shows`. Its
+caller supplies entries, `onSave`, and `onClose`; it performs no API request.
+The editor title is `Add tracklist` when opened with zero entries and
 `Edit Tracklist` when opened with existing entries.
 
 The editor is up to 1080px wide, constrained by the viewport. Its track rows

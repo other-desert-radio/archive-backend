@@ -16,6 +16,7 @@ import {
 } from "../../../shared/modal/index.js";
 import { formatDuration } from "../../../shared/resource-views/index.js";
 import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
+import { formatTracklist } from "../../tracklist-editor-modal/tracklist-utils.js";
 import type { ShowFormOptions } from "../show-form-modal/index.js";
 import tracklistStyles from "../show-form-modal/show-form-modal.module.css";
 import {
@@ -196,8 +197,17 @@ const ReviewForm = ({
 					helper="Changes here affect the archive; your Mixcloud upload stays as uploaded."
 				/>
 				<div className={tracklistStyles.tracklistField}>
-					<span>tracklist</span>
+					<span id="uploaded-show-tracklist-label">tracklist</span>
 					<div>
+						{tracklist.length > 0 && (
+							<textarea
+								className={tracklistStyles.tracklistPreview}
+								readOnly
+								rows={Math.min(5, tracklist.length)}
+								aria-labelledby="uploaded-show-tracklist-label"
+								value={formatTracklist(tracklist)}
+							/>
+						)}
 						<button
 							type="button"
 							ref={tracklistOpener}

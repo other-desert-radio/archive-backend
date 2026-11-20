@@ -16,6 +16,7 @@ import {
 } from "../../../shared/modal/index.js";
 import { SegmentedPicker } from "../../../shared/resource-views/index.js";
 import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
+import { formatTracklist } from "../../tracklist-editor-modal/tracklist-utils.js";
 import type { CreateShowForm } from "../onboard-show-modal/onboard-show-utils.js";
 import { ShowDurationField } from "../show-duration-field/index.js";
 import {
@@ -208,6 +209,15 @@ export const ShowFormModal = ({
 				<div className={styles.tracklistField}>
 					<span id={`${idPrefix}-tracklist-label`}>tracklist</span>
 					<div>
+						{fields.tracklist.length > 0 && (
+							<textarea
+								className={styles.tracklistPreview}
+								readOnly
+								rows={Math.min(5, fields.tracklist.length)}
+								aria-labelledby={`${idPrefix}-tracklist-label`}
+								value={formatTracklist(fields.tracklist)}
+							/>
+						)}
 						<button
 							type="button"
 							ref={tracklistOpener}

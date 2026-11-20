@@ -1,4 +1,15 @@
-/** Pending upload tracklists survive reloads. Rollback loses pending tracklists. */
+/**
+ * mixcloud_uploads (added column)
+ * ┌───────────┬───────┬───────────────────────────────────────────────┐
+ * │ Column    │ Type  │ Constraints / purpose                         │
+ * ├───────────┼───────┼───────────────────────────────────────────────┤
+ * │ tracklist │ jsonb │ NOT NULL; DEFAULT []; validated ordered array │
+ * └───────────┴───────┴───────────────────────────────────────────────┘
+ * Retains pending tracklists through reloads and archive review. Existing rows
+ * get []. The upload_tracklist_shape CHECK reuses shows_tracklist_valid(jsonb)
+ * from migration 0044: artist/song or chapter, with nullable whole-second times.
+ * Rollback drops the column, losing pending tracklists; saved Shows are unchanged.
+ */
 import { type Kysely, sql } from "kysely";
 import type { Database } from "../types.js";
 
