@@ -64,6 +64,10 @@
 	display: flex;
 }
 
+.field:not(.invalid) input[type="date"][data-empty] {
+	color: #999;
+}
+
 .invalid input {
 	color: #ff2c2c;
 	border-color: #ff2c2c;

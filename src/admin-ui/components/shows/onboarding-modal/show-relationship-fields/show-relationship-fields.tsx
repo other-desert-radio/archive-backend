@@ -27,7 +27,6 @@ type Props = {
 	loadTagOptions: () => void;
 	djHelper?: ReactNode;
 	highlightEmptyDJs?: boolean;
-	hideDJSearchHelp?: boolean;
 	hideInstructions?: boolean;
 	tagHelper?: ReactNode;
 };
@@ -48,7 +47,6 @@ export const ShowAssignmentFields = ({
 	onRetryDJs,
 	djHelper,
 	highlightEmptyDJs = false,
-	hideDJSearchHelp = false,
 	hideInstructions = false,
 }: AssignmentProps) => {
 	const djOptions = djs.map((dj) => ({
@@ -68,7 +66,6 @@ export const ShowAssignmentFields = ({
 				label="DJs"
 				muted={fields.special_id != null && fields.selected.length === 0}
 				helper={djHelper}
-				hideSearchHelp={hideInstructions || hideDJSearchHelp}
 				highlightEmptySelection={highlightEmptyDJs && fields.special_id == null}
 				options={djOptions}
 				selectedIds={fields.selected}
@@ -82,7 +79,6 @@ export const ShowAssignmentFields = ({
 				setFields={setFields}
 				idPrefix={idPrefix}
 				options={specialOptions}
-				hideSearchHelp={hideInstructions}
 			/>
 		</div>
 	);
@@ -99,7 +95,6 @@ export const ShowRelationshipFields = ({
 	<>
 		<ShowAssignmentFields {...props} />
 		<TagsInput
-			hideSearchHelp={props.hideInstructions ?? false}
 			id={`${props.idPrefix}-tags`}
 			helper={tagHelper}
 			value={{ tags: props.fields.tags, draft: props.fields.tagDraft }}

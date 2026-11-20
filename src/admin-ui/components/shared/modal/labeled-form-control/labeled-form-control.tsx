@@ -75,6 +75,7 @@ export const LabeledFormControl = ({
 						id={id}
 						name={name}
 						type={type}
+						data-empty={type === "date" && value === "" ? true : undefined}
 						autoComplete={autoComplete}
 						minLength={minLength}
 						maxLength={maxLength}

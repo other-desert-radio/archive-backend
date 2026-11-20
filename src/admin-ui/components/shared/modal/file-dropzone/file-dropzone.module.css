@@ -61,3 +61,7 @@
 	text-align: center;
 	overflow-wrap: anywhere;
 }
+
+.dropzone:not(.hasFile) .button {
+	color: #999;
+}

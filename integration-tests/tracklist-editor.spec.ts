@@ -34,9 +34,15 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	});
 	await expect(editor).toBeVisible();
 	await expect(editor).toBeFocused();
-	await page.keyboard.press("Shift+Tab");
+	await expect(
+		editor.getByRole("button", { name: "Save", exact: true }),
+	).toHaveCount(0);
 	await expect(
 		editor.getByRole("button", { name: "Cancel", exact: true }),
+	).toHaveCount(0);
+	await page.keyboard.press("Shift+Tab");
+	await expect(
+		editor.getByRole("button", { name: "+ Add track", exact: true }),
 	).toBeFocused();
 	await page.keyboard.press("Tab");
 	await expect(
@@ -46,6 +52,12 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	await editor
 		.getByRole("button", { name: "+ Add track", exact: true })
 		.click();
+	await expect(
+		editor.getByRole("button", { name: "Save", exact: true }),
+	).toBeVisible();
+	await expect(
+		editor.getByRole("button", { name: "Cancel", exact: true }),
+	).toBeVisible();
 	const first = editor.getByRole("group", {
 		name: "Tracklist row 1",
 		exact: true,

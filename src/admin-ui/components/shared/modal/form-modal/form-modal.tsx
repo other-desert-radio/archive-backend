@@ -55,6 +55,7 @@ type FormModalProps = {
 	/** Replaces automatic closure after a successful submit; owns any follow-up errors. */
 	onSubmitted?: () => void;
 	isSubmitDisabled?: boolean;
+	hideActions?: boolean;
 	children: ReactNode;
 };
 /** Provides the common accessible shell and submission lifecycle for forms. */
@@ -82,6 +83,7 @@ export const FormModal = ({
 	secondaryAction,
 	onSubmitted,
 	isSubmitDisabled = false,
+	hideActions = false,
 	children,
 }: FormModalProps) => {
 	const titleId = useId();
@@ -144,6 +146,7 @@ export const FormModal = ({
 			isConfirming ||
 			submittingRef.current ||
 			isSubmitDisabled ||
+			hideActions ||
 			isUnchangedSubmitDisabled
 		)
 			return;
@@ -284,31 +287,35 @@ export const FormModal = ({
 							{actionHelper !== undefined && (
 								<p className={styles.actionHelper}>{actionHelper}</p>
 							)}
-							<button
-								type="submit"
-								className={styles.submit}
-								disabled={
-									isSubmitting ||
-									isCovered ||
-									isSubmitDisabled ||
-									isUnchangedSubmitDisabled
-								}
-							>
-								{isSubmitting ? submittingLabel : submitLabel}
-							</button>
-							<button
-								type="button"
-								className={`${styles.cancel} ${secondaryAction === undefined ? "" : styles.secondary}`}
-								data-modal-dismiss
-								onClick={() =>
-									requestAction(secondaryAction?.onClick ?? onClose)
-								}
-								disabled={
-									isSubmitting || isCovered || secondaryAction?.disabled
-								}
-							>
-								{secondaryAction?.label ?? cancelLabel}
-							</button>
+							{!hideActions && (
+								<>
+									<button
+										type="submit"
+										className={styles.submit}
+										disabled={
+											isSubmitting ||
+											isCovered ||
+											isSubmitDisabled ||
+											isUnchangedSubmitDisabled
+										}
+									>
+										{isSubmitting ? submittingLabel : submitLabel}
+									</button>
+									<button
+										type="button"
+										className={`${styles.cancel} ${secondaryAction === undefined ? "" : styles.secondary}`}
+										data-modal-dismiss
+										onClick={() =>
+											requestAction(secondaryAction?.onClick ?? onClose)
+										}
+										disabled={
+											isSubmitting || isCovered || secondaryAction?.disabled
+										}
+									>
+										{secondaryAction?.label ?? cancelLabel}
+									</button>{" "}
+								</>
+							)}
 						</form>
 					</div>
 					{previousNavigationAction !== undefined && (
