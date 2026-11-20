@@ -224,10 +224,10 @@ Small resource wrappers supply empty upload values or existing edit values and
 their upload or mutation callback. Edit controls in both table and grid open the
 same form. Show cards require an edit callback so their Edit action cannot
 silently do nothing. Dates prefill from the UTC calendar portion of the stored
-timestamp; duration stays in integer seconds. All creation fields are editable;
-both image URLs remain required. Edit Show places small image URL and large
-image URL below show URL at the bottom of the form and omits the grouped
-DJs/Special instruction.
+timestamp; duration is entered as m:ss or h:mm:ss and saved as integer seconds.
+All creation fields are editable; both image URLs remain required. Edit Show
+places small image URL and large image URL below show URL at the bottom of the
+form and omits the grouped DJs/Special instruction.
 
 Assigned tag titles come from the loaded resource data. If an assigned tag is
 unresolved, saving stays disabled until tag loading or Retry resolves it. Late
@@ -254,23 +254,24 @@ The editor is up to 1080px wide, constrained by the viewport. Its track rows
 scroll inside a container without a border or padding, keeping Add, Save, and
 Cancel outside the scrolling list. It uses numbered song/chapter rows, removal,
 and left-aligned, borderless + Add track (appending a song), centered when the
-list is empty. New empty tracklists hide Save and Cancel until Add track is
-clicked; actions remain available if all added rows are removed. Row removal
-uses the shared Close visual treatment: a square gray hover background and a
-thicker cross. Type changes clear text while preserving time. Column labels
-appear on the first row and whenever the entry type changes; consecutive rows of
-the same type keep accessible labels without repeating them visually. Matching
-rows have a 4px vertical gap; type changes retain a 20px gap. Row numbers align
-vertically with the first input, and the remove column sits near the container’s
-right edge. Song artist/title and chapter title must be nonblank. Timestamps
-accept m:ss or h:mm:ss, with an “optional” placeholder in empty fields and
-`m:ss or h:mm:ss` guidance above the rows. Blank means unknown; 0:00 is the
-start. Known times need not increase or fit within Show duration. Rows retain
-their order; no reordering controls are provided. All rows may be removed. Save
-trims text and returns the draft to Edit Show; only the parent Save persists it.
-Both dialogs use the existing dirty-discard behavior, with the parent inert
-while covered and focus restored to the tracklist action on return. Rows stack
-on phones, and the modal remains scrollable by keyboard.
+list is empty. New empty tracklists open with one blank song row and visible
+Save and Cancel actions. The untouched row is not an unsaved change; actions
+remain available if all rows are removed. Row removal uses the shared Close
+visual treatment: a square gray hover background and a thicker cross. Type
+changes clear text while preserving time. Column labels appear on the first row
+and whenever the entry type changes; consecutive rows of the same type keep
+accessible labels without repeating them visually. Matching rows have a 4px
+vertical gap; type changes retain a 20px gap. Row numbers align vertically with
+the first input, and the remove column sits near the container’s right edge.
+Song artist/title and chapter title must be nonblank. Timestamps accept m:ss or
+h:mm:ss, with an “optional” placeholder in empty fields and `m:ss or h:mm:ss`
+guidance above the rows. Blank means unknown; 0:00 is the start. Known times
+need not increase or fit within Show duration. Rows retain their order; no
+reordering controls are provided. All rows may be removed. Save trims text and
+returns the draft to Edit Show; only the parent Save persists it. Both dialogs
+use the existing dirty-discard behavior, with the parent inert while covered and
+focus restored to the tracklist action on return. Rows stack on phones, and the
+modal remains scrollable by keyboard.
 
 ### Optional form navigation and helpers
 
@@ -399,17 +400,18 @@ tags. When focus moves to Submit/Save or a modal dismissal action, leave the
 draft in place; request builders and dirty-state checks include it, and
 converting it into chips could move the button during the click.
 
-Show duration is one required positive-integer seconds input (`min=1`, `step=1`,
-maximum 2,147,483,647). Send seconds directly through the existing API contract.
-A live gray helper breaks valid seconds down into hours, minutes, and seconds,
-omitting any zero-valued unit and using `LabeledFormControl` helper styling
-across Show forms, including Mixcloud import. Empty or invalid values omit the
-breakdown. Do not reintroduce separate hours/minutes/seconds inputs.
+Show duration uses the same text input and clock syntax as tracklist timestamps:
+m:ss or h:mm:ss. Edit Show and Mixcloud import prefill clock values and convert
+them to positive integer seconds for the existing API (maximum 2,147,483,647).
+The placeholder shows “m:ss or h:mm:ss”; empty values have no helper text. Valid
+values show a live hours, minutes, and seconds breakdown, omitting zero-valued
+units and using singular labels for 1. Invalid values show validation feedback.
+Read-only duration displays retain their clock format.
 
 ## Design ideas and review boundaries
 
 The reviewed work implemented common typography, spacing and controls; compact
-tag helper spacing; desktop top alignment; phone stacking; and seconds-only Show
+tag helper spacing; desktop top alignment; phone stacking; and clock-format Show
 duration. These are defaults for future resource modals.
 
 One suggested refinement remains unimplemented: clearer visual emphasis for a

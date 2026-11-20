@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { buildCreateShowRequest } from "../../src/admin-ui/components/shows/index.js";
 
 describe("Show onboarding payload", () => {
-	test("preserves duration in seconds, includes both required images, and trims tags", () => {
+	test("converts clock duration to seconds, includes both required images, and trims tags", () => {
 		expect(
 			buildCreateShowRequest({
 				title: "  Night  ",
 				date: "2026-02-03",
-				duration: "3723",
+				duration: "1:02:03",
 				mixcloud_image_small: " https://example.com/small.jpg ",
 				mixcloud_image_large: " https://example.com/large.jpg ",
 				tags: " ambient, , Dance ",
@@ -47,14 +47,23 @@ describe("Show onboarding payload", () => {
 			"Infinity",
 			"9007199254740992",
 			"2147483648",
+			"0:00",
+			"1:60",
+			"1:2",
+			"1:60:00",
+			"596523:14:08",
 		]) {
-			expect(() => buildCreateShowRequest({ ...fields, duration })).toThrow(
-				"Duration must be a positive whole number of seconds",
-			);
+			expect(() => buildCreateShowRequest({ ...fields, duration })).toThrow();
 		}
-		for (const duration of ["1", "60", "3600", "2147483647"]) {
+		for (const [duration, seconds] of [
+			["0:01", 1],
+			["1:00", 60],
+			["1:00:00", 3600],
+			["60:00", 3600],
+			["596523:14:07", 2147483647],
+		] as const) {
 			expect(buildCreateShowRequest({ ...fields, duration }).duration).toBe(
-				Number(duration),
+				seconds,
 			);
 		}
 	});
@@ -64,7 +73,7 @@ test("rejects blank, relative, or non-HTTP image URLs independently", () => {
 	const fields = {
 		title: "Show",
 		date: "2026-01-01",
-		duration: "60",
+		duration: "1:00",
 		mixcloud_image_small: "https://example.test/small",
 		mixcloud_image_large: "https://example.test/large",
 		tags: "",
@@ -82,7 +91,7 @@ test("preserves optional description text and rejects overlong input", () => {
 	const fields = {
 		title: "Night",
 		date: "2026-02-03",
-		duration: "60",
+		duration: "1:00",
 		mixcloud_image_small: "https://example.test/small",
 		mixcloud_image_large: "https://example.test/large",
 		tags: "",

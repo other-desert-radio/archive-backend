@@ -29,7 +29,7 @@ test("import initialization uses suggestions, UTC dates, and complete source URL
 	expect(initialImportValues(row)).toMatchObject({
 		title: "Suggested",
 		date: "2026-09-30",
-		duration: "3661",
+		duration: "1:01:01",
 		url: row.url,
 		mixcloud_image_small: row.image_small,
 		mixcloud_image_large: row.image_large,

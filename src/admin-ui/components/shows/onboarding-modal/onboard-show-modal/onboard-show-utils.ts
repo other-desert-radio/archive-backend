@@ -1,7 +1,8 @@
-import { isMatching, P } from "ts-pattern";
 import type { CreateShowRequest } from "../../../../../admin/routes/shows/index.js";
 import type { ShowTracklistEntry } from "../../../../../db/types.js";
 import { isHttpUrl, splitCommaSeparated } from "../../../../../utils/index.js";
+
+import { parseShowDuration } from "../show-duration-field/index.js";
 
 export type CreateShowForm = CreateShowRequest & {
 	tracklist?: ShowTracklistEntry[];
@@ -21,9 +22,7 @@ export const buildCreateShowRequest = (fields: {
 }): CreateShowForm => {
 	if ((fields.description?.length ?? 0) > 1000)
 		throw new Error("Description must be at most 1000 characters.");
-	const duration = Number(fields.duration);
-	if (!isMatching(P.number.int().between(1, 2_147_483_647), duration))
-		throw new Error("Duration must be a positive whole number of seconds.");
+	const duration = parseShowDuration(fields.duration);
 	const mixcloud_image_small = fields.mixcloud_image_small.trim();
 	const mixcloud_image_large = fields.mixcloud_image_large.trim();
 	for (const [label, value] of [

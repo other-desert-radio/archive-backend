@@ -21,17 +21,18 @@ type Props = {
 export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 	const prefix = useId();
 	const [opening] = useState<DraftRow[]>(() =>
-		entries.map((entry, id) => ({
-			id,
-			type: entry.chapter === undefined ? "song" : "chapter",
-			artist: entry.artist ?? "",
-			title: entry.chapter ?? entry.song ?? "",
-			time: formatTrackTime(entry.start_time),
-		})),
+		entries.length === 0
+			? [{ id: 0, type: "song", artist: "", title: "", time: "" }]
+			: entries.map((entry, id) => ({
+					id,
+					type: entry.chapter === undefined ? "song" : "chapter",
+					artist: entry.artist ?? "",
+					title: entry.chapter ?? entry.song ?? "",
+					time: formatTrackTime(entry.start_time),
+				})),
 	);
 	const [rows, setRows] = useState(opening);
-	const [hasStarted, setHasStarted] = useState(entries.length > 0);
-	const nextId = useRef(entries.length);
+	const nextId = useRef(opening.length);
 	const update = (id: number, changes: Partial<DraftRow>) => {
 		setRows((current) =>
 			current.map((row) => (row.id === id ? { ...row, ...changes } : row)),
@@ -51,7 +52,6 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 		<FormModal
 			isOpen
 			panelWidth={1080}
-			hideActions={!hasStarted}
 			title={entries.length === 0 ? "Add tracklist" : "Edit Tracklist"}
 			subtitle="Enter timestamp as m:ss or h:mm:ss"
 			isSubmitDisabled={timeErrors.some((error) => error !== undefined)}
@@ -171,7 +171,6 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 					className={styles.add}
 					type="button"
 					onClick={() => {
-						setHasStarted(true);
 						const id = nextId.current++;
 						setRows((current) => [
 							...current,

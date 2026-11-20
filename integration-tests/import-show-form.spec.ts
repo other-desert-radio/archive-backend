@@ -126,7 +126,7 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	await expect(page.getByLabel("date", { exact: true })).toHaveValue(
 		"2026-10-01",
 	);
-	await expect(page.getByLabel("duration (seconds)")).toHaveValue("3661");
+	await expect(page.getByLabel("duration")).toHaveValue("1:01:01");
 	await expect(
 		page.getByRole("button", { name: "Remove Known DJ", exact: true }),
 	).toBeVisible();
@@ -158,23 +158,23 @@ test("prefills exact matches, canonical chips, approved source data, and submits
 	await expect(unknownChip).toHaveCSS("color", "rgb(255, 0, 0)");
 	await expect(unknownChip).toHaveCSS("border-color", "rgb(255, 0, 0)");
 	await expect(
-		page.getByText("1 hours, 1 minutes, 1 seconds", { exact: true }),
+		page.getByText("1 hour, 1 minute, 1 second", { exact: true }),
 	).toHaveCSS("color", "rgb(85, 85, 85)");
-	await page.getByLabel("duration (seconds)").fill("62");
+	await page.getByLabel("duration").fill("1:02");
 	await expect(
-		page.getByText("1 minutes, 2 seconds", { exact: true }),
+		page.getByText("1 minute, 2 seconds", { exact: true }),
 	).toBeVisible();
 	for (const [seconds, breakdown] of [
-		["3604", "1 hours, 4 seconds"],
-		["3660", "1 hours, 1 minutes"],
-		["3600", "1 hours"],
-		["60", "1 minutes"],
-		["4", "4 seconds"],
+		["1:00:04", "1 hour, 4 seconds"],
+		["1:01:00", "1 hour, 1 minute"],
+		["1:00:00", "1 hour"],
+		["1:00", "1 minute"],
+		["0:04", "4 seconds"],
 	]) {
-		await page.getByLabel("duration (seconds)").fill(seconds);
+		await page.getByLabel("duration").fill(seconds);
 		await expect(page.getByText(breakdown, { exact: true })).toBeVisible();
 	}
-	await page.getByLabel("duration (seconds)").fill("3661");
+	await page.getByLabel("duration").fill("1:01:01");
 	await page.getByRole("button", { name: "Mixcloud data details" }).click();
 	await expect(page.locator("dl dt")).toHaveText([
 		"name",
@@ -235,7 +235,7 @@ test("resolved opening selections are clean and item changes reset fields, helpe
 		"",
 	);
 	await expect(page.getByLabel("date", { exact: true })).toHaveValue("");
-	await expect(page.getByLabel("duration (seconds)")).toHaveValue("");
+	await expect(page.getByLabel("duration")).toHaveValue("");
 	await expect(page.getByText(/Unmatched DJs:/)).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "Remove Ambient" }),
@@ -699,8 +699,10 @@ for (const width of [1280, 390, 320]) {
 			"Choose archive DJs or a special to save this show.",
 			{ exact: true },
 		);
-		await expect(guidance).toBeVisible();
-		const group = guidance.locator("..");
+		await expect(guidance).toBeHidden();
+		const group = form
+			.getByRole("combobox", { name: "Search DJs", exact: true })
+			.locator("../../..");
 		await expect(group).toHaveCSS("outline-color", "rgb(187, 187, 187)");
 		await expect(
 			group.getByRole("combobox", { name: "Search DJs", exact: true }),
@@ -713,7 +715,7 @@ for (const width of [1280, 390, 320]) {
 				exact: true,
 			}),
 		).toHaveCount(0);
-		await guidance.scrollIntoViewIfNeeded();
+		await group.scrollIntoViewIfNeeded();
 		await page.screenshot({ path: `/tmp/edit-show-group-${width}.png` });
 	});
 }

@@ -323,7 +323,7 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 	}
 });
 
-test("Show duration accepts whole seconds and sends them without conversion", async ({
+test("Show duration accepts clock input and sends seconds", async ({
 	page,
 }) => {
 	let payload:
@@ -366,9 +366,9 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	await page.getByRole("button", { name: "Edit", exact: true }).first().click();
 	const form = page.getByRole("dialog", { name: "Edit Show" });
 	await expect(form).toBeVisible();
-	const duration = form.getByRole("spinbutton", { name: "duration (seconds)" });
-	await expect(duration).toHaveAttribute("min", "1");
-	await expect(duration).toHaveAttribute("step", "1");
+	const duration = form.getByRole("textbox", { name: "duration", exact: true });
+	await expect(duration).toHaveValue("1:00");
+	await expect(duration).toHaveAttribute("placeholder", "m:ss or h:mm:ss");
 	await page.locator("#edit-show-title").fill("Duration test");
 	await page.locator("#edit-show-date").fill("2026-09-29");
 	await page.locator("#edit-show-url").fill("https://example.com/show");
@@ -378,17 +378,13 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	await page
 		.locator("#edit-show-image-large")
 		.fill("https://example.com/large.jpg");
-	for (const value of ["", "0", "-1", "1.5", "2147483648"]) {
+	for (const value of ["", "0:00", "-1", "1.5", "1:60", "596523:14:08"]) {
 		await duration.fill(value);
 		await form.getByRole("button", { name: "Save", exact: true }).click();
-		expect(
-			await duration.evaluate(
-				(input: HTMLInputElement) => input.validity.valid,
-			),
-		).toBe(false);
+		await expect(form).toBeVisible();
 		expect(payload).toBeUndefined();
 	}
-	await duration.fill("3723");
+	await duration.fill("1:02:03");
 	await page.locator("#edit-show-tags").fill("new-duration-tag");
 	await form.getByRole("button", { name: "Save", exact: true }).click();
 	await expect.poll(() => payload?.duration).toBe(3723);
@@ -396,7 +392,7 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 	expect(payload?.mixcloud_image_small).toBe("https://example.com/small.jpg");
 	expect(payload?.mixcloud_image_large).toBe("https://example.com/large.jpg");
 	await expect(form.getByRole("alert")).toBeVisible();
-	await expect(duration).toHaveValue("3723");
+	await expect(duration).toHaveValue("1:02:03");
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(page.getByRole("alertdialog")).toBeVisible();
 });

@@ -3,7 +3,7 @@ import {
 	type SelectedTag,
 	uniqueSelectedTags,
 } from "../../../shared/modal/index.js";
-import type { ShowFormValues } from "../../../shows/index.js";
+import { formatTrackTime, type ShowFormValues } from "../../../shows/index.js";
 
 /** Source metadata initializes the complete Show payload without adding image inputs. */
 export const initialImportValues = (
@@ -14,7 +14,7 @@ export const initialImportValues = (
 		row.derived_date === undefined
 			? ""
 			: new Date(row.derived_date).toISOString().slice(0, 10),
-	duration: row.duration === undefined ? "" : String(row.duration),
+	duration: row.duration === undefined ? "" : formatTrackTime(row.duration),
 	url: row.url ?? "",
 	mixcloud_image_small: row.image_small ?? "",
 	mixcloud_image_large: row.image_large ?? "",

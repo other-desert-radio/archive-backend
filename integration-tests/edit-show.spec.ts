@@ -19,7 +19,7 @@ test.beforeEach(async ({ page, show }) => {
 for (const [field, value] of [
 	["title", "Changed title"],
 	["date", "2025-01-02"],
-	["duration", "7201"],
+	["duration", "2:00:01"],
 	["mixcloud_image_small", "https://example.test/replacement-small.jpg"],
 	["mixcloud_image_large", "https://example.test/replacement.jpg"],
 	["url", "https://example.test/replacement"],
@@ -31,7 +31,7 @@ for (const [field, value] of [
 	}) => {
 		await openShowEditor(page, show.id);
 		await expect(page.locator("#edit-show-date")).toHaveValue("2024-02-29");
-		await expect(page.locator("#edit-show-duration")).toHaveValue("3661");
+		await expect(page.locator("#edit-show-duration")).toHaveValue("1:01:01");
 		await page
 			.locator(
 				`#edit-show-${field.replace("mixcloud_", "").replaceAll("_", "-")}`,
@@ -44,7 +44,7 @@ for (const [field, value] of [
 				field === "date"
 					? `${value}T00:00:00.000Z`
 					: field === "duration"
-						? Number(value)
+						? 7201
 						: value,
 		};
 		if (field === "mixcloud_image_large") expected.image = value;
@@ -198,7 +198,9 @@ for (const [field, value] of [
 	["title", " "],
 	["duration", "0"],
 	["duration", "1.5"],
-	["duration", "2147483648"],
+	["duration", "596523:14:08"],
+	["duration", "1:60"],
+	["duration", "0:00"],
 	["date", ""],
 	["url", "relative"],
 	["image-small", "relative"],
@@ -345,13 +347,52 @@ test("unresolved assigned tags block saving, retry resolves them without resetti
 	).toBeVisible();
 });
 
-for (const width of [390, 320]) {
+for (const width of [1280, 390, 320]) {
 	test(`editor fits ${width}px and keeps actions reachable`, async ({
 		page,
 		show,
 	}) => {
 		await page.setViewportSize({ width, height: 844 });
 		const form = await openShowEditor(page, show.id);
+		const duration = form.getByRole("textbox", {
+			name: "duration",
+			exact: true,
+		});
+		await expect(duration).toHaveValue("1:01:01");
+		await expect(
+			form.getByText("1 hour, 1 minute, 1 second", { exact: true }),
+		).toBeVisible();
+		await duration.fill("");
+		await expect(duration).toHaveAttribute("placeholder", "m:ss or h:mm:ss");
+		await expect(
+			form.getByText("m:ss or h:mm:ss", { exact: true }),
+		).toHaveCount(0);
+		await duration.fill("2:02:02");
+		await expect(
+			form.getByText("2 hours, 2 minutes, 2 seconds", { exact: true }),
+		).toBeVisible();
+		await duration.fill("1:01:01");
+		await page.evaluate(() => document.fonts.ready);
+		await page.screenshot({ path: `/tmp/duration-edit-${width}.png` });
+		await form
+			.getByRole("button", { name: "Add tracklist", exact: true })
+			.click();
+		const editor = page.getByRole("dialog", {
+			name: "Add tracklist",
+			exact: true,
+		});
+		await expect(
+			editor.getByRole("group", { name: /^Tracklist row / }),
+		).toHaveCount(1);
+		expect(
+			await editor.evaluate((node) => node.scrollWidth <= node.clientWidth),
+		).toBe(true);
+		await expect(
+			editor.getByRole("button", { name: "Cancel", exact: true }),
+		).toBeInViewport();
+		await page.screenshot({ path: `/tmp/tracklist-default-${width}.png` });
+		await editor.getByRole("button", { name: "Cancel", exact: true }).click();
+		await expect(page.getByRole("alertdialog")).toBeHidden();
 		await expect
 			.poll(async () =>
 				form.evaluate((node) => node.scrollWidth <= node.clientWidth),

@@ -2,6 +2,7 @@ import type { ModifyShowRequest } from "../../../../../admin/routes/shows/index.
 import { safeHtmlToPlainText } from "../../../../../utils/index.js";
 import type { ShowsAdminRow } from "../../../../loaders/shows.js";
 import type { TagsAdminRow } from "../../../../loaders/tags.js";
+import { formatTrackTime } from "../../tracklist-editor-modal/index.js";
 import {
 	ShowFormModal,
 	type ShowFormOptions,
@@ -29,7 +30,7 @@ export const EditShowModal = ({ show, tags, onSubmit, ...props }: Props) => {
 					? {}
 					: { description: safeHtmlToPlainText(show.description) }),
 				date: show.date.slice(0, 10),
-				duration: String(show.duration),
+				duration: formatTrackTime(show.duration),
 				mixcloud_image_small: show.mixcloud_image_small,
 				mixcloud_image_large: show.mixcloud_image_large,
 				url: show.url,
