@@ -243,15 +243,20 @@ scroll inside the dashed container, keeping Add, Save, and Cancel outside the
 scrolling list. It uses numbered song/chapter rows, removal, and left-aligned,
 borderless + Add track (appending a song). Row removal uses the shared Close
 visual treatment: a square gray hover background and a thicker cross. Type
-changes clear text while preserving time. Song artist/title and chapter title
-must be nonblank. Timestamps accept m:ss or h:mm:ss, with gray “(optional)” text
-and small gray `m:ss or h:mm:ss` guidance beneath each input. Blank means
-unknown; 0:00 is the start. Known times need not increase or fit within Show
-duration. Rows retain their order; no reordering controls are provided. All rows
-may be removed. Save trims text and returns the draft to Edit Show; only the
-parent Save persists it. Both dialogs use the existing dirty-discard behavior,
-with the parent inert while covered and focus restored to the tracklist action
-on return. Rows stack on phones, and the modal remains scrollable by keyboard.
+changes clear text while preserving time. Column labels appear on the first row
+and whenever the entry type changes; consecutive rows of the same type keep
+accessible labels without repeating them visually. Matching rows have a 4px
+vertical gap; type changes retain a 20px gap. Row numbers align vertically with
+the first input, and the remove column sits near the container’s right edge.
+Song artist/title and chapter title must be nonblank. Timestamps accept m:ss or
+h:mm:ss, with gray “(optional)” text and small gray `m:ss or h:mm:ss` guidance
+beneath each input. Blank means unknown; 0:00 is the start. Known times need not
+increase or fit within Show duration. Rows retain their order; no reordering
+controls are provided. All rows may be removed. Save trims text and returns the
+draft to Edit Show; only the parent Save persists it. Both dialogs use the
+existing dirty-discard behavior, with the parent inert while covered and focus
+restored to the tracklist action on return. Rows stack on phones, and the modal
+remains scrollable by keyboard.
 
 ### Optional form navigation and helpers
 

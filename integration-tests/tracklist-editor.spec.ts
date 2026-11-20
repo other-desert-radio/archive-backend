@@ -203,7 +203,7 @@ for (const width of [1280, 390, 320]) {
 			data: {
 				...showRequest(show),
 				tracklist: Array.from({ length: 8 }, (_, index) =>
-					index % 2 === 0
+					index < 2 || index >= 4
 						? {
 								artist: "Long artist name",
 								song: "Song with a long title",
@@ -251,12 +251,43 @@ for (const width of [1280, 390, 320]) {
 			editor.getByRole("button", { name: "Cancel", exact: true }),
 		).toBeInViewport();
 		if (width === 1280) expect((await editor.boundingBox())?.width).toBe(1080);
+		const rows = editor.getByRole("group", { name: /^Tracklist row / });
+		const assertLabels = async (expected: boolean[]) => {
+			for (const [index, visible] of expected.entries()) {
+				const row = rows.nth(index);
+				expect(
+					await row
+						.locator("label")
+						.evaluateAll((labels) =>
+							labels.every(
+								(label) => getComputedStyle(label).position !== "absolute",
+							),
+						),
+				).toBe(visible);
+				await expect(row.getByLabel("type", { exact: true })).toBeVisible();
+			}
+		};
+		await assertLabels([true, false, true, false, true, false, false, false]);
 		await page.screenshot({ path: `/tmp/tracklist-editor-${width}.png` });
+		await rows
+			.nth(1)
+			.getByLabel("type", { exact: true })
+			.selectOption("chapter");
+		await assertLabels([true, true, false, false, true, false, false, false]);
+		await rows
+			.nth(1)
+			.getByLabel("chapter", { exact: true })
+			.fill("Changed chapter");
+		await editor
+			.getByRole("button", { name: "Remove row 1", exact: true })
+			.click();
+		await assertLabels([true, false, false, true, false, false, false]);
+
 		await editor
 			.getByRole("button", { name: "+ Add track", exact: true })
 			.click();
 		const last = editor.getByRole("group", {
-			name: "Tracklist row 9",
+			name: "Tracklist row 8",
 			exact: true,
 		});
 		await last.getByLabel("artist", { exact: true }).fill("Last artist");
