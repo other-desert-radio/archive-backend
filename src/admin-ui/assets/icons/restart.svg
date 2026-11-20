@@ -1,1 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><title>Back to start</title><path d="M5 5v5h5M5.3 10a7 7 0 1 1 1.2 6.3"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" id="restart" viewBox="0 0 24 24"><title>Back to start</title><path d="M5 5v5h5M5.3 10a7 7 0 1 1 1.2 6.3"/></svg>

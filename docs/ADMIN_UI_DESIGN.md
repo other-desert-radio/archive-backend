@@ -579,20 +579,21 @@ Remaining count includes current and skipped pending rows. Save decreases it;
 Next Show advances without writes or count changes. The title displays the
 current position/total in regular weight beside “Import Show”. A “Back to start”
 header button rests as a borderless 24px restart SVG, with the same 1.5px stroke
-as the close icon. Hover or keyboard focus expands it left with a square outline
-and “Back to start” followed by the restart icon; its full area is clickable. It
-returns to the first pending show, using the same dirty-edit confirmation as
-other navigation. Each category independently remembers the current source ID in
-browser preferences, including after dismissal, navigation away, and page
-reload. Reopening resumes that pending source; if it is gone, use the next
-higher pending ID or the first pending row. Previous can revisit skipped rows.
-Reaching the end resets that category to the beginning for its next opening.
-Single-row imports do not change category progress. Cancel closes the import
-session without importing or advancing. Cancel and navigation guard dirty edits
-using the shared confirmation. Successful 201 and already-imported 200 responses
-advance, and the last session item closes automatically. Closing restores focus
-to the launching category button after the background becomes interactive. The
-resource view is inert while a dialog is open, and Refresh Mixcloud is disabled.
+as the close icon, increasing to 2.5px on hover. Hover or keyboard focus expands
+it left with a square outline and “Back to start” followed by the restart icon;
+its full area is clickable. It returns to the first pending show, using the same
+dirty-edit confirmation as other navigation. Each category independently
+remembers the current source ID in browser preferences, including after
+dismissal, navigation away, and page reload. Reopening resumes that pending
+source; if it is gone, use the next higher pending ID or the first pending row.
+Previous can revisit skipped rows. Reaching the end resets that category to the
+beginning for its next opening. Single-row imports do not change category
+progress. Cancel closes the import session without importing or advancing.
+Cancel and navigation guard dirty edits using the shared confirmation.
+Successful 201 and already-imported 200 responses advance, and the last session
+item closes automatically. Closing restores focus to the launching category
+button after the background becomes interactive. The resource view is inert
+while a dialog is open, and Refresh Mixcloud is disabled.
 
 After Save, local tracking and counts update before list/status reloads. Reload
 failures appear separately with Reload import list, preserving the committed

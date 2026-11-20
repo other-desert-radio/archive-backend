@@ -24,7 +24,7 @@ import {
 } from "./import-show-utils.js";
 
 const restartIcon = new URL(
-	"../../../../assets/icons/restart.svg",
+	"../../../../assets/icons/restart.svg?no-inline",
 	import.meta.url,
 ).href;
 
@@ -171,7 +171,7 @@ export const ImportShowForm = ({
 					? undefined
 					: {
 							label: "Back to start",
-							iconSrc: restartIcon,
+							iconSrc: `${restartIcon}#restart`,
 							onClick: onBackToStart,
 						}
 			}

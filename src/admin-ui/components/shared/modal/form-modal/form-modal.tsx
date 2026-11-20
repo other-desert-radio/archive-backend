@@ -225,14 +225,15 @@ export const FormModal = ({
 											{headerAction.label}
 										</span>
 										{headerAction.iconSrc && (
-											<img
+											<svg
 												className={styles.actionIcon}
-												src={headerAction.iconSrc}
 												width="24"
 												height="24"
-												alt=""
+												viewBox="0 0 24 24"
 												aria-hidden="true"
-											/>
+											>
+												<use href={headerAction.iconSrc} />
+											</svg>
 										)}
 									</button>
 								)}
