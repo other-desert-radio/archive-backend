@@ -620,13 +620,10 @@ for (const width of [1280, 390])
 test("empty DJ warning is limited to import and clears after selection", async ({
 	page,
 }) => {
-	await page.getByRole("button", { name: "Open create" }).click();
-	await page
-		.getByRole("button", { name: "existing show", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Open edit" }).click();
 	const search = page.getByRole("combobox", { name: "Search DJs" });
 	await expect(search).not.toHaveAttribute("aria-invalid", "true");
-	await expect(page.locator('label[for="show-djs"]')).toHaveCSS(
+	await expect(page.locator('label[for="edit-show-djs"]')).toHaveCSS(
 		"color",
 		"rgb(17, 17, 17)",
 	);

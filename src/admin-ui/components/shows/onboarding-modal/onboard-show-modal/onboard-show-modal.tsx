@@ -4,22 +4,18 @@ import type { ShowsAdminRow } from "../../../../loaders/shows.js";
 import {
 	ShowFormModal,
 	type ShowFormOptions,
-	type ShowOnboardingMode,
 } from "../show-form-modal/index.js";
 import {
 	SavedShowModal,
 	UploadedShowModal,
 } from "../uploaded-show-modal/index.js";
-import type { CreateShowForm } from "./onboard-show-utils.js";
 
 type Props = ShowFormOptions & {
 	isOpen: boolean;
 	tags: { id: number; title: string }[];
 	onSaved: (show: ShowsAdminRow) => void;
-	onSubmit: (request: CreateShowForm) => Promise<void>;
 };
 const OnboardShowForm = (props: Omit<Props, "isOpen">) => {
-	const [mode, setMode] = useState<ShowOnboardingMode>("new_show");
 	const opener = useRef(
 		typeof document !== "undefined" &&
 			document.activeElement instanceof HTMLElement
@@ -62,8 +58,7 @@ const OnboardShowForm = (props: Omit<Props, "isOpen">) => {
 			{...props}
 			onClose={close}
 			onUploaded={setUpload}
-			onboardingMode={{ value: mode, onChange: setMode }}
-			title={mode === "new_show" ? "Upload Show" : "Onboard Show"}
+			title="Upload Show"
 			idPrefix="show"
 			initialValues={{
 				tracklist: [],
@@ -80,6 +75,6 @@ const OnboardShowForm = (props: Omit<Props, "isOpen">) => {
 		/>
 	);
 };
-/** Creates a Show with the same fields and validation used for editing. */
+/** Uploads a new Show, then reviews and saves its archive metadata. */
 export const OnboardShowModal = ({ isOpen, ...props }: Props) =>
 	isOpen ? <OnboardShowForm {...props} /> : null;
