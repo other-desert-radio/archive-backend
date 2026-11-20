@@ -437,6 +437,11 @@ DJ image storage is unchanged.
 
 ### `specials`
 
+Migration `0050_add_special_description` adds nullable `description text`
+storing sanitized HTML like DJ bios. Existing rows start with `NULL`; rollback
+drops the column and loses descriptions. Admin create/edit accepts optional
+plain text; omitting it on edit preserves the value and blank text clears it.
+
 Migration `0046_add_specials` adds named groups with `id serial PRIMARY KEY`,
 `createdAt timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP`, and nonblank
 `title text NOT NULL`. A Show can belong to one Special through nullable

@@ -10,10 +10,28 @@ import {
 import { loadSpecials } from "../../src/admin-ui/loaders/specials.js";
 
 const rows: [
-	{ id: number; title: string; createdAt: string; showTitles: string[] },
-	{ id: number; title: string; createdAt: string; showTitles: string[] },
+	{
+		id: number;
+		title: string;
+		createdAt: string;
+		description?: string;
+		showTitles: string[];
+	},
+	{
+		id: number;
+		title: string;
+		createdAt: string;
+		description?: string;
+		showTitles: string[];
+	},
 ] = [
-	{ id: 1, title: "Night", createdAt: "", showTitles: ["Zebra", "Alpha"] },
+	{
+		id: 1,
+		title: "Night",
+		description: "<p>Late sessions</p>",
+		createdAt: "",
+		showTitles: ["Zebra", "Alpha"],
+	},
 	{ id: 2, title: "Morning", createdAt: "", showTitles: [] },
 ];
 test("special search matches names and spelled-out shows", () => {
@@ -40,12 +58,14 @@ test("special table spells out shows and both views enable Edit", () => {
 		/>,
 	);
 	expect(table).toContain("Zebra, Alpha");
+	expect(table).toContain("<p>Late sessions</p>");
 	expect(table).toContain("-");
 	expect(table).not.toMatch(/disabled=""[^>]*>Edit/);
 	const card = renderToStaticMarkup(
 		<SpecialCard special={rows[0]} onEdit={() => {}} onDelete={() => {}} />,
 	);
 	expect(card).toContain("Night");
+	expect(card).toContain("<p>Late sessions</p>");
 	expect(card).not.toContain("Zebra");
 	expect(card).not.toContain('disabled=""');
 });

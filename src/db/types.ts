@@ -164,6 +164,7 @@ export type ShowTracklistEntry = (
 ) & { start_time: number | null };
 
 export type SpecialsTable = {
+	description: string | null;
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	title: string;

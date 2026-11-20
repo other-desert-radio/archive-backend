@@ -25,6 +25,9 @@ for (const width of [1280, 390, 320]) {
 		await form
 			.getByRole("textbox", { name: "name", exact: true })
 			.fill(`  ${title}  `);
+		await form
+			.getByRole("textbox", { name: "description", exact: true })
+			.fill("Late sessions\nWith friends");
 		await page.screenshot({ path: `/tmp/specials-create-${width}.png` });
 		await form.getByRole("button", { name: "Create", exact: true }).click();
 		await expect(form).toBeHidden();
@@ -33,6 +36,7 @@ for (const width of [1280, 390, 320]) {
 			(row: { title: string }) => row.title === title,
 		);
 		expect(special).toBeDefined();
+		expect(special.description).toContain("Late sessions<br />With friends");
 		try {
 			const assigned = await request.post("/api/admin/modify-show", {
 				data: { ...showRequest(show), tags: [], special_id: special.id },
@@ -52,6 +56,9 @@ for (const width of [1280, 390, 320]) {
 				name: "Edit special",
 				exact: true,
 			});
+			await expect(
+				edit.getByRole("textbox", { name: "description", exact: true }),
+			).toHaveValue("Late sessions\nWith friends");
 			await edit
 				.getByRole("textbox", { name: "name", exact: true })
 				.fill("   ");

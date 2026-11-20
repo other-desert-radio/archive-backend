@@ -8,7 +8,13 @@ type Props = {
 };
 export const SpecialCard = ({ special, onEdit, onDelete }: Props) => (
 	<article className={styles.card} aria-label={`Special ${special.title}`}>
-		<span className={styles.name}>{special.title}</span>
+		<div className={styles.name}>
+			<span>{special.title}</span>
+			{special.description && (
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is sanitized by the authenticated API before rendering.
+				<div dangerouslySetInnerHTML={{ __html: special.description }} />
+			)}
+		</div>
 		<div className={styles.actions}>
 			<button
 				type="button"

@@ -22,6 +22,18 @@ export const specialColumns: ResourceTableColumn<
 		compare: (a, b) => a.title.localeCompare(b.title),
 	},
 	{
+		key: "description",
+		label: "description",
+		render: (row) =>
+			row.description ? (
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is sanitized by the authenticated API before rendering.
+				<div dangerouslySetInnerHTML={{ __html: row.description }} />
+			) : (
+				"-"
+			),
+		compare: (a, b) => (a.description ?? "").localeCompare(b.description ?? ""),
+	},
+	{
 		key: "shows",
 		label: "shows",
 		render: (row) => (row.showTitles?.length ? row.showTitles.join(", ") : "-"),

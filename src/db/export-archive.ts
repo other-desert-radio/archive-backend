@@ -103,6 +103,7 @@ export type ArchiveTag = {
 };
 
 export type ArchiveSpecial = {
+	description?: string | undefined;
 	id: number;
 	title: string;
 	createdAt: string;
@@ -309,6 +310,9 @@ export const buildArchiveDocuments = ({
 			.map((special) => ({
 				id: special.id,
 				title: special.title,
+				description: special.description
+					? sanitizeArchiveHtml(special.description)
+					: undefined,
 				createdAt: special.createdAt.toISOString(),
 				showIds: (showIdsBySpecial.get(special.id) ?? []).sort((a, b) => a - b),
 			})),
