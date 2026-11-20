@@ -364,6 +364,7 @@ for (const width of [1280, 390, 320]) {
 		).toBeVisible();
 		await duration.fill("");
 		await expect(duration).toHaveAttribute("placeholder", "m:ss or h:mm:ss");
+		await expect(form.locator("#edit-show-duration-help")).toHaveCount(0);
 		await expect(
 			form.getByText("m:ss or h:mm:ss", { exact: true }),
 		).toHaveCount(0);

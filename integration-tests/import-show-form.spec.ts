@@ -700,9 +700,7 @@ for (const width of [1280, 390, 320]) {
 			{ exact: true },
 		);
 		await expect(guidance).toBeHidden();
-		const group = form
-			.getByRole("combobox", { name: "Search DJs", exact: true })
-			.locator("../../..");
+		const group = form.locator('label[for="edit-show-djs"]').locator("../..");
 		await expect(group).toHaveCSS("outline-color", "rgb(187, 187, 187)");
 		await expect(
 			group.getByRole("combobox", { name: "Search DJs", exact: true }),

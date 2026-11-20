@@ -308,6 +308,14 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 		await expect(
 			form.getByRole("button", { name: "Remove Regression tag" }),
 		).toBeVisible();
+		await input.fill("New regression tag");
+		await input.press("Enter");
+		await expect(
+			form.getByText(
+				"The tag “New regression tag” does not exist elsewhere. It will be created after submit.",
+				{ exact: true },
+			),
+		).toBeVisible();
 		const gap = await input.evaluate((element) => {
 			const box = element.closest('[class*="box"]');
 			const helper = element.closest('[class*="control"]')?.querySelector("p");
