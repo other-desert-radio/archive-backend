@@ -50,12 +50,12 @@ describe("Show table helpers", () => {
 			"duration",
 			"image_small",
 			"image_large",
-			"mixcloud_image_small",
-			"mixcloud_image_large",
 			"DJs",
 			"Special",
 			"tags",
 			"tracklist",
+			"mixcloud_image_small",
+			"mixcloud_image_large",
 			"URL",
 		]);
 		expect(showColumns[1].render(shows[0])).toBe("2026-01-02 12:34:56 UTC");

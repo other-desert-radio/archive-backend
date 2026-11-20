@@ -109,20 +109,6 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			compare: (a, b) => compareText(a.image_large, b.image_large),
 		},
 		{
-			key: "mixcloud_image_small",
-			label: "mixcloud_image_small",
-			render: (show) => formatURL(show.mixcloud_image_small),
-			compare: (a, b) =>
-				compareText(a.mixcloud_image_small, b.mixcloud_image_small),
-		},
-		{
-			key: "mixcloud_image_large",
-			label: "mixcloud_image_large",
-			render: (show) => formatURL(show.mixcloud_image_large),
-			compare: (a, b) =>
-				compareText(a.mixcloud_image_large, b.mixcloud_image_large),
-		},
-		{
 			key: "djs",
 			label: "DJs",
 			render: (show) => formatRelationshipIDs(show.djs),
@@ -145,6 +131,20 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			label: "tracklist",
 			render: (show) => (show.tracklist.length === 0 ? "—" : trackCount(show)),
 			compare: (a, b) => trackCount(a) - trackCount(b),
+		},
+		{
+			key: "mixcloud_image_small",
+			label: "mixcloud_image_small",
+			render: (show) => formatURL(show.mixcloud_image_small),
+			compare: (a, b) =>
+				compareText(a.mixcloud_image_small, b.mixcloud_image_small),
+		},
+		{
+			key: "mixcloud_image_large",
+			label: "mixcloud_image_large",
+			render: (show) => formatURL(show.mixcloud_image_large),
+			compare: (a, b) =>
+				compareText(a.mixcloud_image_large, b.mixcloud_image_large),
 		},
 		{
 			key: "url",
