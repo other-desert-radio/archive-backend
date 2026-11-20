@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
 	filterShows,
 	getShowSearchValue,
+	ShowsTable,
 	showColumns,
 	sortShows,
 } from "../../src/admin-ui/components/shows/index.js";
@@ -195,4 +197,24 @@ test("Special titles and IDs are searchable and titles sortable", () => {
 	expect(filterShows(rows, "winter", new Map(), new Map())).toEqual([rows[0]]);
 	expect(filterShows(rows, "80", new Map(), new Map())).toEqual([rows[0]]);
 	expect(sortShows(rows, "special", "asc")).toEqual([rows[1], rows[0]]);
+});
+
+test("Shows table renders resolved tag chips and missing-tag fallbacks", () => {
+	const html = renderToStaticMarkup(
+		createElement(ShowsTable, {
+			shows: [
+				{ ...shows[0], tags: [7, 999] },
+				{ ...shows[1], tags: [] },
+			],
+			tagsById: new Map([[7, { id: 7, title: "ambient", color: "#abcdef" }]]),
+			sortColumn: "id",
+			sortDirection: "asc",
+			onSort: () => {},
+			onEdit: () => {},
+		}),
+	);
+	expect(html).toContain("ambient");
+	expect(html).toContain("Tag #999");
+	expect(html).toContain("None");
+	expect(html).toContain("background-color:#abcdef");
 });

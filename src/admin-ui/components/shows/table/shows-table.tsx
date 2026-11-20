@@ -1,5 +1,6 @@
 import { isHttpUrl, safeHtmlToPlainText } from "../../../../utils/index.js";
 import type { ShowsAdminRow } from "../../../loaders/shows.js";
+import type { TagsAdminRow } from "../../../loaders/tags.js";
 import {
 	formatDuration,
 	formatMissing,
@@ -9,11 +10,14 @@ import {
 	ResourceTable,
 	type ResourceTableColumn,
 	SanitizedHTML,
+	Tag,
+	TagsContainer,
 } from "../../shared/resource-views/index.js";
 import type { ShowSortColumn, SortDirection } from "./shows-table-utils.js";
 
 type ShowsTableProps = {
 	shows: ShowsAdminRow[];
+	tagsById: ReadonlyMap<number, TagsAdminRow>;
 	sortColumn: ShowSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: ShowSortColumn) => void;
@@ -152,6 +156,7 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 
 export const ShowsTable = ({
 	shows,
+	tagsById,
 	sortColumn,
 	sortDirection,
 	onSort,
@@ -162,7 +167,31 @@ export const ShowsTable = ({
 		rows={shows}
 		rowKey={(show) => show.id}
 		caption="Shows"
-		columns={showColumns}
+		columns={showColumns.map((column) =>
+			column.key !== "tags"
+				? column
+				: {
+						...column,
+						render: (show: ShowsAdminRow) =>
+							show.tags.length === 0 ? (
+								formatMissing(undefined)
+							) : (
+								<TagsContainer label={`${show.title} tags`}>
+									{show.tags.map((id) => {
+										const tag = tagsById.get(id);
+										return (
+											<Tag
+												key={id}
+												{...(tag === undefined ? {} : { color: tag.color })}
+											>
+												{tag?.title ?? `Tag #${id}`}
+											</Tag>
+										);
+									})}
+								</TagsContainer>
+							),
+					},
+		)}
 		sortColumn={sortColumn}
 		sortDirection={sortDirection}
 		onSort={onSort}

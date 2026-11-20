@@ -254,6 +254,7 @@ export const ShowsPage = () => {
 								return (
 									<ShowsTable
 										shows={visibleShows}
+										tagsById={tagsById}
 										sortColumn={sortColumn}
 										sortDirection={sortDirection}
 										onSort={handleSort}
