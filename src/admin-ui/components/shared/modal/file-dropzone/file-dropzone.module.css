@@ -28,9 +28,6 @@
 	text-align: left;
 	overflow-wrap: anywhere;
 }
-.dropzone:not(.hasFile) .button {
-	color: #999;
-}
 .compact {
 	padding: 0;
 	border: 0;
@@ -63,4 +60,8 @@
 	min-height: calc(3lh + 2px);
 	text-align: center;
 	overflow-wrap: anywhere;
+}
+
+.dropzone:not(.hasFile) .button {
+	color: #999;
 }
