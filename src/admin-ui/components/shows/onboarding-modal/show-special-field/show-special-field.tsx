@@ -28,6 +28,7 @@ export const ShowSpecialField = ({
 			hideSearchHelp={hideSearchHelp}
 			id={`${idPrefix}-special`}
 			label="Special"
+			emptyMessage="No specials available."
 			options={[
 				...options.specials.map((special) => ({
 					id: special.id,

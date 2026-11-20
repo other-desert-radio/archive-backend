@@ -25,17 +25,15 @@ export const parseTrackTime = (input: string): number | null => {
 	return seconds;
 };
 
+export const formatTracklistEntry = (entry: ShowTracklistEntry): string =>
+	[
+		...(entry.chapter !== undefined
+			? [entry.chapter]
+			: [entry.song, entry.artist]),
+		...(entry.start_time === null ? [] : [formatTrackTime(entry.start_time)]),
+	].join(", ");
+
 export const formatTracklist = (entries: ShowTracklistEntry[]): string =>
 	entries
-		.map(
-			(entry, index) =>
-				`${index + 1} | ${[
-					...(entry.chapter !== undefined
-						? [entry.chapter]
-						: [entry.song, entry.artist]),
-					...(entry.start_time === null
-						? []
-						: [formatTrackTime(entry.start_time)]),
-				].join(", ")}`,
-		)
+		.map((entry, index) => `${index + 1} | ${formatTracklistEntry(entry)}`)
 		.join("\n");

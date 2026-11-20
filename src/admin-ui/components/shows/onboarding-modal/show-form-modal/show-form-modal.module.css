@@ -51,23 +51,9 @@
 .editTracklist {
 	border-radius: 0;
 	min-height: 42px;
-	padding: 10px 12px;
-	border: 1px solid #000;
-	font: inherit;
-}
-
-.tracklistPreview {
-	display: block;
-	width: 100%;
-	padding: 0;
+	padding: 10px 0;
 	border: 0;
-	resize: none;
 	background: transparent;
-	margin: 0 0 12px;
-	max-height: 7.5em;
-	overflow-y: auto;
-	white-space: pre-wrap;
-	overflow-wrap: anywhere;
 	font: inherit;
-	line-height: 1.5;
+	font-weight: bold;
 }

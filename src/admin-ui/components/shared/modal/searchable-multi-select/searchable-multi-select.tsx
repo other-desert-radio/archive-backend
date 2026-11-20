@@ -16,6 +16,7 @@ type SearchableMultiSelectProps = {
 	singleSelection?: boolean;
 	id: string;
 	label: string;
+	emptyMessage?: string;
 	options: SearchableMultiSelectOption[];
 	selectedIds: number[];
 	onChange: (selectedIds: number[]) => void;
@@ -32,6 +33,7 @@ export const SearchableMultiSelect = ({
 	singleSelection = false,
 	id,
 	label,
+	emptyMessage = `No ${label.toLowerCase()} available.`,
 	options,
 	selectedIds,
 	onChange,
@@ -108,7 +110,7 @@ export const SearchableMultiSelect = ({
 						)}
 					</p>
 				) : options.length === 0 ? (
-					<p className={styles.message}>No {label.toLowerCase()} available.</p>
+					<p className={styles.message}>{emptyMessage}</p>
 				) : (
 					<fieldset
 						className={styles.inputGroup}

@@ -16,7 +16,7 @@
 	margin: 0;
 	display: grid;
 	grid-template-columns: 1.5rem minmax(0, 1fr) 8rem 7rem 2.625rem;
-	gap: 12px;
+	gap: 12px 4px;
 	align-items: start;
 	margin-bottom: 20px;
 }
@@ -127,11 +127,16 @@
 		padding: 12px 4px 12px 12px;
 	}
 	.row {
-		gap: 8px;
+		gap: 8px 4px;
 	}
 	.text {
 		grid-template-columns: minmax(0, 1fr);
 	}
+}
+
+.row label,
+.number {
+	color: #777;
 }
 
 .row[data-continuation="true"] label {
