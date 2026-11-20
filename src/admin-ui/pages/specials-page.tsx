@@ -110,6 +110,12 @@ export const SpecialsPage = () => {
 					noResultsMessage="No specials match your search."
 					toolbar={
 						<SpecialsToolbar
+							sortColumn={sortColumn}
+							sortDirection={sortDirection}
+							onSortChange={(column, direction) => {
+								setSortColumn(column);
+								setSortDirection(direction);
+							}}
 							viewMode={viewMode}
 							onViewModeChange={handleViewModeChange}
 							query={query}

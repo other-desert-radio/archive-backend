@@ -175,6 +175,12 @@ characters). It loads stored HTML as plain text and tracks unsaved edits.
 Descriptions render as sanitized HTML in both Shows table and grid views,
 preserving paragraphs and line breaks; search and sorting use readable text.
 
+Resource grids use `GridSort` from `shared/resource-views` immediately before
+Grid/table controls. Shows and DJs offer added-time and alphabetical sorting;
+Shows also offers show-date sorting. Tags and Specials use ID order for added
+sorting. The compact dropdown uses the triangle asset and appears only in grid
+view; table headers retain their sorting controls.
+
 Resource grid/table controls use `SegmentedPicker` from `shared/resource-views`.
 Callers own selection and persistence. The picker provides labeled grouped
 buttons with pressed states, optional disabled state, and native browser

@@ -36,7 +36,7 @@ export const ShowsPage = () => {
 	const [viewMode, setViewMode] = useState<ResourceViewMode>(() =>
 		userPreferences.getResourceViewMode("shows"),
 	);
-	const [sortColumn, setSortColumn] = useState<ShowSortColumn>("id");
+	const [sortColumn, setSortColumn] = useState<ShowSortColumn>("createdAt");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isLoading, setIsLoading] = useState(true);
 	const [reloadError, setReloadError] = useState<string>();
@@ -212,6 +212,12 @@ export const ShowsPage = () => {
 					noResultsMessage="No Shows match your search."
 					toolbar={
 						<ShowsToolbar
+							sortColumn={sortColumn}
+							sortDirection={sortDirection}
+							onSortChange={(column, direction) => {
+								setSortColumn(column);
+								setSortDirection(direction);
+							}}
 							query={query}
 							onQueryChange={setQuery}
 							viewMode={viewMode}

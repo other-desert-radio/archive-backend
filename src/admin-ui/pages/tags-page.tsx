@@ -112,6 +112,12 @@ export const TagsPage = () => {
 					noResultsMessage="No tags match your search."
 					toolbar={
 						<TagsToolbar
+							sortColumn={sortColumn}
+							sortDirection={sortDirection}
+							onSortChange={(column, direction) => {
+								setSortColumn(column);
+								setSortDirection(direction);
+							}}
 							viewMode={viewMode}
 							onViewModeChange={handleViewModeChange}
 							query={query}
