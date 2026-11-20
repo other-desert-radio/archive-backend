@@ -298,7 +298,7 @@ async function upload(page: Page, specialOnly = false) {
 			.click();
 	}
 	await form
-		.getByRole("button", { name: "add tracklist", exact: true })
+		.getByRole("button", { name: "Add tracklist", exact: true })
 		.click();
 	const editor = page.getByRole("dialog", {
 		name: "Add tracklist",

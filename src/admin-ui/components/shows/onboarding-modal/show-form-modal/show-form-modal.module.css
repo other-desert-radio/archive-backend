@@ -43,17 +43,27 @@
 	display: grid;
 	grid-template-columns: subgrid;
 	grid-column: 1 / -1;
-	align-items: start;
+	align-items: center;
 }
 .tracklistField > div {
 	min-width: 0;
 }
 .editTracklist {
 	border-radius: 0;
-	min-height: 42px;
-	padding: 10px 0;
+	min-height: 0;
+	padding: 0;
 	border: 0;
 	background: transparent;
 	font: inherit;
+	font-weight: normal;
+}
+
+.editTracklist:hover {
 	font-weight: bold;
+}
+
+.addTracklist {
+	min-height: 42px;
+	padding: 10px 12px;
+	border: 1px solid #000;
 }

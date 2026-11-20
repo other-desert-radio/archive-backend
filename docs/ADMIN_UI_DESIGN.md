@@ -230,8 +230,9 @@ remain stable, while edit controls use the `edit-show` prefix.
 ### Tracklist editing
 
 Show upload, onboarding, edit, and uploaded-show review display the `tracklist`
-label beside one button: `add tracklist` for an empty list, or `edit` when
-entries exist. The action uses bold, borderless text. Nonempty lists show a
+label beside one button: `Add tracklist` for an empty list, or `edit` when
+entries exist. `Add tracklist` uses a standard bordered button; `edit` uses
+regular, borderless text and becomes bold on hover. Nonempty lists show a
 read-only preview above the button, scrolling after five lines. The preview uses
 a table with gray row numbers and a gray vertical divider before the entry text.
 Empty lists show no preview or None placeholder. Both actions open the reusable

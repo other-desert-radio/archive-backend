@@ -218,10 +218,10 @@ export const ShowFormModal = ({
 						<button
 							type="button"
 							ref={tracklistOpener}
-							className={styles.editTracklist}
+							className={`${styles.editTracklist} ${fields.tracklist.length === 0 ? styles.addTracklist : ""}`}
 							onClick={() => setTracklistOpen(true)}
 						>
-							{fields.tracklist.length === 0 ? "add tracklist" : "edit"}
+							{fields.tracklist.length === 0 ? "Add tracklist" : "edit"}
 						</button>
 					</div>
 				</div>

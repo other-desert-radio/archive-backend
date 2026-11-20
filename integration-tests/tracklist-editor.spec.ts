@@ -24,7 +24,7 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 		parent.getByRole("button", { name: "Save", exact: true }),
 	).toBeDisabled();
 	const opener = parent.getByRole("button", {
-		name: /(?:add tracklist|edit)/,
+		name: /(?:Add tracklist|edit)/,
 		exact: true,
 	});
 	await opener.click();
@@ -154,7 +154,7 @@ test("editor and parent discard are independent; deleting all entries clears the
 	const parent = await openShowEditor(page, show.id);
 	const open = () =>
 		parent
-			.getByRole("button", { name: /(?:add tracklist|edit)/, exact: true })
+			.getByRole("button", { name: /(?:Add tracklist|edit)/, exact: true })
 			.click();
 	const editor = page.getByRole("dialog", {
 		name: /(?:Add tracklist|Edit Tracklist)/,
@@ -220,7 +220,7 @@ for (const width of [1280, 390, 320]) {
 			.scrollIntoViewIfNeeded();
 		await page.screenshot({ path: `/tmp/tracklist-preview-${width}.png` });
 		await parent
-			.getByRole("button", { name: /(?:add tracklist|edit)/, exact: true })
+			.getByRole("button", { name: /(?:Add tracklist|edit)/, exact: true })
 			.click();
 		const editor = page.getByRole("dialog", {
 			name: /(?:Add tracklist|Edit Tracklist)/,

@@ -208,10 +208,10 @@ const ReviewForm = ({
 						<button
 							type="button"
 							ref={tracklistOpener}
-							className={tracklistStyles.editTracklist}
+							className={`${tracklistStyles.editTracklist} ${tracklist.length === 0 ? tracklistStyles.addTracklist : ""}`}
 							onClick={() => setTracklistOpen(true)}
 						>
-							{tracklist.length === 0 ? "add tracklist" : "edit"}
+							{tracklist.length === 0 ? "Add tracklist" : "edit"}
 						</button>
 					</div>
 				</div>
