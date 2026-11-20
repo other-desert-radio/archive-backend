@@ -381,8 +381,6 @@ description text          -- nullable sanitized HTML
 tracklist   jsonb not null -- ordered array, default []
 mixcloud_image_large text not null -- Mixcloud image URL
 mixcloud_image_small text not null -- Mixcloud image URL
-image_small bytea         -- nullable stored WebP
-image_large bytea         -- nullable stored WebP
 url         text          -- audio source URL
 ```
 
@@ -428,15 +426,14 @@ matching application together because the previous application uses the old
 column names. Rollback renames the URL columns back after migration `0037` has
 been rolled back.
 
-Migration `0037_add_show_webp_images` adds nullable `bytea` image columns and
-the `shows_webp_image_pair` constraint: both must be NULL or both populated,
-like DJs. Existing rows remain NULL; there is no download or backfill. These
-columns reserve storage for future 400-by-400 and 1024-by-1024 WebP derivatives.
-Show create, edit, and import currently write only Mixcloud URLs and leave image
-bytes untouched. The admin Shows table links to authenticated stored-image
-endpoints when both variants exist. Upload and binary-image export support are
-deferred. Rolling back `0037` drops the binary columns and any stored images
-while retaining the Mixcloud URLs.
+Migration `0037_add_show_webp_images` introduced nullable binary image columns
+and a paired-image constraint without a backfill or application writer.
+Migration `0049_drop_show_webp_images` removes these unused columns and the
+`shows_webp_image_pair` constraint. Shows and Mixcloud image URLs are preserved;
+any manually stored binary images are lost. Rollback restores nullable columns
+and the pair constraint with NULL values, without recovering image bytes. Apply
+explicitly after deploying the application that no longer queries these fields.
+DJ image storage is unchanged.
 
 ### `specials`
 

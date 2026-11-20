@@ -19,7 +19,14 @@ test.skipIf(!databaseUrl)(
 	"show image migrations preserve URLs and enforce paired nullable bytes through rollback/reapply",
 	async () => {
 		const schema = `show_images_${crypto.randomUUID().replaceAll("-", "")}`;
-		const db = new Kysely<Database>({
+		const db = new Kysely<
+			Database & {
+				shows: Database["shows"] & {
+					image_small: Buffer | null;
+					image_large: Buffer | null;
+				};
+			}
+		>({
 			dialect: new PostgresDialect({
 				pool: new Pool({
 					connectionString: databaseUrl,

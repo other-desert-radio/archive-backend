@@ -87,28 +87,6 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			compare: (a, b) => a.duration - b.duration,
 		},
 		{
-			key: "image_small",
-			label: "image_small",
-			render: (show) =>
-				show.image_small === undefined ? (
-					formatMissing(undefined)
-				) : (
-					<a href={show.image_small}>image_small</a>
-				),
-			compare: (a, b) => compareText(a.image_small, b.image_small),
-		},
-		{
-			key: "image_large",
-			label: "image_large",
-			render: (show) =>
-				show.image_large === undefined ? (
-					formatMissing(undefined)
-				) : (
-					<a href={show.image_large}>image_large</a>
-				),
-			compare: (a, b) => compareText(a.image_large, b.image_large),
-		},
-		{
 			key: "djs",
 			label: "DJs",
 			render: (show) => formatRelationshipIDs(show.djs),

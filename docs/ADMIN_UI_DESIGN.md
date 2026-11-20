@@ -661,9 +661,8 @@ failed-save retention. Empty or invalid image URLs prevent submission. The Shows
 table exposes Mixcloud image URLs with clickable `mixcloud_image_small` and
 `mixcloud_image_large` columns, each searchable and independently sortable. Grid
 cards use the API’s `image` value, derived from `mixcloud_image_large`. The
-separate `image_small` and `image_large` columns match DJs: muted `-` when
-absent, or a named link to the authenticated stored WebP endpoint when present.
-Both columns support sorting and searching.
+Mixcloud image columns sit immediately before URL. Shows have no local binary
+image columns or stored-image links; DJs retain their stored image variants.
 
 ### Import success toast
 
