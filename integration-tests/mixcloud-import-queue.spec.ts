@@ -672,3 +672,69 @@ test("review date and unmatched DJ warnings share red styling at desktop and pho
 		).toBeVisible();
 	}
 });
+
+for (const width of [1280, 390, 320]) {
+	test(`back button expands left and stays clickable at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 800 });
+		await launch(page);
+		await page.getByRole("button", { name: "Next Show" }).click();
+		const back = page.getByRole("button", {
+			name: "Back to start",
+			exact: true,
+		});
+		await page.mouse.move(0, 0);
+		const resting = await back.boundingBox();
+		if (!resting) throw new Error("Back button missing");
+		const close = await page
+			.getByRole("button", { name: "Close", exact: true })
+			.boundingBox();
+		if (!close) throw new Error("Close button missing");
+		expect(close.x - (resting.x + resting.width)).toBeCloseTo(8, 0);
+		expect(resting.width).toBe(42);
+		const restingIcon = await back.locator("[aria-hidden]").boundingBox();
+		await expect(back).toHaveCSS("border-radius", "0px");
+		await expect(back).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
+		await expect(back.locator("svg")).toHaveCSS("width", "24px");
+		await expect(back.locator("svg")).toHaveCSS("height", "24px");
+		await expect(back.locator("use")).toHaveAttribute(
+			"href",
+			/restart.*\.svg#restart$/,
+		);
+		await expect(back.locator("svg")).toHaveCSS("stroke-width", "1.5px");
+		const iconUrl = await back.locator("use").getAttribute("href");
+		if (!iconUrl) throw new Error("Missing restart SVG URL");
+		const iconResponse = await page.request.get(
+			iconUrl.split("#")[0] ?? iconUrl,
+		);
+		expect(iconResponse.ok()).toBe(true);
+		expect(iconResponse.headers()["content-type"]).toContain("image/svg+xml");
+		await back.hover();
+		await expect(back.locator("svg")).toHaveCSS("stroke-width", "2.5px");
+		await expect(back).toHaveCSS("border-top-color", "rgb(0, 0, 0)");
+		await expect(back.locator("[aria-hidden]")).toBeVisible();
+		const expanded = await back.boundingBox();
+		if (!expanded) throw new Error("Expanded back button missing");
+		expect(expanded.width).toBeGreaterThan(resting.width);
+		await expect(back.locator("svg")).toHaveCSS("transform", "none");
+		const expandedIcon = await back.locator("[aria-hidden]").boundingBox();
+		expect(expandedIcon?.x).toBeCloseTo(restingIcon?.x ?? 0, 0);
+		expect(expandedIcon?.y).toBeCloseTo(restingIcon?.y ?? 0, 0);
+		expect(expanded.x + expanded.width).toBeCloseTo(
+			resting.x + resting.width,
+			0,
+		);
+		expect(expanded.x).toBeGreaterThanOrEqual(0);
+		await page.screenshot({ path: `/tmp/back-import-${width}.png` });
+		await back.click({ position: { x: 8, y: 20 } });
+		await expect(sourceId(page)).toHaveText("Source 2");
+		await page.getByRole("button", { name: "Next Show" }).click();
+		await page.mouse.move(0, 0);
+		await page.keyboard.press("Tab");
+		await back.focus();
+		expect((await back.boundingBox())?.width).toBeGreaterThan(42);
+		await back.press("Enter");
+		await expect(sourceId(page)).toHaveText("Source 2");
+	});
+}

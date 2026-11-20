@@ -3,7 +3,7 @@
 	min-width: 0;
 	position: relative;
 	border: 1px dashed #000;
-	padding: 24px 16px 16px;
+	padding: 16px 12px 12px;
 }
 .section h3 {
 	position: absolute;
@@ -30,6 +30,7 @@
 	margin-top: 0;
 }
 .section dt {
+	overflow-wrap: anywhere;
 	text-align: right;
 }
 .section dd {
@@ -37,12 +38,64 @@
 	min-width: 0;
 	overflow-wrap: anywhere;
 }
+.section dl > div:nth-child(-n + 2) {
+	grid-template-columns: 8ch minmax(0, 1fr);
+}
+.section dl > div:first-child dd {
+	padding-right: 32px;
+}
 @media (max-width: 450px) {
-	.section dl > div {
+	.section dl > div,
+	.section dl > div:nth-child(-n + 2) {
 		grid-template-columns: minmax(0, 1fr);
 		gap: 8px;
 	}
 	.section dt {
 		text-align: left;
 	}
+}
+
+.section dl > div[hidden] {
+	display: none;
+}
+.toggle {
+	position: absolute;
+	right: 4px;
+	top: 8px;
+	width: 40px;
+	height: 40px;
+	border: 0;
+	background: transparent;
+	font: inherit;
+	cursor: pointer;
+}
+.toggle:hover {
+	background: #eee;
+}
+
+.toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border-radius: 0;
+}
+.toggleLabel {
+	display: none;
+}
+.chevron {
+	width: 24px;
+	height: 24px;
+	flex-shrink: 0;
+}
+.toggle[aria-expanded="true"] .chevron {
+	transform: rotate(180deg);
+}
+.toggle:is(:hover, :focus-visible) {
+	width: auto;
+	padding: 0 12px;
+	background: #eee;
+}
+.toggle:is(:hover, :focus-visible) .toggleLabel {
+	display: inline;
 }

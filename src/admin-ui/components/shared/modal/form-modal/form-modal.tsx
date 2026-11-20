@@ -15,6 +15,7 @@ import styles from "./form-modal.module.css";
 
 type ModalAction = {
 	label: string;
+	iconSrc?: string;
 	onClick: () => void;
 	disabled?: boolean;
 };
@@ -209,13 +210,31 @@ export const FormModal = ({
 								{headerAction !== undefined && (
 									<button
 										type="button"
-										className={`${styles.cancel} ${styles.headerAction}`}
+										className={`${styles.cancel} ${styles.headerAction} ${headerAction.iconSrc ? styles.iconAction : ""}`}
+										aria-label={headerAction.label}
 										disabled={
 											headerAction.disabled || isSubmitting || isCovered
 										}
 										onClick={() => requestAction(headerAction.onClick)}
 									>
-										{headerAction.label}
+										<span
+											className={
+												headerAction.iconSrc ? styles.actionLabel : undefined
+											}
+										>
+											{headerAction.label}
+										</span>
+										{headerAction.iconSrc && (
+											<svg
+												className={styles.actionIcon}
+												width="24"
+												height="24"
+												viewBox="0 0 24 24"
+												aria-hidden="true"
+											>
+												<use href={headerAction.iconSrc} />
+											</svg>
+										)}
 									</button>
 								)}
 								<button

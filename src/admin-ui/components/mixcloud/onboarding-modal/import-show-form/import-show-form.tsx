@@ -23,6 +23,11 @@ import {
 	resolveImportTags,
 } from "./import-show-utils.js";
 
+const restartIcon = new URL(
+	"../../../../assets/icons/restart.svg?no-inline",
+	import.meta.url,
+).href;
+
 export type ImportShowFormProps = {
 	/** Source record for this form instance; remount the form when its ID changes. */
 	row: MixcloudImportAdminRow;
@@ -65,6 +70,7 @@ export const ImportShowForm = ({
 		invalid: string[];
 	}>();
 	const [initialized, setInitialized] = useState(false);
+	const [dateEdited, setDateEdited] = useState(false);
 	const [resolutionError, setResolutionError] = useState<string>();
 	// Retries and effect cleanup invalidate responses from earlier resolution runs.
 	const versionRef = useRef(0);
@@ -165,6 +171,7 @@ export const ImportShowForm = ({
 					? undefined
 					: {
 							label: "Back to start",
+							iconSrc: `${restartIcon}#restart`,
 							onClick: onBackToStart,
 						}
 			}
@@ -212,14 +219,17 @@ export const ImportShowForm = ({
 				fields={fields}
 				setFields={setFields}
 				idPrefix="import-show"
+				onDateChange={() => setDateEdited(true)}
 				dateError={
-					row.date_source !== "title" || row.derived_date === undefined
+					(row.date_source !== "title" || row.derived_date === undefined) &&
+					(!dateEdited || !fields.date)
 						? "Unable to parse date automatically"
 						: undefined
 				}
 			/>
 			<ShowRelationshipFields
 				groupRelationships
+				hideInstructions
 				specialOptions={specialOptions}
 				hideDJSearchHelp={unmatchedDJs.length > 0}
 				highlightEmptyDJs

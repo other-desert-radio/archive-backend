@@ -281,10 +281,14 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 			}),
 		);
 		await add.click();
+		if (resource === "shows")
+			await page
+				.getByRole("button", { name: "existing show", exact: true })
+				.click();
 		const form = page.getByRole("dialog", {
-			name: resource === "djs" ? "Onboard DJ" : "Upload Show",
+			name: resource === "djs" ? "Onboard DJ" : "Onboard Show",
 		});
-		await expect(form).toBeFocused();
+		if (resource === "djs") await expect(form).toBeFocused();
 		await expect(
 			form
 				.getByText("Type to search. Press Tab to accept the gray completion.")

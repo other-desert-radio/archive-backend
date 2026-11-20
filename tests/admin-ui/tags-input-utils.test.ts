@@ -22,6 +22,7 @@ describe("tag input helpers", () => {
 		]);
 	});
 	test("orders prefix matches before other substring matches and excludes selected tags", () => {
+		expect(findTagMatches("", options, ["Dance"])).toEqual(options.slice(1));
 		expect(findTagMatches("da", options, ["Dance"])).toEqual([options[1]]);
 		expect(findTagMatches("a", options, [])).toEqual([
 			options[0],

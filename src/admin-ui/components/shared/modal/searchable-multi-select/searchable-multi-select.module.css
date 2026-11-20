@@ -176,3 +176,17 @@
 .missing .input {
 	caret-color: #ff2c2c;
 }
+
+.muted > label,
+.muted .preview,
+.muted .input::placeholder,
+.muted .chip {
+	color: #999;
+}
+.muted .box,
+.muted .chip {
+	border-color: #bbb;
+}
+.muted .input {
+	caret-color: #999;
+}

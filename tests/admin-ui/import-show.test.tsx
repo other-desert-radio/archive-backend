@@ -107,8 +107,8 @@ test("source section includes exactly the approved labels and renders missing va
 	);
 	expect(
 		[...markup.matchAll(/<dt>(.*?)<\/dt>/g)].map((match) => match[1]),
-	).toEqual(["name", "url", "created_time", "duration", "mixcloud_tag_json"]);
-	expect(markup).toContain("2026-10-01 02:03:04 UTC");
+	).toEqual(["name", "created", "url", "duration", "mixcloud_tag_json"]);
+	expect(markup).toContain("October 1, 2026 2:03 am");
 	expect(markup).toContain("01:01:01");
 	expect(markup).toContain("None");
 	for (const hidden of [

@@ -175,6 +175,10 @@
 	min-width: 0;
 	overflow-wrap: anywhere;
 }
+.headerActions:has(.iconAction) {
+	column-gap: 8px;
+}
+
 .navigation {
 	position: absolute;
 	top: 50%;
@@ -266,4 +270,49 @@
 	margin: 8px 0 0;
 	color: #555;
 	font-size: var(--modal-helper-size);
+}
+
+.headerAction.iconAction {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	width: 42px;
+	height: 42px;
+	padding: 0 8px;
+	border: 1px solid transparent;
+	border-radius: 0;
+	background: #fff;
+	font-weight: 400;
+	flex-shrink: 0;
+}
+.iconAction .actionLabel {
+	display: none;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.actionIcon {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.5;
+	stroke-linecap: square;
+	stroke-linejoin: miter;
+	display: block;
+	flex: 0 0 24px;
+	width: 24px;
+	height: 24px;
+}
+.headerAction.iconAction:is(:hover, :focus-visible):not(:disabled) {
+	width: calc(13ch + 50px);
+	margin-left: calc(42px - (13ch + 50px));
+	font-weight: 400;
+	border-color: #000;
+	background: #eee;
+}
+.iconAction:is(:hover, :focus-visible):not(:disabled) .actionLabel {
+	display: inline;
+}
+
+.headerAction:enabled:hover .actionIcon {
+	stroke-width: 2.5;
 }

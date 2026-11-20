@@ -28,6 +28,7 @@ type Props = {
 	djHelper?: ReactNode;
 	highlightEmptyDJs?: boolean;
 	hideDJSearchHelp?: boolean;
+	hideInstructions?: boolean;
 	tagHelper?: ReactNode;
 };
 type AssignmentProps = Omit<
@@ -48,6 +49,7 @@ export const ShowAssignmentFields = ({
 	djHelper,
 	highlightEmptyDJs = false,
 	hideDJSearchHelp = false,
+	hideInstructions = false,
 }: AssignmentProps) => {
 	const djOptions = djs.map((dj) => ({
 		id: dj.id,
@@ -56,7 +58,7 @@ export const ShowAssignmentFields = ({
 	}));
 	return (
 		<div className={groupRelationships ? styles.group : styles.relationships}>
-			{groupRelationships && (
+			{groupRelationships && !hideInstructions && (
 				<p className={styles.guidance}>
 					Choose archive DJs or a special to save this show.
 				</p>
@@ -64,8 +66,9 @@ export const ShowAssignmentFields = ({
 			<SearchableMultiSelect
 				id={`${idPrefix}-djs`}
 				label="DJs"
+				muted={fields.special_id != null && fields.selected.length === 0}
 				helper={djHelper}
-				hideSearchHelp={hideDJSearchHelp}
+				hideSearchHelp={hideInstructions || hideDJSearchHelp}
 				highlightEmptySelection={highlightEmptyDJs && fields.special_id == null}
 				options={djOptions}
 				selectedIds={fields.selected}
@@ -79,6 +82,7 @@ export const ShowAssignmentFields = ({
 				setFields={setFields}
 				idPrefix={idPrefix}
 				options={specialOptions}
+				hideSearchHelp={hideInstructions}
 			/>
 		</div>
 	);
@@ -95,6 +99,7 @@ export const ShowRelationshipFields = ({
 	<>
 		<ShowAssignmentFields {...props} />
 		<TagsInput
+			hideSearchHelp={props.hideInstructions ?? false}
 			id={`${props.idPrefix}-tags`}
 			helper={tagHelper}
 			value={{ tags: props.fields.tags, draft: props.fields.tagDraft }}
