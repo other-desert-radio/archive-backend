@@ -40,6 +40,7 @@ export type MixcloudConnectionsTable = {
 
 /** Successful provider uploads awaiting review; media bytes are never retained. */
 export type MixcloudUploadsTable = {
+	tracklist: ColumnType<ShowTracklistEntry[], string | undefined, string>;
 	id: Generated<number>;
 	createdAt: Generated<Date>;
 	created_by: string | null;

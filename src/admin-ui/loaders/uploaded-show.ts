@@ -6,6 +6,7 @@ import type {
 } from "../../admin/routes/mixcloud/index.js";
 import { ReviewedUploadFieldsPattern } from "../../admin/routes/mixcloud/types.js";
 import { UploadedCloudcastPattern } from "../../mixcloud/cloudcast.js";
+import { isShowTracklistEntry } from "../../utils/show-tracklist.js";
 import { apiFetch } from "./api-fetch.js";
 import { describeMutationFailure } from "./mutation-error.js";
 import type { ShowsAdminRow } from "./shows.js";
@@ -86,6 +87,7 @@ export const prepareUploadedShow = async (
 			{
 				uploadId: P.number,
 				editorial: ReviewedUploadFieldsPattern,
+				tracklist: P.optional(P.array(P.when(isShowTracklistEntry))),
 				mixcloud: UploadedCloudcastPattern,
 			},
 			result,
@@ -95,7 +97,8 @@ export const prepareUploadedShow = async (
 		throw new Error(
 			"Mixcloud review data was unreadable. Retry loading details without uploading again.",
 		);
-	return result;
+	const { tracklist, ...review } = result;
+	return { ...review, ...(tracklist === undefined ? {} : { tracklist }) };
 };
 
 /** Reviewed editorial fields → persisted Show; retries use the same upload ID. */

@@ -1,7 +1,10 @@
 import { openAsBlob } from "node:fs";
 import { isMatching, P } from "ts-pattern";
 
+import type { ShowTracklistEntry } from "../db/types.js";
+
 export type MixcloudUpload = {
+	tracklist?: ShowTracklistEntry[];
 	title: string;
 	tags: string[];
 	path: string;
@@ -30,6 +33,16 @@ export const uploadToMixcloud = async (
 		body.set("description", upload.description);
 	upload.tags.forEach((tag, index) => {
 		body.set(`tags-${index}-tag`, tag);
+	});
+	upload.tracklist?.forEach((entry, index) => {
+		if (entry.chapter !== undefined) {
+			body.set(`sections-${index}-chapter`, entry.chapter);
+		} else {
+			body.set(`sections-${index}-artist`, entry.artist);
+			body.set(`sections-${index}-song`, entry.song);
+		}
+		if (entry.start_time !== null)
+			body.set(`sections-${index}-start_time`, String(entry.start_time));
 	});
 	// Disk-backed Blob lets the runtime stream multipart audio without a whole-file buffer.
 	body.set(

@@ -179,3 +179,30 @@ test("maps provider timeout without retrying", async () => {
 	});
 	expect(result).toEqual({ success: false, statusCode: 504 });
 });
+
+test("uploads ordered tracks and chapters, omitting unknown timestamps", async () => {
+	const result = await uploadToMixcloud(
+		"token",
+		{
+			...upload,
+			tracklist: [
+				{ chapter: "Intro", start_time: 0 },
+				{ artist: "Artist", song: "Song", start_time: 90 },
+				{ artist: "Unknown time", song: "Song", start_time: null },
+			],
+		},
+		async (_url, options) => {
+			const body = options.body;
+			if (!(body instanceof FormData)) throw new Error("Expected multipart");
+			expect(body.get("sections-0-chapter")).toBe("Intro");
+			expect(body.get("sections-0-start_time")).toBe("0");
+			expect(body.has("sections-0-artist")).toBe(false);
+			expect(body.get("sections-1-artist")).toBe("Artist");
+			expect(body.get("sections-1-song")).toBe("Song");
+			expect(body.get("sections-1-start_time")).toBe("90");
+			expect(body.has("sections-2-start_time")).toBe(false);
+			return Response.json({ result: { success: true, key: "/odr/show/" } });
+		},
+	);
+	expect(result.success).toBe(true);
+});

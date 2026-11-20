@@ -66,6 +66,7 @@ const OnboardShowForm = (props: Omit<Props, "isOpen">) => {
 			title={mode === "new_show" ? "Upload Show" : "Onboard Show"}
 			idPrefix="show"
 			initialValues={{
+				tracklist: [],
 				title: "",
 				date: "",
 				duration: "",

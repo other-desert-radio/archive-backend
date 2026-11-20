@@ -160,6 +160,7 @@ test.skipIf(!databaseUrl)(
 				db,
 				"actor",
 				{
+					tracklist: [{ chapter: "Opening", start_time: 0 }],
 					title: "Original title",
 					description: "Original description",
 					date: "2026-10-26",
@@ -214,6 +215,7 @@ test.skipIf(!databaseUrl)(
 				"0045_add_show_details_dataset",
 				"0046_add_specials",
 				"0047_add_upload_special",
+				"0048_add_upload_tracklist",
 			]) {
 				const migration = await import(`../../src/db/migrations/${name}.js`);
 				await db.transaction().execute(migration.up);
@@ -362,6 +364,7 @@ test.skipIf(!databaseUrl)(
 			);
 			expect(prepared.json()).toMatchObject({
 				uploadId: upload.id,
+				tracklist: [{ chapter: "Opening", start_time: 0 }],
 				editorial: {
 					title: "Original title",
 					description: "Original description",
@@ -455,6 +458,7 @@ test.skipIf(!databaseUrl)(
 			const saved = responses[0]?.json().show;
 			expect(responses[1]?.json().show).toEqual(saved);
 			expect(saved).toMatchObject({
+				tracklist: [{ chapter: "Opening", start_time: 0 }],
 				title: "Reviewed title",
 				description: "<p>Our description<br />Second line</p>",
 				date: "2026-10-25T00:00:00.000Z",

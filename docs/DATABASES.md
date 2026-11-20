@@ -632,3 +632,8 @@ Durable attempts and uncertain upload recovery are deferred to the
 [future recovery plan](plans/future/mixcloud-upload-recovery.md). Migration and
 storage tests use `MIXCLOUD_UPLOADS_TEST_DATABASE_URL` with an isolated schema
 in a disposable PostgreSQL database.
+
+Migration `0048_add_upload_tracklist` adds a validated JSONB tracklist to
+pending Mixcloud uploads, defaulting existing drafts to `[]`. It reuses
+`shows_tracklist_valid`. Apply it before deploying tracklist uploads. Rollback
+loses pending tracklists; saved Show tracklists remain intact.

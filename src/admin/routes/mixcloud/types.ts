@@ -1,11 +1,13 @@
 import { P } from "ts-pattern";
 import type { ArchiveAuth } from "../../../auth/auth.js";
+import type { ShowTracklistEntry } from "../../../db/types.js";
 import type {
 	MixcloudClient,
 	MixcloudCloudcast,
 	MixcloudIdentity,
 	MixcloudStore,
 } from "../../../mixcloud/index.js";
+import { isShowTracklistEntry } from "../../../utils/show-tracklist.js";
 import type { AdminShowsJSON } from "../shows/types.js";
 import type { AdminApiReply, ErrorResponse, TypedDatabase } from "../types.js";
 
@@ -81,6 +83,7 @@ export type UploadMixcloudRoute = {
 
 /** Only editorial fields may be supplied when saving an uploaded show. */
 export const ReviewedUploadFieldsPattern = {
+	tracklist: P.optional(P.array(P.when(isShowTracklistEntry))),
 	special_id: P.optional(
 		P.union(P.number.int().between(1, 2_147_483_647), null),
 	),
@@ -94,6 +97,7 @@ export type ReviewedUploadFields = P.infer<typeof ReviewedUploadFieldsPattern>;
 export type UploadedShowReview = {
 	uploadId: number;
 	editorial: ReviewedUploadFields;
+	tracklist?: ShowTracklistEntry[];
 	mixcloud: MixcloudCloudcast;
 };
 export type SavedUploadedShow = { created: boolean; show: AdminShowsJSON };

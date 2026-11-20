@@ -90,6 +90,7 @@ export const prepareUploadedShowHandler =
 			);
 			return reply.code(200).send({
 				uploadId,
+				tracklist: prepared.tracklist,
 				editorial: {
 					title: prepared.title,
 					description: prepared.description ?? "",

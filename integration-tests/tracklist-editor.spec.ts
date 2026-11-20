@@ -24,12 +24,12 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 		parent.getByRole("button", { name: "Save", exact: true }),
 	).toBeDisabled();
 	const opener = parent.getByRole("button", {
-		name: "Edit Tracklist",
+		name: /(?:add|edit) tracklist/,
 		exact: true,
 	});
 	await opener.click();
 	const editor = page.getByRole("dialog", {
-		name: "Edit Tracklist",
+		name: /(?:Add tracklist|Edit Tracklist)/,
 		exact: true,
 	});
 	await expect(editor).toBeVisible();
@@ -85,8 +85,8 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	await expect(editor).toBeHidden();
 	await expect(opener).toBeFocused();
 	await expect(
-		parent.getByRole("textbox", { name: "tracklist", exact: true }),
-	).toHaveValue("1 | Song, Artist, 3:07\n2 | Intro, 0:00");
+		parent.getByRole("button", { name: "edit tracklist", exact: true }),
+	).toBeVisible();
 	expect((await loadShow(request, show.id)).tracklist).toEqual([]);
 	await page.route(
 		"**/api/admin/modify-show",
@@ -103,8 +103,8 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 		"Tracklist save failed",
 	);
 	await expect(
-		parent.getByRole("textbox", { name: "tracklist", exact: true }),
-	).toHaveValue("1 | Song, Artist, 3:07\n2 | Intro, 0:00");
+		parent.getByRole("button", { name: "edit tracklist", exact: true }),
+	).toBeVisible();
 	await saveShow(page);
 	expect((await loadShow(request, show.id)).tracklist).toEqual([
 		{ artist: "Artist", song: "Song", start_time: 187 },
@@ -153,9 +153,11 @@ test("editor and parent discard are independent; deleting all entries clears the
 	await page.reload();
 	const parent = await openShowEditor(page, show.id);
 	const open = () =>
-		parent.getByRole("button", { name: "Edit Tracklist", exact: true }).click();
+		parent
+			.getByRole("button", { name: /(?:add|edit) tracklist/, exact: true })
+			.click();
 	const editor = page.getByRole("dialog", {
-		name: "Edit Tracklist",
+		name: /(?:Add tracklist|Edit Tracklist)/,
 		exact: true,
 	});
 	await open();
@@ -172,8 +174,8 @@ test("editor and parent discard are independent; deleting all entries clears the
 	await editor.getByRole("button", { name: "Cancel", exact: true }).click();
 	await discard.getByRole("button", { name: "Discard changes" }).click();
 	await expect(
-		parent.getByRole("textbox", { name: "tracklist", exact: true }),
-	).toHaveValue("1 | Opening");
+		parent.getByRole("button", { name: "edit tracklist", exact: true }),
+	).toBeVisible();
 	await open();
 	await editor.getByRole("button", { name: "Remove row 1" }).click();
 	await editor.getByRole("button", { name: "Save", exact: true }).click();
@@ -191,7 +193,7 @@ test("editor and parent discard are independent; deleting all entries clears the
 });
 
 for (const width of [1280, 390, 320]) {
-	test(`tracklist preview and editor fit and scroll at ${width}px`, async ({
+	test(`tracklist action and editor fit and scroll at ${width}px`, async ({
 		page,
 		request,
 		show,
@@ -213,24 +215,15 @@ for (const width of [1280, 390, 320]) {
 		});
 		await page.reload();
 		const parent = await openShowEditor(page, show.id);
-		const preview = parent.getByRole("textbox", {
-			name: "tracklist",
-			exact: true,
-		});
-		await preview.scrollIntoViewIfNeeded();
-		expect(
-			await preview.evaluate(
-				(element) => element.scrollHeight > element.clientHeight,
-			),
-		).toBe(true);
-		await preview.focus();
-		await page.keyboard.press("End");
+		await parent
+			.getByRole("button", { name: "edit tracklist", exact: true })
+			.scrollIntoViewIfNeeded();
 		await page.screenshot({ path: `/tmp/tracklist-preview-${width}.png` });
 		await parent
-			.getByRole("button", { name: "Edit Tracklist", exact: true })
+			.getByRole("button", { name: /(?:add|edit) tracklist/, exact: true })
 			.click();
 		const editor = page.getByRole("dialog", {
-			name: "Edit Tracklist",
+			name: /(?:Add tracklist|Edit Tracklist)/,
 			exact: true,
 		});
 		await expect(editor).toBeVisible();

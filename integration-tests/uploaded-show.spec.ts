@@ -7,6 +7,9 @@ const cover = await sharp({
 })
 	.png()
 	.toBuffer();
+const tracklist = [
+	{ artist: "Track artist", song: "Track song", start_time: 30 },
+];
 const editorial = {
 	title: "Our show",
 	description: "Our description",
@@ -184,6 +187,9 @@ async function setup(
 		if (path === "/api/admin/mixcloud/upload") {
 			uploaded = !options.uploadFails;
 			calls.uploads++;
+			expect(route.request().postDataBuffer()?.toString()).toContain(
+				JSON.stringify(tracklist),
+			);
 			await uploadGate;
 			expect(route.request().postDataBuffer()?.toString()).toContain(
 				'name="djs"',
@@ -213,6 +219,7 @@ async function setup(
 				: route.fulfill({
 						json: {
 							uploadId: 5,
+							tracklist,
 							editorial: options.specialOnly
 								? { ...editorial, djs: [], special_id: 7 }
 								: editorial,
@@ -290,6 +297,31 @@ async function upload(page: Page, specialOnly = false) {
 			.getByRole("option", { name: "Original DJ", exact: true })
 			.click();
 	}
+	await form
+		.getByRole("button", { name: "add tracklist", exact: true })
+		.click();
+	const editor = page.getByRole("dialog", {
+		name: "Add tracklist",
+		exact: true,
+	});
+	await editor
+		.getByRole("button", { name: "+ Add track", exact: true })
+		.click();
+	await editor
+		.getByRole("textbox", { name: "artist", exact: true })
+		.fill("Track artist");
+	await editor
+		.getByRole("textbox", { name: "song", exact: true })
+		.fill("Track song");
+	await editor.getByRole("textbox", { name: /timestamp/ }).fill("0:30");
+	await editor.getByRole("button", { name: "Save", exact: true }).click();
+	await expect(
+		form.getByRole("button", { name: "edit tracklist", exact: true }),
+	).toBeFocused();
+
+	await expect(
+		form.getByRole("textbox", { name: "tracklist", exact: true }),
+	).toHaveValue("1 | Track song, Track artist, 0:30");
 	await form.locator("#show-mp3").setInputFiles({
 		name: "show.mp3",
 		mimeType: "audio/mpeg",
@@ -318,6 +350,9 @@ for (const width of [1280, 390, 320])
 			exact: true,
 		});
 		await expect(review).toBeVisible();
+		await expect(
+			review.getByRole("textbox", { name: "tracklist", exact: true }),
+		).toHaveValue("1 | Track song, Track artist, 0:30");
 		await expect(
 			review.getByRole("textbox", { name: "title", exact: true }),
 		).toHaveValue(editorial.title);
@@ -384,6 +419,7 @@ for (const width of [1280, 390, 320])
 			{
 				title: "Reviewed title",
 				description: "Reviewed description",
+				tracklist,
 				date: "2026-10-25",
 				djs: [2],
 				special_id: null,

@@ -48,6 +48,14 @@
 .tracklistField > div {
 	min-width: 0;
 }
+.editTracklist {
+	border-radius: 0;
+	min-height: 42px;
+	padding: 10px 12px;
+	border: 1px solid #000;
+	font: inherit;
+}
+
 .tracklistPreview {
 	display: block;
 	width: 100%;
@@ -62,15 +70,4 @@
 	overflow-wrap: anywhere;
 	font: inherit;
 	line-height: 1.5;
-}
-.editTracklist {
-	border-radius: 0;
-	min-height: 42px;
-	padding: 10px 12px;
-	border: 1px solid #000;
-	font: inherit;
-}
-
-.tracklistPreview[data-empty="true"] {
-	color: #555;
 }

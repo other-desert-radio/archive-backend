@@ -1,6 +1,9 @@
 import type { Selectable } from "kysely";
 import { isMatching } from "ts-pattern";
-import type { MixcloudUploadsTable } from "../../../../../db/types.js";
+import type {
+	MixcloudUploadsTable,
+	ShowTracklistEntry,
+} from "../../../../../db/types.js";
 import {
 	type MixcloudCloudcast,
 	UploadedCloudcastPattern,
@@ -16,6 +19,7 @@ export type UploadedShow = Selectable<MixcloudUploadsTable>;
 
 /** Editorial fields retained separately from provider transport metadata. */
 export type UploadedShowDraft = {
+	tracklist?: ShowTracklistEntry[];
 	title: string;
 	description?: string;
 	date: string;
@@ -47,6 +51,7 @@ export const recordUploadedShow = async (
 			.insertInto("mixcloud_uploads")
 			.values({
 				...draft,
+				tracklist: JSON.stringify(draft.tracklist ?? []),
 				date: new Date(`${draft.date}T00:00:00.000Z`),
 				description: draft.description ?? null,
 				special_id: special?.id ?? null,
@@ -132,6 +137,7 @@ export const saveReviewedUpload = async (
 			mixcloud_image_large: cloudcast.pictures["1024wx1024h"],
 			tags: reviewed.tags ?? cloudcast.tags.map(({ name }) => name),
 		});
+		normalized.tracklist = reviewed.tracklist ?? upload.tracklist;
 		await persistMixcloudEntry(transaction, cloudcast);
 		const tracking = await transaction
 			.selectFrom("mixcloud_import")

@@ -15,7 +15,10 @@ import {
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { formatDuration } from "../../../shared/resource-views/index.js";
+import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
+import { formatTracklist } from "../../tracklist-editor-modal/tracklist-utils.js";
 import type { ShowFormOptions } from "../show-form-modal/index.js";
+import tracklistStyles from "../show-form-modal/show-form-modal.module.css";
 import {
 	buildShowFormRequest,
 	useShowFormState,
@@ -94,6 +97,9 @@ const ReviewForm = ({
 }: UploadedShowModalProps & { review: UploadedShowReview }) => {
 	const { editorial, mixcloud } = review;
 	const specialOptions = useSpecialOptions();
+	const [tracklist, setTracklist] = useState(review.tracklist ?? []);
+	const [isTracklistOpen, setTracklistOpen] = useState(false);
+	const tracklistOpener = useRef<HTMLButtonElement>(null);
 	const { fields, setFields } = useShowFormState({
 		title: editorial.title,
 		date: editorial.date,
@@ -128,6 +134,7 @@ const ReviewForm = ({
 		saved.current = await saveUploadedShow(review.uploadId, {
 			title: fields.title.trim(),
 			description,
+			tracklist,
 			date: fields.date,
 			djs: fields.selected,
 			special_id: fields.special_id ?? null,
@@ -135,131 +142,166 @@ const ReviewForm = ({
 		});
 	};
 	return (
-		<FormModal
-			isOpen
-			title="Review Show"
-			onClose={onClose}
-			onSubmit={submit}
-			onSubmitted={() => {
-				if (saved.current) onSaved(saved.current);
-			}}
-			hasUnsavedChanges
-			allowUnchangedSubmit
-			submitLabel="Save Show"
-			submittingLabel="Saving…"
-			cancelLabel="Close"
-			isSubmitDisabled={
-				isDJsLoading ||
-				djsError !== undefined ||
-				isTagsLoading ||
-				tagsError !== undefined ||
-				(fields.selected.length === 0 && fields.special_id == null)
-			}
-		>
-			<p role="status" className={styles.notice}>
-				Uploaded to Mixcloud. Review the details, then save this show to the
-				archive.
-			</p>
-			<ShowTitleDateFields
-				fields={fields}
-				setFields={setFields}
-				idPrefix="uploaded-show"
+		<>
+			<FormModal
+				isOpen
+				isCovered={isTracklistOpen}
+				title="Review Show"
+				onClose={onClose}
+				onSubmit={submit}
+				onSubmitted={() => {
+					if (saved.current) onSaved(saved.current);
+				}}
+				hasUnsavedChanges
+				allowUnchangedSubmit
+				submitLabel="Save Show"
+				submittingLabel="Saving…"
+				cancelLabel="Close"
+				isSubmitDisabled={
+					isDJsLoading ||
+					djsError !== undefined ||
+					isTagsLoading ||
+					tagsError !== undefined ||
+					(fields.selected.length === 0 && fields.special_id == null)
+				}
 			>
-				<ShowAssignmentFields
-					groupRelationships
+				<p role="status" className={styles.notice}>
+					Uploaded to Mixcloud. Review the details, then save this show to the
+					archive.
+				</p>
+				<ShowTitleDateFields
 					fields={fields}
 					setFields={setFields}
 					idPrefix="uploaded-show"
-					djs={djs}
-					isDJsLoading={isDJsLoading}
-					{...(djsError === undefined ? {} : { djsError })}
-					onRetryDJs={onRetryDJs}
-					specialOptions={specialOptions}
+				>
+					<ShowAssignmentFields
+						groupRelationships
+						fields={fields}
+						setFields={setFields}
+						idPrefix="uploaded-show"
+						djs={djs}
+						isDJsLoading={isDJsLoading}
+						{...(djsError === undefined ? {} : { djsError })}
+						onRetryDJs={onRetryDJs}
+						specialOptions={specialOptions}
+					/>
+				</ShowTitleDateFields>
+				<LabeledFormControl
+					id="uploaded-show-description"
+					name="description"
+					label="description"
+					value={description}
+					onChange={setDescription}
+					textarea
+					maxLength={1000}
+					helper="Changes here affect the archive; your Mixcloud upload stays as uploaded."
 				/>
-			</ShowTitleDateFields>
-			<LabeledFormControl
-				id="uploaded-show-description"
-				name="description"
-				label="description"
-				value={description}
-				onChange={setDescription}
-				textarea
-				maxLength={1000}
-				helper="Changes here affect the archive; your Mixcloud upload stays as uploaded."
-			/>
-			<TagsInput
-				id="uploaded-show-tags"
-				value={{ tags: fields.tags, draft: fields.tagDraft }}
-				onChange={({ tags, draft }) =>
-					setFields({ ...fields, tags, tagDraft: draft })
-				}
-				options={tagOptions}
-				isLoading={isTagsLoading}
-				{...(tagsError === undefined ? {} : { error: tagsError })}
-				onRetry={loadTagOptions}
-			/>
-			<section
-				className={sourceStyles.section}
-				aria-labelledby="uploaded-show-provider-heading"
-			>
-				<h3 id="uploaded-show-provider-heading">MIXCLOUD DATA</h3>
-				<dl>
+				<div className={tracklistStyles.tracklistField}>
+					<span id="uploaded-show-tracklist-label">tracklist</span>
 					<div>
-						<dt>Mixcloud title</dt>
-						<dd>{mixcloud.name}</dd>
-					</div>
-					<div>
-						<dt>duration</dt>
-						<dd>{formatDuration(mixcloud.audio_length)}</dd>
-					</div>
-					<div>
-						<dt>show URL</dt>
-						<dd>
-							<a href={mixcloud.url} target="_blank" rel="noreferrer">
-								{mixcloud.url}
-							</a>
-						</dd>
-					</div>
-					<div>
-						<dt>small image URL</dt>
-						<dd>
-							<a
-								href={mixcloud.pictures.large}
-								target="_blank"
-								rel="noreferrer"
-							>
-								{mixcloud.pictures.large}
-							</a>
-						</dd>
-					</div>
-					<div>
-						<dt>large image URL</dt>
-						<dd>
-							<a
-								href={mixcloud.pictures["1024wx1024h"]}
-								target="_blank"
-								rel="noreferrer"
-							>
-								{mixcloud.pictures["1024wx1024h"]}
-							</a>
-						</dd>
-					</div>
-					<div>
-						<dt>cover</dt>
-						<dd>
-							<img
-								className={styles.preview}
-								src={mixcloud.pictures.large}
-								alt="Uploaded show cover"
+						{tracklist.length > 0 && (
+							<textarea
+								className={tracklistStyles.tracklistPreview}
+								readOnly
+								rows={Math.min(5, tracklist.length)}
+								aria-labelledby="uploaded-show-tracklist-label"
+								value={formatTracklist(tracklist)}
 							/>
-						</dd>
+						)}
+						<button
+							type="button"
+							ref={tracklistOpener}
+							className={tracklistStyles.editTracklist}
+							onClick={() => setTracklistOpen(true)}
+						>
+							{tracklist.length === 0 ? "add tracklist" : "edit tracklist"}
+						</button>
 					</div>
-				</dl>
-			</section>
-			<p className={`${styles.notice} ${styles.helper}`}>
-				Closing leaves this show unsaved in the archive. You can resume from
-				Pending uploads on the Shows page.
-			</p>
-		</FormModal>
+				</div>
+				<TagsInput
+					id="uploaded-show-tags"
+					value={{ tags: fields.tags, draft: fields.tagDraft }}
+					onChange={({ tags, draft }) =>
+						setFields({ ...fields, tags, tagDraft: draft })
+					}
+					options={tagOptions}
+					isLoading={isTagsLoading}
+					{...(tagsError === undefined ? {} : { error: tagsError })}
+					onRetry={loadTagOptions}
+				/>
+				<section
+					className={sourceStyles.section}
+					aria-labelledby="uploaded-show-provider-heading"
+				>
+					<h3 id="uploaded-show-provider-heading">MIXCLOUD DATA</h3>
+					<dl>
+						<div>
+							<dt>Mixcloud title</dt>
+							<dd>{mixcloud.name}</dd>
+						</div>
+						<div>
+							<dt>duration</dt>
+							<dd>{formatDuration(mixcloud.audio_length)}</dd>
+						</div>
+						<div>
+							<dt>show URL</dt>
+							<dd>
+								<a href={mixcloud.url} target="_blank" rel="noreferrer">
+									{mixcloud.url}
+								</a>
+							</dd>
+						</div>
+						<div>
+							<dt>small image URL</dt>
+							<dd>
+								<a
+									href={mixcloud.pictures.large}
+									target="_blank"
+									rel="noreferrer"
+								>
+									{mixcloud.pictures.large}
+								</a>
+							</dd>
+						</div>
+						<div>
+							<dt>large image URL</dt>
+							<dd>
+								<a
+									href={mixcloud.pictures["1024wx1024h"]}
+									target="_blank"
+									rel="noreferrer"
+								>
+									{mixcloud.pictures["1024wx1024h"]}
+								</a>
+							</dd>
+						</div>
+						<div>
+							<dt>cover</dt>
+							<dd>
+								<img
+									className={styles.preview}
+									src={mixcloud.pictures.large}
+									alt="Uploaded show cover"
+								/>
+							</dd>
+						</div>
+					</dl>
+				</section>
+				<p className={`${styles.notice} ${styles.helper}`}>
+					Closing leaves this show unsaved in the archive. You can resume from
+					Pending uploads on the Shows page.
+				</p>
+			</FormModal>
+			{isTracklistOpen && (
+				<TracklistEditorModal
+					entries={tracklist}
+					onSave={setTracklist}
+					onClose={() => {
+						setTracklistOpen(false);
+						window.setTimeout(() => tracklistOpener.current?.focus());
+					}}
+				/>
+			)}
+		</>
 	);
 };
