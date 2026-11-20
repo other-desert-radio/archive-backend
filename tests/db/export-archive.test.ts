@@ -1006,8 +1006,13 @@ test("Specials and membership IDs export in numeric order, including empty group
 	};
 	const documents = buildArchiveDocuments({
 		specials: [
-			{ id: 2, title: "Empty", createdAt },
-			{ id: 1, title: "Special", createdAt },
+			{ id: 2, title: "Empty", createdAt, description: null },
+			{
+				id: 1,
+				title: "Special",
+				createdAt,
+				description: "<p>Hello</p><script>alert(1)</script>",
+			},
 		],
 		shows: [
 			{ ...show, id: 10, special_id: 1 },
@@ -1024,6 +1029,7 @@ test("Specials and membership IDs export in numeric order, including empty group
 		{
 			id: 1,
 			title: "Special",
+			description: "<p>Hello</p>",
 			createdAt: createdAt.toISOString(),
 			showIds: [3, 10],
 		},

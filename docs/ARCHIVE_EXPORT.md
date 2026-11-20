@@ -92,13 +92,15 @@ all Specials, including empty groups, ordered by ascending ID:
 ```
 
 `createdAt` is the stored creation timestamp serialized as UTC ISO 8601;
-`showIds` contains ascending Show IDs. A Show can belong to a Special and have
-DJs, or belong to a Special with an empty DJ array. Existing Show index and DJ
-detail shapes remain unchanged. Resolve Special membership through `showIds`.
-The independent `specials` version advances for changed metadata or membership;
-unchanged exports preserve both version and `updatedAt`. It is included in the
-manifest and publication previews/commits. Older baselines without the file are
-read as having no Specials; the next export creates it even when empty.
+Optional `description` contains sanitized HTML, matching DJ bios, and is omitted
+when empty. `showIds` contains ascending Show IDs. A Show can belong to a
+Special and have DJs, or belong to a Special with an empty DJ array. Existing
+Show index and DJ detail shapes remain unchanged. Resolve Special membership
+through `showIds`. The independent `specials` version advances for changed
+metadata or membership; unchanged exports preserve both version and `updatedAt`.
+It is included in the manifest and publication previews/commits. Older baselines
+without the file are read as having no Specials; the next export creates it even
+when empty.
 
 `show_details.json` contains one record per show in the same order as the show
 index, with `id` identifying the show. Optional `description` contains sanitized

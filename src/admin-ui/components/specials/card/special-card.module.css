@@ -8,9 +8,15 @@
 	background: #fff;
 }
 .name {
-	font-weight: bold;
 	overflow-wrap: anywhere;
 	min-width: 0;
+	flex: 1;
+}
+.name > span {
+	font-weight: bold;
+}
+.name > div {
+	font-weight: normal;
 }
 .actions {
 	display: flex;

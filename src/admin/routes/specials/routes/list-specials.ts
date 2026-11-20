@@ -17,6 +17,7 @@ export const listSpecialsHandler =
 			request.log.info({ count: rows.length }, "[Special Listing] loaded");
 			return rows.map((row) => ({
 				...row,
+				description: row.description ?? undefined,
 				createdAt: row.createdAt.toISOString(),
 			}));
 		} catch (error) {

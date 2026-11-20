@@ -14,6 +14,10 @@ import {
 } from "../../src/db/export-archive.js";
 import { down, up } from "../../src/db/migrations/0046_add_specials.js";
 import { down as removeUploadSpecial } from "../../src/db/migrations/0047_add_upload_special.js";
+import {
+	up as addDescription,
+	down as removeDescription,
+} from "../../src/db/migrations/0050_add_special_description.js";
 import type { Database } from "../../src/db/types.js";
 
 const databaseUrl = process.env.SPECIALS_TEST_DATABASE_URL;
@@ -45,6 +49,42 @@ test.skipIf(!databaseUrl)(
 			});
 			const migration = await migrator.migrateToLatest();
 			if (migration.error) throw migration.error;
+			await database.transaction().execute(removeDescription);
+			const legacy = await database
+				.insertInto("specials")
+				.values({ title: "Legacy" })
+				.returning("id")
+				.executeTakeFirstOrThrow();
+			await database.transaction().execute(addDescription);
+			expect(
+				(
+					await database
+						.selectFrom("specials")
+						.selectAll()
+						.where("id", "=", legacy.id)
+						.executeTakeFirstOrThrow()
+				).description,
+			).toBeNull();
+			await database
+				.updateTable("specials")
+				.set({ description: "<p>Temporary</p>" })
+				.where("id", "=", legacy.id)
+				.execute();
+			await database.transaction().execute(removeDescription);
+			await database.transaction().execute(addDescription);
+			expect(
+				(
+					await database
+						.selectFrom("specials")
+						.selectAll()
+						.where("id", "=", legacy.id)
+						.executeTakeFirstOrThrow()
+				).description,
+			).toBeNull();
+			await database
+				.deleteFrom("specials")
+				.where("id", "=", legacy.id)
+				.execute();
 			await app.register(
 				adminRoutes(
 					{

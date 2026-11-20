@@ -265,7 +265,7 @@ for (const scenario of [
 				],
 			);
 			if (scenario === "create") {
-				expect(values).toEqual({ title: "Night" });
+				expect(values).toEqual({ title: "Night", description: null });
 				expect(response.json()).toEqual({
 					...row,
 					createdAt: row.createdAt.toISOString(),
@@ -336,4 +336,72 @@ for (const scenario of [
 			await app.close();
 		}
 	});
+}
+
+for (const endpoint of ["create-special", "modify-special"]) {
+	for (const description of [
+		undefined,
+		"",
+		"  Hello\n<script>alert(1)</script>  ",
+		42,
+		null,
+	]) {
+		test(`${endpoint} description: ${JSON.stringify(description)}`, async () => {
+			let stored: unknown;
+			const builder = {
+				values: (value: unknown) => {
+					stored = value;
+					return builder;
+				},
+				set: (value: unknown) => {
+					stored = value;
+					return builder;
+				},
+				where: () => builder,
+				returningAll: () => builder,
+				executeTakeFirst: async () => ({
+					id: 5,
+					title: "Night",
+					createdAt: new Date(),
+					description: "<p>Saved</p>",
+				}),
+				executeTakeFirstOrThrow: async () => builder.executeTakeFirst(),
+			};
+			const app = Fastify();
+			try {
+				await app.register(
+					specialRoutes({
+						insertInto: () => builder,
+						updateTable: () => builder,
+					} as never),
+				);
+				const response = await app.inject({
+					method: "POST",
+					url: `/${endpoint}`,
+					payload: { id: 5, title: "Night", description },
+				});
+				if (description === null || typeof description === "number") {
+					expect(response.statusCode).toBe(400);
+					expect(stored).toBeUndefined();
+				} else {
+					expect(response.statusCode).toBe(
+						endpoint === "create-special" ? 201 : 200,
+					);
+					expect(stored).toEqual({
+						title: "Night",
+						...(description === undefined && endpoint === "modify-special"
+							? {}
+							: {
+									description: description
+										? "<p>Hello<br />&lt;script&gt;alert(1)&lt;/script&gt;</p>"
+										: null,
+								}),
+					});
+					expect(response.json().description).toBe("<p>Saved</p>");
+				}
+			} finally {
+				await app.close();
+			}
+		});
+	}
 }
