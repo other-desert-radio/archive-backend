@@ -8,6 +8,8 @@ import { parseFile } from "music-metadata";
 import sharp from "sharp";
 import { isMatching, P } from "ts-pattern";
 
+import { isShowTracklistEntry } from "../../../../../utils/show-tracklist.js";
+
 const maxMP3Bytes = 4_000_000_000;
 const maxImageBytes = 10_000_000;
 
@@ -117,6 +119,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 					"description",
 					"djs",
 					"special_id",
+					"tracklist",
 				].includes(part.fieldname) ||
 				part.valueTruncated
 			) {
@@ -143,6 +146,7 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 				date: P.string,
 				tags: P.string,
 				djs: P.string,
+				tracklist: P.optional(P.string),
 				special_id: P.optional(P.string),
 				description: P.optional(P.string.maxLength(1000)),
 			},
@@ -197,6 +201,24 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 		tags.some((tag) => !tag.trim())
 	)
 		return reject("invalid_tags");
+	let tracklist: unknown;
+	try {
+		tracklist =
+			fields.tracklist === undefined ? [] : JSON.parse(fields.tracklist);
+	} catch {
+		return reject("invalid_tracklist_json");
+	}
+	if (!isMatching(P.array(P.when(isShowTracklistEntry)), tracklist))
+		return reject("invalid_tracklist");
+	const normalizedTracklist = tracklist.map((entry) =>
+		entry.chapter === undefined
+			? {
+					artist: entry.artist.trim(),
+					song: entry.song.trim(),
+					start_time: entry.start_time,
+				}
+			: { chapter: entry.chapter.trim(), start_time: entry.start_time },
+	);
 	request.log.info(
 		{ tagCount: tags.length },
 		"[Mixcloud Upload] metadata validated; parsing audio",
@@ -246,7 +268,9 @@ export const receiveUpload = async (request: FastifyRequest, path: string) => {
 	return {
 		...(imagePath === undefined ? {} : { imagePath }),
 		title: fields.mixcloud_title.trim(),
+		tracklist: normalizedTracklist,
 		draft: {
+			tracklist: normalizedTracklist,
 			title: fields.title.trim(),
 			mixcloud_title: fields.mixcloud_title.trim(),
 			date: fields.date,

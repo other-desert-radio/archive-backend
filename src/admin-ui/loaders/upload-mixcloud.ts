@@ -1,9 +1,11 @@
 import { isMatching, P } from "ts-pattern";
 import type { UploadedShowConfirmation } from "../../admin/routes/mixcloud/types.js";
+import type { ShowTracklistEntry } from "../../db/types.js";
 import { apiFetch } from "./api-fetch.js";
 
 /** Posts audio directly to our server; browser credentials never include a provider token. */
 export const uploadMixcloud = async (fields: {
+	tracklist?: ShowTracklistEntry[];
 	title: string;
 	mixcloud_title: string;
 	date: string;
@@ -24,6 +26,8 @@ export const uploadMixcloud = async (fields: {
 	if (fields.special_id !== undefined)
 		body.set("special_id", String(fields.special_id));
 	body.set("tags", JSON.stringify(fields.tags));
+	if (fields.tracklist !== undefined)
+		body.set("tracklist", JSON.stringify(fields.tracklist));
 	body.set("mp3", fields.mp3);
 	if (fields.image !== undefined) body.set("image", fields.image);
 	let response: Response;

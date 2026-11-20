@@ -16,7 +16,6 @@ import {
 } from "../../../shared/modal/index.js";
 import { SegmentedPicker } from "../../../shared/resource-views/index.js";
 import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
-import { formatTracklist } from "../../tracklist-editor-modal/tracklist-utils.js";
 import type { CreateShowForm } from "../onboard-show-modal/onboard-show-utils.js";
 import { ShowDurationField } from "../show-duration-field/index.js";
 import {
@@ -190,6 +189,7 @@ export const ShowFormModal = ({
 				djs: fields.selected,
 				...(fields.special_id == null ? {} : { special_id: fields.special_id }),
 				tags,
+				tracklist: fields.tracklist ?? [],
 				mp3,
 				description,
 				image,
@@ -202,6 +202,27 @@ export const ShowFormModal = ({
 			throw new Error("DJs must finish loading before submitting.");
 		await onSubmit(buildShowFormRequest(fields));
 	};
+	const tracklistField = (
+		<>
+			{fields.tracklist !== undefined && (
+				<div className={styles.tracklistField}>
+					<span id={`${idPrefix}-tracklist-label`}>tracklist</span>
+					<div>
+						<button
+							type="button"
+							ref={tracklistOpener}
+							className={styles.editTracklist}
+							onClick={() => setTracklistOpen(true)}
+						>
+							{fields.tracklist.length === 0
+								? "add tracklist"
+								: "edit tracklist"}
+						</button>
+					</div>
+				</div>
+			)}
+		</>
+	);
 	const commonFields = (
 		<>
 			<ShowTitleDateFields
@@ -219,29 +240,7 @@ export const ShowFormModal = ({
 				maxLength={1000}
 				helper="Up to 1000 characters."
 			/>
-			{fields.tracklist !== undefined && (
-				<div className={styles.tracklistField}>
-					<span id={`${idPrefix}-tracklist-label`}>tracklist</span>
-					<div>
-						<textarea
-							className={styles.tracklistPreview}
-							data-empty={fields.tracklist.length === 0}
-							readOnly
-							rows={Math.min(5, Math.max(1, fields.tracklist.length))}
-							aria-labelledby={`${idPrefix}-tracklist-label`}
-							value={formatTracklist(fields.tracklist) || "None"}
-						/>
-						<button
-							type="button"
-							ref={tracklistOpener}
-							className={styles.editTracklist}
-							onClick={() => setTracklistOpen(true)}
-						>
-							Edit Tracklist
-						</button>
-					</div>
-				</div>
-			)}
+			{tracklistField}
 			<ShowDurationField
 				fields={fields}
 				setFields={setFields}
@@ -364,6 +363,7 @@ export const ShowFormModal = ({
 								maxLength={1000}
 								helper="Up to 1000 characters."
 							/>
+							{tracklistField}
 							<TagsInput
 								id={`${idPrefix}-tags`}
 								value={{ tags: fields.tags, draft: fields.tagDraft }}

@@ -50,7 +50,7 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 		<FormModal
 			isOpen
 			panelWidth={1080}
-			title="Edit Tracklist"
+			title={entries.length === 0 ? "Add tracklist" : "Edit Tracklist"}
 			subtitle="Enter timestamp as m:ss or h:mm:ss"
 			isSubmitDisabled={timeErrors.some((error) => error !== undefined)}
 			onClose={onClose}

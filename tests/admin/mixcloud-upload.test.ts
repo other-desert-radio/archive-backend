@@ -368,6 +368,7 @@ test("retains editorial fields and selected DJs in the pending record", async ()
 		}),
 	).toBe(200);
 	expect(values).toHaveBeenCalledWith({
+		tracklist: "[]",
 		title: "Archive title",
 		mixcloud_title: "DJ - Show",
 		description: "Our description",
@@ -467,6 +468,42 @@ test("retains the pending draft when its Special is deleted during provider uplo
 			show_id: null,
 		});
 		expect(upload).toHaveBeenCalledTimes(1);
+	} finally {
+		upload.mockRestore();
+	}
+});
+
+test("validates and retains upload tracklists", async () => {
+	const tracklist = [
+		{ artist: " Artist ", song: " Song ", start_time: 0 },
+		{ chapter: "End", start_time: null },
+	];
+	const upload = spyOn(integration.client, "upload").mockResolvedValue({
+		success: true,
+		statusCode: 200,
+		key: "/odr/show/",
+	});
+	try {
+		expect(await send({ tracklist: JSON.stringify(tracklist) })).toBe(200);
+		const normalized = [
+			{ artist: "Artist", song: "Song", start_time: 0 },
+			tracklist[1],
+		];
+		expect(upload.mock.calls.at(-1)?.[1].tracklist).toEqual(normalized);
+		expect(values.mock.calls.at(-1)?.[0]).toMatchObject({
+			tracklist: JSON.stringify(normalized),
+		});
+		for (const invalid of [
+			"{",
+			"null",
+			"{}",
+			'[{"artist":"A","song":"S","start_time":-1}]',
+			'[{"chapter":" ","start_time":0}]',
+		]) {
+			upload.mockClear();
+			expect(await send({ tracklist: invalid })).toBe(400);
+			expect(upload).not.toHaveBeenCalled();
+		}
 	} finally {
 		upload.mockRestore();
 	}

@@ -848,3 +848,11 @@ session and trusted-origin boundary. IDs must be positive PostgreSQL integers;
 names are trimmed and must be nonblank. Duplicate names remain allowed. Invalid
 input returns 400, missing Specials 404, and unexpected failures 500. Renaming
 preserves membership and uses the existing publication revision trigger.
+
+Mixcloud upload multipart requests optionally include `tracklist` as a JSON
+array using the Show tracklist entry contract. Entries are validated before
+contacting Mixcloud, sent as ordered `sections-X-*` fields, and retained in
+pending uploads. Unknown timestamps are omitted from provider fields.
+Preparation returns the pending `tracklist`; reviewed saves accept an optional
+replacement tracklist, which changes only the archive. Omission retains the
+pending tracklist.

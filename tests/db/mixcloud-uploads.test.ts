@@ -3,10 +3,15 @@ import { Kysely, PostgresDialect, sql } from "kysely";
 import { Pool } from "pg";
 import { recordUploadedShow } from "../../src/admin/routes/mixcloud/routes/upload/upload-store.js";
 import { down, up } from "../../src/db/migrations/0039_add_mixcloud_uploads.js";
+import { up as addShowTracklist } from "../../src/db/migrations/0044_add_show_tracklist.js";
 import {
 	up as addUploadSpecial,
 	down as removeUploadSpecial,
 } from "../../src/db/migrations/0047_add_upload_special.js";
+import {
+	up as addUploadTracklist,
+	down as removeUploadTracklist,
+} from "../../src/db/migrations/0048_add_upload_tracklist.js";
 import type { Database } from "../../src/db/types.js";
 
 const databaseUrl = process.env.MIXCLOUD_UPLOADS_TEST_DATABASE_URL;
@@ -31,7 +36,10 @@ test.skipIf(!databaseUrl)(
 			await sql`INSERT INTO shows (id) VALUES (10)`.execute(db);
 			await db.transaction().execute(up);
 			await db.transaction().execute(addUploadSpecial);
+			await db.transaction().execute(addShowTracklist);
+			await db.transaction().execute(addUploadTracklist);
 			const draft = {
+				tracklist: [{ artist: "Artist", song: "Song", start_time: 0 }],
 				title: "Our show",
 				description: "Our description\nSecond paragraph",
 				date: "2026-10-26",
@@ -122,9 +130,11 @@ test.skipIf(!databaseUrl)(
 			});
 			expect(deletedSpecialDraft.special_id).toBe(7);
 			await db.transaction().execute(removeUploadSpecial);
+			await db.transaction().execute(removeUploadTracklist);
 			await db.transaction().execute(down);
 			await db.transaction().execute(up);
 			await db.transaction().execute(addUploadSpecial);
+			await db.transaction().execute(addUploadTracklist);
 			expect(
 				await db.selectFrom("mixcloud_uploads").selectAll().execute(),
 			).toEqual([]);
