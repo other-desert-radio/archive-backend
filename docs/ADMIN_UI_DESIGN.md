@@ -135,10 +135,12 @@ a generic form framework or components with many unrelated mode flags.
 
 DJ, Special, and tag pickers close suggestions after selection by mouse, Enter,
 or Tab, retaining input focus. Programmatic refocus does not reopen suggestions;
-a fresh click, typing, or arrow-key navigation does. Selecting a DJ mutes the
-Special label and input; selecting a Special mutes the DJ label and input. Both
-remain editable, and removing the other assignment restores ordinary styling.
-Empty tag searches can show remaining options after an explicit click.
+a fresh click, typing, or arrow-key navigation does. Selecting a DJ mutes an
+empty Special label and input; selecting a Special mutes an empty DJ label and
+input. When both have selections, both use ordinary black styling. Both remain
+editable. Empty tag searches can show remaining options after an explicit click.
+Suggestion rows stay outside the sequential Tab order; arrow keys navigate
+options, and Tab without a completion advances to the next form control.
 
 Keep shared tables, grids, toolbars, and formatters in `resource-views/`, and
 modal/form primitives in `modal/`. Both DJ and Shows use `card/`, `table/`,

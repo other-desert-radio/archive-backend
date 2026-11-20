@@ -66,7 +66,7 @@ export const ShowAssignmentFields = ({
 			<SearchableMultiSelect
 				id={`${idPrefix}-djs`}
 				label="DJs"
-				muted={fields.special_id != null}
+				muted={fields.special_id != null && fields.selected.length === 0}
 				helper={djHelper}
 				hideSearchHelp={hideInstructions || hideDJSearchHelp}
 				highlightEmptySelection={highlightEmptyDJs && fields.special_id == null}

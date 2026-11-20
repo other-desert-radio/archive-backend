@@ -52,6 +52,7 @@ export const AutocompleteOption = ({
 		id={id}
 		type="button"
 		role="option"
+		tabIndex={-1}
 		aria-selected={selected}
 		className={className}
 		onMouseDown={(event) => event.preventDefault()}

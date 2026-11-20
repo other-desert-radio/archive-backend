@@ -24,7 +24,7 @@ export const ShowSpecialField = ({
 	return (
 		<SearchableMultiSelect
 			singleSelection
-			muted={fields.selected.length > 0}
+			muted={fields.selected.length > 0 && fields.special_id == null}
 			hideSearchHelp={hideSearchHelp}
 			id={`${idPrefix}-special`}
 			label="Special"

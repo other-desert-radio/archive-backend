@@ -820,7 +820,8 @@ test("DJ and Special fields mute their optional counterpart and stay editable", 
 	await expect(special).toBeEnabled();
 	await special.fill("Fest");
 	await special.press("Tab");
-	await expect(djLabel).toHaveCSS("color", "rgb(153, 153, 153)");
+	await expect(djLabel).toHaveCSS("color", "rgb(17, 17, 17)");
+	await expect(specialLabel).toHaveCSS("color", "rgb(17, 17, 17)");
 	await expect(dj).toBeEnabled();
 	await page
 		.getByRole("button", { name: "Remove Known DJ", exact: true })
@@ -829,9 +830,37 @@ test("DJ and Special fields mute their optional counterpart and stay editable", 
 	await expect(djLabel).toHaveCSS("color", "rgb(153, 153, 153)");
 	await dj.fill("Second");
 	await dj.press("Tab");
-	await expect(specialLabel).toHaveCSS("color", "rgb(153, 153, 153)");
+	await expect(djLabel).toHaveCSS("color", "rgb(17, 17, 17)");
+	await expect(specialLabel).toHaveCSS("color", "rgb(17, 17, 17)");
 	await page
 		.getByRole("button", { name: "Remove Festival", exact: true })
 		.click();
-	await expect(djLabel).not.toHaveCSS("color", "rgb(153, 153, 153)");
+	await expect(djLabel).toHaveCSS("color", "rgb(17, 17, 17)");
+	await expect(specialLabel).toHaveCSS("color", "rgb(153, 153, 153)");
+});
+
+test("Tab leaves empty tag suggestions without losing keyboard focus", async ({
+	page,
+}) => {
+	await page.getByRole("button", { name: "Open edit", exact: true }).click();
+	const tags = page.getByRole("combobox", { name: "tags", exact: true });
+	const nextField = page.getByLabel("show URL", { exact: true });
+	await tags.focus();
+	await expect(tags).toHaveValue("");
+	await expect(
+		page.getByRole("option", { name: "Ambient", exact: true }),
+	).toBeVisible();
+	await tags.press("Tab");
+	await expect(nextField).toBeFocused();
+	await expect(tags).toHaveAttribute("aria-expanded", "false");
+	await nextField.press("Shift+Tab");
+	await expect(tags).toBeFocused();
+	await expect(
+		page.getByRole("option", { name: "Ambient", exact: true }),
+	).toBeVisible();
+	await tags.press("Shift+Tab");
+	await expect(
+		page.getByRole("combobox", { name: "Search Special", exact: true }),
+	).toBeFocused();
+	await expect(tags).toHaveAttribute("aria-expanded", "false");
 });
