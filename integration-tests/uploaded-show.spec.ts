@@ -562,31 +562,12 @@ test("rejected uploads retain the original form and do not prepare metadata", as
 	expect(calls.prepares).toBe(0);
 });
 
-test("manual onboarding and editing keep using the existing Show endpoints", async ({
-	page,
-}) => {
+test("editing keeps using the existing Show endpoint", async ({ page }) => {
 	const { calls } = await setup(page);
-	await page.getByRole("button", { name: "+ show", exact: true }).click();
-	await page.locator("#show-title").fill("Manual show");
-	await page.locator("#show-date").fill("2026-10-26");
-	await page.getByRole("combobox", { name: "Search DJs" }).fill("Original");
-	await page.getByRole("option", { name: "Original DJ", exact: true }).click();
-	await page
-		.getByRole("button", { name: "existing show", exact: true })
-		.click();
-	const form = page.getByRole("dialog", { name: "Onboard Show", exact: true });
-	await expect(
-		form.getByRole("textbox", { name: "title", exact: true }),
-	).toHaveValue("Manual show");
-	await page.locator("#show-duration").fill("120");
-	await page.locator("#show-image-small").fill(mixcloud.pictures.large);
-	await page
-		.locator("#show-image-large")
-		.fill(mixcloud.pictures["1024wx1024h"]);
-	await page.locator("#show-url").fill(mixcloud.url);
-	await form.locator('button[type="submit"]').click();
-	await expect(form).toBeHidden();
-	expect(calls.manual).toBe(1);
+	await page.route("**/api/admin/shows", (route) =>
+		route.fulfill({ json: [saved] }),
+	);
+	await page.reload();
 	await page.getByRole("button", { name: "Edit", exact: true }).first().click();
 	const edit = page.getByRole("dialog", { name: "Edit Show", exact: true });
 	await edit

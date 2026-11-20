@@ -93,6 +93,43 @@ for (const width of [1440, 390, 320]) {
 		await expect(
 			page.getByText("Signed into Mixcloud as", { exact: false }),
 		).toBeVisible();
+		const connection = page.getByText("Signed into Mixcloud as", {
+			exact: false,
+		});
+		await expect(connection).toHaveCSS("font-size", "12px");
+		await expect(connection).toHaveCSS("color", "rgb(85, 85, 85)");
+		await expect(connection).toHaveText(
+			"Signed into Mixcloud as Other Desert Radio",
+		);
+		await expect(
+			page.getByRole("heading", { name: "MIXCLOUD", exact: true }),
+		).toHaveCount(0);
+		await expect(
+			page.getByText("This show doesn't exist on Mixcloud yet.", {
+				exact: false,
+			}),
+		).toHaveCount(0);
+		const signOut = page.getByRole("button", { name: "sign out of mixcloud" });
+		await expect(signOut).toHaveCSS("font-size", "12px");
+		await expect(signOut).toHaveText("sign out");
+		await expect(signOut).toHaveCSS("border-width", "0px");
+		await expect(
+			page.getByRole("dialog").locator("fieldset").first(),
+		).toHaveCSS("margin-top", "0px");
+		expect(
+			await connection.evaluate((element) => {
+				let parent = element.parentElement;
+				while (parent && parent.getAttribute("role") !== "dialog") {
+					if (getComputedStyle(parent).borderStyle.includes("dashed"))
+						return true;
+					parent = parent.parentElement;
+				}
+				return false;
+			}),
+		).toBe(false);
+		await page.screenshot({
+			path: `/tmp/mixcloud-connection-compact-${width}.png`,
+		});
 		await expect(page).toHaveURL(/\/admin\/#shows$/);
 		await expect(page.locator("#show-title")).toBeVisible();
 		await page.evaluate(() => document.fonts.ready);

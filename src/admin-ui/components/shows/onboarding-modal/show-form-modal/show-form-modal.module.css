@@ -1,8 +1,9 @@
-.modeDescription {
+.mixcloudFields {
 	grid-column: 1 / -1;
-	margin: 0;
-	font-size: var(--modal-helper-size);
-	line-height: 1.5;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
 }
 
 .uploadMessage {
