@@ -175,6 +175,10 @@
 	min-width: 0;
 	overflow-wrap: anywhere;
 }
+.headerActions:has(.iconAction) {
+	column-gap: 8px;
+}
+
 .navigation {
 	position: absolute;
 	top: 50%;
@@ -288,15 +292,10 @@
 	white-space: nowrap;
 }
 .actionIcon {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
+	display: block;
 	flex: 0 0 24px;
 	width: 24px;
 	height: 24px;
-	font:
-		400 24px / 1 Arial,
-		sans-serif;
 }
 .headerAction.iconAction:is(:hover, :focus-visible):not(:disabled) {
 	width: calc(13ch + 50px);

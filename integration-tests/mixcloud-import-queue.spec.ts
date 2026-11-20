@@ -687,18 +687,35 @@ for (const width of [1280, 390, 320]) {
 		await page.mouse.move(0, 0);
 		const resting = await back.boundingBox();
 		if (!resting) throw new Error("Back button missing");
+		const close = await page
+			.getByRole("button", { name: "Close", exact: true })
+			.boundingBox();
+		if (!close) throw new Error("Close button missing");
+		expect(close.x - (resting.x + resting.width)).toBeCloseTo(8, 0);
 		expect(resting.width).toBe(42);
 		const restingIcon = await back.locator("[aria-hidden]").boundingBox();
 		await expect(back).toHaveCSS("border-radius", "0px");
 		await expect(back).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
-		await expect(back.locator("[aria-hidden]")).toHaveCSS("font-size", "24px");
+		await expect(back.locator("img")).toHaveCSS("width", "24px");
+		await expect(back.locator("img")).toHaveCSS("height", "24px");
+		await expect(back.locator("img")).toHaveAttribute(
+			"src",
+			/restart.*\.svg|data:image\/svg\+xml/,
+		);
+		expect(
+			await back
+				.locator("img")
+				.evaluate(
+					(img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+				),
+		).toBe(true);
 		await back.hover();
 		await expect(back).toHaveCSS("border-top-color", "rgb(0, 0, 0)");
 		await expect(back.locator("[aria-hidden]")).toBeVisible();
 		const expanded = await back.boundingBox();
 		if (!expanded) throw new Error("Expanded back button missing");
 		expect(expanded.width).toBeGreaterThan(resting.width);
-		await expect(back.locator("[aria-hidden]")).toHaveCSS("font-weight", "400");
+		await expect(back.locator("img")).toHaveCSS("transform", "none");
 		const expandedIcon = await back.locator("[aria-hidden]").boundingBox();
 		expect(expandedIcon?.x).toBeCloseTo(restingIcon?.x ?? 0, 0);
 		expect(expandedIcon?.y).toBeCloseTo(restingIcon?.y ?? 0, 0);

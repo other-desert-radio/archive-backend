@@ -15,7 +15,7 @@ import styles from "./form-modal.module.css";
 
 type ModalAction = {
 	label: string;
-	icon?: string;
+	iconSrc?: string;
 	onClick: () => void;
 	disabled?: boolean;
 };
@@ -210,7 +210,7 @@ export const FormModal = ({
 								{headerAction !== undefined && (
 									<button
 										type="button"
-										className={`${styles.cancel} ${styles.headerAction} ${headerAction.icon ? styles.iconAction : ""}`}
+										className={`${styles.cancel} ${styles.headerAction} ${headerAction.iconSrc ? styles.iconAction : ""}`}
 										aria-label={headerAction.label}
 										disabled={
 											headerAction.disabled || isSubmitting || isCovered
@@ -219,15 +219,20 @@ export const FormModal = ({
 									>
 										<span
 											className={
-												headerAction.icon ? styles.actionLabel : undefined
+												headerAction.iconSrc ? styles.actionLabel : undefined
 											}
 										>
 											{headerAction.label}
 										</span>
-										{headerAction.icon && (
-											<span className={styles.actionIcon} aria-hidden="true">
-												{headerAction.icon}
-											</span>
+										{headerAction.iconSrc && (
+											<img
+												className={styles.actionIcon}
+												src={headerAction.iconSrc}
+												width="24"
+												height="24"
+												alt=""
+												aria-hidden="true"
+											/>
 										)}
 									</button>
 								)}

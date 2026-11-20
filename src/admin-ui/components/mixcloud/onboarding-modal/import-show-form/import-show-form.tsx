@@ -23,6 +23,11 @@ import {
 	resolveImportTags,
 } from "./import-show-utils.js";
 
+const restartIcon = new URL(
+	"../../../../assets/icons/restart.svg",
+	import.meta.url,
+).href;
+
 export type ImportShowFormProps = {
 	/** Source record for this form instance; remount the form when its ID changes. */
 	row: MixcloudImportAdminRow;
@@ -166,7 +171,7 @@ export const ImportShowForm = ({
 					? undefined
 					: {
 							label: "Back to start",
-							icon: "↺",
+							iconSrc: restartIcon,
 							onClick: onBackToStart,
 						}
 			}
