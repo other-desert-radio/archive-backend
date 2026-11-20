@@ -131,8 +131,7 @@ export const MixcloudConnectionBanner = ({
 						) : status.connected ? (
 							<p>
 								Signed into Mixcloud as{" "}
-								<strong>{status.account.displayName}</strong> (
-								{status.account.key}).
+								<strong>{status.account.displayName}</strong>
 							</p>
 						) : (
 							<p>Sign in to mixcloud to begin uploading a show.</p>
@@ -147,12 +146,11 @@ export const MixcloudConnectionBanner = ({
 							<button
 								type="button"
 								className={styles.signIn}
+								aria-label="sign out of mixcloud"
 								onClick={() => void signOut()}
 								disabled={busy}
 							>
-								{pending === "disconnecting"
-									? "signing out…"
-									: "sign out of mixcloud"}
+								{pending === "disconnecting" ? "signing out…" : "sign out"}
 							</button>
 						) : (
 							<button

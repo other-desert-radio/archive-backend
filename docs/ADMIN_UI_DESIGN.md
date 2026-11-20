@@ -86,8 +86,8 @@ indent. The DATABASE label has a 2px solid white bottom border, `0.5rem` padding
 below its text, and a `1rem` gap below it. Active, hovered, and keyboard-focused
 links are bold without moving surrounding items.
 
-Mixcloud connection controls live in the upload modal’s MIXCLOUD box. There is
-no separate upload navigation item.
+Mixcloud connection controls live in a compact row at the top of the upload
+modal. There is no separate upload navigation item.
 
 ### Reusable banner
 
@@ -96,8 +96,9 @@ no separate upload navigation item.
 actions; the layout stacks at 42rem. Its background is 80% white, becoming solid
 white on hover. The upload modal uses it for Mixcloud sign-in guidance. Its
 square bordered sign-in button starts OAuth when configured. The modal loads
-connection status and shows the connected account name/key with a sign-out
-action. Loading or pending requests disable actions; unavailable configuration
+connection status and shows “Signed into Mixcloud as X” with a trailing sign-out
+button. Both use the 12px helper font size; the row has no heading or dotted
+border. Loading or pending requests disable actions; unavailable configuration
 explains why sign-in is disabled. Failures offer reload/retry without hiding an
 existing connection. Callback outcome messages are informational; server status
 determines the connected identity. OAuth returns reopen the upload modal, which
@@ -177,32 +178,31 @@ buttons with pressed states, optional disabled state, and native browser
 tooltips through button title attributes. Grid/table keeps the default styling.
 Upload Show has no mode picker or manual existing-show onboarding flow. While
 Mixcloud is disconnected or its status is being checked, the upload button stays
-disabled and gray. Only the MIXCLOUD box appears until connected; upload fields
-and the upload explanation are hidden. Once connected, a paragraph above the
-fields explains that submission uploads a new show to Mixcloud. Existing
-Mixcloud shows enter the archive through the Mixcloud import flow.
+disabled and gray. Only the connection row appears until connected; upload
+fields are hidden. Existing Mixcloud shows enter the archive through the
+Mixcloud import flow.
 
 Upload Show displays title, grouped DJs and Special, date, an optional
 description (up to 1000 characters), tags, required square image selection, and
 MP3 selection. Description is sent to Mixcloud, preserves paragraph breaks and
 counts as an unsaved change. The image picker reuses the shared artist crop
 flow, including rotation, zoom, 1200 × 1200 WebP output, replacement, removal,
-and discard protection. A MIXCLOUD panel above the fields centers the connection
-status and shows the editable Mixcloud title after a form edit. The input fills
-the panel width, has an accessible label without a visible label, and uses only
-a bottom border. Gray helper text underneath reads “Title to be sent to
-Mixcloud. This is auto generated using the existing format. Click to edit”.
-Generated titles have a gray underline; manual edits use the standard black
-underline and persist until reset. Titles update as source fields are typed,
-using whichever fields are available and omitting missing parts. A selected
-Special appears first, followed by DJ names joined with `+`, show title, and
-date; heading parts use `-`. Submission requires a connected Mixcloud account,
-nonblank show and Mixcloud titles, at least one DJ or a Special, a show date, an
-image, and selected audio. Description and tags are optional. Submission uploads
-publicly to Mixcloud; confirmed success closes the modal, while errors retain
-the draft. The upload date represents the show date, not a scheduled Mixcloud
-publication time. Editing has no mode picker. Header content may be static or a
-renderer receiving isSubmitting.
+and discard protection. Below the connection row, the editable Mixcloud title
+appears after a form edit. The input fills the available width, has an
+accessible label without a visible label, and uses only a bottom border. Gray
+helper text underneath reads “Title to be sent to Mixcloud. This is auto
+generated using the existing format. Click to edit”. Generated titles have a
+gray underline; manual edits use the standard black underline and persist until
+reset. Titles update as source fields are typed, using whichever fields are
+available and omitting missing parts. A selected Special appears first, followed
+by DJ names joined with `+`, show title, and date; heading parts use `-`.
+Submission requires a connected Mixcloud account, nonblank show and Mixcloud
+titles, at least one DJ or a Special, a show date, an image, and selected audio.
+Description and tags are optional. Submission uploads publicly to Mixcloud;
+confirmed success closes the modal, while errors retain the draft. The upload
+date represents the show date, not a scheduled Mixcloud publication time.
+Editing has no mode picker. Header content may be static or a renderer receiving
+isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
 values, validation, tag loading, DJ selection, and unsaved-change comparison.

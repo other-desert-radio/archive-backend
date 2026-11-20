@@ -1,21 +1,26 @@
 .connection {
 	margin: 0;
+	font-size: var(--modal-helper-size);
+	line-height: 1.5;
 }
 
 .connection > div {
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 8px;
 	padding: 0;
 	border: 0;
 	background: transparent;
 }
 
 .connection p {
-	margin-block: 0.25rem;
+	margin: 0;
 }
 
 .signIn {
 	max-width: 100%;
 	min-height: 42px;
-	padding: 0.75rem 1rem;
+	padding: 6px 10px;
 	border: 1px solid #000;
 	border-radius: 0;
 	font: inherit;

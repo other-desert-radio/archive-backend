@@ -2,7 +2,6 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { UploadedShowConfirmation } from "../../../../../admin/routes/mixcloud/index.js";
 import { uploadMixcloud } from "../../../../loaders/upload-mixcloud.js";
 import { MixcloudConnectionBanner } from "../../../mixcloud/connection-banner/index.js";
-import sourceStyles from "../../../mixcloud/onboarding-modal/mixcloud-source-data/mixcloud-source-data.module.css";
 import {
 	commitTagDraft,
 	FileDropzone,
@@ -297,11 +296,7 @@ export const ShowFormModal = ({
 	if (isNewShow) {
 		elements = (
 			<>
-				<section
-					className={sourceStyles.section}
-					aria-labelledby={`${idPrefix}-mixcloud-data`}
-				>
-					<h3 id={`${idPrefix}-mixcloud-data`}>MIXCLOUD</h3>
+				<div className={styles.mixcloudFields}>
 					<MixcloudConnectionBanner onConnected={setMixcloudConnected} />
 					{mixcloudConnected &&
 						(hasUnsavedChanges ||
@@ -331,7 +326,7 @@ export const ShowFormModal = ({
 							Reset to generated title
 						</button>
 					)}
-				</section>
+				</div>
 				{mixcloudConnected && (
 					<>
 						<ShowTitleDateFields
@@ -475,12 +470,6 @@ export const ShowFormModal = ({
 					submittingLabel ?? (isNewShow ? "Uploading…" : "Submitting…")
 				}
 			>
-				{isNewShow && mixcloudConnected && (
-					<p className={styles.modeDescription}>
-						This show doesn't exist on Mixcloud yet. Submitting this form will
-						upload there.
-					</p>
-				)}
 				{elements}
 			</FormModal>
 			{isTracklistOpen && fields.tracklist !== undefined && (
