@@ -5,6 +5,8 @@ import {
 } from "../../shared/resource-views/index.js";
 import type { ShowSortColumn, SortDirection } from "../table/index.js";
 
+import styles from "./shows-toolbar.module.css";
+
 const sortOptions = [
 	{ column: "createdAt", direction: "asc", label: "added ↑" },
 	{ column: "createdAt", direction: "desc", label: "added ↓" },
@@ -48,46 +50,52 @@ export const ShowsToolbar = ({
 		searchLabel="Search Shows"
 		createLabel="+ show"
 		onCreate={onAddShow}
-		actionsBeforeCreate={
-			<select
-				aria-label="Sort shows"
-				value={`${sortColumn}:${sortDirection}`}
-				onChange={(event) => {
-					const option = sortOptions.find(
-						(option) =>
-							`${option.column}:${option.direction}` === event.target.value,
-					);
-					if (option) onSortChange(option.column, option.direction);
-				}}
-			>
-				{!sortOptions.some(
-					(option) =>
-						option.column === sortColumn && option.direction === sortDirection,
-				) && (
-					<option value={`${sortColumn}:${sortDirection}`} disabled>
-						table sort
-					</option>
-				)}
-				{sortOptions.map((option) => (
-					<option
-						key={`${option.column}:${option.direction}`}
-						value={`${option.column}:${option.direction}`}
-					>
-						{option.label}
-					</option>
-				))}
-			</select>
-		}
 		actionsBeforeView={
-			pendingCount !== undefined &&
-			pendingCount > 0 && (
-				<CountButton
-					label="pending uploads"
-					count={pendingCount}
-					title="Resume uploaded shows that have not been saved to the archive."
-					onClick={onPendingUploads}
-				/>
-			)
+			<>
+				{pendingCount !== undefined && pendingCount > 0 && (
+					<CountButton
+						label="pending uploads"
+						count={pendingCount}
+						title="Resume uploaded shows that have not been saved to the archive."
+						onClick={onPendingUploads}
+					/>
+				)}
+				{viewMode === "grid" && (
+					<span className={styles.sortControl}>
+						<select
+							className={styles.sort}
+							aria-label="Sort shows"
+							value={`${sortColumn}:${sortDirection}`}
+							onChange={(event) => {
+								const option = sortOptions.find(
+									(option) =>
+										`${option.column}:${option.direction}` ===
+										event.target.value,
+								);
+								if (option) onSortChange(option.column, option.direction);
+							}}
+						>
+							{!sortOptions.some(
+								(option) =>
+									option.column === sortColumn &&
+									option.direction === sortDirection,
+							) && (
+								<option value={`${sortColumn}:${sortDirection}`} disabled>
+									table sort
+								</option>
+							)}
+							{sortOptions.map((option) => (
+								<option
+									key={`${option.column}:${option.direction}`}
+									value={`${option.column}:${option.direction}`}
+								>
+									{option.label}
+								</option>
+							))}
+						</select>
+					</span>
+				)}
+			</>
 		}
 	/>
 );
