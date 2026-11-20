@@ -133,8 +133,6 @@ export const TagsInput = ({
 			return;
 		}
 		if (event.key === "Escape" && isOpen) {
-			event.preventDefault();
-			event.stopPropagation();
 			setIsFocused(false);
 			setActiveIndex(undefined);
 			return;

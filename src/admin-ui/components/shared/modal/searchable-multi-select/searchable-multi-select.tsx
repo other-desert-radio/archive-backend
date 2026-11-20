@@ -182,8 +182,6 @@ export const SearchableMultiSelect = ({
 										if (event.nativeEvent.isComposing) return;
 										if (handleBackspace(event)) return;
 										if (event.key === "Escape" && isOpen) {
-											event.preventDefault();
-											event.stopPropagation();
 											setIsOpen(false);
 											setActiveIndex(undefined);
 										}

@@ -120,6 +120,61 @@ test("all dismissal paths protect drafts and confirmation preserves focus", asyn
 	await expect(form).toBeHidden();
 });
 
+for (const width of [1280, 390, 320]) {
+	test(`Escape from open tag and DJ dropdowns follows Close at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		await page.route("**/api/admin/tags", (route) =>
+			route.fulfill({ json: [{ id: 1, title: "Test tag", color: "#abcdef" }] }),
+		);
+		for (const resource of ["djs", "shows"]) {
+			await page.goto(`/admin/#${resource}`);
+			const add = page.getByRole("button", {
+				name: resource === "djs" ? "+ DJ" : "+ show",
+				exact: true,
+			});
+			for (const label of resource === "djs"
+				? ["tags"]
+				: ["tags", "Search DJs"]) {
+				await add.click();
+				const form = page.getByRole("dialog", {
+					name: resource === "djs" ? "Onboard DJ" : "Upload Show",
+					exact: true,
+				});
+				const input = form.getByRole("combobox", { name: label, exact: true });
+				await input.focus();
+				await expect(form.getByRole("listbox")).toBeVisible();
+				await input.press("Escape");
+				await expect(form).toBeHidden();
+				await expect(page.getByRole("alertdialog")).toBeHidden();
+				await add.click();
+				await form
+					.getByRole("textbox", { name: "title", exact: true })
+					.fill("Retained draft");
+				await input.focus();
+				await expect(form.getByRole("listbox")).toBeVisible();
+				await input.press("Escape");
+				const confirmation = page.getByRole("alertdialog");
+				await expect(confirmation).toBeVisible();
+				await confirmation
+					.getByRole("button", { name: "Keep editing" })
+					.press("Escape");
+				await expect(confirmation).toBeHidden();
+				await expect(
+					form.getByRole("textbox", { name: "title", exact: true }),
+				).toHaveValue("Retained draft");
+				await input.focus();
+				await input.press("Escape");
+				await confirmation
+					.getByRole("button", { name: "Discard changes" })
+					.click();
+				await expect(form).toBeHidden();
+			}
+		}
+	});
+}
+
 test("Show selections retain unsaved changes", async ({ page }) => {
 	await page.goto("/admin/#shows");
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
