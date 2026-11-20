@@ -1,6 +1,19 @@
 import { expect } from "@playwright/test";
 import { test } from "./auth-fixtures.js";
 
+// Upload controls require an established provider connection.
+test.beforeEach(async ({ page }) => {
+	await page.route("**/api/admin/mixcloud/status", (route) =>
+		route.fulfill({
+			json: {
+				configured: true,
+				connected: true,
+				account: { key: "/test/", displayName: "Test" },
+			},
+		}),
+	);
+});
+
 const baseURL = process.env.E2E_BASE_URL ?? "http://api:3000";
 test.use({
 	baseURL,
@@ -107,15 +120,10 @@ test("all dismissal paths protect drafts and confirmation preserves focus", asyn
 	await expect(form).toBeHidden();
 });
 
-test("Show selections and failed submissions retain unsaved changes", async ({
-	page,
-}) => {
+test("Show selections retain unsaved changes", async ({ page }) => {
 	await page.goto("/admin/#shows");
 	await page.getByRole("button", { name: "+ show", exact: true }).click();
-	await page
-		.getByRole("button", { name: "existing show", exact: true })
-		.click();
-	const form = page.getByRole("dialog", { name: "Onboard Show" });
+	const form = page.getByRole("dialog", { name: "Upload Show" });
 	await form.getByRole("combobox", { name: "Search DJs" }).focus();
 	const option = form.getByRole("option").first();
 	const djName = await option.innerText();
@@ -131,20 +139,6 @@ test("Show selections and failed submissions retain unsaved changes", async ({
 		.click();
 	await form.getByRole("button", { name: "Cancel", exact: true }).click();
 	await expect(form).toBeHidden();
-	await page.getByRole("button", { name: "+ show", exact: true }).click();
-	await page
-		.getByRole("button", { name: "existing show", exact: true })
-		.click();
-	await page.locator("#show-title").fill("Draft");
-	await page.locator("#show-date").fill("2026-09-29");
-	await page.locator("#show-duration").fill("3600");
-	await page.locator("#show-url").fill("https://example.com/show");
-	await page.locator("#show-image-small").fill("https://example.com/small.jpg");
-	await page.locator("#show-image-large").fill("https://example.com/large.jpg");
-	await form.getByRole("button", { name: "Submit", exact: true }).click();
-	await expect(form.getByRole("alert")).toContainText("Select at least one DJ");
-	await form.getByRole("button", { name: "Cancel", exact: true }).click();
-	await expect(page.getByRole("alertdialog")).toBeVisible();
 });
 
 test("edit image undo and crop layering protect the parent form", async ({
@@ -281,12 +275,8 @@ test("Show and DJ forms share tag suggestions and compact helper spacing", async
 			}),
 		);
 		await add.click();
-		if (resource === "shows")
-			await page
-				.getByRole("button", { name: "existing show", exact: true })
-				.click();
 		const form = page.getByRole("dialog", {
-			name: resource === "djs" ? "Onboard DJ" : "Onboard Show",
+			name: resource === "djs" ? "Onboard DJ" : "Upload Show",
 		});
 		if (resource === "djs") await expect(form).toBeFocused();
 		await expect(
@@ -344,7 +334,7 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 				mixcloud_image_large: string;
 		  }
 		| undefined;
-	await page.route("**/api/admin/create-show", async (route) => {
+	await page.route("**/api/admin/modify-show", async (route) => {
 		payload = route.request().postDataJSON();
 		await route.fulfill({
 			status: 400,
@@ -352,29 +342,45 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 			body: JSON.stringify({ error: "Mock submission rejected" }),
 		});
 	});
+	await page.route("**/api/admin/shows", (route) =>
+		route.fulfill({
+			json: [
+				{
+					id: 1,
+					title: "Duration test",
+					date: "2026-09-29",
+					createdAt: "2026-09-29Z",
+					duration: 60,
+					url: "https://example.com/show",
+					image: "https://example.com/large.jpg",
+					mixcloud_image_small: "https://example.com/small.jpg",
+					mixcloud_image_large: "https://example.com/large.jpg",
+					djs: [1],
+					tags: [],
+					tracklist: [],
+				},
+			],
+		}),
+	);
 	await page.goto("/admin/#shows");
-	await page.getByRole("button", { name: "+ show", exact: true }).click();
-	await page
-		.getByRole("button", { name: "existing show", exact: true })
-		.click();
-	const form = page.getByRole("dialog", { name: "Onboard Show" });
+	await page.getByRole("button", { name: "Edit", exact: true }).first().click();
+	const form = page.getByRole("dialog", { name: "Edit Show" });
 	await expect(form).toBeVisible();
-	await expect(
-		form.getByRole("button", { name: "existing show", exact: true }),
-	).toBeFocused();
 	const duration = form.getByRole("spinbutton", { name: "duration (seconds)" });
 	await expect(duration).toHaveAttribute("min", "1");
 	await expect(duration).toHaveAttribute("step", "1");
-	await page.locator("#show-title").fill("Duration test");
-	await page.locator("#show-date").fill("2026-09-29");
-	await page.locator("#show-url").fill("https://example.com/show");
-	await page.locator("#show-image-small").fill("https://example.com/small.jpg");
-	await page.locator("#show-image-large").fill("https://example.com/large.jpg");
-	await form.getByRole("combobox", { name: "Search DJs" }).focus();
-	await form.getByRole("option").first().click();
+	await page.locator("#edit-show-title").fill("Duration test");
+	await page.locator("#edit-show-date").fill("2026-09-29");
+	await page.locator("#edit-show-url").fill("https://example.com/show");
+	await page
+		.locator("#edit-show-image-small")
+		.fill("https://example.com/small.jpg");
+	await page
+		.locator("#edit-show-image-large")
+		.fill("https://example.com/large.jpg");
 	for (const value of ["", "0", "-1", "1.5", "2147483648"]) {
 		await duration.fill(value);
-		await form.getByRole("button", { name: "Submit", exact: true }).click();
+		await form.getByRole("button", { name: "Save", exact: true }).click();
 		expect(
 			await duration.evaluate(
 				(input: HTMLInputElement) => input.validity.valid,
@@ -383,8 +389,8 @@ test("Show duration accepts whole seconds and sends them without conversion", as
 		expect(payload).toBeUndefined();
 	}
 	await duration.fill("3723");
-	await page.locator("#show-tags").fill("new-duration-tag");
-	await form.getByRole("button", { name: "Submit", exact: true }).click();
+	await page.locator("#edit-show-tags").fill("new-duration-tag");
+	await form.getByRole("button", { name: "Save", exact: true }).click();
 	await expect.poll(() => payload?.duration).toBe(3723);
 	expect(payload?.tags).toContain("new-duration-tag");
 	expect(payload?.mixcloud_image_small).toBe("https://example.com/small.jpg");

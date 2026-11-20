@@ -421,9 +421,7 @@ test("description saves safe HTML, renders in table/grid, reopens and clears", a
 	expect((await loadShow(request, show.id)).description).toBe("");
 });
 
-test("description survives onboarding mode changes and reverting clears dirty state", async ({
-	page,
-}) => {
+test("upload description reverting clears dirty state", async ({ page }) => {
 	await page.route("**/api/admin/mixcloud/status", (route) =>
 		route.fulfill({
 			json: {
@@ -439,13 +437,10 @@ test("description survives onboarding mode changes and reverting clears dirty st
 		exact: true,
 	});
 	await description.fill("A draft\nSecond line");
-	await page
-		.getByRole("button", { name: "existing show", exact: true })
-		.click();
 	await expect(description).toHaveValue("A draft\nSecond line");
 	await description.fill("");
 	await page
-		.getByRole("dialog", { name: "Onboard Show", exact: true })
+		.getByRole("dialog", { name: "Upload Show", exact: true })
 		.getByRole("button", { name: "Cancel", exact: true })
 		.click();
 	await expect(page.getByRole("alertdialog")).toBeHidden();

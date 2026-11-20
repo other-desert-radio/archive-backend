@@ -18,7 +18,6 @@ import {
 	type SortDirection,
 	sortShows,
 } from "../components/shows/index.js";
-import { createShow } from "../loaders/create-show.js";
 import { type DJsAdminRow, loadDJs } from "../loaders/djs.js";
 import { modifyShow } from "../loaders/modify-show.js";
 import { loadShows, type ShowsAdminRow } from "../loaders/shows.js";
@@ -157,12 +156,6 @@ export const ShowsPage = () => {
 		setSortColumn(column);
 		setSortDirection("asc");
 	};
-	const handleCreateShow = async (
-		request: Parameters<typeof createShow>[0],
-	) => {
-		await createShow(request);
-		refreshShows();
-	};
 	const handleEditShow = (show: ShowsAdminRow) => setEditingShow(show);
 	const handleModifyShow = async (
 		request: Parameters<typeof modifyShow>[0],
@@ -276,7 +269,6 @@ export const ShowsPage = () => {
 					setIsModalOpen(false);
 					refreshPending();
 				}}
-				onSubmit={handleCreateShow}
 				tags={tags}
 				onSaved={(show) => {
 					refreshPending();

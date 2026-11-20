@@ -2,6 +2,19 @@ import { expect } from "@playwright/test";
 import sharp from "sharp";
 import { test } from "./auth-fixtures.js";
 
+// Upload controls require an established provider connection.
+test.beforeEach(async ({ page }) => {
+	await page.route("**/api/admin/mixcloud/status", (route) =>
+		route.fulfill({
+			json: {
+				configured: true,
+				connected: true,
+				account: { key: "/test/", displayName: "Test" },
+			},
+		}),
+	);
+});
+
 for (const width of [1280, 390, 320]) {
 	test(`new show has only upload metadata at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: 900 });
@@ -25,22 +38,14 @@ for (const width of [1280, 390, 320]) {
 		}
 		await expect(form.locator('button[type="submit"]')).toBeDisabled();
 
-		await page
-			.getByRole("button", { name: "existing show", exact: true })
-			.click();
-		const existing = page.getByRole("dialog", {
-			name: "Onboard Show",
-			exact: true,
-		});
-		await expect(page.locator("#show-title")).toHaveValue("Upload draft");
-		await expect(page.locator("#show-duration")).toBeVisible();
+		await expect(form.getByRole("group", { name: "Show mode" })).toHaveCount(0);
 		await expect(
-			existing.getByRole("combobox", { name: "Search DJs" }),
-		).toBeVisible();
-		await expect(existing.locator('button[type="submit"]')).toBeEnabled();
-		await page.getByRole("button", { name: "new show", exact: true }).click();
-		await expect(page.locator("#show-date")).toHaveValue("2026-10-26");
-		await expect(description).toHaveValue("A show description\nSecond line");
+			form.getByRole("button", { name: "existing show", exact: true }),
+		).toHaveCount(0);
+		await expect(
+			page.getByRole("dialog", { name: "Onboard Show", exact: true }),
+		).toHaveCount(0);
+
 		await page.screenshot({ path: `/tmp/show-description-${width}.png` });
 		await form.getByRole("button", { name: "Cancel", exact: true }).click();
 		await expect(page.getByRole("alertdialog")).toBeVisible();
@@ -107,10 +112,6 @@ for (const width of [1280, 390, 320]) {
 		await output.fill("Custom upload title");
 		await expect(output).toHaveCSS("border-color", "rgb(0, 0, 0)");
 		await page.locator("#show-title").fill("Changed");
-		await page
-			.getByRole("button", { name: "existing show", exact: true })
-			.click();
-		await page.getByRole("button", { name: "new show", exact: true }).click();
 		await expect(output).toHaveValue("Custom upload title");
 		await form
 			.getByRole("button", { name: "Reset to generated title" })
@@ -162,10 +163,9 @@ for (const { status, body, text } of [
 		await page.getByRole("button", { name: "+ show", exact: true }).click();
 		const form = page.getByRole("dialog", { name: "Upload Show", exact: true });
 		await expect(form.getByRole("status")).toHaveText(text);
-		await page
-			.getByRole("button", { name: "existing show", exact: true })
-			.click();
-		await expect(page.getByRole("dialog").getByRole("status")).toHaveCount(0);
+		await expect(
+			form.getByRole("button", { name: "existing show", exact: true }),
+		).toHaveCount(0);
 	});
 }
 

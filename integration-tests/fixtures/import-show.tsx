@@ -65,7 +65,8 @@ const Fixture = () => {
 				isDJsLoading={false}
 				onRetryDJs={() => {}}
 				onClose={() => setCreateOpen(false)}
-				onSubmit={async () => {}}
+				tags={[]}
+				onSaved={() => {}}
 			/>
 			<output aria-label="Imported Show">{saved}</output>
 			{open && row && (
