@@ -68,6 +68,7 @@ export const ResourceTable = <Row, ColumnKey extends string>({
 				Math.min(top - bounds.top, bounds.height - header.offsetHeight),
 			);
 			header.style.transform = `translateY(${offset}px)`;
+			header.toggleAttribute("data-stuck", offset > 0);
 		};
 		const observer = new ResizeObserver(update);
 		observer.observe(wrapper);
