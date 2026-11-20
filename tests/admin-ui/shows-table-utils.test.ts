@@ -112,7 +112,7 @@ test("searches, links, and sorts both image URLs independently", () => {
 	).toEqual([2, 1]);
 });
 
-test("stored image columns match DJs: named links or None, searchable and sortable", () => {
+test("stored image columns match DJs: named links or -, searchable and sortable", () => {
 	const withImages = {
 		...shows[0],
 		image_small: "/api/admin/shows/2/image/small",
@@ -125,7 +125,7 @@ test("stored image columns match DJs: named links or None, searchable and sortab
 		expect(renderToStaticMarkup(column.render(withImages))).toBe(
 			`<a href="${withImages[key]}">${key}</a>`,
 		);
-		expect(renderToStaticMarkup(column.render(shows[1]))).toContain("None");
+		expect(renderToStaticMarkup(column.render(shows[1]))).toContain("-");
 		expect(filterShows(rows, withImages[key], new Map(), new Map())).toEqual([
 			withImages,
 		]);
@@ -140,7 +140,7 @@ test("displays, searches, and sorts descriptions with missing values", () => {
 	expect(renderToStaticMarkup(column.render(shows[0]))).toContain(
 		"Late night journey",
 	);
-	expect(renderToStaticMarkup(column.render(shows[1]))).toContain("None");
+	expect(renderToStaticMarkup(column.render(shows[1]))).toContain("-");
 	expect(filterShows(shows, "journey", new Map(), new Map())).toEqual([
 		shows[0],
 	]);
@@ -215,6 +215,6 @@ test("Shows table renders resolved tag chips and missing-tag fallbacks", () => {
 	);
 	expect(html).toContain("ambient");
 	expect(html).toContain("Tag #999");
-	expect(html).toContain("None");
+	expect(html).toContain("-");
 	expect(html).toContain("background-color:#abcdef");
 });

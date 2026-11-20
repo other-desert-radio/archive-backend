@@ -320,7 +320,7 @@ rows. Created uses UTC formatted like “May 5, 2023 6:20 pm”. A right-side
 keyboard-accessible 24px triangle SVG reveals url, duration, and
 mixcloud_tag_json. Each source starts collapsed. Hover or keyboard focus expands
 its control leftward to show “More” or “Less” beside the triangle. Missing/empty
-values show muted None; phone labels stack and long values wrap.
+values show muted `-`; phone labels stack and long values wrap.
 
 Initial resolution selects unique exact DJ names ignoring case and surrounding
 whitespace, and canonical tag titles from source keys. Unmatched DJ names appear
@@ -458,7 +458,7 @@ reviewed state, retaining search and sort. The existing full editor continues to
 mark metadata saves reviewed.
 
 Shows tables include a sortable, searchable description column after title;
-missing descriptions display None. Show cards display nonempty descriptions as
+missing descriptions display `-`. Show cards display nonempty descriptions as
 plain text with preserved line breaks and omit missing descriptions.
 
 Blocking form, message, and image crop dialogs lock document scrolling until the
@@ -555,7 +555,7 @@ ascending order. Readiness controls open pending import queues for ready and
 review categories. Search covers all displayed parser fields, including raw ISO
 and formatted UTC derived dates. Parser dates sort chronologically and versions
 sort numerically; missing values sort first ascending. Extracted DJ names
-display comma-separated, with muted “None” for missing or empty arrays; version
+display comma-separated, with muted `-` for missing or empty arrays; version
 zero displays as `0`. These suggestions are read-only and separate from linked
 archive Show/DJ values. Refresh populates parser suggestions and clears stale
 results on parse failure. Search covers all displayed fields; sorting defaults
@@ -661,7 +661,7 @@ failed-save retention. Empty or invalid image URLs prevent submission. The Shows
 table exposes Mixcloud image URLs with clickable `mixcloud_image_small` and
 `mixcloud_image_large` columns, each searchable and independently sortable. Grid
 cards use the API’s `image` value, derived from `mixcloud_image_large`. The
-separate `image_small` and `image_large` columns match DJs: muted None when
+separate `image_small` and `image_large` columns match DJs: muted `-` when
 absent, or a named link to the authenticated stored WebP endpoint when present.
 Both columns support sorting and searching.
 
@@ -680,12 +680,12 @@ status without moving focus, and its close button dismisses immediately. Failed
 saves show no success toast.
 
 The source section omits id, key, and show_id. HTTP(S) source URLs are clickable
-and open in a new tab; missing URLs keep the existing None feedback.
+and open in a new tab; missing URLs keep the existing `-` feedback.
 
 The Mixcloud database table uses one `mixcloud_tag_json` column, displaying the
 original key/name/URL JSON from the `mixcloud_tags` API field. Names preserve
 source case. The column participates in shared search and sorting; absent source
-tag data displays None, and an empty array displays `[]`.
+tag data displays `-`, and an empty array displays `[]`.
 
 Mixcloud import navigation includes a mirrored Previous Show arrow to the left
 of the panel, matching Next Show. On smaller screens the arrows sit together
@@ -757,7 +757,7 @@ review and delete actions remain available through the table view.
 
 The Tags table includes a sortable shows column listing every directly
 associated Show title alphabetically, separated by commas. Tags without Shows
-display None. The page loads existing Tags and Shows endpoints together; either
+display `-`. The page loads existing Tags and Shows endpoints together; either
 read failing uses the page error/retry state rather than displaying missing
 associations.
 
@@ -772,7 +772,7 @@ password. Everyone can change their own password and sign out.
 Only admins see the Users sidebar page. Its account list supports creation, role
 changes, administrator password resets, and confirmed deletion. Sortable columns
 show password-change requirements, banned status, ban reason, ban expiry in UTC,
-and linked Mixcloud name and key. Missing details display None; search includes
+and linked Mixcloud name and key. Missing details display `-`; search includes
 these account details. Editors retain every archive action. Account forms use
 shared modal/focus/dismissal behavior and never redisplay saved passwords.
 Failed requests preserve drafts; self-deletion and self-demotion are
@@ -933,7 +933,7 @@ their name; list refresh failures remain separate from deletion.
 ### Specials management
 
 Specials appears after Tags in navigation for admins and editors. The table
-shows ID, name, and all associated Show titles alphabetically, or None. Search
+shows ID, name, and all associated Show titles alphabetically, or `-`. Search
 matches Special names and Show titles. Table/grid selection persists
 independently; the default is table. Grid cards show only the name and actions,
 without tag colors or Show metadata. Both views expose Edit and Delete controls.

@@ -72,7 +72,7 @@ export const UsersPage = ({ currentUser }: { currentUser: AccountUser }) => {
 			render: (user: ListedUser) => {
 				const value = user[key];
 				if (typeof value === "boolean") return value ? "Yes" : "No";
-				if (!value) return "None";
+				if (!value) return "-";
 				return key === "banExpires"
 					? new Date(value)
 							.toISOString()
