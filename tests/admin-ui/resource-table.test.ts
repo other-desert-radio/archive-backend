@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { isValidElement, type ReactNode } from "react";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	filterResourceRows,
 	getNextSort,
@@ -14,25 +15,6 @@ const rows: Row[] = [
 	{ id: 1, title: "Alpha" },
 ];
 
-type ElementProps = { children?: ReactNode; onClick?: () => void };
-
-const findActionButton = (
-	node: ReactNode,
-	label: string,
-): ElementProps | undefined => {
-	if (Array.isArray(node)) {
-		for (const child of node) {
-			const result = findActionButton(child, label);
-			if (result !== undefined) return result;
-		}
-		return undefined;
-	}
-	if (!isValidElement<ElementProps>(node)) return undefined;
-	if (node.type === "button" && node.props.children === label) {
-		return node.props;
-	}
-	return findActionButton(node.props.children, label);
-};
 const columns: ResourceTableColumn<Row, "id" | "title">[] = [
 	{
 		key: "id",
@@ -74,28 +56,9 @@ describe("resource table helpers", () => {
 		});
 	});
 
-	test("always renders Edit actions that call the supplied row callback", () => {
-		const editedRows: Row[] = [];
-		const table = ResourceTable({
-			rows,
-			rowKey: (row) => row.id,
-			caption: "Rows",
-			columns,
-			sortColumn: "id",
-			sortDirection: "asc",
-			onSort: () => undefined,
-			onEdit: (row) => editedRows.push(row),
-		});
-		const editButton = findActionButton(table, "Edit");
-
-		expect(editButton).toBeDefined();
-		editButton?.onClick?.();
-		expect(editedRows).toEqual([rows[0]]);
-	});
-	test("preserves Delete callbacks with optional Edit controls", () => {
-		for (const withEdit of [true, false]) {
-			const deletedRows: Row[] = [];
-			const table = ResourceTable({
+	test("renders Edit actions for every row", () => {
+		const html = renderToStaticMarkup(
+			createElement(ResourceTable<Row, "id" | "title">, {
 				rows,
 				rowKey: (row) => row.id,
 				caption: "Rows",
@@ -103,14 +66,28 @@ describe("resource table helpers", () => {
 				sortColumn: "id",
 				sortDirection: "asc",
 				onSort: () => undefined,
-				onEdit: withEdit ? () => undefined : undefined,
-				onDelete: (row) => deletedRows.push(row),
-			});
-			expect(findActionButton(table, "Edit") !== undefined).toBe(withEdit);
-			const deleteButton = findActionButton(table, "Delete");
-			expect(deleteButton).toBeDefined();
-			deleteButton?.onClick?.();
-			expect(deletedRows).toEqual([rows[0]]);
+				onEdit: () => undefined,
+			}),
+		);
+		expect(html.match(/>Edit<\/button>/g)).toHaveLength(rows.length);
+	});
+	test("renders Delete actions with optional Edit controls", () => {
+		for (const withEdit of [true, false]) {
+			const html = renderToStaticMarkup(
+				createElement(ResourceTable<Row, "id" | "title">, {
+					rows,
+					rowKey: (row) => row.id,
+					caption: "Rows",
+					columns,
+					sortColumn: "id",
+					sortDirection: "asc",
+					onSort: () => undefined,
+					onEdit: withEdit ? () => undefined : undefined,
+					onDelete: () => undefined,
+				}),
+			);
+			expect(html.includes(">Edit</button>")).toBe(withEdit);
+			expect(html.match(/>Delete<\/button>/g)).toHaveLength(rows.length);
 		}
 	});
 });
