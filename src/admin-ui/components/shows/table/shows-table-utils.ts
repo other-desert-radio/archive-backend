@@ -16,8 +16,6 @@ export type ShowSortColumn =
 	| "description"
 	| "date"
 	| "duration"
-	| "image_small"
-	| "image_large"
 	| "mixcloud_image_small"
 	| "mixcloud_image_large"
 	| "special"
@@ -39,8 +37,6 @@ export const getShowSearchValue = (
 		safeHtmlToPlainText(show.description ?? ""),
 		formatUTCDate(show.date),
 		formatDuration(show.duration),
-		show.image_small,
-		show.image_large,
 		show.mixcloud_image_small,
 		show.mixcloud_image_large,
 		show.url,

@@ -40,7 +40,7 @@ test("special table spells out shows and both views enable Edit", () => {
 		/>,
 	);
 	expect(table).toContain("Zebra, Alpha");
-	expect(table).toContain("None");
+	expect(table).toContain("-");
 	expect(table).not.toMatch(/disabled=""[^>]*>Edit/);
 	const card = renderToStaticMarkup(
 		<SpecialCard special={rows[0]} onEdit={() => {}} onDelete={() => {}} />,

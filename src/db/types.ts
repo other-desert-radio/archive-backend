@@ -180,8 +180,6 @@ export type ShowsTable = {
 	duration: number;
 	mixcloud_image_small: string;
 	mixcloud_image_large: string;
-	image_small: Buffer | null;
-	image_large: Buffer | null;
 	url: string;
 };
 

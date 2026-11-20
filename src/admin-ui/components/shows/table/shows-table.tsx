@@ -1,5 +1,6 @@
 import { isHttpUrl, safeHtmlToPlainText } from "../../../../utils/index.js";
 import type { ShowsAdminRow } from "../../../loaders/shows.js";
+import type { TagsAdminRow } from "../../../loaders/tags.js";
 import {
 	formatDuration,
 	formatMissing,
@@ -9,11 +10,14 @@ import {
 	ResourceTable,
 	type ResourceTableColumn,
 	SanitizedHTML,
+	Tag,
+	TagsContainer,
 } from "../../shared/resource-views/index.js";
 import type { ShowSortColumn, SortDirection } from "./shows-table-utils.js";
 
 type ShowsTableProps = {
 	shows: ShowsAdminRow[];
+	tagsById: ReadonlyMap<number, TagsAdminRow>;
 	sortColumn: ShowSortColumn;
 	sortDirection: SortDirection;
 	onSort: (column: ShowSortColumn) => void;
@@ -83,42 +87,6 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			compare: (a, b) => a.duration - b.duration,
 		},
 		{
-			key: "image_small",
-			label: "image_small",
-			render: (show) =>
-				show.image_small === undefined ? (
-					formatMissing(undefined)
-				) : (
-					<a href={show.image_small}>image_small</a>
-				),
-			compare: (a, b) => compareText(a.image_small, b.image_small),
-		},
-		{
-			key: "image_large",
-			label: "image_large",
-			render: (show) =>
-				show.image_large === undefined ? (
-					formatMissing(undefined)
-				) : (
-					<a href={show.image_large}>image_large</a>
-				),
-			compare: (a, b) => compareText(a.image_large, b.image_large),
-		},
-		{
-			key: "mixcloud_image_small",
-			label: "mixcloud_image_small",
-			render: (show) => formatURL(show.mixcloud_image_small),
-			compare: (a, b) =>
-				compareText(a.mixcloud_image_small, b.mixcloud_image_small),
-		},
-		{
-			key: "mixcloud_image_large",
-			label: "mixcloud_image_large",
-			render: (show) => formatURL(show.mixcloud_image_large),
-			compare: (a, b) =>
-				compareText(a.mixcloud_image_large, b.mixcloud_image_large),
-		},
-		{
 			key: "djs",
 			label: "DJs",
 			render: (show) => formatRelationshipIDs(show.djs),
@@ -143,6 +111,20 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 			compare: (a, b) => trackCount(a) - trackCount(b),
 		},
 		{
+			key: "mixcloud_image_small",
+			label: "mixcloud_image_small",
+			render: (show) => formatURL(show.mixcloud_image_small),
+			compare: (a, b) =>
+				compareText(a.mixcloud_image_small, b.mixcloud_image_small),
+		},
+		{
+			key: "mixcloud_image_large",
+			label: "mixcloud_image_large",
+			render: (show) => formatURL(show.mixcloud_image_large),
+			compare: (a, b) =>
+				compareText(a.mixcloud_image_large, b.mixcloud_image_large),
+		},
+		{
 			key: "url",
 			label: "URL",
 			render: (show) => formatURL(show.url),
@@ -152,6 +134,7 @@ export const showColumns: ResourceTableColumn<ShowsAdminRow, ShowSortColumn>[] =
 
 export const ShowsTable = ({
 	shows,
+	tagsById,
 	sortColumn,
 	sortDirection,
 	onSort,
@@ -162,7 +145,31 @@ export const ShowsTable = ({
 		rows={shows}
 		rowKey={(show) => show.id}
 		caption="Shows"
-		columns={showColumns}
+		columns={showColumns.map((column) =>
+			column.key !== "tags"
+				? column
+				: {
+						...column,
+						render: (show: ShowsAdminRow) =>
+							show.tags.length === 0 ? (
+								formatMissing(undefined)
+							) : (
+								<TagsContainer label={`${show.title} tags`}>
+									{show.tags.map((id) => {
+										const tag = tagsById.get(id);
+										return (
+											<Tag
+												key={id}
+												{...(tag === undefined ? {} : { color: tag.color })}
+											>
+												{tag?.title ?? `Tag #${id}`}
+											</Tag>
+										);
+									})}
+								</TagsContainer>
+							),
+					},
+		)}
 		sortColumn={sortColumn}
 		sortDirection={sortDirection}
 		onSort={onSort}

@@ -79,14 +79,14 @@ describe("tags table", () => {
 		).toBe("https://www.mixcloud.com/genres/ambient/");
 	});
 
-	test("lists every associated show and uses None for unassigned tags", () => {
+	test("lists every associated show and uses - for unassigned tags", () => {
 		const column = tagColumns.find(({ key }) => key === "shows");
 		const tag = { id: 1, title: "Ambient", color: "#abcdef", reviewed: true };
 		expect(
 			column?.render({ ...tag, showTitles: ["First Show", "Second Show"] }),
 		).toBe("First Show, Second Show");
-		expect(column?.render({ ...tag, showTitles: [] })).toBe("None");
-		expect(column?.render(tag)).toBe("None");
+		expect(column?.render({ ...tag, showTitles: [] })).toBe("-");
+		expect(column?.render(tag)).toBe("-");
 	});
 
 	test("filters by title or color", () => {

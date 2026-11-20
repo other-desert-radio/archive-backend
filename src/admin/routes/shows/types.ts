@@ -10,8 +10,6 @@ export type AdminShowsJSON = ShowsJSON & {
 	special?: { id: number; title: string };
 	tracklist: ShowTracklistEntry[];
 	description?: string;
-	image_small?: string;
-	image_large?: string;
 	mixcloud_image_small: string;
 	mixcloud_image_large: string;
 };
@@ -56,11 +54,6 @@ export type CreateShowRoute = {
 export type ModifyShowRoute = {
 	Body: ModifyShowRequest;
 	Reply: AdminApiReply<AdminShowsJSON>;
-};
-
-export type GetShowImageRoute = {
-	Params: { id: string; variant: "small" | "large" };
-	Reply: AdminApiReply<Buffer>;
 };
 
 export const RemoveShowRequestPattern = {

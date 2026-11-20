@@ -56,9 +56,7 @@
 }
 
 .edit {
-	justify-self: start;
-	border: 1px solid black;
-	border-radius: 0;
+	composes: edit from "../../shared/resource-views/resource-actions.module.css";
 }
 
 .description {
@@ -69,14 +67,5 @@
 }
 
 .delete {
-	border: 1px solid #b00020;
-	color: #b00020;
-	border-radius: 0;
-	background: #fff;
-	padding: 0.25rem 0.5rem;
-	font: inherit;
-}
-
-.delete:enabled:hover {
-	background: #efefef;
+	composes: delete from "../../shared/resource-views/resource-actions.module.css";
 }

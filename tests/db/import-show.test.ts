@@ -154,21 +154,6 @@ test.skipIf(!databaseUrl)(
 				data_changed: false,
 			});
 			expect(tracking.imported_at).toBeInstanceOf(Date);
-			expect(
-				await db
-					.selectFrom("shows")
-					.select(["image_small", "image_large"])
-					.executeTakeFirstOrThrow(),
-			).toEqual({ image_small: null, image_large: null });
-			const images = {
-				image_small: Buffer.from("small-webp"),
-				image_large: Buffer.from("large-webp"),
-			};
-			await db
-				.updateTable("shows")
-				.set(images)
-				.where("id", "=", saved.id)
-				.execute();
 			const edited = await app.inject({
 				method: "POST",
 				url: "/api/admin/modify-show",
@@ -176,24 +161,12 @@ test.skipIf(!databaseUrl)(
 			});
 			expect(edited.statusCode).toBe(200);
 			expect(edited.json()).toEqual(saved);
-			expect(
-				await db
-					.selectFrom("shows")
-					.select(["image_small", "image_large"])
-					.executeTakeFirstOrThrow(),
-			).toEqual(images);
 			const listed = await app.inject({
 				method: "GET",
 				url: "/api/admin/shows",
 			});
 			expect(listed.statusCode).toBe(200);
-			expect(listed.json()).toEqual([
-				{
-					...saved,
-					image_small: `/api/admin/shows/${saved.id}/image/small`,
-					image_large: `/api/admin/shows/${saved.id}/image/large`,
-				},
-			]);
+			expect(listed.json()).toEqual([saved]);
 
 			// Any attempted write makes this repeat request fail at the database boundary.
 			for (const table of [

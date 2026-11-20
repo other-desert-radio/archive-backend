@@ -24,8 +24,7 @@ export const specialColumns: ResourceTableColumn<
 	{
 		key: "shows",
 		label: "shows",
-		render: (row) =>
-			row.showTitles?.length ? row.showTitles.join(", ") : "None",
+		render: (row) => (row.showTitles?.length ? row.showTitles.join(", ") : "-"),
 		compare: (a, b) =>
 			(a.showTitles ?? [])
 				.join(", ")

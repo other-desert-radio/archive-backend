@@ -12,6 +12,7 @@ export const SpecialCard = ({ special, onEdit, onDelete }: Props) => (
 		<div className={styles.actions}>
 			<button
 				type="button"
+				className={styles.edit}
 				onClick={() => onEdit(special)}
 				aria-label={`Edit ${special.title}`}
 			>
@@ -19,6 +20,7 @@ export const SpecialCard = ({ special, onEdit, onDelete }: Props) => (
 			</button>
 			<button
 				type="button"
+				className={styles.delete}
 				aria-label={`Delete ${special.title}`}
 				onClick={() => onDelete(special)}
 			>

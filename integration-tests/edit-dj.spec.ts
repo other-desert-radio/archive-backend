@@ -59,9 +59,9 @@ for (const label of ["socials", "show title", "show description"]) {
 			.getByLabel(label, { exact: true })
 			.fill("   ");
 		await save(page);
-		await expect(await cellFor(page, dj.id, label)).toHaveText("None");
+		await expect(await cellFor(page, dj.id, label)).toHaveText("-");
 		await page.reload();
-		await expect(await cellFor(page, dj.id, label)).toHaveText("None");
+		await expect(await cellFor(page, dj.id, label)).toHaveText("-");
 		await expect(
 			(await openEditor(page, dj.id)).getByLabel(label, { exact: true }),
 		).toHaveValue("");
@@ -184,7 +184,7 @@ test("adds existing and draft tags, removes one, and clears direct tags", async 
 			.click();
 	await save(page);
 	await page.reload();
-	await expect(await cellFor(page, dj.id, "tags")).toHaveText("None");
+	await expect(await cellFor(page, dj.id, "tags")).toHaveText("-");
 	expect((await loadDJ(request, dj.id)).directTags).toEqual([]);
 });
 
@@ -258,7 +258,7 @@ test("undoes removal, cancels cropping, then removes both image variants", async
 	await page.reload();
 	for (const variant of ["small", "large"]) {
 		await expect(await cellFor(page, dj.id, `image_${variant}`)).toHaveText(
-			"None",
+			"-",
 		);
 		expect(
 			(await request.get(`/api/admin/djs/${dj.id}/image/${variant}`)).status(),

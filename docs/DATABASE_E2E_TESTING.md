@@ -255,6 +255,9 @@ variant, required-field rejection, draft retention, reload/reopening, and
 URLs. `tests/db/show-image-urls-migration.test.ts` uses an explicit disposable
 `SHOW_MIGRATION_TEST_DATABASE_URL` to check backfill, null rejection, atomic
 failure, and rollback; otherwise it skips.
+`tests/db/drop-show-webp-images-migration.test.ts` uses the same variable to
+verify migration `0049` drops only the binary fields, preserves Mixcloud URLs,
+and restores empty paired columns on rollback before reapplying.
 
 ### Mixcloud import queue interaction coverage
 

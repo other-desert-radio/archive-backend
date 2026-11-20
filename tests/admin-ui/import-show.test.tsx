@@ -110,7 +110,7 @@ test("source section includes exactly the approved labels and renders missing va
 	).toEqual(["name", "created", "url", "duration", "mixcloud_tag_json"]);
 	expect(markup).toContain("October 1, 2026 2:03 am");
 	expect(markup).toContain("01:01:01");
-	expect(markup).toContain("None");
+	expect(markup).toContain("-");
 	for (const hidden of [
 		"image_small",
 		"image_large",

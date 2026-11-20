@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
 	filterShows,
 	getShowSearchValue,
+	ShowsTable,
 	showColumns,
 	sortShows,
 } from "../../src/admin-ui/components/shows/index.js";
@@ -46,14 +48,12 @@ describe("Show table helpers", () => {
 			"description",
 			"date",
 			"duration",
-			"image_small",
-			"image_large",
-			"mixcloud_image_small",
-			"mixcloud_image_large",
 			"DJs",
 			"Special",
 			"tags",
 			"tracklist",
+			"mixcloud_image_small",
+			"mixcloud_image_large",
 			"URL",
 		]);
 		expect(showColumns[1].render(shows[0])).toBe("2026-01-02 12:34:56 UTC");
@@ -110,35 +110,13 @@ test("searches, links, and sorts both image URLs independently", () => {
 	).toEqual([2, 1]);
 });
 
-test("stored image columns match DJs: named links or None, searchable and sortable", () => {
-	const withImages = {
-		...shows[0],
-		image_small: "/api/admin/shows/2/image/small",
-		image_large: "/api/admin/shows/2/image/large",
-	};
-	const rows = [withImages, shows[1]];
-	for (const key of ["image_small", "image_large"] as const) {
-		const column = showColumns.find((column) => column.key === key);
-		if (!column) throw new Error("Missing image column");
-		expect(renderToStaticMarkup(column.render(withImages))).toBe(
-			`<a href="${withImages[key]}">${key}</a>`,
-		);
-		expect(renderToStaticMarkup(column.render(shows[1]))).toContain("None");
-		expect(filterShows(rows, withImages[key], new Map(), new Map())).toEqual([
-			withImages,
-		]);
-		expect(sortShows(rows, key, "asc").map((show) => show.id)).toEqual([1, 2]);
-		expect(sortShows(rows, key, "desc").map((show) => show.id)).toEqual([2, 1]);
-	}
-});
-
 test("displays, searches, and sorts descriptions with missing values", () => {
 	const column = showColumns.find((column) => column.key === "description");
 	if (!column) throw new Error("Missing description column");
 	expect(renderToStaticMarkup(column.render(shows[0]))).toContain(
 		"Late night journey",
 	);
-	expect(renderToStaticMarkup(column.render(shows[1]))).toContain("None");
+	expect(renderToStaticMarkup(column.render(shows[1]))).toContain("-");
 	expect(filterShows(shows, "journey", new Map(), new Map())).toEqual([
 		shows[0],
 	]);
@@ -195,4 +173,24 @@ test("Special titles and IDs are searchable and titles sortable", () => {
 	expect(filterShows(rows, "winter", new Map(), new Map())).toEqual([rows[0]]);
 	expect(filterShows(rows, "80", new Map(), new Map())).toEqual([rows[0]]);
 	expect(sortShows(rows, "special", "asc")).toEqual([rows[1], rows[0]]);
+});
+
+test("Shows table renders resolved tag chips and missing-tag fallbacks", () => {
+	const html = renderToStaticMarkup(
+		createElement(ShowsTable, {
+			shows: [
+				{ ...shows[0], tags: [7, 999] },
+				{ ...shows[1], tags: [] },
+			],
+			tagsById: new Map([[7, { id: 7, title: "ambient", color: "#abcdef" }]]),
+			sortColumn: "id",
+			sortDirection: "asc",
+			onSort: () => {},
+			onEdit: () => {},
+		}),
+	);
+	expect(html).toContain("ambient");
+	expect(html).toContain("Tag #999");
+	expect(html).toContain("-");
+	expect(html).toContain("background-color:#abcdef");
 });

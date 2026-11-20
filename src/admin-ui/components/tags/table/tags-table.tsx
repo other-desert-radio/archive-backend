@@ -47,8 +47,7 @@ export const tagColumns: ResourceTableColumn<TagsAdminRow, TagSortColumn>[] = [
 	{
 		key: "shows",
 		label: "shows",
-		render: (tag) =>
-			tag.showTitles?.length ? tag.showTitles.join(", ") : "None",
+		render: (tag) => (tag.showTitles?.length ? tag.showTitles.join(", ") : "-"),
 		compare: (left, right) =>
 			(left.showTitles ?? [])
 				.join(", ")
