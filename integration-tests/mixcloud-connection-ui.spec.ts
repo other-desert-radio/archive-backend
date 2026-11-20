@@ -97,6 +97,7 @@ for (const width of [1440, 390, 320]) {
 			exact: false,
 		});
 		await expect(connection).toHaveCSS("font-size", "12px");
+		await expect(connection).toHaveCSS("color", "rgb(85, 85, 85)");
 		await expect(connection).toHaveText(
 			"Signed into Mixcloud as Other Desert Radio",
 		);
@@ -114,7 +115,7 @@ for (const width of [1440, 390, 320]) {
 		await expect(signOut).toHaveCSS("border-width", "0px");
 		await expect(
 			page.getByRole("dialog").locator("fieldset").first(),
-		).toHaveCSS("margin-top", "8px");
+		).toHaveCSS("margin-top", "0px");
 		expect(
 			await connection.evaluate((element) => {
 				let parent = element.parentElement;

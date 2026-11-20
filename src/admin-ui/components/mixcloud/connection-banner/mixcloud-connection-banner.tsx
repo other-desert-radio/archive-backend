@@ -129,7 +129,7 @@ export const MixcloudConnectionBanner = ({
 								Mixcloud sign-in is not configured. Contact an administrator.
 							</p>
 						) : status.connected ? (
-							<p>
+							<p className={styles.signedIn}>
 								Signed into Mixcloud as{" "}
 								<strong>{status.account.displayName}</strong>
 							</p>

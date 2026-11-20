@@ -43,3 +43,11 @@
 .signIn[aria-label="sign out of mixcloud"] {
 	border: 0;
 }
+
+.signedIn {
+	font-style: italic;
+}
+
+.signIn[aria-label="sign out of mixcloud"]:hover:not(:disabled) {
+	color: #000;
+}
