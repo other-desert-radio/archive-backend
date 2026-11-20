@@ -24,7 +24,7 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 		parent.getByRole("button", { name: "Save", exact: true }),
 	).toBeDisabled();
 	const opener = parent.getByRole("button", {
-		name: /(?:add|edit) tracklist/,
+		name: /(?:Add tracklist|edit)/,
 		exact: true,
 	});
 	await opener.click();
@@ -52,18 +52,18 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	});
 	await first.getByLabel("artist", { exact: true }).fill(" Artist ");
 	await first.getByLabel("song", { exact: true }).fill(" Song ");
-	await first.getByLabel("timestamp (optional)").fill("3:70");
+	await first.getByLabel("timestamp").fill("3:70");
 	await expect(
 		editor.getByRole("button", { name: "Save", exact: true }),
 	).toBeDisabled();
 	await expect(
 		first.getByText("Timestamp must use", { exact: false }),
 	).toBeVisible();
-	await expect(first.getByLabel("timestamp (optional)")).toHaveCSS(
+	await expect(first.getByLabel("timestamp")).toHaveCSS(
 		"border-top-color",
 		"rgb(255, 44, 44)",
 	);
-	await first.getByLabel("timestamp (optional)").fill("3:07");
+	await first.getByLabel("timestamp").fill("3:07");
 	await editor
 		.getByRole("button", { name: "+ Add track", exact: true })
 		.click();
@@ -73,10 +73,10 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	});
 	await second.getByLabel("artist", { exact: true }).fill("clear me");
 	await second.getByLabel("song", { exact: true }).fill("clear me");
-	await second.getByLabel("timestamp (optional)").fill("0:00");
+	await second.getByLabel("timestamp").fill("0:00");
 	await second.getByLabel("type", { exact: true }).selectOption("chapter");
 	await expect(second.getByLabel("chapter", { exact: true })).toHaveValue("");
-	await expect(second.getByLabel("timestamp (optional)")).toHaveValue("0:00");
+	await expect(second.getByLabel("timestamp")).toHaveValue("0:00");
 	await second.getByLabel("chapter", { exact: true }).fill("Intro");
 	await expect(
 		editor.getByText("Enter timestamp as m:ss or h:mm:ss", { exact: true }),
@@ -85,7 +85,7 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 	await expect(editor).toBeHidden();
 	await expect(opener).toBeFocused();
 	await expect(
-		parent.getByRole("button", { name: "edit tracklist", exact: true }),
+		parent.getByRole("button", { name: "edit", exact: true }),
 	).toBeVisible();
 	expect((await loadShow(request, show.id)).tracklist).toEqual([]);
 	await page.route(
@@ -103,7 +103,7 @@ test("edits mixed tracklists as a local draft, retries failed saves and persists
 		"Tracklist save failed",
 	);
 	await expect(
-		parent.getByRole("button", { name: "edit tracklist", exact: true }),
+		parent.getByRole("button", { name: "edit", exact: true }),
 	).toBeVisible();
 	await saveShow(page);
 	expect((await loadShow(request, show.id)).tracklist).toEqual([
@@ -154,7 +154,7 @@ test("editor and parent discard are independent; deleting all entries clears the
 	const parent = await openShowEditor(page, show.id);
 	const open = () =>
 		parent
-			.getByRole("button", { name: /(?:add|edit) tracklist/, exact: true })
+			.getByRole("button", { name: /(?:Add tracklist|edit)/, exact: true })
 			.click();
 	const editor = page.getByRole("dialog", {
 		name: /(?:Add tracklist|Edit Tracklist)/,
@@ -174,7 +174,7 @@ test("editor and parent discard are independent; deleting all entries clears the
 	await editor.getByRole("button", { name: "Cancel", exact: true }).click();
 	await discard.getByRole("button", { name: "Discard changes" }).click();
 	await expect(
-		parent.getByRole("button", { name: "edit tracklist", exact: true }),
+		parent.getByRole("button", { name: "edit", exact: true }),
 	).toBeVisible();
 	await open();
 	await editor.getByRole("button", { name: "Remove row 1" }).click();
@@ -203,7 +203,7 @@ for (const width of [1280, 390, 320]) {
 			data: {
 				...showRequest(show),
 				tracklist: Array.from({ length: 8 }, (_, index) =>
-					index % 2 === 0
+					index < 2 || index >= 4
 						? {
 								artist: "Long artist name",
 								song: "Song with a long title",
@@ -216,11 +216,11 @@ for (const width of [1280, 390, 320]) {
 		await page.reload();
 		const parent = await openShowEditor(page, show.id);
 		await parent
-			.getByRole("button", { name: "edit tracklist", exact: true })
+			.getByRole("button", { name: "edit", exact: true })
 			.scrollIntoViewIfNeeded();
 		await page.screenshot({ path: `/tmp/tracklist-preview-${width}.png` });
 		await parent
-			.getByRole("button", { name: /(?:add|edit) tracklist/, exact: true })
+			.getByRole("button", { name: /(?:Add tracklist|edit)/, exact: true })
 			.click();
 		const editor = page.getByRole("dialog", {
 			name: /(?:Add tracklist|Edit Tracklist)/,
@@ -251,12 +251,43 @@ for (const width of [1280, 390, 320]) {
 			editor.getByRole("button", { name: "Cancel", exact: true }),
 		).toBeInViewport();
 		if (width === 1280) expect((await editor.boundingBox())?.width).toBe(1080);
+		const rows = editor.getByRole("group", { name: /^Tracklist row / });
+		const assertLabels = async (expected: boolean[]) => {
+			for (const [index, visible] of expected.entries()) {
+				const row = rows.nth(index);
+				expect(
+					await row
+						.locator("label")
+						.evaluateAll((labels) =>
+							labels.every(
+								(label) => getComputedStyle(label).position !== "absolute",
+							),
+						),
+				).toBe(visible);
+				await expect(row.getByLabel("type", { exact: true })).toBeVisible();
+			}
+		};
+		await assertLabels([true, false, true, false, true, false, false, false]);
 		await page.screenshot({ path: `/tmp/tracklist-editor-${width}.png` });
+		await rows
+			.nth(1)
+			.getByLabel("type", { exact: true })
+			.selectOption("chapter");
+		await assertLabels([true, true, false, false, true, false, false, false]);
+		await rows
+			.nth(1)
+			.getByLabel("chapter", { exact: true })
+			.fill("Changed chapter");
+		await editor
+			.getByRole("button", { name: "Remove row 1", exact: true })
+			.click();
+		await assertLabels([true, false, false, true, false, false, false]);
+
 		await editor
 			.getByRole("button", { name: "+ Add track", exact: true })
 			.click();
 		const last = editor.getByRole("group", {
-			name: "Tracklist row 9",
+			name: "Tracklist row 8",
 			exact: true,
 		});
 		await last.getByLabel("artist", { exact: true }).fill("Last artist");

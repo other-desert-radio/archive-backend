@@ -1,0 +1,23 @@
+.preview {
+	max-height: 7.5em;
+	overflow-y: auto;
+	margin-bottom: 12px;
+	line-height: 1.5;
+}
+.preview table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.preview td {
+	padding: 0 0 0 12px;
+	vertical-align: top;
+	overflow-wrap: anywhere;
+}
+.preview .number {
+	width: 1%;
+	padding: 0 12px 0 0;
+	border-right: 1px solid #777;
+	color: #777;
+	text-align: right;
+	white-space: nowrap;
+}

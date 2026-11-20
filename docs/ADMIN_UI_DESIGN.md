@@ -225,28 +225,36 @@ stable, while edit controls use the `edit-show` prefix.
 ### Tracklist editing
 
 Show upload, edit, and uploaded-show review display the `tracklist` label beside
-one button: `add tracklist` for an empty list, or `edit tracklist` when entries
-exist. Nonempty lists show a read-only preview above the button, scrolling after
-five lines. Empty lists show no preview or None placeholder. Both actions open
-the reusable `TracklistEditorModal` exported from `shows`. Its caller supplies
-entries, `onSave`, and `onClose`; it performs no API request. The editor title
-is `Add tracklist` when opened with zero entries and `Edit Tracklist` when
-opened with existing entries.
+one button: `Add tracklist` for an empty list, or `edit` when entries exist.
+`Add tracklist` uses a standard bordered button; `edit` uses regular, borderless
+text and becomes bold on hover. Nonempty lists show a read-only preview above
+the button, scrolling after five lines. The preview uses a table with gray row
+numbers and a gray vertical divider before the entry text. Empty lists show no
+preview or None placeholder. Both actions open the reusable
+`TracklistEditorModal` exported from `shows`. Its caller supplies entries,
+`onSave`, and `onClose`; it performs no API request. The editor title is
+`Add tracklist` when opened with zero entries and `Edit Tracklist` when opened
+with existing entries.
 
 The editor is up to 1080px wide, constrained by the viewport. Its track rows
 scroll inside the dashed container, keeping Add, Save, and Cancel outside the
 scrolling list. It uses numbered song/chapter rows, removal, and left-aligned,
 borderless + Add track (appending a song). Row removal uses the shared Close
 visual treatment: a square gray hover background and a thicker cross. Type
-changes clear text while preserving time. Song artist/title and chapter title
-must be nonblank. Timestamps accept m:ss or h:mm:ss, with gray “(optional)” text
-and small gray `m:ss or h:mm:ss` guidance beneath each input. Blank means
-unknown; 0:00 is the start. Known times need not increase or fit within Show
-duration. Rows retain their order; no reordering controls are provided. All rows
-may be removed. Save trims text and returns the draft to Edit Show; only the
-parent Save persists it. Both dialogs use the existing dirty-discard behavior,
-with the parent inert while covered and focus restored to the tracklist action
-on return. Rows stack on phones, and the modal remains scrollable by keyboard.
+changes clear text while preserving time. Column labels appear on the first row
+and whenever the entry type changes; consecutive rows of the same type keep
+accessible labels without repeating them visually. Matching rows have a 4px
+vertical gap; type changes retain a 20px gap. Row numbers align vertically with
+the first input, and the remove column sits near the container’s right edge.
+Song artist/title and chapter title must be nonblank. Timestamps accept m:ss or
+h:mm:ss, with an “optional” placeholder in empty fields and `m:ss or h:mm:ss`
+guidance above the rows. Blank means unknown; 0:00 is the start. Known times
+need not increase or fit within Show duration. Rows retain their order; no
+reordering controls are provided. All rows may be removed. Save trims text and
+returns the draft to Edit Show; only the parent Save persists it. Both dialogs
+use the existing dirty-discard behavior, with the parent inert while covered and
+focus restored to the tracklist action on return. Rows stack on phones, and the
+modal remains scrollable by keyboard.
 
 ### Optional form navigation and helpers
 

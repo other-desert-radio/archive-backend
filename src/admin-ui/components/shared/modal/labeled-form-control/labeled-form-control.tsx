@@ -6,6 +6,7 @@ type LabeledFormControlProps = {
 	name: string;
 	label: ReactNode;
 	value: string;
+	placeholder?: string;
 	onChange: (value: string) => void;
 	onBlur?: () => void;
 	type?: "text" | "url" | "date" | "number" | "email" | "password";
@@ -28,6 +29,7 @@ export const LabeledFormControl = ({
 	name,
 	label,
 	value,
+	placeholder,
 	onChange,
 	onBlur,
 	type = "text",
@@ -54,6 +56,7 @@ export const LabeledFormControl = ({
 					minLength={minLength}
 					id={id}
 					name={name}
+					placeholder={placeholder}
 					value={value}
 					onChange={(event) => onChange(event.target.value)}
 					onBlur={onBlur}
@@ -78,6 +81,7 @@ export const LabeledFormControl = ({
 						min={min}
 						max={max}
 						step={step}
+						placeholder={placeholder}
 						value={value}
 						onChange={(event) => onChange(event.target.value)}
 						onBlur={onBlur}

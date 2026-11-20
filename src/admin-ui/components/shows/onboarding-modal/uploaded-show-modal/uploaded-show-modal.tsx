@@ -16,7 +16,7 @@ import {
 } from "../../../shared/modal/index.js";
 import { formatDuration } from "../../../shared/resource-views/index.js";
 import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
-import { formatTracklist } from "../../tracklist-editor-modal/tracklist-utils.js";
+import { TracklistPreview } from "../../tracklist-preview/index.js";
 import type { ShowFormOptions } from "../show-form-modal/index.js";
 import tracklistStyles from "../show-form-modal/show-form-modal.module.css";
 import {
@@ -200,21 +200,18 @@ const ReviewForm = ({
 					<span id="uploaded-show-tracklist-label">tracklist</span>
 					<div>
 						{tracklist.length > 0 && (
-							<textarea
-								className={tracklistStyles.tracklistPreview}
-								readOnly
-								rows={Math.min(5, tracklist.length)}
-								aria-labelledby="uploaded-show-tracklist-label"
-								value={formatTracklist(tracklist)}
+							<TracklistPreview
+								entries={tracklist}
+								labelledBy="uploaded-show-tracklist-label"
 							/>
 						)}
 						<button
 							type="button"
 							ref={tracklistOpener}
-							className={tracklistStyles.editTracklist}
+							className={`${tracklistStyles.editTracklist} ${tracklist.length === 0 ? tracklistStyles.addTracklist : ""}`}
 							onClick={() => setTracklistOpen(true)}
 						>
-							{tracklist.length === 0 ? "add tracklist" : "edit tracklist"}
+							{tracklist.length === 0 ? "Add tracklist" : "edit"}
 						</button>
 					</div>
 				</div>

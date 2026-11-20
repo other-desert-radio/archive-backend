@@ -86,6 +86,7 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 						<fieldset
 							key={row.id}
 							className={styles.row}
+							data-continuation={rows[index - 1]?.type === row.type}
 							aria-label={`Tracklist row ${index + 1}`}
 						>
 							<span className={styles.number}>{index + 1}</span>
@@ -115,12 +116,8 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 								<LabeledFormControl
 									id={`${prefix}-${row.id}-time`}
 									name="timestamp"
-									label={
-										<>
-											timestamp{" "}
-											<span className={styles.optional}>(optional)</span>
-										</>
-									}
+									label="timestamp"
+									placeholder="optional"
 									value={row.time}
 									onChange={(time) => update(row.id, { time })}
 									{...(timeErrors[index] === undefined

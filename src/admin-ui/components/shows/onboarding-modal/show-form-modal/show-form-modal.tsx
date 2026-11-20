@@ -14,7 +14,7 @@ import {
 	useTagOptions,
 } from "../../../shared/modal/index.js";
 import { TracklistEditorModal } from "../../tracklist-editor-modal/index.js";
-import { formatTracklist } from "../../tracklist-editor-modal/tracklist-utils.js";
+import { TracklistPreview } from "../../tracklist-preview/index.js";
 import type { CreateShowForm } from "../onboard-show-modal/onboard-show-utils.js";
 import { ShowDurationField } from "../show-duration-field/index.js";
 import {
@@ -198,23 +198,18 @@ export const ShowFormModal = ({
 					<span id={`${idPrefix}-tracklist-label`}>tracklist</span>
 					<div>
 						{fields.tracklist.length > 0 && (
-							<textarea
-								className={styles.tracklistPreview}
-								readOnly
-								rows={Math.min(5, fields.tracklist.length)}
-								aria-labelledby={`${idPrefix}-tracklist-label`}
-								value={formatTracklist(fields.tracklist)}
+							<TracklistPreview
+								entries={fields.tracklist}
+								labelledBy={`${idPrefix}-tracklist-label`}
 							/>
 						)}
 						<button
 							type="button"
 							ref={tracklistOpener}
-							className={styles.editTracklist}
+							className={`${styles.editTracklist} ${fields.tracklist.length === 0 ? styles.addTracklist : ""}`}
 							onClick={() => setTracklistOpen(true)}
 						>
-							{fields.tracklist.length === 0
-								? "add tracklist"
-								: "edit tracklist"}
+							{fields.tracklist.length === 0 ? "Add tracklist" : "edit"}
 						</button>
 					</div>
 				</div>

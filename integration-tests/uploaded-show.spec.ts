@@ -298,7 +298,7 @@ async function upload(page: Page, specialOnly = false) {
 			.click();
 	}
 	await form
-		.getByRole("button", { name: "add tracklist", exact: true })
+		.getByRole("button", { name: "Add tracklist", exact: true })
 		.click();
 	const editor = page.getByRole("dialog", {
 		name: "Add tracklist",
@@ -316,12 +316,12 @@ async function upload(page: Page, specialOnly = false) {
 	await editor.getByRole("textbox", { name: /timestamp/ }).fill("0:30");
 	await editor.getByRole("button", { name: "Save", exact: true }).click();
 	await expect(
-		form.getByRole("button", { name: "edit tracklist", exact: true }),
+		form.getByRole("button", { name: "edit", exact: true }),
 	).toBeFocused();
 
 	await expect(
-		form.getByRole("textbox", { name: "tracklist", exact: true }),
-	).toHaveValue("1 | Track song, Track artist, 0:30");
+		form.getByRole("table", { name: "tracklist", exact: true }),
+	).toContainText("Track song, Track artist, 0:30");
 	await form.locator("#show-mp3").setInputFiles({
 		name: "show.mp3",
 		mimeType: "audio/mpeg",
@@ -351,8 +351,8 @@ for (const width of [1280, 390, 320])
 		});
 		await expect(review).toBeVisible();
 		await expect(
-			review.getByRole("textbox", { name: "tracklist", exact: true }),
-		).toHaveValue("1 | Track song, Track artist, 0:30");
+			review.getByRole("table", { name: "tracklist", exact: true }),
+		).toContainText("Track song, Track artist, 0:30");
 		await expect(
 			review.getByRole("textbox", { name: "title", exact: true }),
 		).toHaveValue(editorial.title);
