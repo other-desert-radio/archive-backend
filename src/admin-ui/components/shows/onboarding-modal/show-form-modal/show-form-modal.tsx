@@ -240,29 +240,8 @@ export const ShowFormModal = ({
 				setFields={setFields}
 				idPrefix={idPrefix}
 			/>
-			<LabeledFormControl
-				id={`${idPrefix}-image-small`}
-				name="mixcloud_image_small"
-				label="small image URL"
-				type="url"
-				value={mixcloud_image_small}
-				onChange={(mixcloud_image_small) =>
-					setFields({ ...fields, mixcloud_image_small })
-				}
-				required
-			/>
-			<LabeledFormControl
-				id={`${idPrefix}-image-large`}
-				name="mixcloud_image_large"
-				label="large image URL"
-				type="url"
-				value={mixcloud_image_large}
-				onChange={(mixcloud_image_large) =>
-					setFields({ ...fields, mixcloud_image_large })
-				}
-				required
-			/>
 			<ShowRelationshipFields
+				hideInstructions
 				groupRelationships
 				specialOptions={specialOptions}
 				fields={fields}
@@ -284,6 +263,28 @@ export const ShowFormModal = ({
 				type="url"
 				value={url}
 				onChange={(url) => setFields({ ...fields, url })}
+				required
+			/>
+			<LabeledFormControl
+				id={`${idPrefix}-image-small`}
+				name="mixcloud_image_small"
+				label="small image URL"
+				type="url"
+				value={mixcloud_image_small}
+				onChange={(mixcloud_image_small) =>
+					setFields({ ...fields, mixcloud_image_small })
+				}
+				required
+			/>
+			<LabeledFormControl
+				id={`${idPrefix}-image-large`}
+				name="mixcloud_image_large"
+				label="large image URL"
+				type="url"
+				value={mixcloud_image_large}
+				onChange={(mixcloud_image_large) =>
+					setFields({ ...fields, mixcloud_image_large })
+				}
 				required
 			/>
 		</>

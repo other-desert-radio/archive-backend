@@ -225,7 +225,9 @@ their upload or mutation callback. Edit controls in both table and grid open the
 same form. Show cards require an edit callback so their Edit action cannot
 silently do nothing. Dates prefill from the UTC calendar portion of the stored
 timestamp; duration stays in integer seconds. All creation fields are editable;
-both image URLs remain required.
+both image URLs remain required. Edit Show places small image URL and large
+image URL below show URL at the bottom of the form and omits the grouped
+DJs/Special instruction.
 
 Assigned tag titles come from the loaded resource data. If an assigned tag is
 unresolved, saving stays disabled until tag loading or Retry resolves it. Late
