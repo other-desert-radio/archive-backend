@@ -43,9 +43,10 @@ inventing slightly different dimensions for each resource.
 Desktop forms use label/control columns. Top-align textarea, tag, and DJ
 selector labels; retain centered labels for ordinary single-line inputs. At
 450px or less, stack each label above its control and allow the panel to scroll
-vertically. Keep helpers and inherited tags in the same responsive layout. Check
-narrow screens for horizontal overflow and make sure the actions remain
-reachable.
+vertically. Empty date inputs use gray hint text; filled dates use ordinary text
+color, and validation errors retain red styling. Keep helpers and inherited tags
+in the same responsive layout. Check narrow screens for horizontal overflow and
+make sure the actions remain reachable.
 
 ### Button states
 
@@ -190,27 +191,32 @@ disabled and gray. Only the connection row appears until connected; upload
 fields are hidden. Existing Mixcloud shows enter the archive through the
 Mixcloud import flow.
 
-Upload Show displays title, grouped DJs and Special, date, an optional
-description (up to 1000 characters), tags, required square image selection, and
-MP3 selection. Description is sent to Mixcloud, preserves paragraph breaks and
-counts as an unsaved change. The image picker reuses the shared artist crop
-flow, including rotation, zoom, 1200 × 1200 WebP output, replacement, removal,
-and discard protection. Below the connection row, the editable Mixcloud title
-appears after a form edit. The input fills the available width, has an
-accessible label without a visible label, and uses only a bottom border. Gray
-helper text underneath reads “Title to be sent to Mixcloud. This is auto
-generated using the existing format. Click to edit”. Generated titles have a
-gray underline; manual edits use the standard black underline and persist until
-reset. Titles update as source fields are typed, using whichever fields are
-available and omitting missing parts. A selected Special appears first, followed
-by DJ names joined with `+`, show title, and date; heading parts use `-`.
-Submission requires a connected Mixcloud account, nonblank show and Mixcloud
-titles, at least one DJ or a Special, a show date, an image, and selected audio.
-Description and tags are optional. Submission uploads publicly to Mixcloud;
-confirmed success closes the modal, while errors retain the draft. The upload
-date represents the show date, not a scheduled Mixcloud publication time.
-Editing has no mode picker. Header content may be static or a renderer receiving
-isSubmitting.
+Grouped DJs/Special controls align with the other form fields; their gray
+outline sits 8px outside the group without adding inset padding.
+
+Upload Show omits the grouped DJs/Special instruction. It displays title,
+optional description (up to 1000 characters), date, grouped DJs and Special,
+required square image selection, MP3 selection, tags, and tracklist, in that
+order. Description is sent to Mixcloud, preserves paragraph breaks and counts as
+an unsaved change. The image picker reuses the shared artist crop flow,
+including rotation, zoom, 1200 × 1200 WebP output, replacement, removal, and
+discard protection. Below the connection row, the editable Mixcloud title
+appears when title source fields contain content, a file is selected, or a
+manual title override exists. Description edits and file selections do not
+reveal it. The input fills the available width, has an accessible label without
+a visible label, and uses only a bottom border. Gray helper text underneath
+reads “This title will appear on mixcloud. click to edit”. Generated titles have
+a gray underline; manual edits use the standard black underline and persist
+until reset. Titles update as source fields are typed, using whichever fields
+are available and omitting missing parts. A selected Special appears first,
+followed by DJ names joined with `+`, show title, and date; heading parts use
+`-`. Submission requires a connected Mixcloud account, nonblank show and
+Mixcloud titles, at least one DJ or a Special, a show date, an image, and
+selected audio. Description and tags are optional. Submission uploads publicly
+to Mixcloud; confirmed success closes the modal, while errors retain the draft.
+The upload date represents the show date, not a scheduled Mixcloud publication
+time. Editing has no mode picker. Header content may be static or a renderer
+receiving isSubmitting.
 
 Show onboarding and editing share `ShowFormModal`, including fields, opening
 values, validation, tag loading, DJ selection, and unsaved-change comparison.
@@ -243,24 +249,26 @@ preview or None placeholder. Both actions open the reusable
 with existing entries.
 
 The editor is up to 1080px wide, constrained by the viewport. Its track rows
-scroll inside the dashed container, keeping Add, Save, and Cancel outside the
-scrolling list. It uses numbered song/chapter rows, removal, and left-aligned,
-borderless + Add track (appending a song). Row removal uses the shared Close
-visual treatment: a square gray hover background and a thicker cross. Type
-changes clear text while preserving time. Column labels appear on the first row
-and whenever the entry type changes; consecutive rows of the same type keep
-accessible labels without repeating them visually. Matching rows have a 4px
-vertical gap; type changes retain a 20px gap. Row numbers align vertically with
-the first input, and the remove column sits near the container’s right edge.
-Song artist/title and chapter title must be nonblank. Timestamps accept m:ss or
-h:mm:ss, with an “optional” placeholder in empty fields and `m:ss or h:mm:ss`
-guidance above the rows. Blank means unknown; 0:00 is the start. Known times
-need not increase or fit within Show duration. Rows retain their order; no
-reordering controls are provided. All rows may be removed. Save trims text and
-returns the draft to Edit Show; only the parent Save persists it. Both dialogs
-use the existing dirty-discard behavior, with the parent inert while covered and
-focus restored to the tracklist action on return. Rows stack on phones, and the
-modal remains scrollable by keyboard.
+scroll inside a container without a border or padding, keeping Add, Save, and
+Cancel outside the scrolling list. It uses numbered song/chapter rows, removal,
+and left-aligned, borderless + Add track (appending a song), centered when the
+list is empty. New empty tracklists hide Save and Cancel until Add track is
+clicked; actions remain available if all added rows are removed. Row removal
+uses the shared Close visual treatment: a square gray hover background and a
+thicker cross. Type changes clear text while preserving time. Column labels
+appear on the first row and whenever the entry type changes; consecutive rows of
+the same type keep accessible labels without repeating them visually. Matching
+rows have a 4px vertical gap; type changes retain a 20px gap. Row numbers align
+vertically with the first input, and the remove column sits near the container’s
+right edge. Song artist/title and chapter title must be nonblank. Timestamps
+accept m:ss or h:mm:ss, with an “optional” placeholder in empty fields and
+`m:ss or h:mm:ss` guidance above the rows. Blank means unknown; 0:00 is the
+start. Known times need not increase or fit within Show duration. Rows retain
+their order; no reordering controls are provided. All rows may be removed. Save
+trims text and returns the draft to Edit Show; only the parent Save persists it.
+Both dialogs use the existing dirty-discard behavior, with the parent inert
+while covered and focus restored to the tracklist action on return. Rows stack
+on phones, and the modal remains scrollable by keyboard.
 
 ### Optional form navigation and helpers
 
@@ -281,8 +289,9 @@ callers still close automatically.
 
 `SearchableMultiSelect` and `TagsInput` accept optional `helper` content below
 the control, with 12px text, wrapping, and accessible descriptions. Additional
-tag guidance preserves the existing search/loading/unknown-tag helper. DJ search
-spacing stays unchanged when no optional helper is supplied.
+tag guidance preserves loading and unknown-tag feedback. Search/Tab instructions
+are omitted from all modal pickers. DJ search spacing stays unchanged when no
+optional helper is supplied.
 
 The test-only shared-modal fixture exercises these extensions before the import
 form is wired. It bundles the real components and is intercepted by Playwright;

@@ -17,6 +17,10 @@
 	background: #fff;
 }
 
+.panel button {
+	border-radius: 0;
+}
+
 .header,
 .actions {
 	display: flex;

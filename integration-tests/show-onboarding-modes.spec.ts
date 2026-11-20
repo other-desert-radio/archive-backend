@@ -77,16 +77,19 @@ for (const width of [1280, 390, 320]) {
 			exact: true,
 		});
 		await expect(output).toHaveCount(0);
+		await form
+			.getByRole("textbox", { name: "description", exact: true })
+			.fill("Description only");
+		await expect(output).toHaveCount(0);
 		await page.locator("#show-title").fill("Constant Coverage #2");
 		await expect(output).toHaveCSS("border-bottom-color", "rgb(153, 153, 153)");
 		await expect(output).toHaveCSS("border-top-width", "0px");
 		await expect(output).toHaveCSS("border-left-width", "0px");
 		await expect(output).toHaveCSS("border-right-width", "0px");
 		await expect(
-			form.getByText(
-				"Title to be sent to Mixcloud. This is auto generated using the existing format. Click to edit",
-				{ exact: true },
-			),
+			form.getByText("This title will appear on mixcloud. click to edit", {
+				exact: true,
+			}),
 		).toBeVisible();
 		await page.locator("#show-title").fill("Constant Coverage #2");
 		await expect(output).toHaveValue("Constant Coverage #2");

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import { useModalScrollLock } from "../../scroll-lock/index.js";
+import actionStyles from "../../text-action.module.css";
 import { validateImageFile } from "../utils/index.js";
 import styles from "./image-crop-modal.module.css";
 import {
@@ -167,7 +168,12 @@ export const ImageCropModal = ({
 					</p>
 				)}
 				<div className={styles.actions}>
-					<button type="button" onClick={onCancel} disabled={isSaving}>
+					<button
+						className={actionStyles.textAction}
+						type="button"
+						onClick={onCancel}
+						disabled={isSaving}
+					>
 						Cancel
 					</button>
 					<button

@@ -701,7 +701,7 @@ for (const width of [1280, 390, 320]) {
 		);
 		await expect(guidance).toBeVisible();
 		const group = guidance.locator("..");
-		await expect(group).toHaveCSS("border-top-color", "rgb(187, 187, 187)");
+		await expect(group).toHaveCSS("outline-color", "rgb(187, 187, 187)");
 		await expect(
 			group.getByRole("combobox", { name: "Search DJs", exact: true }),
 		).toBeVisible();

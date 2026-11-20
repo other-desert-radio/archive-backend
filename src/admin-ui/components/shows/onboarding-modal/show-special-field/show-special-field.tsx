@@ -8,13 +8,11 @@ export const ShowSpecialField = ({
 	setFields,
 	idPrefix,
 	options,
-	hideSearchHelp = false,
 }: {
 	fields: ShowFormValues;
 	setFields: Dispatch<SetStateAction<ShowFormValues>>;
 	idPrefix: string;
 	options: ReturnType<typeof useSpecialOptions>;
-	hideSearchHelp?: boolean | undefined;
 }) => {
 	const missing =
 		fields.special_id != null &&
@@ -25,7 +23,6 @@ export const ShowSpecialField = ({
 		<SearchableMultiSelect
 			singleSelection
 			muted={fields.selected.length > 0 && fields.special_id == null}
-			hideSearchHelp={hideSearchHelp}
 			id={`${idPrefix}-special`}
 			label="Special"
 			emptyMessage="No specials available."

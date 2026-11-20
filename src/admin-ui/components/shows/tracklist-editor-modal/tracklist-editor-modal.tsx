@@ -30,6 +30,7 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 		})),
 	);
 	const [rows, setRows] = useState(opening);
+	const [hasStarted, setHasStarted] = useState(entries.length > 0);
 	const nextId = useRef(entries.length);
 	const update = (id: number, changes: Partial<DraftRow>) => {
 		setRows((current) =>
@@ -50,6 +51,7 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 		<FormModal
 			isOpen
 			panelWidth={1080}
+			hideActions={!hasStarted}
 			title={entries.length === 0 ? "Add tracklist" : "Edit Tracklist"}
 			subtitle="Enter timestamp as m:ss or h:mm:ss"
 			isSubmitDisabled={timeErrors.some((error) => error !== undefined)}
@@ -169,6 +171,7 @@ export const TracklistEditorModal = ({ entries, onSave, onClose }: Props) => {
 					className={styles.add}
 					type="button"
 					onClick={() => {
+						setHasStarted(true);
 						const id = nextId.current++;
 						setRows((current) => [
 							...current,
