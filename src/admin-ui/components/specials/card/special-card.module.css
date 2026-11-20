@@ -18,10 +18,10 @@
 	flex-shrink: 0;
 }
 .edit {
-	composes: edit from "../../shared/resource-views/card-actions.module.css";
+	composes: edit from "../../shared/resource-views/resource-actions.module.css";
 }
 .delete {
-	composes: delete from "../../shared/resource-views/card-actions.module.css";
+	composes: delete from "../../shared/resource-views/resource-actions.module.css";
 }
 @media (max-width: 450px) {
 	.card {

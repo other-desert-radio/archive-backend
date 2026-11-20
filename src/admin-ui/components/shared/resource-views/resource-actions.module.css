@@ -1,7 +1,9 @@
 .edit {
-	justify-self: start;
 	border: 1px solid black;
 	border-radius: 0;
+	background: #fff;
+	padding: 0.25rem 0.5rem;
+	font: inherit;
 }
 
 .delete {

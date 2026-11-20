@@ -67,26 +67,14 @@
 	z-index: 1;
 }
 .editButton {
-	border: 1px solid #000;
-	border-radius: 0;
-	background: #fff;
-	padding: 0.25rem 0.5rem;
-	font: inherit;
+	composes: edit from "../resource-actions.module.css";
 }
 .activeSort {
 	font-weight: 700;
 }
 .deleteButton {
-	border: 1px solid #b00020;
-	color: #b00020;
-	border-radius: 0;
-	background: #fff;
-	padding: 0.25rem 0.5rem;
-	font: inherit;
+	composes: delete from "../resource-actions.module.css";
 	margin-left: 8px;
-}
-.deleteButton:enabled:hover {
-	background: #efefef;
 }
 .actionCell:has(.deleteButton) {
 	white-space: nowrap;
