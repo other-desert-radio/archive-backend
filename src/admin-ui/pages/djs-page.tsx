@@ -31,7 +31,7 @@ export const DJsPage = () => {
 	const [viewMode, setViewMode] = useState<ResourceViewMode>(() =>
 		userPreferences.getResourceViewMode("djs"),
 	);
-	const [sortColumn, setSortColumn] = useState<DJSortColumn>("id");
+	const [sortColumn, setSortColumn] = useState<DJSortColumn>("createdAt");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [deletingDJ, setDeletingDJ] = useState<DJsAdminRow>();
@@ -171,6 +171,12 @@ export const DJsPage = () => {
 					noResultsMessage="No DJs match your search."
 					toolbar={
 						<DJToolbar
+							sortColumn={sortColumn}
+							sortDirection={sortDirection}
+							onSortChange={(column, direction) => {
+								setSortColumn(column);
+								setSortDirection(direction);
+							}}
 							query={query}
 							onQueryChange={setQuery}
 							viewMode={viewMode}

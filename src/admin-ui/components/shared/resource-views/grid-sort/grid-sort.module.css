@@ -12,7 +12,7 @@
 	width: 14px;
 	height: 14px;
 	background:
-		url("../../../assets/icons/triangle.svg") center / contain no-repeat;
+		url("../../../../assets/icons/triangle.svg") center / contain no-repeat;
 	transform: translateY(-50%);
 	pointer-events: none;
 }
