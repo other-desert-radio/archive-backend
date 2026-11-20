@@ -380,8 +380,9 @@ Form dialogs sit above the management header and toolbar. Discard confirmations
 and image crop dialogs sit above the form so toolbar controls cannot intercept
 dialog actions.
 
-Cancel, Close, Escape, and the form backdrop share one dismissal path. Clean
-forms close immediately. Dirty forms show “Discard unsaved changes?” with “Keep
+Cancel, Close, Escape, and the form backdrop share one dismissal path. Escape
+also follows this path when a tag or DJ search dropdown is open. Clean forms
+close immediately. Dirty forms show “Discard unsaved changes?” with “Keep
 editing” initially focused and “Discard changes” as the primary action. Escape
 and the confirmation backdrop keep editing. Preserve values and restore focus to
 the initiating control, or the form panel if necessary.
@@ -716,9 +717,8 @@ anywhere on an option row selects it while keeping search focused; selected DJs
 are excluded from suggestions. Arrow keys navigate, Enter selects, and Tab
 accepts a prefix completion. Tags and DJs share matching, completion, and option
 pointer handling through `shared/modal/autocomplete`. Leaving the control closes
-it, and Escape from search closes the dropdown before dismissing the modal. The
-Mixcloud source name value is bold for easier comparison with the editable
-title.
+it, and Escape from search triggers the modal’s Close action. The Mixcloud
+source name value is bold for easier comparison with the editable title.
 
 DJ chips preserve selection order, including after options reload or a DJ is
 removed and selected again. Tags and DJs share `useChipBackspace`: with an empty
